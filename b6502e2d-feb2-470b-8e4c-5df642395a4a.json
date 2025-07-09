@@ -1,0 +1,7 @@
+{
+	"LSPs": {
+		"language_name_here": "lsp_command_here",
+		"c++": "C:/Users/adamj/OneDrive/Documents/LanguageServers/clangd_19.1.2/bin/clangd.exe --compile-commands-dir=D:/Users/adamj/Documents/C/CodeWizard/build/windows-release"
+	},
+	"build_command": "cd /d D:\\Users\\adamj\\Documents\\C\\CodeWizard && call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat\" x64 && cmake --preset windows-release && cmake --build --preset windows-release && D:\\Users\\adamj\\Documents\\C\\CodeWizard\\build\\windows-release\\CodeWizard.exe"
+}

@@ -1,0 +1,12 @@
+Todo:
+//	-1. Save all on window close/program exit
+//	0.  Find menu needs to actually work
+//	0.1 Replace/replace all
+//	0.2 (this merges with 0.3) require case sensitivity thing
+//	0.3 Find buttons
+//	1   Vim actions (s key, as well as < >)
+//	1.5 Comment/indent control flow
+	  2.  Settings
+//	3.  Language detection
+	  4.  Command palette
+	  5.  Everything else on that paper.

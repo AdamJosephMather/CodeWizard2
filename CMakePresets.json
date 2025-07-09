@@ -1,0 +1,32 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+	"major": 3,
+	"minor": 21,
+	"patch": 0
+  },
+  "configurePresets": [
+	{
+	  "name": "default",
+	  "hidden": true,
+	  "generator": "Ninja",
+	  "toolchainFile": "C:/Users/adamj/vcpkg/scripts/buildsystems/vcpkg.cmake"
+	},
+	{
+	  "name": "windows-release",
+	  "inherits": "default",
+	  "description": "Release build using vcpkg on Windows",
+	  "binaryDir": "${sourceDir}/build/windows-release",
+	  "cacheVariables": {
+		"CMAKE_BUILD_TYPE": "Release",
+		"CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+	  }
+	}
+  ],
+  "buildPresets": [
+	{
+	  "name": "windows-release",
+	  "configurePreset": "windows-release"
+	}
+  ]
+}

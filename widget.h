@@ -49,4 +49,5 @@ public:
 	
 	virtual void save();
 	virtual Widget* fileOpen(std::string fname);
+	virtual Widget* getFirstEditor();
 };

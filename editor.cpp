@@ -60,8 +60,7 @@ bool Editor::is_image(std::string path) {
 	   std::string(path).find(".jpg") != std::string::npos || 
 	   std::string(path).find(".jpeg") != std::string::npos || 
 	   std::string(path).find(".bmp") != std::string::npos || 
-	   std::string(path).find(".gif") != std::string::npos || 
-	   std::string(path).find(".ico") != std::string::npos;
+	   std::string(path).find(".gif") != std::string::npos;
 }
 
 void Editor::createNew(FileInfo* fn) {
@@ -312,4 +311,8 @@ Widget* Editor::fileOpen(std::string fname) { // this is a widget function to fi
 		}
 	}
 	return nullptr;
+}
+
+Widget* Editor::getFirstEditor() {
+	return this;
 }

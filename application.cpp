@@ -941,6 +941,8 @@ void App::executeCommandPaletteAction() {
 }
 
 void App::openFromCMD(std::string filepath, std::string filename, int line) {
+	std::cout << "Opening from cmd..." << std::endl;
+	
 	FileInfo* finfo = new FileInfo();
 	finfo->filepath = filepath;
 	finfo->filename = filename;
@@ -965,7 +967,18 @@ void App::openFromCMD(std::string filepath, std::string filename, int line) {
 			edtr->fileOpenRequested(finfo);
 		}
 	}else {
-		// we are well and truly screwed here.
+		Widget* wdgt = rootelement->getFirstEditor();
+		std::cout << "Okay, widget from getfirsteditor: " << wdgt << std::endl;
+		if (auto edtr = dynamic_cast<Editor*>(wdgt)) {
+			if (line != -1) {
+				edtr->fileOpenRequested(finfo, line, 0, line, 0);
+			}else{
+				edtr->fileOpenRequested(finfo);
+			}
+		}else{
+			std::cout << "Fuck. Just fuck." << std::endl;
+			// we have no choice in this matter (there is no open editor on which we can call.)
+		}
 	}
 }
 

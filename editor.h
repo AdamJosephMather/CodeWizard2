@@ -18,12 +18,12 @@ public:
 	void fileOpenRequested(FileInfo* f, int lns = -1, int chrs = -1, int ln = -1, int chr = -1);
 	void moveto(int lns, int chrs, int ln, int chr);
 	
-	bool on_key_event(int key, int scancode, int action, int mods);
+	bool on_key_event(int key, int scancode, int action, int mods) override;
 //	bool on_mouse_button_event(int button, int action, int mods);
 //	bool on_mouse_move_event();
 //	bool on_scroll_event(double xchange, double ychange);
 	
-	void position(int x, int y, int w, int h);
+	void position(int x, int y, int w, int h) override;
 	void createNew(FileInfo* fn);
 	void closeFile(int file_id);
 	
@@ -31,11 +31,13 @@ public:
 	
 	void tabinfoclicked(TabInfo info);
 	
-	void save();
-	Widget* fileOpen(std::string fname);
+	void save() override;
+	Widget* fileOpen(std::string fname) override;
 	
-	void render();
+	void render() override;
 	
 	icu::UnicodeString getPaletteName();
+	
+	Widget* getFirstEditor() override;
 private:
 };

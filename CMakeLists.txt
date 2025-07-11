@@ -12,14 +12,16 @@ add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_render
 # Use vcpkg-provided GLFW and ICU
 find_package(glfw3 CONFIG REQUIRED)
 find_package(ICU   REQUIRED COMPONENTS uc i18n data)  # must list each component :contentReference[oaicite:0]{index=0}
+find_package(Freetype REQUIRED)
 
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE
-		glfw          # your working GLFW target
-		opengl32      # on Windows
-		ICU::uc       # core Unicode (formerly icuuc) :contentReference[oaicite:1]{index=1}
-		ICU::i18n     # internationalization (formerly icui18n)
-		ICU::data     # ICU data blobs (formerly icudata)
+	glfw          # your working GLFW target
+	opengl32      # on Windows
+	ICU::uc       # core Unicode (formerly icuuc) :contentReference[oaicite:1]{index=1}
+	ICU::i18n     # internationalization (formerly icui18n)
+	ICU::data     # ICU data blobs (formerly icudata)
+	Freetype::Freetype
 )
 
 find_library(ONIG_LIB
@@ -41,7 +43,7 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 if (MSVC)
-  set_target_properties(${PROJECT_NAME} PROPERTIES
+	set_target_properties(${PROJECT_NAME} PROPERTIES
 	WIN32_EXECUTABLE TRUE
-  )
+	)
 endif()

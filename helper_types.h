@@ -545,28 +545,44 @@ static std::string trim(const std::string& s) {
 
 
 static bool isBinaryFile(const std::string& path) {
-	// Open in binary mode
-	std::ifstream file(path, std::ios::in | std::ios::binary);
+	std::ifstream file(path, std::ios::binary);
 	if (!file.is_open()) {
 		// Couldn’t open → treat as “binary”/ignore
 		return true;
 	}
 
-	// Read up to the first 1 KB
-	std::vector<char> buffer(1024);
-	file.read(buffer.data(), buffer.size());
-	std::streamsize bytesRead = file.gcount();
+	// Read up to the first 4 KB
+	const std::size_t MAX_CHECK = 4096;
+	std::vector<unsigned char> buf(MAX_CHECK);
+	file.read(reinterpret_cast<char*>(buf.data()),
+	 buf.size());
+	std::streamsize n = file.gcount();
 
-	// Check each byte for non-text ranges
-	for (std::streamsize i = 0; i < bytesRead; ++i) {
-		unsigned char c = static_cast<unsigned char>(buffer[i]);
-		if (c == 0
-			|| ((c < 7  || c > 13)
-				&& (c < 32 || c > 126)))
-		{
-			return true;  // non-text byte found
-		}
+	if (n == 0) {
+		// Empty file is text
+		return false;
 	}
 
-	return false;  // all bytes in a “text” range
+	int controlCount = 0;
+	for (std::streamsize i = 0; i < n; ++i) {
+		unsigned char c = buf[i];
+		if (c == 0) {
+			// A single NUL byte almost certainly means binary
+			return true;
+		}
+		// Count C0 controls except: TAB (9), LF (10), VT (11), FF (12), CR (13)
+		if ( (c < 9) ||
+			 (c > 13 && c < 32) ) 
+		{
+			++controlCount;
+			// If more than 1% of bytes are “odd” controls, call it binary
+			if (controlCount > static_cast<int>(n / 100)) {
+				return true;
+			}
+		}
+		// NOTE: we do *not* reject c >= 128 here
+	}
+
+	// Passed all binary tests → text
+	return false;
 }

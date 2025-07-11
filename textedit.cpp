@@ -1237,7 +1237,6 @@ void TextEdit::insertTextAtCursor(Cursor c, icu::UnicodeString insert_text) {
 	
 	std::string endthing;
 	end.toUTF8String(endthing);
-	std::cout << "End: " << endthing << std::endl;
 	
 	changed_during_update = true;
 	
@@ -1259,7 +1258,6 @@ void TextEdit::insertTextAtCursor(Cursor c, icu::UnicodeString insert_text) {
 			
 			std::string endthing;
 			end.toUTF8String(endthing);
-			std::cout << "  End: " << endthing << std::endl;
 			
 			if (i == insert_lines.size()-1) {
 				new_line.line_text += end;

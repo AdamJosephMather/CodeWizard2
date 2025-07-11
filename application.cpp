@@ -394,6 +394,21 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 			mmi->ptMaxPosition.y = work.top    - monitor.top;
 		
 			return 0;
+		}case WM_MOVING: {
+		}case WM_SIZING: {
+			// Let Windows do its thing first
+			CallWindowProc(originalWndProc, hwnd, uMsg, wParam, lParam);
+		
+			// lParam is a RECT* for the new window position
+			RECT* rc = reinterpret_cast<RECT*>(lParam);
+			int newW = rc->right  - rc->left;
+			int newH = rc->bottom - rc->top;
+		
+			// Force our OpenGL viewport and projection to update
+			App::resize_callback(App::window, newW, newH);
+		
+			// Consume the message
+			return 0;
 		}
 	}
 	

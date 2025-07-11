@@ -200,3 +200,10 @@ Widget* Widget::fileOpen(std::string fname) {
 	}
 	return nullptr;
 }
+
+Widget* Widget::getFirstEditor() {
+	for (auto c : children) {
+		if (auto b = c->getFirstEditor()) { return b; }
+	}
+	return nullptr;
+}

@@ -1478,17 +1478,9 @@ void App::launchCommandNonBlocking(const std::string& command) {
 	}
 }
 
-SearchResult App::searchAcrossFiles(const std::string& searchTerm) {
-	int totalMatches = 0;
-	SearchResult out;
-	
-	auto st = toLower(searchTerm);
-
-	// limit to first 300 (or fewer) files
-	size_t maxlen = std::min<size_t>(300, INDEXED_FILES.fullPaths.size());
-
-	for (size_t idx = 0; idx < maxlen; ++idx) {
-		const auto& path = INDEXED_FILES.fullPaths[idx];
+void searchTheseFiles(const std::string& st, std::vector<std::string> files, SearchResult* res) {
+	for (size_t idx = 0; idx < files.size(); ++idx) {
+		const auto& path = files[idx];
 		if (isBinaryFile(path)) 
 			continue;
 
@@ -1503,18 +1495,48 @@ SearchResult App::searchAcrossFiles(const std::string& searchTerm) {
 		while (std::getline(in, line)) {
 			if (caseInsensitiveFindAlreadyLowered(line, st)) {
 				matches.emplace_back(lineNum, trim(line));
-				++totalMatches;
 			}
 			++lineNum;
 		}
 
 		if (!matches.empty()) {
-			out.emplace(std::make_pair(path, INDEXED_FILES.fullPaths[idx]),
-						std::move(matches));
+			res->emplace(std::make_pair(path, files[idx]), std::move(matches));
 		}
+	}
+}
 
-		if (totalMatches > 100)
-			break;
+SearchResult App::searchAcrossFiles(const std::string& searchTerm) {
+	SearchResult out;
+	
+	auto st = toLower(searchTerm);
+	
+	// limit to first 300 (or fewer) files
+	size_t maxlen = std::min<size_t>(300, INDEXED_FILES.fullPaths.size());
+	
+	std::vector<std::string>  torun;
+	std::vector<std::thread>  threads;
+	std::vector<SearchResult*> reses;
+	
+	for (size_t idx = 0; idx < maxlen; ++idx) { // we're going to separate this into different groups of files to search
+		if (torun.size() == 30) {
+			reses.push_back(new SearchResult());
+			threads.emplace_back(searchTheseFiles, st, torun, reses.back());
+			torun.clear();
+		}
+		torun.push_back(INDEXED_FILES.fullPaths[idx]);
+	}
+	if (torun.size() != 0) {
+		reses.push_back(new SearchResult());
+		threads.emplace_back(searchTheseFiles, st, torun, reses.back());
+		torun.clear();
+	}
+
+	for (int i = 0; i < threads.size(); i++) {
+		threads[i].join();
+		for (const auto& pair : *reses[i]) {
+			out[pair.first] = pair.second;
+		}
+		delete reses[i];
 	}
 	
 	return out;

@@ -150,6 +150,16 @@ int main() {
 	add_button->transparent = true;
 	remove_button->transparent = true;
 	
+	Widget* wdgt = App::rootelement->getFirstEditor();
+	if (auto edtr = dynamic_cast<Editor*>(wdgt)) {
+		auto wdgt = edtr->editors[edtr->tab_bar->selected_id];
+		if (auto cdet = dynamic_cast<CodeEdit*>(wdgt)) {
+			if (cdet->textedit) {
+				App::setActiveLeafNode(cdet->textedit);
+			}
+		}
+	}
+	
 	App::Run();
 	
 	return 0;

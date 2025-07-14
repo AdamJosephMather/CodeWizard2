@@ -56,11 +56,9 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 	tab_bar->can_add_new = false;
 	
 	tab_bar->tab_clicked_callback = [&](TabInfo info){
-		std::cout << "S0\n";
 		if (info.id == 2) {
 			// project specifics
 			bool worked = App::settings->makeProjectSettings();
-			std::cout << "Worked: " << worked << std::endl;
 			if (auto el = dynamic_cast<SettingsLabel*>(settings_menus[2][0])) {
 				if (worked) {
 					el->default_value = App::settings->getProjectSettingsPath();
@@ -69,9 +67,8 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 				}
 			}
 		}
-		std::cout << "S1\n";
+		
 		handleChildren();
-		std::cout << "S2\n";
 	};
 	
 	
@@ -87,7 +84,52 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"Font Path",
 			"font_path",
 			getExecutableDir()+"\\cascadia\\CascadiaCode-Regular.ttf"
-		)
+		),
+		makeString(
+			"Tint Color",
+			"c_tint_color",
+			colorToString(App::theme.tint_color)
+		),
+		makeString(
+			"Strings Colors",
+			"c_strings_color",
+			colorToString(App::theme.syntax_colors[1])
+		),
+		makeString(
+			"Comments Color",
+			"c_comments_color",
+			colorToString(App::theme.syntax_colors[2])
+		),
+		makeString(
+			"Variables Color",
+			"c_vars_color",
+			colorToString(App::theme.syntax_colors[3])
+		),
+		makeString(
+			"Types Color",
+			"c_types_color",
+			colorToString(App::theme.syntax_colors[4])
+		),
+		makeString(
+			"Functions Color",
+			"c_functs_color",
+			colorToString(App::theme.syntax_colors[5])
+		),
+		makeString(
+			"Keywords Color",
+			"c_keywords_color",
+			colorToString(App::theme.syntax_colors[6])
+		),
+		makeString(
+			"Punctuation Color",
+			"c_punctuation_color",
+			colorToString(App::theme.syntax_colors[7])
+		),
+		makeString(
+			"Literals Color",
+			"c_literals_color",
+			colorToString(App::theme.syntax_colors[8])
+		),
 	};
 	
 	settings_menus[1] = {
@@ -408,6 +450,26 @@ bool Settings::validate_input(SettingsBool* el) {
 	return true;
 }
 
+bool handleColor(bool syntax, SettingsString* el, int indx) {
+	bool worked;
+	Color c = stringToColor(el->value, worked);
+	if (!worked) {
+		el->value = el->default_value;
+		return false;
+	}
+	
+	if (syntax) {
+		App::theme.syntax_colors[indx]->r = c.r;
+		App::theme.syntax_colors[indx]->g = c.g;
+		App::theme.syntax_colors[indx]->b = c.b;
+	}else if (indx == -1){ // handle non syntax-colors here
+		App::theme.tint_color->r = c.r;
+		App::theme.tint_color->g = c.g;
+		App::theme.tint_color->b = c.b;
+	}
+	return true;
+}
+
 bool Settings::validate_input(SettingsString* el) {
 	if (el->key_name == "font_path") {
 		if (!std::filesystem::exists(el->value)) {
@@ -426,8 +488,27 @@ bool Settings::validate_input(SettingsString* el) {
 		}
 		
 		return true;
+	}else if (el->key_name == "c_strings_color") {
+		return handleColor(true, el, 1);
+	}else if (el->key_name == "c_comments_color") {
+		return handleColor(true, el, 2);
+	}else if (el->key_name == "c_vars_color") {
+		return handleColor(true, el, 3);
+	}else if (el->key_name == "c_types_color") {
+		return handleColor(true, el, 4);
+	}else if (el->key_name == "c_functs_color") {
+		return handleColor(true, el, 5);
+	}else if (el->key_name == "c_keywords_color") {
+		return handleColor(true, el, 6);
+	}else if (el->key_name == "c_punctuation_color") {
+		return handleColor(true, el, 7);
+	}else if (el->key_name == "c_literals_color") {
+		return handleColor(true, el, 8);
+	}else if (el->key_name == "c_tint_color") {
+		bool worked = handleColor(false, el, -1);
+		App::updateFromTintColor(&App::theme);
+		return worked;
 	}
-	
 	
 	return true;
 }

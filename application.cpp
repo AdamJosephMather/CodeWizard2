@@ -1519,3 +1519,36 @@ SearchResult App::searchAcrossFiles(const std::string& searchTerm) {
 	
 	return out;
 }
+
+void App::setTintedColor(Color* tint_c, Color* c, float b) {
+	if (tint_c->r == 1 && tint_c->g == 1 && tint_c->b == 1) {
+		c->r = b;
+		c->g = b;
+		c->b = b;
+		return;
+	}
+	
+	float tcb = tint_c->r*0.299+tint_c->g*0.587+tint_c->b*0.114;
+	float scale = (b/tcb+b*2)/3;
+	
+	float new_r = fmin(255.0, tint_c->r*scale);
+	float new_g = fmin(255.0, tint_c->g*scale);
+	float new_b = fmin(255.0, tint_c->b*scale);
+	
+	c->r = new_r;
+	c->g = new_g;
+	c->b = new_b;
+}
+
+void App::updateFromTintColor(Theme* t) {
+	setTintedColor(t->tint_color, t->main_background_color,    0.098039);
+	setTintedColor(t->tint_color, t->extras_background_color,  0.164706);
+	setTintedColor(t->tint_color, t->hover_background_color,   0.23);
+	setTintedColor(t->tint_color, t->main_text_color,          1.0);
+	setTintedColor(t->tint_color, t->syntax_colors[0],         1.0);
+	setTintedColor(t->tint_color, t->darker_background_color,  0.05);
+	setTintedColor(t->tint_color, t->overlay_background_color, 0.12);
+	setTintedColor(t->tint_color, t->lesser_text_color,        0.392157);
+	
+	t->border = MakeColor(0, 0, 0);
+}

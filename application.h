@@ -154,4 +154,7 @@ public:
 	static SearchResult searchAcrossFiles(const std::string& searchTerm);
 	
 	static void openFromCMD(std::string filepath, std::string filename, int line = -1);
+	
+	static void updateFromTintColor(Theme* t);
+	static void setTintedColor(Color* tint_c, Color* c, float b);
 };

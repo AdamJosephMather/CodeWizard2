@@ -12,10 +12,25 @@
 
 #include <Windows.h>
 
+static std::string empty = "";
+
+void setSynColor(Theme* t, std::string name, int id) {
+	std::string cl = App::settings->getValue(name, empty);
+	if (cl == empty) { return; }
+	bool worked;
+	Color c = stringToColor(cl, worked);
+	if (!worked) { return; }
+	t->syntax_colors[id]->r = c.r;
+	t->syntax_colors[id]->g = c.g;
+	t->syntax_colors[id]->b = c.b;
+}
+
 int main() {
 	App::Init();
 	
 	Theme theme;
+	
+	theme.tint_color = MakeColor(0.435294,0.670588,0.819608);
 	
 	theme.main_background_color = MakeColor(0.0509803922, 0.0784313725, 0.0941176471);
 	theme.extras_background_color = MakeColor(0.0862745098, 0.1294117647, 0.1607843137);
@@ -43,6 +58,27 @@ int main() {
 	theme.syntax_colors[7] = MakeColor(0.4980392156862745, 0.5176470588235295, 0.5568627450980392);
 	theme.syntax_colors[8] = MakeColor(0.7607843137254902, 0.4980392156862745, 0.25098039215686274);
 	
+	setSynColor(&theme, "c_strings_color", 1);
+	setSynColor(&theme, "c_comments_color", 2);
+	setSynColor(&theme, "c_vars_color", 3);
+	setSynColor(&theme, "c_types_color", 4);
+	setSynColor(&theme, "c_functs_color", 5);
+	setSynColor(&theme, "c_keywords_color", 6);
+	setSynColor(&theme, "c_punctuation_color", 7);
+	setSynColor(&theme, "c_literals_color", 8);
+	
+	std::string cl = App::settings->getValue("c_tint_color", empty);
+	if (cl != empty) {
+		bool worked;
+		Color c = stringToColor(cl, worked);
+		if (worked) {
+			theme.tint_color->r = c.r;
+			theme.tint_color->g = c.g;
+			theme.tint_color->b = c.b;
+		}
+	}
+	
+	App::updateFromTintColor(&theme);
 	App::setTheme(theme);
 
 	

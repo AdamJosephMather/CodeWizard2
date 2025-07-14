@@ -76,6 +76,8 @@ struct Theme {
 	Color* overlay_background_color;
 	Color* border;
 	
+	Color* tint_color;
+	
 	Color* white;
 	Color* black;
 	
@@ -585,4 +587,56 @@ static bool isBinaryFile(const std::string& path) {
 
 	// Passed all binary tests → text
 	return false;
+}
+
+static std::string colorToString(Color* c) {
+	int r = (int)(c->r*255.0);
+	int g = (int)(c->g*255.0);
+	int b = (int)(c->b*255.0);
+	return std::to_string(r)+","+std::to_string(g)+","+std::to_string(b);
+}
+
+static Color stringToColor(std::string s, bool& worked) {
+	worked = true;
+	Color c;
+	
+	std::vector<int> vals = { 0 };
+	
+	static std::string numbers = "0123456789";
+	
+	for (auto chr : s) {
+		if (chr == ' ') { continue; }
+		
+		if (chr == ',') {
+			vals.push_back(0);
+			continue;
+		}
+		
+		auto nm = numbers.find(chr);
+		if (nm == std::string::npos){
+			worked = false;
+			return c;
+		}
+		
+		vals[vals.size()-1] *= 10;
+		vals[vals.size()-1] += nm;
+	}
+	
+	if (vals.size() != 3) {
+		worked = false;
+		return c;
+	}
+	
+	for (auto v : vals) {
+		if (v < 0 || v > 255) {
+			worked = false;
+			return c;
+		}
+	}
+	
+	c.r = (float)(vals[0])/255.0;
+	c.g = (float)(vals[1])/255.0;
+	c.b = (float)(vals[2])/255.0;
+	
+	return c;
 }

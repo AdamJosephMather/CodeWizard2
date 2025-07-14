@@ -250,6 +250,10 @@ void Editor::fileOpenRequested(FileInfo* f, int lns, int chrs, int ln, int chr) 
 		}
 	}
 	
+	if (auto ce = dynamic_cast<CodeEdit*>(editors[tab_bar->selected_id])) { // we do this cast because not all widgets have FileInfo file; variables.
+		App::setActiveLeafNode(ce->textedit);
+	}
+	
 	moveto(lns, chrs, ln, chr);
 	App::commandUnfocused();
 }
@@ -285,6 +289,9 @@ bool Editor::on_key_event(int key, int scancode, int action, int mods) {
 	if (this == App::activeEditor) {
 		if (key == GLFW_KEY_O && action == GLFW_PRESS && holding_control) {
 			fileOpenRequested(nullptr);
+			return true;
+		}else if (key == GLFW_KEY_N && action == GLFW_PRESS && holding_control) {
+			createNew(nullptr);
 			return true;
 		}
 	}

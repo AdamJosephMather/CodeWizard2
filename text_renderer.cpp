@@ -72,7 +72,7 @@ static std::vector<PackedChar> cdata;  // packed glyph metadata
 static std::vector<RangeInfo> packedRanges;
 static GLuint fontTex = 0;
 
-const int TEX_W = 1024, TEX_H = 1024;
+const int TEX_W = 2048, TEX_H = 2048;
 int TEXT_WIDTH  = 1;  // monospace char cell
 int TEXT_HEIGHT = 1;
 int ascent_px   = 0;
@@ -167,6 +167,7 @@ bool TextRenderer::init_font(const char* fontPath)
 		{ 0x0370, 0x0090 }, // Greek and Coptic
 		{ 0xFFFD, 0x0001 }, // Replacement Character
 		{ 0xFE00, 0x0010 }, // Variation Selectors
+		{ 0x25A0, 0x0060 }, // Geometric Shapes (U+25A0–U+25FF), includes □ (U+25A1)
 	};
 
 	int totalGlyphs = 0;
@@ -250,17 +251,17 @@ bool TextRenderer::init_font(const char* fontPath)
 	// --------------------------------------------------------------------------
 	// Debug: write atlas PPM
 	// --------------------------------------------------------------------------
-	{
-		std::ofstream ppm("font_atlas_debug.ppm");
-		ppm << "P3\n" << TEX_W << " " << TEX_H << "\n255\n";
-		for (int y = 0; y < TEX_H; ++y) {
-			for (int x = 0; x < TEX_W; ++x) {
-				int val = atlas[y * TEX_W + x];
-				ppm << val << " " << val << " " << val << " ";
-			}
-			ppm << "\n";
-		}
-	}
+//	{
+//		std::ofstream ppm("font_atlas_debug.ppm");
+//		ppm << "P3\n" << TEX_W << " " << TEX_H << "\n255\n";
+//		for (int y = 0; y < TEX_H; ++y) {
+//			for (int x = 0; x < TEX_W; ++x) {
+//				int val = atlas[y * TEX_W + x];
+//				ppm << val << " " << val << " " << val << " ";
+//			}
+//			ppm << "\n";
+//		}
+//	}
 
 	// --------------------------------------------------------------------------
 	// Layout constants (monospaced assumption as in original)

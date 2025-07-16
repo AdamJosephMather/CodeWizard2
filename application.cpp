@@ -687,7 +687,12 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		}
 	}
 	
-	if (action == GLFW_PRESS && key == GLFW_KEY_O && control && shift) {
+	if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE && (curr_removing_panel || curr_adding_panel)){
+		curr_removing_panel = false;
+		curr_adding_panel = false;
+		rerender = true;
+		return;
+	}if (action == GLFW_PRESS && key == GLFW_KEY_O && control && shift) {
 		std::string fldr = settings->getValue("current_folder", std::string());
 		
 		const char * fpr = tinyfd_selectFolderDialog(

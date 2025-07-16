@@ -27,7 +27,7 @@ Editor::Editor(Widget* parent) : Widget(parent) {
 		if (it != editors.end()) {
 			it->second->request_close([&](Widget* w){ // wait for it to delete itself
 				App::RemoveWidgetFromParent(w);
-				delete editors[it->first];
+				delete it->second;
 				editors.erase(it->first);
 			});
 		}
@@ -194,13 +194,7 @@ void Editor::position(int x, int y, int w, int h) {
 }
 
 void Editor::closeFile(int file_id) {
-	tab_bar->removeTab(file_id);
-	
-	editors[file_id]->request_close([&](Widget* w){ // wait for it to delete itself
-		App::RemoveWidgetFromParent(w);
-		delete editors[file_id];
-		editors.erase(file_id);
-	});
+	tab_bar->removeTab(file_id); // this triggers a thing in the tabbar which calls back to here to delete it (:
 }
 
 void Editor::fileOpenRequested(FileInfo* f, int lns, int chrs, int ln, int chr) {

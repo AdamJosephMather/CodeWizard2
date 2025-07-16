@@ -3339,44 +3339,42 @@ char * tinyfd_selectFolderDialog(
 		char const * aTitle , /* NULL or "" */
 		char const * aDefaultPath ) /* NULL or "" */
 {
-		static char lBuff[MAX_PATH_OR_CMD];
-		char * p;
-		char * lPointerInputBox;
-		char lString[MAX_PATH_OR_CMD];
+	static char lBuff[MAX_PATH_OR_CMD];
+	char * p;
+	char * lPointerInputBox;
+	char lString[MAX_PATH_OR_CMD];
+	
+	if (tfd_quoteDetected(aTitle)) return tinyfd_selectFolderDialog("INVALID TITLE WITH QUOTES", aDefaultPath);
+	if (tfd_quoteDetected(aDefaultPath)) return tinyfd_selectFolderDialog(aTitle, "INVALID DEFAULT_PATH WITH QUOTES"); // it's recursive... lol
 
-		if (tfd_quoteDetected(aTitle)) return tinyfd_selectFolderDialog("INVALID TITLE WITH QUOTES", aDefaultPath);
-		if (tfd_quoteDetected(aDefaultPath)) return tinyfd_selectFolderDialog(aTitle, "INVALID DEFAULT_PATH WITH QUOTES");
-
-	if ( ( !tinyfd_forceConsole || !( GetConsoleWindow() || dialogPresent() ) )
-				&& (!getenv("SSH_CLIENT") || getenvDISPLAY()))
-		{
-				if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"windows");return (char *)1;}
-				p = selectFolderDialogWinGui(lBuff, aTitle, aDefaultPath);
+	if ( ( !tinyfd_forceConsole || !( GetConsoleWindow() || dialogPresent() ) ) && (!getenv("SSH_CLIENT") || getenvDISPLAY())) {
+		if ( aTitle && !strcmp(aTitle,"tinyfd_query") ){
+			strcpy(tinyfd_response,"windows");
+			return (char *)1;
 		}
-				else
-				if (dialogPresent())
-				{
-						if (aTitle&&!strcmp(aTitle, "tinyfd_query")){ strcpy(tinyfd_response, "dialog"); return (char *)0; }
-						p = selectFolderDialogWinConsole(lBuff, aTitle, aDefaultPath);
-				}
-				else
-				{
-						if (aTitle&&!strcmp(aTitle, "tinyfd_query")){ strcpy(tinyfd_response, "basicinput"); return (char *)0; }
-						strcpy(lBuff, "Select folder from ");
-						strcat(lBuff, getCurDir());
-						lPointerInputBox = tinyfd_inputBox(NULL, NULL, NULL); /* obtain a pointer on the current content of tinyfd_inputBox */
-						if (lPointerInputBox) strcpy(lString, lPointerInputBox); /* preserve the current content of tinyfd_inputBox */
-						p = tinyfd_inputBox(aTitle, lBuff, "");
-						if (p) strcpy(lBuff, p); else lBuff[0] = '\0';
-						if (lPointerInputBox) strcpy(lPointerInputBox, lString); /* restore its previous content to tinyfd_inputBox */
-						p = lBuff;
-				}
-
-		if ( ! p || ! strlen( p ) || ! dirExists( p ) )
-		{
-				return NULL ;
+		p = selectFolderDialogWinGui(lBuff, aTitle, aDefaultPath);
+	}else if (dialogPresent()) {
+		if ( aTitle && !strcmp(aTitle, "tinyfd_query") ){
+			strcpy(tinyfd_response, "dialog");
+			return (char *)0;
 		}
-		return p ;
+		p = selectFolderDialogWinConsole(lBuff, aTitle, aDefaultPath);
+	}else{
+		if (aTitle&&!strcmp(aTitle, "tinyfd_query")){ strcpy(tinyfd_response, "basicinput"); return (char *)0; }
+		strcpy(lBuff, "Select folder from ");
+		strcat(lBuff, getCurDir());
+		lPointerInputBox = tinyfd_inputBox(NULL, NULL, NULL); /* obtain a pointer on the current content of tinyfd_inputBox */
+		if (lPointerInputBox) strcpy(lString, lPointerInputBox); /* preserve the current content of tinyfd_inputBox */
+		p = tinyfd_inputBox(aTitle, lBuff, "");
+		if (p) strcpy(lBuff, p); else lBuff[0] = '\0';
+		if (lPointerInputBox) strcpy(lPointerInputBox, lString); /* restore its previous content to tinyfd_inputBox */
+		p = lBuff;
+	}
+	
+	if ( ! p || ! strlen( p ) || ! dirExists( p ) ) { 
+		return NULL ;
+	}
+	return p ;
 }
 
 

@@ -36,6 +36,7 @@ public:
 	TCC tab_clicked_callback = nullptr;
 	ATCC all_tabs_closed_callback = nullptr;
 	ATCC add_new_tab_callback = nullptr;
+	TCC erasing_tab = nullptr;
 	hit hovering;
 	bool has_close_button = true;
 	bool can_add_new = true;

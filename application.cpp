@@ -709,6 +709,8 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		}
 		commandUnfocused();
 		return;
+	}else if (action == GLFW_PRESS && key == GLFW_KEY_S && control && !shift) {
+		save();
 	}else if (action == GLFW_PRESS && key == GLFW_KEY_F5) {
 		save();
 		std::string build_command = settings->getProjectBuild();
@@ -726,7 +728,9 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		cp->cursors = { {0, 1, 0, 1, 1} };
 		cp->mode = 'i';
 		return;
-	}if ((action == GLFW_PRESS || action == GLFW_REPEAT) && activeLeafNode == commandPalette) {
+	}
+	
+	if ((action == GLFW_PRESS || action == GLFW_REPEAT) && activeLeafNode == commandPalette) {
 		if (auto cmd_p = dynamic_cast<TextEdit*>(commandPalette)) {
 			if (key == GLFW_KEY_ESCAPE) {
 				

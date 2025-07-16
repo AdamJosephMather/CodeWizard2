@@ -22,6 +22,17 @@ Editor::Editor(Widget* parent) : Widget(parent) {
 		createNew(nullptr); // can do...
 	};
 	
+	tab_bar->erasing_tab = [&](TabInfo info){
+		auto it = editors.find(info.id);
+		if (it != editors.end()) {
+			it->second->request_close([&](Widget* w){ // wait for it to delete itself
+				App::RemoveWidgetFromParent(w);
+				delete editors[it->first];
+				editors.erase(it->first);
+			});
+		}
+	};
+	
 	tabid = 0;
 	
 	createNew(nullptr);

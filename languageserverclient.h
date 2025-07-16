@@ -118,6 +118,7 @@ private:
 	std::atomic<bool> shutdownComplete{false};
 	
 	std::function<void(const std::string&)> logCallback;
+	std::mutex writeMutex;
 };
 
 #endif // LANGUAGESERVERCLIENT_H

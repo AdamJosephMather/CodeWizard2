@@ -141,13 +141,13 @@ bool Process::start(const std::string& program, const std::vector<std::string>& 
 		impl->errorStr = "Failed to create pipes";
 		return false;
 	}
-
+	
 	impl->pid = fork();
 	if (impl->pid == -1) {
 		impl->errorStr = "Failed to fork process";
 		return false;
 	}
-
+	
 	if (impl->pid == 0) {
 		// Child process
 		close(impl->stdin_pipe[1]);
@@ -1040,9 +1040,16 @@ void LanguageServerClient::onServerReadyRead()
 
 void LanguageServerClient::sendMessage(const json &message)
 {
-	std::string data = message.dump();
-	std::string header = "Content-Length: " + std::to_string(data.size()) + "\r\n\r\n";
-	serverProcess.write(header + data);
+	std::thread writer([this, message]() {
+		std::lock_guard<std::mutex> lk(writeMutex);
+		
+		std::string data   = message.dump();
+		std::string header = "Content-Length: " + std::to_string(data.size()) + "\r\n\r\n";
+		serverProcess.write(header + data);
+	});
+
+	// Detach so we don’t have to join later
+	writer.detach();
 }
 
 void LanguageServerClient::changeFolder(const std::string& oldUri, const std::string& newUri)

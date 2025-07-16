@@ -1158,7 +1158,7 @@ void TextEdit::ensureCursorVisible(Cursor c) {
 		}
 	}
 	
-	int c1 = c.head_char;
+	int c1 = _mapFromRealToVisual(c.head_line, c.head_char);
 	
 	if (c1-4 < char_start) {
 		scrolled_to_horz = c1-4;

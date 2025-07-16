@@ -17,6 +17,9 @@ void Tabs::addTab(TabInfo info) {
 void Tabs::removeTab(int id) {
 	for (int i = 0; i < tabs_list.size(); i++) {
 		if (tabs_list[i].id == id) {
+			if (erasing_tab){
+				erasing_tab(tabs_list[i]);
+			}
 			tabs_list.erase(tabs_list.begin() + i);
 		}
 	}

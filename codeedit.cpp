@@ -290,15 +290,7 @@ void CodeEdit::detectLanguage() {
 	}
 	
 	highlighter = new Highlighter();
-	bool success = highlighter->loadGrammarFile(
-		App::languagemap[language].textmatefile
-//		"highlightingfiles/html.tmLanguage.json"
-//		"highlightingfiles/JavaScript.tmLanguage.json"
-//		"highlightingfiles/rust.tmLanguage.json"
-//		"highlightingfiles/go.tmLanguage.json"
-//		"highlightingfiles/cpp.tmLanguage.json"
-//		"highlightingfiles/MagicPython.tmLanguage.json"
-	);
+	bool success = highlighter->loadGrammarFile(App::languagemap[language].textmatefile);
 	
 	if (!success) {
 		return;
@@ -606,7 +598,8 @@ void CodeEdit::save() {
 		std::string filepath = file->filepath;
 		icu::UnicodeString content = textedit->getFullText();
 		
-		std::string existingcontent = "";
+		std::string str;
+		content.toUTF8String(str);
 		
 		if (lastsaved) {
 			bool worked = true;
@@ -615,6 +608,12 @@ void CodeEdit::save() {
 			if (worked) {
 				if (existingcontent != *lastsaved) {
 					FILE_BROKEN_STATE = true;
+					return;
+				}else if (content == existingcontent) { // so here the lastsaved is equal to the existingContent and our current content is equal - no reason to save it now.
+					FILE_BROKEN_STATE = false;
+					if (broken_state_menu->parent == this) {
+						App::RemoveWidgetFromParent(broken_state_menu);
+					}
 					return;
 				}
 			}
@@ -625,17 +624,12 @@ void CodeEdit::save() {
 			App::RemoveWidgetFromParent(broken_state_menu);
 		}
 		
-		std::string str;
-		content.toUTF8String(str);
-		
 		std::ifstream checkFile(filepath);
 		if (checkFile.good()) {
-			if (existingcontent != str) {
-				std::ofstream fileStream(filepath);
-				if (fileStream.is_open()) {
-					fileStream << str;
-					fileStream.close();
-				}
+			std::ofstream fileStream(filepath);
+			if (fileStream.is_open()) {
+				fileStream << str;
+				fileStream.close();
 			}
 		} else {
 			checkFile.close();
@@ -997,6 +991,9 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 		}
 		
 		if (key == GLFW_KEY_S && is_press && shift_held && control_held){
+			triggerSaveAs();
+			return true;
+		}else if (key == GLFW_KEY_S && is_press && !shift_held && control_held && (!file || !file->ondisk)){
 			triggerSaveAs();
 			return true;
 		}else if (key == GLFW_KEY_F && is_press && (control_held || (App::activeLeafNode == textedit && textedit->mode == 'n'))) {

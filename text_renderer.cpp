@@ -142,20 +142,31 @@ bool TextRenderer::init_font(const char* fontPath)
 	struct Range { int first, count; };
 	std::vector<Range> ranges = {
 		{ 0x0020, 0x0060 }, // ASCII printable
-		{ 0x00A0, 0x0060 }, // Latin‑1 supplement
+		{ 0x00A0, 0x0060 }, // Latin-1 Supplement
+		{ 0x0100, 0x0080 }, // Latin Extended-A
+		{ 0x0180, 0x00D0 }, // Latin Extended-B
+		{ 0x0300, 0x0070 }, // Combining Diacritical Marks
 		{ 0x2000, 0x0080 }, // General Punctuation
-		{ 0x25A0, 0x0060 }, // Geometric Shapes
-		{ 0x0100, 0x0080 }, // Latin Extended‑A
-		{ 0x0180, 0x00D0 }, // Latin Extended‑B
-		{ 0x0370, 0x0090 }, // Greek and Coptic
-		{ 0x0400, 0x0100 }, // Cyrillic
-		{ 0x0300, 0x0070 }, // Combining Diacritical
-		{ 0x20A0, 0x0030 }, // Currency Symbols
-		{ 0x2190, 0x00F0 }, // Arrows
-		{ 0x2200, 0x0100 }, // Mathematical Operators
-		{ 0x2500, 0x0080 }, // Box Drawing
 		{ 0x2E00, 0x0080 }, // Supplemental Punctuation
+		{ 0x20A0, 0x0030 }, // Currency Symbols
+		{ 0x2100, 0x0050 }, // Letterlike Symbols (™, ℉, ♯, etc.)
+		{ 0x2150, 0x0040 }, // Number Forms (⅓, ½, Ⅻ, etc.)
+		{ 0x2190, 0x00F0 }, // Arrows
+		{ 0x27F0, 0x0010 }, // Supplemental Arrows-A
+		{ 0x2900, 0x0080 }, // Supplemental Arrows-B
+		{ 0x2B00, 0x0100 }, // Miscellaneous Symbols & Arrows
+		{ 0x2200, 0x0100 }, // Mathematical Operators
+		{ 0x2300, 0x0100 }, // Miscellaneous Technical (⌂, ⌘, ⌚…)
+		{ 0x2580, 0x0020 }, // Block Elements
+		{ 0x2500, 0x0080 }, // Box Drawing
+		{ 0x2460, 0x009F }, // Enclosed Alphanumerics (①, ②…Ⓐ, Ⓑ…)
+		{ 0x2070, 0x0030 }, // Superscripts & Subscripts
+		{ 0x2600, 0x0100 }, // Miscellaneous Symbols (☀, ♫, ❤…)
+		{ 0x2700, 0x00C0 }, // Dingbats (✂, ✔, ✉…)
+		{ 0x0400, 0x0100 }, // Cyrillic
+		{ 0x0370, 0x0090 }, // Greek and Coptic
 		{ 0xFFFD, 0x0001 }, // Replacement Character
+		{ 0xFE00, 0x0010 }, // Variation Selectors
 	};
 
 	int totalGlyphs = 0;

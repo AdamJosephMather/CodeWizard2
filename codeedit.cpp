@@ -349,10 +349,10 @@ void CodeEdit::openFile() {
 	}
 	
 	bool worked = true;
-	std::cout << "Trying to open file: " << path << std::endl;
+//	std::cout << "Trying to open file: " << path << std::endl;
 	icu::UnicodeString text = App::readFileToUnicodeString(path, worked);
-	std::cout << "Worked             : " << worked << std::endl;
-	std::cout << "Size               : " << text.length() << std::endl;
+//	std::cout << "Worked             : " << worked << std::endl;
+//	std::cout << "Size               : " << text.length() << std::endl;
 	
 	if (worked) {
 		textedit->setFullText(text);

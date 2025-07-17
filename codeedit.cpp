@@ -361,7 +361,7 @@ void CodeEdit::openFile() {
 		if (lsp_client) {
 			std::string str;
 			text.toUTF8String(str);
-			lsp_client->openDocument(file->filepath, "go", str);
+			lsp_client->openDocument(file->filepath, App::languagemap[language].name, str);
 		}
 	} else {
 		file = nullptr;
@@ -572,7 +572,7 @@ void CodeEdit::triggerSaveAs() {
 		if (lsp_client){
 			std::string str;
 			textedit->getFullText().toUTF8String(str);
-			lsp_client->openDocument(file->filepath, "go", str);
+			lsp_client->openDocument(file->filepath, App::languagemap[language].name, str);
 		}
 	}
 	

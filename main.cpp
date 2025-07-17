@@ -25,7 +25,7 @@ void setSynColor(Theme* t, std::string name, int id) {
 	t->syntax_colors[id]->b = c.b;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
 	App::Init();
 	
 	Theme theme;
@@ -158,6 +158,21 @@ int main() {
 				App::setActiveLeafNode(cdet->textedit);
 			}
 		}
+		
+		if (argc >= 2) {
+			std::string candidate = argv[1];
+			std::filesystem::path p(candidate);
+	
+			if (std::filesystem::exists(p) && std::filesystem::is_regular_file(p)) {
+				FileInfo* f = new FileInfo;
+				
+				f->ondisk = true;
+				f->filepath = p.string();
+				f->filename = p.filename().string();
+				
+				edtr->fileOpenRequested(f);
+			}
+		}
 	}
 	
 	App::Run();
@@ -166,5 +181,5 @@ int main() {
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
-	return main();
+	return main(__argc, __argv);
 }

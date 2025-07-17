@@ -1710,3 +1710,23 @@ std::vector<EditSection> CodeEdit::gatherCurrentFileSections(const std::vector<F
 	
 	return sections;
 }
+
+void CodeEdit::request_close(close_callback_type callback) {
+	App::MoveWidget(replaceTextEdit, this); // ensure all of these will be deleted
+	App::MoveWidget(findTextEdit, this);
+	App::MoveWidget(caseSensitivity, this);
+	App::MoveWidget(prevButton, this);
+	App::MoveWidget(nextButton, this);
+	App::MoveWidget(nextReplButton, this);
+	App::MoveWidget(allButton, this);
+	App::MoveWidget(broken_state_menu, this);
+	App::MoveWidget(renamebox, this);
+	App::MoveWidget(completionbox, this);
+	App::MoveWidget(errorMenu, this);
+	App::MoveWidget(showErrorsButton, this);
+	App::MoveWidget(hoverbox, this);
+	
+	delete highlighter;
+	
+	Widget::request_close(callback);
+}

@@ -110,4 +110,9 @@ void TitleBar::render() {
 		glScissor(w->t_x, App::WINDOW_HEIGHT-(w->t_y+w->t_h), w->t_w, w->t_h);
 		w->render(); // we do this manually because otherwise our scissoring will cut this off
 	}
+	
+	glDisable(GL_SCISSOR_TEST);
+	App::DrawRect(0, 0, t_w, 1, App::theme.main_background_color);
+	App::DrawRect(0, t_h, t_w, 1, App::theme.main_background_color);
+	glEnable(GL_SCISSOR_TEST);
 }

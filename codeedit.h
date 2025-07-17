@@ -39,6 +39,8 @@ class CodeEdit : public Widget {
 public:
 	CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::UpdateFInfoFunction fupdater);
 	
+	void request_close(close_callback_type callback);
+	
 	int TABID;
 	
 	App::PosFunction POS_FUNC = nullptr;

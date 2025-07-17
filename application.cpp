@@ -682,7 +682,19 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		}if (key == GLFW_KEY_ESCAPE && (action == GLFW_PRESS || action == GLFW_REPEAT) && (STRING_REQUEST_TEXTEDIT->mode == 'n' || !settings->getValue("use_vim", false))) {
 			REQUESTING_STRING = false;
 			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
-			setActiveLeafNode(nullptr);
+			if (beforeCommandLeafNode && rootelement->widgetexists(beforeCommandLeafNode)){
+				setActiveLeafNode(beforeCommandLeafNode);
+			}else{
+				auto wdgt = rootelement->getFirstEditor();
+				if (auto edtr = dynamic_cast<Editor*>(wdgt)) {
+					auto wdgt = edtr->editors[edtr->tab_bar->selected_id];
+					if (auto cdet = dynamic_cast<CodeEdit*>(wdgt)) {
+						if (cdet->textedit) {
+							setActiveLeafNode(cdet->textedit);
+						}
+					}
+				}
+			}
 			return;
 		}
 	}
@@ -738,7 +750,6 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 	if ((action == GLFW_PRESS || action == GLFW_REPEAT) && activeLeafNode == commandPalette) {
 		if (auto cmd_p = dynamic_cast<TextEdit*>(commandPalette)) {
 			if (key == GLFW_KEY_ESCAPE) {
-				
 				if (cmd_p->mode == 'n' || !settings->getValue("use_vim", false)) {
 					if (rootelement->widgetexists(beforeCommandLeafNode)) {
 						setActiveLeafNode(beforeCommandLeafNode);
@@ -928,8 +939,18 @@ void App::executeCommandPaletteAction() {
 	std::string filepath = INDEXED_FILES.fullPaths[cur_sel];
 	
 	
-	if (beforeCommandLeafNode) {
+	if (beforeCommandLeafNode && beforeCommandLeafNode->parent != nullptr && beforeCommandLeafNode->is_visible) {
 		setActiveLeafNode(beforeCommandLeafNode);
+	}else{
+		auto wdgt = rootelement->getFirstEditor();
+		if (auto edtr = dynamic_cast<Editor*>(wdgt)) {
+			auto wdgt = edtr->editors[edtr->tab_bar->selected_id];
+			if (auto cdet = dynamic_cast<CodeEdit*>(wdgt)) {
+				if (cdet->textedit) {
+					setActiveLeafNode(cdet->textedit);
+				}
+			}
+		}
 	}
 	
 	if (filepath.at(0) == ':') { // it's a command

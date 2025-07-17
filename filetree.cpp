@@ -192,8 +192,6 @@ bool FileTree::on_mouse_button_event(int button, int action, int mods){
 }
 
 void FileTree::save() { // we'll update the actuall tree structure every x seconds, (onsave) or when the user clicks something
-	std::lock_guard<std::mutex> lock(App::canMakeChanges); // we have to run this in time to the beat or whatever
-	
 	deleteTree(root);
 	root = new TreeStructure();
 	root->path = App::settings->getValue("current_folder", getExecutableDir());

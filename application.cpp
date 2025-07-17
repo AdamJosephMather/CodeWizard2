@@ -192,7 +192,10 @@ bool App::Init() {
 	
 	lastTime = glfwGetTime();
 	
-	repeatEveryXSeconds(4, save);
+	repeatEveryXSeconds(4, [&](){
+		std::lock_guard<std::mutex> lock(canMakeChanges);
+		save();
+	});
 	
 	
 	// app icon

@@ -331,6 +331,8 @@ int CodeEdit::analyzeForFixit_on_lines(const std::vector<Line>& lines) {
 }
 
 void CodeEdit::openFile() {
+	std::lock_guard<std::mutex> lock(App::canMakeChanges);
+	
 	REQUESTING_FIXIT = false;
 	if (fixit_request_menu->parent == this) {
 		App::RemoveWidgetFromParent(fixit_request_menu);
@@ -347,7 +349,10 @@ void CodeEdit::openFile() {
 	}
 	
 	bool worked = true;
+	std::cout << "Trying to open file: " << path << std::endl;
 	icu::UnicodeString text = App::readFileToUnicodeString(path, worked);
+	std::cout << "Worked             : " << worked << std::endl;
+	std::cout << "Size               : " << text.length() << std::endl;
 	
 	if (worked) {
 		textedit->setFullText(text);

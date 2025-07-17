@@ -1316,11 +1316,6 @@ icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, boo
 		file.close();
 		return icu::UnicodeString::fromUTF8("Failed to open file - fileSize < 0");;
 	}
-	if (fileSize == 0) {
-		file.close();
-		worked = true;
-		return icu::UnicodeString();
-	}
 	
 	file.seekg(0, std::ios::beg);
 	std::vector<char> buffer(fileSize);
@@ -1329,6 +1324,11 @@ icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, boo
 		return icu::UnicodeString::fromUTF8("Failed to open file - couldn't read data");;
 	}
 	file.close();
+
+	if (buffer.empty()) {
+		worked = true;
+		return icu::UnicodeString();
+	}
 	
 	UErrorCode status = U_ZERO_ERROR;
 	

@@ -1307,14 +1307,14 @@ icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, boo
 	// First, read the entire file as binary data
 	std::ifstream file(filename, std::ios::binary | std::ios::ate);
 	if (!file.is_open()) {
-		return icu::UnicodeString();
-	}
+		return icu::UnicodeString::fromUTF8("Failed to open file - file.is_open");
+	}	
 	
 	// Get file size and read all data
 	std::streamsize fileSize = file.tellg();
 	if (fileSize < 0) {
 		file.close();
-		return icu::UnicodeString();
+		return icu::UnicodeString::fromUTF8("Failed to open file - fileSize < 0");;
 	}
 	if (fileSize == 0) {
 		file.close();
@@ -1326,7 +1326,7 @@ icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, boo
 	std::vector<char> buffer(fileSize);
 	if (!file.read(buffer.data(), fileSize)) {
 		file.close();
-		return icu::UnicodeString();
+		return icu::UnicodeString::fromUTF8("Failed to open file - couldn't read data");;
 	}
 	file.close();
 	
@@ -1335,14 +1335,14 @@ icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, boo
 	// Create charset detector
 	UCharsetDetector* detector = ucsdet_open(&status);
 	if (U_FAILURE(status)) {
-		return icu::UnicodeString();
+		icu::UnicodeString::fromUTF8("Failed to open file - couldn't create charset detector");
 	}
 	
 	// Set the input data for detection
 	ucsdet_setText(detector, buffer.data(), static_cast<int32_t>(fileSize), &status);
 	if (U_FAILURE(status)) {
 		ucsdet_close(detector);
-		return icu::UnicodeString();
+		icu::UnicodeString::fromUTF8("Failed to open file - couldn't set input data for charset detector");
 	}
 	
 	// Detect all possible character sets
@@ -1350,7 +1350,7 @@ icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, boo
 	const UCharsetMatch** matches = ucsdet_detectAll(detector, &matchCount, &status);
 	if (U_FAILURE(status) || matchCount == 0) {
 		ucsdet_close(detector);
-		return icu::UnicodeString();
+		icu::UnicodeString::fromUTF8("Failed to open file - no matches on charset detector");
 	}
 	
 	icu::UnicodeString result;

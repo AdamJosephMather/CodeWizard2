@@ -382,7 +382,8 @@ void LanguageServerClient::initialize(const std::string &rootUri)
 				{"willSave", false}
 			}},
 			{"publishDiagnostics", {
-				{"enabled", true}
+				{"enabled", true},
+				{"relatedInformation", true}
 			}}
 		}},
 		{"completionProvider", {

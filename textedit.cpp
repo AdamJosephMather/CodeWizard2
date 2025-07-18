@@ -1549,11 +1549,23 @@ Color* TextEdit::getColorFromTokens(int indx, std::vector<ColoredTokens> tokens,
 	for (int i = tokens.size()-1; i >= 0; i--) {
 		auto t = tokens[i];
 		if (t.start <= indx && indx < t.end) {
-			if (t.color == 1 || t.color == 2) {
-				*aragne = true;
+			if (t.color < 0) {
+				// it's a difference token
+				if (t.color == -1) {
+					return App::theme.add_diff;
+				}else if (t.color == -2) {
+					return App::theme.del_diff;
+				}else {
+					return App::theme.equal_diff;
+				}
+				
+			}else{
+				if (t.color == 1 || t.color == 2) {
+					*aragne = true;
+				}
+				
+				return App::theme.syntax_colors[t.color];
 			}
-			
-			return App::theme.syntax_colors[t.color];
 		}
 	}
 	return App::theme.main_text_color;

@@ -1,5 +1,6 @@
 #include "widgetchooser.h"
 #include "button.h"
+#include "compare.h"
 #include "editor.h"
 #include "filetree.h"
 #include "settings.h"
@@ -36,6 +37,18 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new Settings(nullptr));
 		std::cout << "Creating settings menu\n";
+		delete this;
+	});
+	
+	auto text4 = icu::UnicodeString::fromUTF8("Compare Two Files");
+	b4 = new Button(this, text4, [&](Button* button, int x, int y, int w, int h, int tw, int th){
+		button->t_x = t_x+t_w/2-tw/2;
+		button->t_y = b3->t_y+b3->t_h+20;
+	}, [&](Button* button) {
+		App::ReplaceWith(this, new Compare(nullptr, [&](Widget* w){
+			return;
+		}));
+		std::cout << "Creating compare menu\n";
 		delete this;
 	});
 }

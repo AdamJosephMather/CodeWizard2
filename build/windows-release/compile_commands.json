@@ -142,5 +142,11 @@
   "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\imageview.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\imageview.cpp",
   "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\imageview.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\imageview.cpp.obj"
+},
+{
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\compare.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\compare.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\compare.cpp",
+  "output": "CMakeFiles\\CodeWizard.dir\\compare.cpp.obj"
 }
 ]

@@ -46,6 +46,10 @@ int main(int argc, char* argv[]) {
 	theme.warning_color = MakeColor(1.0, 0.6431372549, 0.21);
 	theme.suggestion_color = MakeColor(0.1137254902, 0.3254901961, 0.6);
 	
+	theme.add_diff = MakeColor(0.321569, 0.960784, 0.250980);
+	theme.del_diff = MakeColor(0.921569, 0.286275, 0.203922);
+	theme.equal_diff = MakeColor(0.203922, 0.478431, 0.921569);
+	
 	theme.white = MakeColor(1.0, 1.0, 1.0);
 	theme.black = MakeColor(0.0, 0.0, 0.0);
 	

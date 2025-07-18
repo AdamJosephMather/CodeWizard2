@@ -76,6 +76,10 @@ struct Theme {
 	Color* overlay_background_color;
 	Color* border;
 	
+	Color* add_diff;
+	Color* del_diff;
+	Color* equal_diff;
+	
 	Color* tint_color;
 	
 	Color* white;

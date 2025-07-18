@@ -260,6 +260,7 @@ void Editor::fileOpenRequested(FileInfo* f, int lns, int chrs, int ln, int chr) 
 	}
 	
 	moveto(lns, chrs, ln, chr);
+	
 	App::commandUnfocused();
 }
 

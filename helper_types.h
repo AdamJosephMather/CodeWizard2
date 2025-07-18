@@ -96,12 +96,12 @@ static std::vector<icu::UnicodeString> splitByChar(const icu::UnicodeString& inp
 	std::vector<icu::UnicodeString> result;
 	int32_t start = 0;
 	int32_t pos;
-
+	
 	while ((pos = input.indexOf(delimiter, start)) != -1) {
 		result.push_back(input.tempSubStringBetween(start, pos));
 		start = pos + 1;
 	}
-
+	
 	// Add the last part
 	result.push_back(input.tempSubString(start));
 	return result;

@@ -1203,14 +1203,19 @@ bool CodeEdit::on_mouse_move_event() {
 }
 
 bool CodeEdit::on_scroll_event(double xchange, double ychange) {
+	int mx = App::mouseX;
+	int my = App::mouseY;
+	
 	if (FILE_BROKEN_STATE) {
 		return broken_state_menu->on_scroll_event(xchange, ychange);
 	}else{
-		if (hoveringHoverbox(App::mouseX, App::mouseY)) {
+		if (hoveringHoverbox(mx, my)) {
 			return hoverbox->on_scroll_event(xchange, ychange);
+		}else if (errorMenu->is_visible_layered && errorMenu->t_x <= mx && errorMenu->t_x+errorMenu->t_w >= mx && errorMenu->t_y <= my && errorMenu->t_y+errorMenu->t_h >= my){
+			return errorMenu->on_scroll_event(xchange, ychange);
+		}else{
+			return Widget::on_scroll_event(xchange, ychange);
 		}
-		
-		return Widget::on_scroll_event(xchange, ychange);
 	}
 }
 

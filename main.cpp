@@ -9,6 +9,7 @@
 #include "button.h"
 #include "editor.h"
 #include "panel_holder.h"
+#include "codeedit.h"
 
 #include <Windows.h>
 

@@ -4,6 +4,7 @@
 #include <unicode/unistr.h>
 #include <unicode/ustream.h>
 #include <iostream>
+#include "codeedit.h"
 #include "editor.h"
 #include "helper_types.h"
 #include <vector>
@@ -13,6 +14,7 @@
 #include "tinyfiledialogs.h"
 #include "titlebar.h"
 #include "languageserverclient.h"
+#include "textedit.h"
 
 #include <windows.h>
 #include <windowsx.h>  // This header contains GET_X_LPARAM and GET_Y_LPARAM
@@ -202,14 +204,12 @@ bool App::Init() {
 	
 	auto pth_str = getExecutableDir()+"\\app.png";
 	auto pth = pth_str.c_str();
-	std::cout << "Trying to load icon: " << pth_str << "\n";
 
 	GLFWimage icon;
 	int channels;
 	icon.pixels = stbi_load(pth, &icon.width, &icon.height, &channels, 4);
 	
 	if (icon.pixels) {
-		std::cout << "Icon loaded: " << icon.width << "x" << icon.height << "\n";
 		glfwSetWindowIcon(window, 1, &icon);
 		stbi_image_free(icon.pixels);
 	} else {
@@ -1016,7 +1016,6 @@ void App::openFromCMD(std::string filepath, std::string filename, int line) {
 		}
 	}else {
 		Widget* wdgt = rootelement->getFirstEditor();
-		std::cout << "Okay, widget from getfirsteditor: " << wdgt << std::endl;
 		if (auto edtr = dynamic_cast<Editor*>(wdgt)) {
 			if (line != -1) {
 				edtr->fileOpenRequested(finfo, line, 0, line, 0);

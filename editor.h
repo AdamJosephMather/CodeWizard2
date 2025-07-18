@@ -1,7 +1,6 @@
 #pragma once
 
 #include "helper_types.h"
-#include "codeedit.h"
 #include "widget.h"
 #include <GLFW/glfw3.h>
 #include "tabs.h"

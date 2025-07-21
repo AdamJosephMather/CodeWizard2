@@ -20,6 +20,8 @@ struct Visual {
 	
 	icu::UnicodeString name;
 	TreeStructure* ts = nullptr;
+	
+	bool is_folder = false;
 };
 
 class FileTree : public Widget {

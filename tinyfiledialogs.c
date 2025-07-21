@@ -55,7 +55,7 @@ misrepresented as being the original software.
 
 
 #ifndef _WIN32_WINNT
-#  define _WIN32_WINNT 0x0600   /* target Windows Vista+ to expose IFileDialog */
+#  define _WIN32_WINNT 0x0A00   /* target Windows Vista+ to expose IFileDialog */
 #endif
 
 #define COBJMACROS
@@ -86,7 +86,7 @@ misrepresented as being the original software.
   #define _getch getch
  #endif
  #ifndef _WIN32_WINNT
-  #define _WIN32_WINNT 0x0500
+  #define _WIN32_WINNT 0x0A00
  #endif
  #include <windows.h>
  #include <commdlg.h>

@@ -174,6 +174,9 @@ bool App::Init() {
 	// Now grab the HWND and force a resize border
 	HWND hwnd = glfwGetWin32Window(window);
 
+	DWM_WINDOW_CORNER_PREFERENCE cornerPreference = DWMWCP_ROUND;
+	DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &cornerPreference, sizeof(cornerPreference));
+
 	// Chain your custom proc
 	originalWndProc = (WNDPROC)SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)CustomWndProc);
 
@@ -323,6 +326,13 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 			return HTCLIENT;
 		}
 		
+		case WM_PAINT: {
+			rerender = true;
+			DoFullRenderWithoutInput();
+			ValidateRect(hwnd, NULL);
+			return 0;
+		}
+
 		case WM_SETCURSOR:
 		{
 			// Skip custom cursor handling when maximized/fullscreen
@@ -330,7 +340,7 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 				return CallWindowProc(originalWndProc, hwnd, uMsg, wParam, lParam);
 			}
 			
-			// LOWORD(lParam) is the hitÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âtest code the system last determined
+			// LOWORD(lParam) is the hit test code the system last determined
 			WORD ht = LOWORD(lParam);
 			HCURSOR hCur = nullptr;
 			switch (ht) {
@@ -409,9 +419,10 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 		
 			// Force our OpenGL viewport and projection to update
 			App::resize_callback(App::window, newW, newH);
+			InvalidateRect(hwnd, NULL, FALSE);
 		
 			// Consume the message
-			return 0;
+			return TRUE;
 		}
 	}
 	
@@ -842,7 +853,6 @@ void App::resize_callback(GLFWwindow* window, int width, int height) {
 	
 	rerender = true;
 	forceWaitTime = true;
-	DoFullRenderWithoutInput();
 }
 
 void App::setTheme(Theme t) {

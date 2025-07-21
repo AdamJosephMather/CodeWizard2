@@ -12,7 +12,9 @@ void FileTree::render() {
 	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
 	
 	for (auto itm : toRender) {
-		App::DrawRect(itm.x+2, itm.y+2, itm.w-4, itm.h-4, App::theme.hover_background_color);
+		if (itm.is_folder) {
+			App::DrawRect(itm.x+2, itm.y+2, itm.w-4, itm.h-4, App::theme.hover_background_color);
+		}
 		TextRenderer::draw_text(itm.x+App::text_padding, itm.y+App::text_padding, itm.name, AllOneColor(App::theme.main_text_color, itm.name.length()));
 	}
 	
@@ -97,7 +99,7 @@ double FileTree::createVisuals(double pos, double depth, TreeStructure* el) {
 	}
 	int w = TextRenderer::get_text_width(str.length())+App::text_padding*2;
 	
-	toRender.push_back( { x, y, w, elHeighto, str, el } );
+	toRender.push_back( { x, y, w, elHeighto, str, el, el->is_folder } );
 	
 	pos ++;
 	

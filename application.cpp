@@ -152,8 +152,11 @@ bool App::Init() {
 	
 	int screenWidth = mode->width;
 	int screenHeight = mode->height;
+
+	int x = settings->getValue("window_x", screenWidth / 2 - WINDOW_WIDTH / 2);
+	int y = settings->getValue("window_y", screenHeight / 2 - WINDOW_HEIGHT / 2);
 	
-	glfwSetWindowPos(window, screenWidth/2-WINDOW_WIDTH/2, screenHeight/2-WINDOW_HEIGHT/2);
+	glfwSetWindowPos(window, x, y);
 		
 	TextRenderer::set_font_size(settings->getValue("font_size", 23.0f));
 	std::string default_font_path = getExecutableDir()+"\\cascadia\\CascadiaCode-Regular.ttf";
@@ -219,6 +222,12 @@ bool App::Init() {
 		std::cerr << "Failed to load icon: " << stbi_failure_reason() << "\n";
 	}
 	
+	
+	// restore full screened
+	
+	if (settings->getValue("window_maximized", false)) {
+		win_button();
+	}
 	
 	return true;
 }
@@ -620,6 +629,19 @@ void App::Run() {
 	
 	if (auto pe = dynamic_cast<PanelHolder*>(rootelement->children[0])) {
 		settings->saveConfig(pe->saveConfiguration());
+	}
+
+	bool maximized = glfwGetWindowAttrib(window, GLFW_MAXIMIZED);
+	settings->setValue("window_maximized", maximized);
+
+	if (!maximized) {
+		int x, y, w, h;
+		glfwGetWindowPos(window, &x, &y);
+		glfwGetWindowSize(window, &w, &h);
+		settings->setValue("window_x", x);
+		settings->setValue("window_y", y);
+		settings->setValue("window_width", w);
+		settings->setValue("window_height", h);
 	}
 
 	glfwDestroyWindow(window);

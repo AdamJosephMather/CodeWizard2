@@ -299,6 +299,9 @@ bool Editor::on_key_event(int key, int scancode, int action, int mods) {
 		}else if (key == GLFW_KEY_N && action == GLFW_PRESS && holding_control) {
 			createNew(nullptr);
 			return true;
+		}else if (key == GLFW_KEY_W && action == GLFW_PRESS && holding_control) {
+			closeFile(tab_bar->selected_id);
+			return true;
 		}
 	}
 	

@@ -628,6 +628,7 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 		if (res.first != -1 && res.second != -1) {
 			c.head_line = res.first;
 			c.head_char = res.second+1;
+			c.preffered_collumn = c.head_char;
 		}
 	}else if (key == CODEWIZARD_MATCHING_BRACKET_RIGHT) {
 		UChar32 left_of = U' ';
@@ -653,6 +654,7 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 		if (res.first != -1 && res.second != -1) {
 			c.head_line = res.first;
 			c.head_char = res.second;
+			c.preffered_collumn = c.head_char;
 		}
 	}
 	

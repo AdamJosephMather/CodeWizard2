@@ -14,7 +14,46 @@ void Tabs::addTab(TabInfo info) {
 	tabs_list.push_back(info);
 }
 
-void Tabs::removeTab(int id) {
+void Tabs::removeTab(int id, int nexttake) {
+	if (id == selected_id) {
+		int nx = 0;
+		if (nexttake != -1) {
+			nx = nexttake;
+		}else{
+			for (int j = 0; j < tabs_list.size(); j++) {
+				if (tabs_list[j].id == id) {
+					nx = j+1;
+					break;
+				}
+			}
+		}
+		
+		int new_indx = nx;
+		if (nx >= tabs_list.size()) {
+			nx -= 2;
+			if (nx < 0) {
+				new_indx = -1;
+			}else{
+				new_indx = nx;
+			}
+		}
+		
+		if (new_indx == -1) {
+			selected_id = -1;
+		}else{
+			selected_id = tabs_list[new_indx].id;
+		}
+		
+		if (tab_clicked_callback && selected_id != -1) {
+			tab_clicked_callback(tabs_list[new_indx]);
+		}
+		
+		if (selected_id == -1 && all_tabs_closed_callback) {
+			all_tabs_closed_callback();
+		}
+	}
+	
+	
 	for (int i = 0; i < tabs_list.size(); i++) {
 		if (tabs_list[i].id == id) {
 			if (erasing_tab){
@@ -212,34 +251,7 @@ bool Tabs::on_mouse_button_event(int button, int action, int mods) {
 			selected_id = tabs_list[ht.indx].id;
 			tab_clicked_callback(tabs_list[ht.indx]);
 		}else{
-			if (tabs_list[ht.indx].id == selected_id) {
-				int nx = ht.indx + 1;
-				int new_indx = nx;
-				if (nx >= tabs_list.size()) {
-					nx -= 2;
-					if (nx < 0) {
-						new_indx = -1;
-					}else{
-						new_indx = nx;
-					}
-				}
-				
-				if (new_indx == -1) {
-					selected_id = -1;
-				}else{
-					selected_id = tabs_list[new_indx].id;
-				}
-				
-				if (tab_clicked_callback && selected_id != -1) {
-					tab_clicked_callback(tabs_list[new_indx]);
-				}
-				
-				if (selected_id == -1 && all_tabs_closed_callback) {
-					all_tabs_closed_callback();
-				}
-			}
-			
-			removeTab(tabs_list[ht.indx].id);
+			removeTab(tabs_list[ht.indx].id, ht.indx+1);
 		}
 		return true;
 	}

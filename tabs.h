@@ -44,7 +44,7 @@ public:
 	int screen_add_y = 0;
 	
 	void addTab(TabInfo info);
-	void removeTab(int id);
+	void removeTab(int id, int nexttake=-1);
 	hit hoveringTab();
 	bool hoveringNewTab();
 	

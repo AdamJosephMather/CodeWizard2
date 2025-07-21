@@ -7,6 +7,7 @@
 #include "codeedit.h"
 #include "settings.h"
 #include "filetree.h"
+#include "text_renderer.h"
 
 PanelHolder::PanelHolder(Widget *parent) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Panel holder");
@@ -17,6 +18,9 @@ void PanelHolder::position(int x, int y, int width, int height) {
 	t_y = y;
 	t_w = width;
 	t_h = height;
+	
+	handle_long = TextRenderer::get_text_height()*2;
+	handle_short = TextRenderer::get_text_width(1);
 	
 	hastwo = (children.size() == 2);
 	

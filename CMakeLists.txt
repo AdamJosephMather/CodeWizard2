@@ -40,6 +40,7 @@ target_link_libraries(${PROJECT_NAME}
 	ole32
 	shell32
 	strsafe
+	dwmapi
 )
 
 if (MSVC)

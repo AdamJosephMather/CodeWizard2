@@ -400,7 +400,7 @@ int CodeEdit::indentIdentifierAfterLine(icu::UnicodeString line, icu::UnicodeStr
 		if (in_meat){
 			if (c == U'(' || c == U'{' || c == U'['){
 				openers += 1;
-			}else if (c == U')' || c == U'}' || c == U']'){
+			}else if ((c == U')' || c == U'}' || c == U']') && openers > 0){
 				openers -= 1;
 			}
 			lastChar = c;

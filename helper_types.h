@@ -644,3 +644,13 @@ static Color stringToColor(std::string s, bool& worked) {
 	
 	return c;
 }
+
+static bool URISEqual(std::string u1, std::string u2) {
+	std::cout << "Testing: " << u1 << " to " << u2 << std::endl;
+	std::cout << "Testing: " << fileUriToPath(u1) << " to " << fileUriToPath(u2) << std::endl;
+	
+	auto f1_p = fileUriToPath(u1);
+	auto f2_p = fileUriToPath(u2);
+	
+	return areSameFile(f1_p, f2_p);
+}

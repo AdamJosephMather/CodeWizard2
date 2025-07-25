@@ -1095,9 +1095,10 @@ void App::indexFiles() {
 			if (seen >= maxFiles) break;
 
 			if (entry.is_directory()) {
-				dirs.push(entry.path().string());
-			}
-			else if (entry.is_regular_file()) {
+				if (entry.path().filename().string()[0] != '.') {
+					dirs.push(entry.path().string());
+				}
+			}else if (entry.is_regular_file()) {
 				std::string absPath = entry.path().string();
 				INDEXED_FILES.fullPaths.push_back(absPath);
 

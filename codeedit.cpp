@@ -1297,7 +1297,9 @@ void CodeEdit::renameReceived(int id, json resp) {
 		return;
 	}
 	
-	auto edits = parseCommandArguments(resp["changes"]);
+	std::cout << resp << std::endl;
+	
+	auto edits = parseCommandArguments(resp);
 	
 	applyOtherFileEdits(edits, file->filepath);
 	
@@ -1421,7 +1423,7 @@ void CodeEdit::activateCompletion() {
 void CodeEdit::publishDiagnostics(std::string filename, std::vector<std::string> messages, std::vector<int> startC, std::vector<int> startL, std::vector<int> endC, std::vector<int> endL, std::vector<int> severities) {
 	std::lock_guard<std::mutex> lock(App::canMakeChanges);
 	
-	if (!lsp_client || !file || filename != lsp_client->fromLocalFile(file->filepath)) {
+	if (!lsp_client || !file || !URISEqual(filename, lsp_client->fromLocalFile(file->filepath))) {
 		return;
 	}
 	
@@ -1582,19 +1584,44 @@ std::vector<FileEdit> CodeEdit::parseCodeAction(const json& action) {
 
 std::vector<FileEdit> CodeEdit::parseCommandArguments(const json& changesObj) {
 	std::vector<FileEdit> out;
-	for (auto& [uri, editsArr] : changesObj.items()) {
-		FileEdit fe;
-		fe.uri = uri;
-		for (auto& ev : editsArr) {
-			EditDoc te;
-			auto r = ev["range"];
-			te.range.start = { r["start"]["line"], r["start"]["character"] };
-			te.range.end   = { r["end"  ]["line"], r["end"  ]["character"] };
-			te.newText     = ev.value("newText", "");
-			fe.edits.push_back(std::move(te));
+	
+	if (changesObj.contains("changes")){
+		auto tochange = changesObj["changes"];
+		for (auto& [uri, editsArr] : tochange.items()) {
+			FileEdit fe;
+			fe.uri = uri;
+			for (auto& ev : editsArr) {
+				EditDoc te;
+				auto r = ev["range"];
+				te.range.start = { r["start"]["line"], r["start"]["character"] };
+				te.range.end   = { r["end"  ]["line"], r["end"  ]["character"] };
+				te.newText     = ev.value("newText", "");
+				fe.edits.push_back(std::move(te));
+			}
+			out.push_back(std::move(fe));
 		}
-		out.push_back(std::move(fe));
+	}else{
+		auto tochange = changesObj["documentChanges"];
+		
+		for (auto& change : tochange) {
+			std::string uri = change["textDocument"]["uri"];
+			
+			FileEdit fe;
+			fe.uri = uri;
+			
+			for (auto edit : change["edits"]) {
+				EditDoc te;
+				auto r = edit["range"];
+				te.range.start = { r["start"]["line"], r["start"]["character"] };
+				te.range.end   = { r["end"  ]["line"], r["end"  ]["character"] };
+				te.newText     = edit.value("newText", "");
+				fe.edits.push_back(std::move(te));
+			}
+			
+			out.push_back(std::move(fe));
+		}
 	}
+	
 	return out;
 }
 
@@ -1665,7 +1692,7 @@ void CodeEdit::applyEditToLines(std::vector<std::string>& lines, const EditDoc& 
 
 void CodeEdit::applyOtherFileEdits(const std::vector<FileEdit>& edits, const std::string& currentFilePath) {
 	for (auto& fe : edits) {
-		if (fe.uri == lsp_client->fromLocalFile(currentFilePath))
+		if (URISEqual(fe.uri, lsp_client->fromLocalFile(currentFilePath)))
 			continue;
 		
 		std::filesystem::path p = std::filesystem::path(fileUriToPath(fe.uri));
@@ -1701,7 +1728,7 @@ std::vector<EditSection> CodeEdit::gatherCurrentFileSections(const std::vector<F
 	for (auto& fe : edits) {
 		// convert URI to path
 		
-		if (fe.uri != lsp_client->fromLocalFile(currentFilePath))
+		if (!URISEqual(fe.uri, lsp_client->fromLocalFile(currentFilePath)))
 			continue;
 
 		for (auto& te : fe.edits) {

@@ -15,6 +15,7 @@
 #include "titlebar.h"
 #include "languageserverclient.h"
 #include "textedit.h"
+#include "toast.h"
 
 #include <windows.h>
 #include <windowsx.h>  // This header contains GET_X_LPARAM and GET_Y_LPARAM
@@ -27,6 +28,7 @@
 #include <unicode/ucnv.h>     // UConverter, ucnv_open/close
 
 #include <stb_image.h>
+#include "curler.h"
 
 bool App::REQUESTING_STRING = false;
 App::StringGivenFunc App::ON_STRING_GIVEN = nullptr;
@@ -39,6 +41,7 @@ std::vector<StoredSearch> App::storedsearches = {};
 
 Widget* App::commandPalette = nullptr;
 Widget* App::commandBox = nullptr;
+Widget* App::toastBox = nullptr;
 
 int App::WINDOW_WIDTH = 1200;
 int App::WINDOW_HEIGHT = 800;
@@ -173,6 +176,7 @@ bool App::Init() {
 	rootelement = new Widget(nullptr);
 	new PanelHolder(rootelement);
 	tb = new TitleBar(rootelement);
+	toastBox = new Toast(rootelement);
 	
 	// Now grab the HWND and force a resize border
 	HWND hwnd = glfwGetWin32Window(window);
@@ -227,6 +231,10 @@ bool App::Init() {
 	
 	if (settings->getValue("window_maximized", false)) {
 		win_button();
+	}
+	
+	if (settings->getValue("lm_load_model_on_start", false)) {
+		Curler::loadModel();
 	}
 	
 	return true;
@@ -1638,4 +1646,10 @@ void App::updateFromTintColor(Theme* t) {
 	setTintedColor(t->tint_color, t->lesser_text_color,        0.392157);
 	
 	t->border = MakeColor(0, 0, 0);
+}
+
+void App::displayToast(icu::UnicodeString text) {
+	if (auto toaster = dynamic_cast<Toast*>(toastBox)) {
+		toaster->displayMessage(text);
+	}
 }

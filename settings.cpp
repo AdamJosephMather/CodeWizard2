@@ -169,9 +169,19 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"qwen2.5-coder-1.5b-instruct@q4_k_m"
 		),
 		makeInt(
-			"LM Studio Context Lines",
+			"Context Lines - LM Studio",
 			"lm_studio_context_lines",
 			30
+		),
+		makeInt(
+			"Max New Tokens - LM Studio",
+			"lm_studio_max_tokens",
+			30
+		),
+		makeBool(
+			"Load Model On Start - LM Studio",
+			"lm_load_model_on_start",
+			false
 		)
 	};
 	

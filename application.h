@@ -50,6 +50,7 @@ public:
 		
 	static Widget* commandPalette;
 	static Widget* commandBox;
+	static Widget* toastBox;
 	
 	static std::mutex canMakeChanges;
 	
@@ -157,4 +158,5 @@ public:
 	
 	static void updateFromTintColor(Theme* t);
 	static void setTintedColor(Color* tint_c, Color* c, float b);
+	static void displayToast(icu::UnicodeString text);
 };

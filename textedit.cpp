@@ -1082,6 +1082,9 @@ bool TextEdit::handleInsertKey(int key, int scancode, int action, int mods) {
 	}else if (key == GLFW_KEY_Z && !is_shift_held && (is_control_held || mode == 'n')) {
 		activateUndo();
 		donesomthing = true;
+	}else if (key == GLFW_KEY_U && mode == 'n') {
+		activateUndo();
+		donesomthing = true;
 	}else if (key == GLFW_KEY_Z && is_shift_held && (is_control_held || mode == 'n')) {
 		activateRedo();
 		donesomthing = true;

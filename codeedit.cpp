@@ -1378,7 +1378,10 @@ void CodeEdit::activateCompletion() {
 	icu::UnicodeString selected = completionbox->elements[completionbox->selected_id];
 	
 	if (are_code_actions) {
+		std::cout << "CODE ACTIONS!" << std::endl << code_actions[completionbox->selected_id] << std::endl;
 		auto edits = parseCodeAction(code_actions[completionbox->selected_id]);
+		
+		std::cout << "Code actions len: " << edits.size() << std::endl;
 		
 		applyOtherFileEdits(edits, file->filepath);
 		
@@ -1603,17 +1606,12 @@ void CodeEdit::onTextChanged(Widget* w) {
 
 std::vector<FileEdit> CodeEdit::parseCodeAction(const json& action) {
 	// If it came back as a “command” with arguments… 
-	if (action.contains("arguments") 
-		&& action["arguments"].is_array() 
-		&& !action["arguments"].empty()
-		&& action["arguments"][0].contains("changes"))
-	{
-		return parseCommandArguments(action["arguments"][0]["changes"]);
+	if (action.contains("arguments") && action["arguments"].is_array() && !action["arguments"].empty() && action["arguments"][0].contains("changes")) {
+		std::cout << "Got arguments? " << action["arguments"] << std::endl;
+		return parseCommandArguments(action["arguments"][0]);
 	}
 	// Otherwise if it has an embedded WorkspaceEdit…
-	if (action.contains("edit") 
-		&& action["edit"].contains("documentChanges"))
-	{
+	if (action.contains("edit") && action["edit"].contains("documentChanges")){
 		return parseWorkspaceEdits(action["edit"]["documentChanges"]);
 	}
 	return {}; 

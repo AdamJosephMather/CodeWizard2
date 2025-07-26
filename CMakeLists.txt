@@ -7,21 +7,23 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Set the icon file
 set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/resources.rc")
 
-add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_renderer.cpp application.cpp widget.cpp button.cpp titlebar.cpp panel_holder.cpp widgetchooser.cpp editor.cpp filetree.cpp tabs.cpp settings.cpp codeedit.cpp linenumbers.cpp textedit.cpp highlighter.cpp tinyfiledialogs.c brokenstatemenu.cpp checkbox.cpp settingsmanager.cpp languageserverclient.cpp listbox.cpp imageview.cpp compare.cpp )
+add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_renderer.cpp application.cpp widget.cpp button.cpp titlebar.cpp panel_holder.cpp widgetchooser.cpp editor.cpp filetree.cpp tabs.cpp settings.cpp codeedit.cpp linenumbers.cpp textedit.cpp highlighter.cpp tinyfiledialogs.c brokenstatemenu.cpp checkbox.cpp settingsmanager.cpp languageserverclient.cpp listbox.cpp imageview.cpp compare.cpp curler.cpp )
 
 # Use vcpkg-provided GLFW and ICU
 find_package(glfw3 CONFIG REQUIRED)
 find_package(ICU   REQUIRED COMPONENTS uc i18n data)  # must list each component :contentReference[oaicite:0]{index=0}
 find_package(Freetype REQUIRED)
+find_package(CURL CONFIG REQUIRED)
 
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE
-	glfw          # your working GLFW target
-	opengl32      # on Windows
-	ICU::uc       # core Unicode (formerly icuuc) :contentReference[oaicite:1]{index=1}
-	ICU::i18n     # internationalization (formerly icui18n)
-	ICU::data     # ICU data blobs (formerly icudata)
+	glfw
+	opengl32
+	ICU::uc            # core Unicode (formerly icuuc) :contentReference[oaicite:1]{index=1}
+	ICU::i18n          # internationalization (formerly icui18n)
+	ICU::data          # ICU data blobs (formerly icudata)
 	Freetype::Freetype
+	CURL::libcurl
 )
 
 find_library(ONIG_LIB

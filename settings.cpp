@@ -162,6 +162,16 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"Max Files To Index",
 			"max_index_files",
 			2000
+		),
+		makeString(
+			"LM Studio Model ID",
+			"lm_studio_model_id",
+			"qwen2.5-coder-1.5b-instruct@q4_k_m"
+		),
+		makeInt(
+			"LM Studio Context Lines",
+			"lm_studio_context_lines",
+			30
 		)
 	};
 	

@@ -148,5 +148,11 @@
   "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\compare.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\compare.cpp",
   "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\compare.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\compare.cpp.obj"
+},
+{
+  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\curler.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\curler.cpp",
+  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\curler.cpp",
+  "output": "CMakeFiles\\CodeWizard.dir\\curler.cpp.obj"
 }
 ]

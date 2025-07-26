@@ -10,6 +10,7 @@
 #include <unicode/regex.h>
 #include <unicode/stringoptions.h>
 #include "editor.h"
+#include "curler.h"
 
 std::set<UChar32> whitespace_before_comment = {U'\t', U' '};
 
@@ -862,7 +863,42 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 				App::launchCommandNonBlocking(augmentBuildCommand(l.build_command));
 				return true;
 			}
+		}else if (key == GLFW_KEY_A && is_press && alt_held) {
+			new std::thread([&](){
+				int contextsize = App::settings->getValue("lm_studio_context_lines", 30);
+				
+				Cursor cur = textedit->cursors[0];
+				
+				Cursor start = Cursor();
+				start.anchor_char = cur.head_char;
+				start.anchor_line = cur.head_line;
+				start.head_char = 0;
+				start.head_line = max(0, cur.head_line-contextsize);
+				auto t1 = textedit->getSelectedText(start);
+				
+				std::string befr;
+				t1.toUTF8String(befr);
+				
+				Cursor end = Cursor();
+				end.anchor_char = cur.head_char;
+				end.anchor_line = cur.head_line;
+				end.head_line = min(textedit->lines.size()-1, cur.head_line+contextsize);
+				end.head_char = textedit->lines[end.head_line].line_text.length();
+				auto t2 = textedit->getSelectedText(end);
+				
+				std::string aftr;
+				t2.toUTF8String(aftr);
+				
+				std::string insertion = Curler::getInsertion(befr, aftr);
+				
+				icu::UnicodeString insertion_uc = icu::UnicodeString::fromUTF8(insertion);
+				textedit->insertTextAtCursor(textedit->cursors[0], insertion_uc);
+				
+				App::time_till_regular += 2;
+			});
 		}
+		
+		
 		if (App::activeLeafNode == renamebox && renamebox->parent == this) {
 			if (key == GLFW_KEY_ESCAPE) {
 				App::RemoveWidgetFromParent(renamebox);

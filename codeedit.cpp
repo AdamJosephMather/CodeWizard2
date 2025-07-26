@@ -889,6 +889,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 				std::string aftr;
 				t2.toUTF8String(aftr);
 				
+				App::displayToast(icu::UnicodeString::fromUTF8("Contacting LM Studio"));
 				std::string insertion = Curler::getInsertion(befr, aftr);
 				
 				icu::UnicodeString insertion_uc = icu::UnicodeString::fromUTF8(insertion);

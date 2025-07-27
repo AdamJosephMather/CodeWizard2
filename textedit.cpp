@@ -1140,26 +1140,28 @@ void TextEdit::ensureCursorVisible(Cursor c) {
 	int end_line = line_start+ceil((float)t_h/(float)TextRenderer::get_text_height());
 	int end_char = char_start+ceil((float)t_w/(float)TextRenderer::get_text_width(1))-1;
 	
-	if (end_line-line_start < 14) {
-		scrolled_to_vert = c.head_line-(end_line-line_start)/2;
-		if (scrolled_to_vert < 0) {
-			scrolled_to_vert = 0;
-		}if (scrolled_to_vert > max_scroll_vert) {
-			scrolled_to_vert = max_scroll_vert;
-		}
-	}else{
-		int l1 = c.head_line;
-		
-		if (l1-4 < line_start) {
-			scrolled_to_vert = l1-4;
-		}else if (l1+7 > end_line) {
-			scrolled_to_vert = l1-(end_line-line_start)+7;
-		}
-		
-		if (scrolled_to_vert < 0) {
-			scrolled_to_vert = 0;
-		}if (scrolled_to_vert > max_scroll_vert) {
-			scrolled_to_vert = max_scroll_vert;
+	if (!DONT_SCROLL_VERT_CURS) {
+		if (end_line-line_start < 14) {
+			scrolled_to_vert = c.head_line-(end_line-line_start)/2;
+			if (scrolled_to_vert < 0) {
+				scrolled_to_vert = 0;
+			}if (scrolled_to_vert > max_scroll_vert) {
+				scrolled_to_vert = max_scroll_vert;
+			}
+		}else{
+			int l1 = c.head_line;
+			
+			if (l1-4 < line_start) {
+				scrolled_to_vert = l1-4;
+			}else if (l1+7 > end_line) {
+				scrolled_to_vert = l1-(end_line-line_start)+7;
+			}
+			
+			if (scrolled_to_vert < 0) {
+				scrolled_to_vert = 0;
+			}if (scrolled_to_vert > max_scroll_vert) {
+				scrolled_to_vert = max_scroll_vert;
+			}
 		}
 	}
 	

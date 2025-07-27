@@ -1,5 +1,6 @@
 #include "widgetchooser.h"
 #include "button.h"
+#include "chat.h"
 #include "compare.h"
 #include "editor.h"
 #include "filetree.h"
@@ -49,6 +50,16 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 			return;
 		}));
 		std::cout << "Creating compare menu\n";
+		delete this;
+	});
+	
+	auto text5 = icu::UnicodeString::fromUTF8("AI Chat");
+	b5 = new Button(this, text5, [&](Button* button, int x, int y, int w, int h, int tw, int th){
+		button->t_x = t_x+t_w/2-tw/2;
+		button->t_y = b4->t_y+b4->t_h+20;
+	}, [&](Button* button) {
+		App::ReplaceWith(this, new Chat(nullptr));
+		std::cout << "Creating chat menu\n";
 		delete this;
 	});
 }

@@ -1,7 +1,7 @@
 #include "panel_holder.h"
 
-
 #include "application.h"
+#include "chat.h"
 #include "editor.h"
 #include "widgetchooser.h"
 #include "codeedit.h"
@@ -273,6 +273,8 @@ void PanelHolder::setState(nlohmann::json state) {
 			new Settings(this);
 		}else if (c == "WidgetChooser"){
 			new WidgetChooser(this);
+		}else if (c == "Chat"){
+			new Chat(this);
 		}else { // any unknown, or editor
 			new Editor(this);
 		}
@@ -298,6 +300,8 @@ nlohmann::json PanelHolder::saveConfiguration() {
 			thisitm["children"][i] = "Settings";
 		}else if (auto pe = dynamic_cast<WidgetChooser*>(c)){
 			thisitm["children"][i] = "WidgetChooser";
+		}else if (auto pe = dynamic_cast<Chat*>(c)){
+			thisitm["children"][i] = "Chat";
 		}else {
 			thisitm["children"][i] = "Ehhhhh";
 		}

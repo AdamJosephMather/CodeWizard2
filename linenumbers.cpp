@@ -50,11 +50,10 @@ void LineNumbers::render() {
 				}
 			}
 			
-			std::vector<Color*> colors = AllOneColor(fillcolor, line_text.length());
 			icu::UnicodeString text = icu::UnicodeString::fromUTF8(line_text);
 			
 			lines_to_draw.push_back(text);
-			lines_to_color.push_back(colors);
+			lines_to_color.push_back(fillcolor);
 		}else{
 			Color* fillcolor = App::theme.lesser_text_color;
 			
@@ -70,11 +69,10 @@ void LineNumbers::render() {
 				line_text = " " + line_text;
 			}
 			
-			std::vector<Color*> colors = AllOneColor(fillcolor, line_text.length());
 			icu::UnicodeString text = icu::UnicodeString::fromUTF8(line_text);
 			
 			lines_to_draw.push_back(text);
-			lines_to_color.push_back(colors);
+			lines_to_color.push_back(fillcolor);
 		}
 	}
 	

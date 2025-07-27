@@ -159,4 +159,9 @@ public:
 	static void updateFromTintColor(Theme* t);
 	static void setTintedColor(Color* tint_c, Color* c, float b);
 	static void displayToast(icu::UnicodeString text);
+	
+	static void moveMouse(int x, int y);
+	
+	static int moveMouseToX;
+	static int moveMouseToY;
 };

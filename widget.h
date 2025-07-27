@@ -10,6 +10,7 @@ class Widget {
 public:
 	Widget() : parent(nullptr) {}
 	Widget(Widget* parent);
+	virtual ~Widget() = default;  // now deletes are safe
 	
 	using close_callback_type = std::function<void(Widget*)>;
 	

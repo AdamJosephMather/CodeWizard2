@@ -68,7 +68,7 @@ void WidgetChooser::render() {
 	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
 	
 	auto txt = icu::UnicodeString::fromUTF8("Widget chooser");
-	TextRenderer::draw_text(t_x+t_w/2-TextRenderer::get_text_width(txt.length())/2, t_y+10, txt, AllOneColor(App::theme.main_text_color, txt.length()));
+	TextRenderer::draw_text(t_x+t_w/2-TextRenderer::get_text_width(txt.length())/2, t_y+10, txt, App::theme.main_text_color);
 	
 	Widget::render();
 }

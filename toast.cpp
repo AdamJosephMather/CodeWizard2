@@ -30,7 +30,7 @@ void Toast::render() {
 	
 	if (time != -1) {
 		App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, App::theme.hover_background_color);
-		TextRenderer::draw_text(t_x+radius, t_y+t_h/2-TextRenderer::get_text_height()/2, text, AllOneColor(App::theme.main_text_color, text.length()));
+		TextRenderer::draw_text(t_x+radius, t_y+t_h/2-TextRenderer::get_text_height()/2, text, App::theme.main_text_color);
 	}
 	
 	Widget::render();

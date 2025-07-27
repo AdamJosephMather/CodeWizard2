@@ -19,7 +19,6 @@ void ListBox::render() {
 	int th = TextRenderer::get_text_height()+10;
 	
 	int maxlen = floor(t_w/TextRenderer::get_text_width(1));
-	auto cs = AllOneColor(App::theme.main_text_color, maxlen);
 	int y = t_y;
 	
 	for (int indx = scrolled_to; indx < fmin(elements.size(), scrolled_to+toshow); indx++) {
@@ -29,7 +28,7 @@ void ListBox::render() {
 		
 		elementalPositions.push_back({t_x, y, t_w, th, indx});
 		
-		TextRenderer::draw_text(t_x+5, y+5, elements[indx].tempSubStringBetween(0, maxlen), cs);
+		TextRenderer::draw_text(t_x+5, y+5, elements[indx].tempSubStringBetween(0, maxlen), App::theme.main_text_color);
 		y += th;
 	}
 }

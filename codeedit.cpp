@@ -920,7 +920,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 		}
 		
 		if (App::activeLeafNode != hoverbox) {
-			if (hoverbox->parent == this && is_press) {
+			if (hoverbox->parent == this && is_press && key != GLFW_KEY_LEFT_SHIFT && key != GLFW_KEY_RIGHT_SHIFT) {
 				App::RemoveWidgetFromParent(hoverbox);
 			}
 		}
@@ -969,6 +969,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 			}if (file && key == GLFW_KEY_P && (control_held || textedit->mode == 'n') && is_press) {
 				if (lsp_client){
 					hoverCrsr = textedit->cursors[0];
+					should_move_mouse_hover = true;
 					hover_id = lsp_client->requestHover(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
 				}
 			}if (key == GLFW_KEY_3 && alt_held && is_press && language != "" && App::languagemap[language].line_comment != "") {
@@ -1222,6 +1223,7 @@ bool CodeEdit::on_mouse_move_event() {
 				hoverCrsr.head_char = hov_last_char;
 				hoverCrsr.head_line = hov_last_line;
 				
+				should_move_mouse_hover = false;
 				hover_id = lsp_client->requestHover(file->filepath, crsr.head_line, crsr.head_char);
 			}).detach(); // Detach the thread so it runs independently
 		}
@@ -1583,6 +1585,11 @@ void CodeEdit::hoverRecieved(std::string content, std::string type, int id) {
 	hoverbox->setFullText(icu::UnicodeString::fromUTF8(content));
 	hoverbox->scrolled_to_vert = 0;
 	hoverbox->scrolled_to_horz = 0;
+	
+	if (should_move_mouse_hover){
+		hoverbox->position(t_x, t_y, t_w, t_h);
+		App::moveMouse(hoverbox->t_x+hoverbox->t_w/2, hoverbox->t_y+hoverbox->t_h/2);
+	}
 }
 
 void CodeEdit::onTextChanged(Widget* w) {

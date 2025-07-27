@@ -81,14 +81,12 @@ void Button::render() {
 		}
 	}
 	
-	auto HIGHLIGHT = AllOneColor(App::theme.main_text_color, BUTTON_LABEL.length());
-	
 	if (!window_button){
-		TextRenderer::draw_text(t_x+padding_button, t_y+padding_button, BUTTON_LABEL, HIGHLIGHT);
+		TextRenderer::draw_text(t_x+padding_button, t_y+padding_button, BUTTON_LABEL, App::theme.main_text_color);
 	}else{
 		int x = t_x+t_w/2-TextRenderer::get_text_width(BUTTON_LABEL.length())/2;
 		int y = t_y+t_h/2-TextRenderer::get_text_height()/2;
-		TextRenderer::draw_text(x, y, BUTTON_LABEL, HIGHLIGHT);
+		TextRenderer::draw_text(x, y, BUTTON_LABEL, App::theme.main_text_color);
 	}
 	
 	Widget::render();

@@ -6,6 +6,11 @@
 #include "widget.h"
 #include "label.h"
 
+struct Segment {
+	bool isCode;          // true ⇒ this segment is a code block
+	std::string content;  // the raw text of that segment
+};
+
 class Chat : public Widget {
 public:
 	Chat(Widget* parent);
@@ -22,6 +27,8 @@ public:
 	
 private:
 	TextEdit* querybox = nullptr;
-	std::vector<Label*> message_te = {};
+	std::vector<Widget*> message_te = {};
 	std::vector<bool> from_user = {};
+	
+	std::vector<Segment> splitMarkdown(const std::string& input);
 };

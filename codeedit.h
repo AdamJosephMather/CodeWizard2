@@ -56,6 +56,7 @@ public:
 	int completion_id = -1;
 	int goto_id = -1;
 	int hover_id = -1;
+	bool should_move_mouse_hover = false;
 	int code_actions_id = -1;
 	int rename_id = -1;
 	TextEdit* renamebox = nullptr;

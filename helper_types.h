@@ -10,6 +10,7 @@
 #include <sstream>
 #include <fstream>
 #include <map>
+#include <array>
 
 using SearchFileKey  = std::pair<std::string, std::string>;
 using SearchMatch    = std::pair<int, std::string>;
@@ -45,6 +46,14 @@ struct Color {
 	float b;
 	float a;
 };
+
+static constexpr std::array<unsigned char,256> ToLower = []{
+	std::array<unsigned char,256> m{};
+	for(int i=0;i<256;i++){
+		m[i] = (i >= 'A' && i <= 'Z') ? (i + 32) : i;
+	}
+	return m;
+}();
 
 inline Color* MakeColor(float r, float g, float b, float a = 1.0f){
 	auto c = new Color();
@@ -529,17 +538,6 @@ static std::string toLower(const std::string& s) {
 	out.reserve(s.size());
 	for (unsigned char c : s) out.push_back(std::tolower(c));
 	return out;
-}
-
-static bool caseInsensitiveFind(const std::string& hay, const std::string& needle) {
-	auto h = toLower(hay);
-	auto n = toLower(needle);
-	return h.find(n) != std::string::npos;
-}
-
-static bool caseInsensitiveFindAlreadyLowered(const std::string& hay, const std::string& needle) {
-	auto h = toLower(hay);
-	return h.find(needle) != std::string::npos;
 }
 
 static std::string trim(const std::string& s) {

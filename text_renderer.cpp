@@ -333,6 +333,54 @@ void TextRenderer::draw_text(float x, float y,
 	if (!wasTexEnabled) glDisable(GL_TEXTURE_2D);
 }
 
+void TextRenderer::draw_text(float x, float y,
+							 const icu::UnicodeString& unicodeStr,
+							 Color* color)
+{
+	y += ascent_px; // baseline adjustment
+
+	GLboolean wasBlendEnabled = glIsEnabled(GL_BLEND);
+	GLboolean wasTexEnabled   = glIsEnabled(GL_TEXTURE_2D);
+	GLint oldBlendSrc, oldBlendDst;
+	glGetIntegerv(GL_BLEND_SRC, &oldBlendSrc);
+	glGetIntegerv(GL_BLEND_DST, &oldBlendDst);
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, fontTex);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	float cursorX = x;
+	float cursorY = y;
+	
+	glColor4f(color->r, color->g, color->b, 1.0f);
+
+	glBegin(GL_QUADS);
+	for (int32_t i = 0; i < unicodeStr.length(); ) {
+		UChar32 cp = unicodeStr.char32At(i);
+		int idx = lookup_packedchar_index(cp);
+		if (idx >= 0) {
+			AlignedQuad q;
+			GetPackedQuad(cdata, TEX_W, TEX_H, idx, &cursorX, &cursorY, &q, true);
+
+			glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, q.y0);
+			glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, q.y0);
+			glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, q.y1);
+			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
+		} else if (idx < 0) {
+			std::cout << "Missing glyph U+" << std::hex << cp << std::dec << "\n";
+			cursorX += TEXT_WIDTH;
+		}
+
+		i = unicodeStr.moveIndex32(i, 1);
+	}
+	glEnd();
+
+	if (!wasBlendEnabled) glDisable(GL_BLEND);
+	else glBlendFunc(oldBlendSrc, oldBlendDst);
+	if (!wasTexEnabled) glDisable(GL_TEXTURE_2D);
+}
+
 void TextRenderer::cleanup()
 {
 	if (fontTex) {

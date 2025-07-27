@@ -1,4 +1,6 @@
 #include <string>
+#include <vector>
+#include <functional>
 
 class Curler {
 	public:
@@ -7,4 +9,5 @@ class Curler {
 	static std::string run_curl(std::string url, std::string data, bool& worked);
 	static std::string getInsertion(std::string before, std::string after);
 	static void loadModel();
+	static std::string StreamChatResponse(const std::vector<std::pair<bool, std::string>>& messages, std::function<void(const std::string&)> stream_callback);
 };

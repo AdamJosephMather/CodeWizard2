@@ -13,6 +13,7 @@ public:
 	
 	// Draw text at specified position with per-glyph colors
 	static void draw_text(float x, float y, const icu::UnicodeString& unicodeStr, const std::vector<Color*>& colors);
+	static void draw_text(float x, float y, const icu::UnicodeString& unicodeStr, Color* color);
 	
 	// Cleanup resources
 	static void cleanup();

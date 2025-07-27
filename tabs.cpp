@@ -116,10 +116,10 @@ void Tabs::render() {
 					App::DrawRect(lc.end, t_y, end_len, t_h, App::theme.extras_background_color);
 				}
 				
-				TextRenderer::draw_text(lc.end+tsx, t_y+text_height, "X", AllOneColor(App::theme.main_text_color, 1));
+				TextRenderer::draw_text(lc.end+tsx, t_y+text_height, "X", App::theme.main_text_color);
 			}
 			
-			TextRenderer::draw_text(lc.start+5, t_y+text_height, info.title, AllOneColor(App::theme.main_text_color, info.title.length()));
+			TextRenderer::draw_text(lc.start+5, t_y+text_height, info.title, App::theme.main_text_color);
 		}
 		
 		tab_screen_loc.push_back(lc);
@@ -146,7 +146,7 @@ void Tabs::render() {
 				App::DrawRect(add_loc, t_y, end_len, t_h, App::theme.extras_background_color);
 			}
 			
-			TextRenderer::draw_text(add_loc+tsx, t_y+text_height, "+", AllOneColor(App::theme.main_text_color, 1));
+			TextRenderer::draw_text(add_loc+tsx, t_y+text_height, "+", App::theme.main_text_color);
 		}
 		
 		screen_add_x = add_loc;

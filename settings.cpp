@@ -294,7 +294,7 @@ void Settings::render() {
 			int x = t_x+10;
 			icu::UnicodeString text = icu::UnicodeString::fromUTF8(it.first->name);
 			
-			TextRenderer::draw_text(x, y, text, AllOneColor(App::theme.main_text_color, text.length()));
+			TextRenderer::draw_text(x, y, text, App::theme.main_text_color);
 			App::runWithSKIZ(it.second->t_x, it.second->t_y, it.second->t_w, it.second->t_h, [&](){
 				it.second->render();
 			});

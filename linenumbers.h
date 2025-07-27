@@ -17,7 +17,7 @@ public:
 	
 	double start_y;
 	std::vector<icu::UnicodeString> lines_to_draw;
-	std::vector<std::vector<Color*>> lines_to_color;
+	std::vector<Color*> lines_to_color;
 	
 	void position(int x, int y, int w, int h);
 	void render();

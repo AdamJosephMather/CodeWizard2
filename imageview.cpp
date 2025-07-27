@@ -39,7 +39,7 @@ void ImageView::openFile() {
 		TextRenderer::draw_text(
 			t_x, t_y,
 			text,
-			AllOneColor(App::theme.main_text_color, text.length())
+			App::theme.main_text_color
 		);
 		return;
 	}

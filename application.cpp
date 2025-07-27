@@ -30,6 +30,9 @@
 #include <stb_image.h>
 #include "curler.h"
 
+int App::moveMouseToX = -1;
+int App::moveMouseToY = -1;
+
 bool App::REQUESTING_STRING = false;
 App::StringGivenFunc App::ON_STRING_GIVEN = nullptr;
 TextEdit* STRING_REQUEST_TEXTEDIT = nullptr;
@@ -523,6 +526,11 @@ void App::DoFullRenderWithoutInput() {
 		lastTime = currentTime;
 	}
 	
+	if (moveMouseToX != -1 && moveMouseToY != -1) {
+		glfwSetCursorPos(window, moveMouseToX, moveMouseToY);
+		moveMouseToX = -1;
+		moveMouseToY = -1;
+	}
 	
 	std::lock_guard<std::mutex> lock(canMakeChanges); // this prevents separate threads (the lsp clients) from messing with shit while positioning/rendering
 	if (rootelement) {
@@ -1299,6 +1307,12 @@ void App::setActiveLeafNode(Widget* w) {
 void App::ext_button() {
 	rerender = true;
 	glfwSetWindowShouldClose(window, GLFW_TRUE);
+}
+
+void App::moveMouse(int x, int y) {
+	std::cout << "Moving mx " << x << " " << y << std::endl;
+	moveMouseToX = x;
+	moveMouseToY = y;
 }
 
 void App::runWithSKIZ(int nx, int ny, int nw, int nh, VoidFunction withskiz) {

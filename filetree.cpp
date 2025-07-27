@@ -15,7 +15,7 @@ void FileTree::render() {
 		if (itm.is_folder) {
 			App::DrawRect(itm.x+2, itm.y+2, itm.w-4, itm.h-4, App::theme.hover_background_color);
 		}
-		TextRenderer::draw_text(itm.x+App::text_padding, itm.y+App::text_padding, itm.name, AllOneColor(App::theme.main_text_color, itm.name.length()));
+		TextRenderer::draw_text(itm.x+App::text_padding, itm.y+App::text_padding, itm.name, App::theme.main_text_color);
 	}
 	
 	Widget::render();

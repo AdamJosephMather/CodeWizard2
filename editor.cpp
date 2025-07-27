@@ -156,7 +156,7 @@ void Editor::render() {
 	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
 	
 	auto txt = icu::UnicodeString::fromUTF8("Editor Panel");
-	TextRenderer::draw_text(t_x+t_w/2-TextRenderer::get_text_width(txt.length())/2, t_y+10+tab_bar->t_h, txt, AllOneColor(App::theme.main_text_color, txt.length()));
+	TextRenderer::draw_text(t_x+t_w/2-TextRenderer::get_text_width(txt.length())/2, t_y+10+tab_bar->t_h, txt, App::theme.main_text_color);
 	
 	auto e = editors[tab_bar->selected_id];
 	

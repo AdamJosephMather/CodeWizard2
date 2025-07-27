@@ -1552,26 +1552,63 @@ void App::launchCommandNonBlocking(const std::string& command) {
 }
 
 void searchTheseFiles(const std::string& st, std::vector<std::string> files, SearchResult* res) {
+	unsigned char frstchr = st[0];
+	bool works;
+	unsigned char hc;
+	int stlen = (int)st.size();
+	
 	for (size_t idx = 0; idx < files.size(); ++idx) {
 		const auto& path = files[idx];
-		if (isBinaryFile(path)) 
+		if (isBinaryFile(path))
 			continue;
 
-		std::ifstream in(path);
-		if (!in.is_open()) 
-			continue;
-
+		std::ifstream in(path, std::ios::binary | std::ios::ate);
+		if (!in) continue;
+		auto size = in.tellg();
+		in.seekg(0);
+		
+		std::string buf;
+		buf.resize(size);
+		in.read(&buf[0], size);
+		
+		int buflen = (int)buf.size();
+		
 		SearchMatchVec matches;
-		std::string line;
 		int lineNum = 1;
-
-		while (std::getline(in, line)) {
-			if (caseInsensitiveFindAlreadyLowered(line, st)) {
-				matches.emplace_back(lineNum, trim(line));
+		int lineStart = 0;
+		bool waitingforline = false;
+		
+		for (int i1 = 0; i1 < buflen-stlen+1; i1++) {
+			hc = ToLower[static_cast<unsigned char>(buf[i1])];
+			
+			if (hc == '\n') {
+				lineNum ++;
+				lineStart = i1+1; // we're not starting at i1 because let's not include \n in the lines
+				waitingforline = false;
 			}
-			++lineNum;
+			
+			if (waitingforline || hc != frstchr) { continue; }
+			
+			works = true;
+			for (int i2 = 1; i2 < stlen; i2++) {
+				if (st[i2] != ToLower[static_cast<unsigned char>(buf[i1+i2])]) {
+					works = false;
+					break;
+				}
+			}
+			
+			if (works) {
+				auto endLine = buf.find('\n', i1+stlen);
+				if (endLine == 0) {
+					endLine = buflen;
+				}
+				
+				matches.emplace_back(lineNum, trim(buf.substr(lineStart, endLine-lineStart)));
+				waitingforline = true;
+				works = false;
+			}
 		}
-
+		
 		if (!matches.empty()) {
 			res->emplace(std::make_pair(path, files[idx]), std::move(matches));
 		}

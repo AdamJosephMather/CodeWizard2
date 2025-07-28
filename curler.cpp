@@ -50,6 +50,12 @@ std::string Curler::getInsertion(std::string before, std::string after) {
 	itm["temperature"] = 0.7;
 	itm["max_tokens"] = maxtokens;
 	itm["stream"] = false;
+	itm["stop"] = {
+		"<|endoftext|>",
+		"<|fim_prefix|>",
+		"<|fim_suffix|>",
+		"<|fim_middle|>"
+	};
 	
 	std::string json = itm.dump();
 	

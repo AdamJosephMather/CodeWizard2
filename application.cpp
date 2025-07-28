@@ -641,10 +641,15 @@ void App::Run() {
 		DoFullRenderWithoutInput();
 	}
 	
+	std::cout << "Saving..." << std::endl;
+	
 	save(); // save before exit.
 	
-	if (auto pe = dynamic_cast<PanelHolder*>(rootelement->children[0])) {
-		settings->saveConfig(pe->saveConfiguration());
+	for (auto c : rootelement->children) {
+		if (auto pe = dynamic_cast<PanelHolder*>(c)) {
+			settings->saveConfig(pe->saveConfiguration());
+			break;
+		}
 	}
 
 	bool maximized = glfwGetWindowAttrib(window, GLFW_MAXIMIZED);

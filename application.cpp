@@ -179,7 +179,7 @@ bool App::Init() {
 	rootelement = new Widget(nullptr);
 	new PanelHolder(rootelement);
 	tb = new TitleBar(rootelement);
-	toastBox = new Toast(rootelement);
+	toastBox = new Toast(nullptr);
 	
 	// Now grab the HWND and force a resize border
 	HWND hwnd = glfwGetWin32Window(window);
@@ -535,6 +535,7 @@ void App::DoFullRenderWithoutInput() {
 	std::lock_guard<std::mutex> lock(canMakeChanges); // this prevents separate threads (the lsp clients) from messing with shit while positioning/rendering
 	if (rootelement) {
 		rootelement->position(0, tb->t_h, WINDOW_WIDTH, WINDOW_HEIGHT-tb->t_h);
+		toastBox->position(0, tb->t_h, WINDOW_WIDTH, WINDOW_HEIGHT-tb->t_h);
 	}
 	
 	//render
@@ -574,6 +575,7 @@ void App::DoFullRenderWithoutInput() {
 	
 	if (rootelement) {
 		rootelement->render();
+		toastBox->render();
 	}
 	
 	glDisable(GL_SCISSOR_TEST);

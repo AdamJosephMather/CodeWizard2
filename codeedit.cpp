@@ -890,15 +890,16 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 				t2.toUTF8String(aftr);
 				
 				App::displayToast(icu::UnicodeString::fromUTF8("Contacting LM Studio"));
-				std::string insertion = Curler::getInsertion(befr, aftr);
+				std::string insertion = Curler::StreamInsertion(befr, aftr, [this](std::string s){
+					std::cout << "Callback!!!!" << std::endl;
+					textedit->insertTextAtCursor(textedit->cursors[0], icu::UnicodeString::fromUTF8(s));
+					App::time_till_regular += 2;
+				});
 				
-				icu::UnicodeString insertion_uc = icu::UnicodeString::fromUTF8(insertion);
-				textedit->insertTextAtCursor(textedit->cursors[0], insertion_uc);
-				
-				App::time_till_regular += 2;
+				std::cout << "Full insertion: " << insertion << std::endl;
 			});
+			return true;
 		}
-		
 		
 		if (App::activeLeafNode == renamebox && renamebox->parent == this) {
 			if (key == GLFW_KEY_ESCAPE) {

@@ -575,7 +575,9 @@ void App::DoFullRenderWithoutInput() {
 	
 	if (rootelement) {
 		rootelement->render();
-		toastBox->render();
+		runWithSKIZ(toastBox->t_x, toastBox->t_y, toastBox->t_w, toastBox->t_h, []() {
+			toastBox->render();
+		});
 	}
 	
 	glDisable(GL_SCISSOR_TEST);

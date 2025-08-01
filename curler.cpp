@@ -40,6 +40,7 @@ static size_t WriteStreamCallback(
 				st->done = true;
 				break;
 			}
+			
 			auto j = nlohmann::json::parse(payload);
 			auto object = j["choices"][0];
 			

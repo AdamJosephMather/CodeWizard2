@@ -1,3 +1,3 @@
-C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/CMakeFiles/CodeWizard.dir
-C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/CMakeFiles/edit_cache.dir
-C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/CMakeFiles/rebuild_cache.dir
+D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CodeWizard.dir
+D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/edit_cache.dir
+D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/rebuild_cache.dir

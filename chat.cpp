@@ -85,6 +85,11 @@ void Chat::render() {
 }
 
 bool Chat::on_scroll_event(double xchange, double ychange) {
+	int mx = App::mouseX;
+	int my = App::mouseY;
+	
+	if (mx < t_x || my < t_y || mx > t_x+t_w || my > t_y+t_h || !is_visible) { return false; }
+	
 	scrolled_to += ychange * 6 * TextRenderer::get_text_height();
 	if (scrolled_to > 0) {
 		scrolled_to = 0;

@@ -1,176 +1,176 @@
 [
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\main.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\main.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\main.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\main.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\main.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\main.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\main.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe -DGLFW_DLL -I C:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -DWIN32 /fo CMakeFiles\\CodeWizard.dir\\resources.rc.res C:\\Users\\adamj\\Documents\\C\\CodeWizard\\resources.rc",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\resources.rc",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe -DGLFW_DLL -I D:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -DWIN32 /fo CMakeFiles\\CodeWizard.dir\\resources.rc.res D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\resources.rc",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\resources.rc",
   "output": "CMakeFiles\\CodeWizard.dir\\resources.rc.res"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\text_renderer.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\text_renderer.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\text_renderer.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\text_renderer.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\text_renderer.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\text_renderer.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\text_renderer.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\application.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\application.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\application.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\application.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\application.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\application.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\application.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\widget.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\widget.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\widget.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\widget.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\widget.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\widget.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\widget.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\button.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\button.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\button.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\button.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\button.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\button.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\button.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\titlebar.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\titlebar.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\titlebar.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\titlebar.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\titlebar.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\titlebar.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\titlebar.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\panel_holder.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\panel_holder.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\panel_holder.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\panel_holder.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\panel_holder.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\panel_holder.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\panel_holder.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\widgetchooser.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\widgetchooser.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\widgetchooser.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\widgetchooser.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\widgetchooser.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\widgetchooser.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\widgetchooser.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\editor.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\editor.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\editor.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\editor.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\editor.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\editor.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\editor.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\filetree.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\filetree.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\filetree.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\filetree.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\filetree.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\filetree.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\filetree.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\tabs.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\tabs.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\tabs.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\tabs.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\tabs.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\tabs.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\tabs.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\settings.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\settings.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\settings.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\settings.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\settings.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\settings.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\settings.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\codeedit.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\codeedit.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\codeedit.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\codeedit.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\codeedit.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\codeedit.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\codeedit.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\linenumbers.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\linenumbers.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\linenumbers.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\linenumbers.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\linenumbers.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\linenumbers.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\linenumbers.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\textedit.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\textedit.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\textedit.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\textedit.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\textedit.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\textedit.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\textedit.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\highlighter.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\highlighter.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\highlighter.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\highlighter.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\highlighter.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\highlighter.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\highlighter.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /MD /O2 /Ob2 /DNDEBUG /FoCMakeFiles\\CodeWizard.dir\\tinyfiledialogs.c.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\tinyfiledialogs.c",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\tinyfiledialogs.c",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /MD /O2 /Ob2 /DNDEBUG /FoCMakeFiles\\CodeWizard.dir\\tinyfiledialogs.c.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\tinyfiledialogs.c",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\tinyfiledialogs.c",
   "output": "CMakeFiles\\CodeWizard.dir\\tinyfiledialogs.c.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\brokenstatemenu.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\brokenstatemenu.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\brokenstatemenu.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\brokenstatemenu.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\brokenstatemenu.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\brokenstatemenu.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\brokenstatemenu.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\checkbox.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\checkbox.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\checkbox.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\checkbox.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\checkbox.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\checkbox.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\checkbox.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\settingsmanager.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\settingsmanager.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\settingsmanager.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\settingsmanager.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\settingsmanager.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\settingsmanager.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\settingsmanager.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\languageserverclient.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\languageserverclient.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\languageserverclient.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\languageserverclient.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\languageserverclient.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\languageserverclient.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\languageserverclient.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\listbox.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\listbox.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\listbox.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\listbox.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\listbox.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\listbox.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\listbox.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\imageview.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\imageview.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\imageview.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\imageview.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\imageview.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\imageview.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\imageview.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\compare.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\compare.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\compare.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\compare.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\compare.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\compare.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\compare.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\curler.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\curler.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\curler.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\curler.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\curler.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\curler.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\curler.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\toast.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\toast.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\toast.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\toast.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\toast.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\toast.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\toast.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\chat.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\chat.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\chat.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\chat.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\chat.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\chat.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\chat.cpp.obj"
 },
 {
-  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
-  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\label.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\label.cpp",
-  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\label.cpp",
+  "directory": "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -external:ID:\\Users\\adamj\\Documents\\C\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /FoCMakeFiles\\CodeWizard.dir\\label.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\label.cpp",
+  "file": "D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\label.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\label.cpp.obj"
 }
 ]

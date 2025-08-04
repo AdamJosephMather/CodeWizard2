@@ -9,7 +9,7 @@ class Curler {
 public:
 	static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp);
 
-	static std::string run_curl(std::string url, std::string json, bool& worked);
+	static std::string run_curl(std::string url, std::string json, const std::string& apiKey, bool& worked);
 
 	static std::string getInsertion(const std::string& before, const std::string& after);
 

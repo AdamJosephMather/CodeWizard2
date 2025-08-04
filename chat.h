@@ -18,7 +18,7 @@ public:
 	void render();
 	void position(int x, int y, int width, int height);
 	
-//	bool on_mouse_button_event(int button, int action, int mods);
+	bool on_mouse_button_event(int button, int action, int mods);
 	bool on_scroll_event(double xchange, double ychange);
 	bool on_key_event(int key, int scancode, int action, int mods);
 	

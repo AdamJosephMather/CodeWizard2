@@ -64,48 +64,61 @@ static size_t WriteStreamCallback(
 
 void Curler::loadModel() {
 	int maxtokens = 1;
-	
+
 	std::string request = "a";
-	
-	std::string url = "http://localhost:1234/api/v0/completions";
-	
+
+	// --- GET URL & API KEY FROM SETTINGS ---
+	std::string baseUrl = App::settings->getValue("ai_model_url", std::string("http://localhost:1234/v1"));
+	std::string url = baseUrl + "/completions";
+	std::string apiKey = App::settings->getValue("ai_model_api_key", std::string(""));
+	// ------------------------------------
+
 	std::string defmdl = "qwen2.5-coder-1.5b-instruct@q4_k_m";
-	
+
 	nlohmann::json itm;
 	itm["model"] = App::settings->getValue("lm_studio_model_id", defmdl);
 	itm["prompt"] = request;
 	itm["temperature"] = 0.7;
 	itm["max_tokens"] = maxtokens;
 	itm["stream"] = false;
-	
+
 	std::string json = itm.dump();
-	
-	new std::thread([url, json](){
+
+	// --- UPDATED THREAD WITH NEW PARAMETER ---
+	new std::thread([url, json, apiKey](){
 		bool wrkd;
-		run_curl(url, json, wrkd);
+		run_curl(url, json, apiKey, wrkd);
 	});
 }
 
-std::string Curler::run_curl(std::string url, std::string json, bool& worked) {
+// This is the new, updated signature
+std::string Curler::run_curl(std::string url, std::string json, const std::string& apiKey, bool& worked) {
 	CURL* curl;
 	CURLcode res;
 	std::string readBuffer = "";
 	worked = false;
-	
+
 	curl_global_init(CURL_GLOBAL_DEFAULT);
 	curl = curl_easy_init();
 	if(curl) {
 		struct curl_slist *headers = NULL;
 		headers = curl_slist_append(headers, "Content-Type: application/json");
 		
+		// --- ADDED LOGIC FOR API KEY ---
+		if (!apiKey.empty()) {
+			std::string authHeader = "Authorization: Bearer " + apiKey;
+			headers = curl_slist_append(headers, authHeader.c_str());
+		}
+		// ------------------------------
+
 		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json.c_str());
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-		
+
 		res = curl_easy_perform(curl);
-		
+
 		if(res != CURLE_OK){
 			std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
 			worked = false;
@@ -114,39 +127,44 @@ std::string Curler::run_curl(std::string url, std::string json, bool& worked) {
 			std::cout << "Response: " << readBuffer << std::endl;
 			worked = true;
 		}
-		
+
 		// Cleanup
 		curl_easy_cleanup(curl);
 		curl_slist_free_all(headers);
 	}
-	
+
 	curl_global_cleanup();
-	
+
 	return readBuffer;
 }
 
 std::string Curler::StreamChatResponse(const std::vector<std::pair<bool, std::string>>& messages, std::function<void(const std::string&)> stream_callback) {
 	// 1) Build the JSON payload
+	// ... (payload building logic is unchanged)
 	nlohmann::json payload;
 	payload["model"] = App::settings->getValue(
 		"lm_studio_model_id",
 		std::string("qwen2.5-coder-1.5b-instruct@q4_k_m")
 	);
 	payload["stream"] = true;
-
-	// assemble the messages array
+	
 	nlohmann::json msgarr = nlohmann::json::array();
 	for (auto& m : messages) {
 		nlohmann::json mm;
-		mm["role"]    = m.first ? "user" : "assistant";
+		mm["role"]  = m.first ? "user" : "assistant";
 		mm["content"] = m.second;
 		msgarr.push_back(mm);
 	}
 	payload["messages"] = std::move(msgarr);
 
 	std::string body = payload.dump();
-	std::string url  = "http://localhost:1234/api/v0/chat/completions";
-
+	
+	// --- GET URL & API KEY FROM SETTINGS ---
+	std::string baseUrl = App::settings->getValue("ai_model_url", std::string("http://localhost:1234/v1"));
+	std::string url = baseUrl + "/chat/completions";
+	std::string apiKey = App::settings->getValue("ai_model_api_key", std::string(""));
+	// -------------------------------------
+	
 	// 2) Initialize cURL
 	CURL* curl = curl_easy_init();
 	if (!curl) {
@@ -160,6 +178,13 @@ std::string Curler::StreamChatResponse(const std::vector<std::pair<bool, std::st
 	struct curl_slist* headers = nullptr;
 	headers = curl_slist_append(headers, "Content-Type: application/json");
 	headers = curl_slist_append(headers, "Accept: text/event-stream");
+	
+	// --- ADDED LOGIC FOR API KEY ---
+	if (!apiKey.empty()) {
+		std::string authHeader = "Authorization: Bearer " + apiKey;
+		headers = curl_slist_append(headers, authHeader.c_str());
+	}
+	// -----------------------------
 
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -169,6 +194,7 @@ std::string Curler::StreamChatResponse(const std::vector<std::pair<bool, std::st
 
 	// 4) Perform the request (this will block until the server closes the stream)
 	CURLcode res = curl_easy_perform(curl);
+	// ... (error handling and cleanup are unchanged)
 	if (res != CURLE_OK) {
 		curl_slist_free_all(headers);
 		curl_easy_cleanup(curl);
@@ -192,11 +218,28 @@ std::string Curler::StreamInsertion(
 	const std::string& after,
 	std::function<void(const std::string&)> onChunk
 ) {
+	if (!App::settings->getValue("use_non_chat_completions", true)) {
+		std::vector<std::pair<bool, std::string>> messages;
+		
+		messages.push_back({
+			true,
+			"Provide a code insertion given the following context. Note that your response **does not include any text other than the code to be inserted**. No markdown (this includes code segmens like ```), no explanation of the code. Reply with **only** code as plaintext. You may provide multiple lines if the situation calls for it. Match the indentation such that it can be inserted without changing it. Match the indentation type (tabs vs spaces). The cursor position (place where your response will be inserted) is marked:\n\n"+before+"[cursor is here]"+after
+		});
+		
+		return StreamChatResponse(messages, onChunk);
+	}
+	
 	int maxtokens = App::settings->getValue("lm_studio_max_tokens", 30);
 	std::string request = "<|fim_prefix|>" + before + "<|fim_suffix|>" + after + "<|fim_middle|>";
-	std::string url = "http://localhost:1234/api/v0/completions";
+
+	// --- GET URL & API KEY FROM SETTINGS ---
+	std::string baseUrl = App::settings->getValue("ai_model_url", std::string("http://localhost:1234/v1"));
+	std::string url = baseUrl + "/completions";
+	std::string apiKey = App::settings->getValue("ai_model_api_key", std::string(""));
+	// -------------------------------------
 
 	nlohmann::json payload;
+	// ... (payload building is unchanged)
 	payload["model"] = App::settings->getValue(
 		"lm_studio_model_id",
 		std::string("qwen2.5-coder-1.5b-instruct@q4_k_m")
@@ -226,6 +269,13 @@ std::string Curler::StreamInsertion(
 	headers = curl_slist_append(headers, "Content-Type: application/json");
 	headers = curl_slist_append(headers, "Accept: text/event-stream");
 
+	// --- ADDED LOGIC FOR API KEY ---
+	if (!apiKey.empty()) {
+		std::string authHeader = "Authorization: Bearer " + apiKey;
+		headers = curl_slist_append(headers, authHeader.c_str());
+	}
+	// -----------------------------
+
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
@@ -233,6 +283,7 @@ std::string Curler::StreamInsertion(
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &state);
 
 	CURLcode res = curl_easy_perform(curl);
+	// ... (error handling and cleanup are unchanged)
 	if (res != CURLE_OK) {
 		curl_slist_free_all(headers);
 		curl_easy_cleanup(curl);

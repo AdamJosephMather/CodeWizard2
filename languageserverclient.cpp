@@ -447,7 +447,22 @@ void LanguageServerClient::initialize(const std::string &rootUri)
 
 	json params2 = {
 		{"settings", {
-			{"python", json::object()}
+			{"python", {
+				{"analysis", {
+					{"diagnosticMode", "openFilesOnly"},
+					{"typeCheckingMode", "basic"},
+					{"useLibraryCodeForTypes", false},
+					{"indexing", false},
+					{"inlayHints", {
+						{"variableTypes", false},
+						{"functionReturnTypes", false},
+						{"callArgumentNames", "off"}
+					}},
+					{"memory", {
+						{"keepLibraryAst", true}
+					}}
+				}}
+			}}
 		}}
 	};
 

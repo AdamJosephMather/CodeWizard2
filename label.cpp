@@ -66,6 +66,10 @@ void Label::position(int x, int y, int w, int h) {
 	t_w = w;
 	t_h = h;
 	
+	if (POSITIONER) {
+		POSITIONER(this);
+	}
+	
 	if (old_width == t_w) { return; }
 	old_width = t_w;
 	

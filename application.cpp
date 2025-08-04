@@ -29,6 +29,8 @@
 
 #include <stb_image.h>
 #include "curler.h"
+#include "myrect.h"
+#include "label.h"
 
 int App::moveMouseToX = -1;
 int App::moveMouseToY = -1;
@@ -36,6 +38,8 @@ int App::moveMouseToY = -1;
 bool App::REQUESTING_STRING = false;
 App::StringGivenFunc App::ON_STRING_GIVEN = nullptr;
 TextEdit* STRING_REQUEST_TEXTEDIT = nullptr;
+MyRect* STRING_REQUEST_RECTANGLE = nullptr;
+Label* STRING_REQUEST_LABEL = nullptr;
 
 SettingsManager* App::settings = new SettingsManager();
 std::mutex App::canMakeChanges;
@@ -105,6 +109,23 @@ bool App::Init() {
 		w->t_y = w->t_y+w->t_h/2-(new_h/2);
 		w->t_h = new_h;
 	});
+	
+	STRING_REQUEST_RECTANGLE = new MyRect(nullptr, [&](Widget* w){
+		int h = TextRenderer::get_text_height()+text_padding*2;
+		w->t_x = STRING_REQUEST_TEXTEDIT->t_x-h;
+		w->t_w = STRING_REQUEST_TEXTEDIT->t_w+h*2;
+		w->t_y = STRING_REQUEST_TEXTEDIT->t_y-h;
+		w->t_h = STRING_REQUEST_TEXTEDIT->t_h+h*2;
+	});
+	
+	STRING_REQUEST_LABEL = new Label(nullptr);
+	STRING_REQUEST_LABEL->POSITIONER = [&](Widget* w) {
+		int h = TextRenderer::get_text_height()+text_padding*2;
+		w->t_x = STRING_REQUEST_RECTANGLE->t_x;
+		w->t_w = STRING_REQUEST_RECTANGLE->t_w;
+		w->t_y = STRING_REQUEST_RECTANGLE->t_y;
+		w->t_h = h;
+	};
 	
 	settings->loadSettings();
 	WINDOW_WIDTH = settings->getValue("window_width", 1200);
@@ -634,6 +655,9 @@ void App::ReplaceWith(Widget* existing, Widget* replacement) {
 
 void App::Run() {
 	STRING_REQUEST_TEXTEDIT->background_color = theme.overlay_background_color;
+	STRING_REQUEST_RECTANGLE->background_color = theme.overlay_background_color;
+	STRING_REQUEST_LABEL->background_color = theme.overlay_background_color;
+	
 	commandUnfocused(); // sets the command bar text to start with
 	
 	// Main loop
@@ -714,6 +738,8 @@ void App::mouse_button_callback(GLFWwindow* window, int button, int action, int 
 		}else{
 			REQUESTING_STRING = false;
 			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
+			RemoveWidgetFromParent(STRING_REQUEST_RECTANGLE);
+			RemoveWidgetFromParent(STRING_REQUEST_LABEL);
 			setActiveLeafNode(nullptr);
 		}
 	}
@@ -735,6 +761,8 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		if (key == GLFW_KEY_ENTER && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
 			REQUESTING_STRING = false;
 			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
+			RemoveWidgetFromParent(STRING_REQUEST_RECTANGLE);
+			RemoveWidgetFromParent(STRING_REQUEST_LABEL);
 			setActiveLeafNode(nullptr);
 			if (ON_STRING_GIVEN) {
 				ON_STRING_GIVEN(STRING_REQUEST_TEXTEDIT->getFullText());
@@ -743,6 +771,8 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		}if (key == GLFW_KEY_ESCAPE && (action == GLFW_PRESS || action == GLFW_REPEAT) && (STRING_REQUEST_TEXTEDIT->mode == 'n' || !settings->getValue("use_vim", false))) {
 			REQUESTING_STRING = false;
 			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
+			RemoveWidgetFromParent(STRING_REQUEST_RECTANGLE);
+			RemoveWidgetFromParent(STRING_REQUEST_LABEL);
 			if (beforeCommandLeafNode && rootelement->widgetexists(beforeCommandLeafNode)){
 				setActiveLeafNode(beforeCommandLeafNode);
 			}else{
@@ -938,7 +968,7 @@ void App::commandUnfocused() {
 	
 	// here let's remove the cp_listbox from the rootwidget
 	if (commandBox && commandBox->parent != nullptr) {
-		App::RemoveWidgetFromParent(commandBox);
+		RemoveWidgetFromParent(commandBox);
 	}
 }
 
@@ -1029,7 +1059,10 @@ void App::executeCommandPaletteAction() {
 			REQUESTING_STRING = true;
 			STRING_REQUEST_TEXTEDIT->setFullText(icu::UnicodeString());
 			STRING_REQUEST_TEXTEDIT->mode = 'i';
+			STRING_REQUEST_LABEL->setFullText(icu::UnicodeString::fromUTF8("Git Commit Message?"));
+			MoveWidget(STRING_REQUEST_RECTANGLE, rootelement);
 			MoveWidget(STRING_REQUEST_TEXTEDIT, rootelement);
+			MoveWidget(STRING_REQUEST_LABEL, rootelement);
 			setActiveLeafNode(STRING_REQUEST_TEXTEDIT);
 		}else if (filepath == ":Git Pull") {
 			std::string folder = settings->getValue("current_folder", getExecutableDir());
@@ -1268,6 +1301,8 @@ void App::setActiveLeafNode(Widget* w) {
 	if (REQUESTING_STRING && w != STRING_REQUEST_TEXTEDIT) {
 		REQUESTING_STRING = false;
 		RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
+		RemoveWidgetFromParent(STRING_REQUEST_RECTANGLE);
+		RemoveWidgetFromParent(STRING_REQUEST_LABEL);
 	}
 	
 	if (w == commandPalette && activeLeafNode != commandPalette) {

@@ -11,6 +11,8 @@ public:
 	icu::UnicodeString fulltext;
 	std::vector<icu::UnicodeString> drawlines;
 	
+	App::PosFunction POSITIONER = nullptr;
+	
 	void position(int x, int y, int w, int h);
 	void render();
 	

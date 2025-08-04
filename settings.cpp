@@ -164,24 +164,39 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			2000
 		),
 		makeString(
-			"LM Studio Model ID",
+			"AI Model ID",
 			"lm_studio_model_id",
 			"qwen2.5-coder-1.5b-instruct@q4_k_m"
 		),
+		makeString(
+			"AI Model Provider",
+			"ai_model_url",
+			"http://localhost:1234/api/v0"
+		),
+		makeString(
+			"AI Model API Key",
+			"ai_model_api_key",
+			""
+		),
 		makeInt(
-			"Context Lines - LM Studio",
+			"Context Lines",
 			"lm_studio_context_lines",
 			30
 		),
 		makeInt(
-			"Max New Tokens - LM Studio",
+			"Max New Tokens (Only Non-Chat Completion)",
 			"lm_studio_max_tokens",
 			30
 		),
 		makeBool(
-			"Load Model On Start - LM Studio",
+			"Load AI Model On Start",
 			"lm_load_model_on_start",
 			false
+		),
+		makeBool(
+			"AI Provider Supports Non-Chat Completions",
+			"use_non_chat_completions",
+			true
 		)
 	};
 	

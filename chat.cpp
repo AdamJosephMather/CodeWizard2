@@ -102,6 +102,15 @@ bool Chat::on_scroll_event(double xchange, double ychange) {
 	return false;
 }
 
+bool Chat::on_mouse_button_event(int button, int action, int mods) {
+	int mx = App::mouseX;
+	int my = App::mouseY;
+
+	if (mx < t_x || my < t_y || mx > t_x+t_w || my > t_y+t_h || !is_visible) { return false; }
+	
+	return Widget::on_mouse_button_event(button, action, mods);
+}
+
 std::vector<Segment> Chat::splitMarkdown(const std::string& input) {
 	// Regex to match ```[name]\n...``` blocks (as before)
 	static const std::regex re(

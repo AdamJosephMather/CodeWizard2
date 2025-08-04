@@ -96,6 +96,7 @@ public:
 	bool changed_during_update = true;
 	
 	std::vector<Cursor> cursors;
+	std::vector<icu::UnicodeString> coppiedText;
 	
 	double scrolled_to_horz = 0.0;
 	double scrolled_to_vert = 0.0;

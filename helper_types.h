@@ -107,12 +107,16 @@ static std::vector<icu::UnicodeString> splitByChar(const icu::UnicodeString& inp
 	int32_t pos;
 	
 	while ((pos = input.indexOf(delimiter, start)) != -1) {
-		result.push_back(input.tempSubStringBetween(start, pos));
+		icu::UnicodeString substr;
+		input.extractBetween(start, pos, substr);
+		result.push_back(substr);
 		start = pos + 1;
 	}
 	
 	// Add the last part
-	result.push_back(input.tempSubString(start));
+	icu::UnicodeString substr;
+	input.extractBetween(start, input.length(), substr);
+	result.push_back(substr);
 	return result;
 }
 

@@ -32,6 +32,7 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 	
 	lines = {ln}; // one empty line.
 	cursors = {Cursor()}; // we have to set these two before we init the undo history.
+	coppiedText = {};
 	historyThisUpdate = createHistory();
 	
 	draw_cursor = {};
@@ -1059,23 +1060,43 @@ bool TextEdit::handleInsertKey(int key, int scancode, int action, int mods) {
 	}
 	
 	if (key == GLFW_KEY_V && (is_control_held || mode == 'n')) {
-		std::string clipboard_text = GetClipboardText();
-		applyInsertToAllCursors(run_fixit_on_text(icu::UnicodeString::fromUTF8(clipboard_text)));
+		if (coppiedText.size() == cursors.size()) {
+			for (int ci = 0; ci < cursors.size(); ci++) {
+				insertTextAtCursor(cursors[ci], coppiedText[ci]);
+			}
+		}else{
+			std::string clipboard_text = GetClipboardText();
+			applyInsertToAllCursors(run_fixit_on_text(icu::UnicodeString::fromUTF8(clipboard_text)));
+		}
 		donesomthing = true;
 	}else if (key == GLFW_KEY_C && (is_control_held || mode == 'n')) {
-		auto icutext = getSelectedText(cursors[0]);
-		if (icutext.length() != 0) {
-			std::string text;
-			icutext.toUTF8String(text);
-			SetClipboardText(text);
+		if (cursors.size() > 1) {
+			coppiedText.clear();
+			for (auto ci = 0; ci < cursors.size(); ci++) {
+				coppiedText.push_back(getSelectedText(cursors[ci]));
+			}
+		}else{
+			auto icutext = getSelectedText(cursors[0]);
+			if (icutext.length() != 0) {
+				std::string text;
+				icutext.toUTF8String(text);
+				SetClipboardText(text);
+			}
 		}
 		donesomthing = true;
 	}else if (key == GLFW_KEY_X && (is_control_held || mode == 'n')) {
-		auto icutext = getSelectedText(cursors[0]);
-		if (icutext.length() != 0) {
-			std::string text;
-			icutext.toUTF8String(text);
-			SetClipboardText(text);
+		if (cursors.size() > 1) {
+			coppiedText.clear();
+			for (auto ci = 0; ci < cursors.size(); ci++) {
+				coppiedText.push_back(getSelectedText(cursors[ci]));
+			}
+		}else{
+			auto icutext = getSelectedText(cursors[0]);
+			if (icutext.length() != 0) {
+				std::string text;
+				icutext.toUTF8String(text);
+				SetClipboardText(text);
+			}
 		}
 		applyDeleteToAllCursors(GLFW_KEY_BACKSPACE, false);
 		donesomthing = true;
@@ -1114,12 +1135,15 @@ icu::UnicodeString TextEdit::getSelectedText(Cursor c) {
 	int sc = sel.second.first;
 	int ec = sel.second.second;
 	
+	icu::UnicodeString start;
+	icu::UnicodeString end;
+
 	if (sl == el) {
-		return lines[sl].line_text.tempSubStringBetween(sc, ec);
+		lines[sl].line_text.extractBetween(sc, ec, start);
+		return start;
 	}
 	
-	auto start = lines[sl].line_text.tempSubStringBetween(sc, lines[sl].line_text.length());
-	icu::UnicodeString end;
+	lines[sl].line_text.extractBetween(sc, lines[sl].line_text.length(), start);
 	lines[el].line_text.extractBetween(0, ec, end);
 	
 	std::vector<icu::UnicodeString> ourlines = {start};
@@ -1992,8 +2016,9 @@ icu::UnicodeString TextEdit::getCurrentWord(const icu::UnicodeString& blockText,
 	int wordLength = blockPos - wordStart;
 
 	// Extract substring if length is valid
-	if (wordLength > 0)
-		word = blockText.tempSubStringBetween(wordStart, blockPos);
+	if (wordLength > 0) {
+		blockText.extractBetween(wordStart, blockPos, word);
+	}
 
 	return word;
 }

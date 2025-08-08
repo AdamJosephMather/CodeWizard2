@@ -855,7 +855,6 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 	
 	if (parent == App::activeEditor) {
 		if (key == GLFW_KEY_F5 && is_press && language != "" && file && file->ondisk) {
-			std::cout << "Handled F5 here\n";
 			// at this point we've already tried project build commands
 			auto l = App::languagemap[language];
 			std::cout << "Lang.bc = " << l.build_command << std::endl;

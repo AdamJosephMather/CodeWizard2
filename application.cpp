@@ -1354,7 +1354,6 @@ void App::ext_button() {
 }
 
 void App::moveMouse(int x, int y) {
-	std::cout << "Moving mx " << x << " " << y << std::endl;
 	moveMouseToX = x;
 	moveMouseToY = y;
 }

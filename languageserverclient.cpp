@@ -1048,6 +1048,12 @@ void LanguageServerClient::onServerReadyRead()
 				if (completionReceivedCallback) {
 					completionReceivedCallback(completions, id);
 				}
+				
+				for (auto w : connected_edits) {
+					if (auto ce = dynamic_cast<CodeEdit*>(w)) {
+						ce->completionRecieved(completions, id);
+					}
+				}
 			}
 			continue;
 		}
@@ -1056,6 +1062,10 @@ void LanguageServerClient::onServerReadyRead()
 
 void LanguageServerClient::sendMessage(const json &message)
 {
+	std::string from = "CodeWizard";
+	std::string tosend = message.dump();
+	App::rootelement->lspmessage(from, tosend);
+	
 	std::thread writer([this, message]() {
 		std::lock_guard<std::mutex> lk(writeMutex);
 		
@@ -1114,6 +1124,10 @@ json LanguageServerClient::readMessage()
 
 		try {
 			json doc = json::parse(part1);
+			
+			std::string from = "LanguageServer";
+			App::rootelement->lspmessage(from, part1);
+			
 			return doc;
 		} catch (const json::parse_error&) {
 			// Continue processing
@@ -1128,6 +1142,10 @@ json LanguageServerClient::readMessage()
 
 		try {
 			json doc = json::parse(part1);
+			
+			std::string from = "LanguageServer";
+			App::rootelement->lspmessage(from, part1);
+			
 			return doc;
 		} catch (const json::parse_error&) {
 			// Continue processing
@@ -1136,6 +1154,10 @@ json LanguageServerClient::readMessage()
 
 	try {
 		json doc = json::parse(currentExecution);
+		
+		std::string from = "LanguageServer";
+		App::rootelement->lspmessage(from, currentExecution);
+		
 		currentExecution = "";
 		return doc;
 	} catch (const json::parse_error&) {

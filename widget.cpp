@@ -207,3 +207,9 @@ Widget* Widget::getFirstEditor() {
 	}
 	return nullptr;
 }
+
+void Widget::lspmessage(std::string& from, std::string& message) {
+	for (auto c : children) {
+		c->lspmessage(from, message);
+	}
+}

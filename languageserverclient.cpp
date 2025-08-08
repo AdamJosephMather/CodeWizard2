@@ -1062,10 +1062,6 @@ void LanguageServerClient::onServerReadyRead()
 
 void LanguageServerClient::sendMessage(const json &message)
 {
-	std::string from = "CodeWizard";
-	std::string tosend = message.dump();
-	App::rootelement->lspmessage(from, tosend);
-	
 	std::thread writer([this, message]() {
 		std::lock_guard<std::mutex> lk(writeMutex);
 		
@@ -1076,6 +1072,11 @@ void LanguageServerClient::sendMessage(const json &message)
 
 	// Detach so we don’t have to join later
 	writer.detach();
+	
+	//				 "LanguageServer"
+	std::string from = "CodeWizard    ";
+	std::string tosend = message.dump();
+	App::rootelement->lspmessage(from, tosend);
 }
 
 void LanguageServerClient::changeFolder(const std::string& oldUri, const std::string& newUri)

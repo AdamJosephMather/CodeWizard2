@@ -6,16 +6,17 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <memory>
 #include <set>
 #include <regex>
+#include <cstdint>
 
 #define ONIG_ESCAPE_UCHAR_COLLISION
 #include <oniguruma.h>
 #undef ONIG_ESCAPE_UCHAR_COLLISION
 
 #include <unicode/unistr.h>
-
 #include "json.hpp"
 
 struct Rule;
@@ -37,6 +38,9 @@ struct ContextFrame {
 	int64_t hash = 0;
 	int start_char = 0;
 	bool started_here = true;
+
+	// NEW: tells us we must free endReg when this frame is popped
+	bool owns_end_regex = false;
 };
 
 struct RegexSegment {
@@ -66,6 +70,9 @@ struct Rule {
 	bool needsInsertIntoEndRegex = false;
 	std::vector<RegexSegment> uncompiledEndReg;
 	std::map<int, Capture> whileCaptures;
+
+	// NEW: ensure compiled regexes are freed with the rule graph
+	~Rule();
 };
 
 struct TextMateInfo {
@@ -106,7 +113,7 @@ struct Match {
 	int index;
 	int length;
 	std::shared_ptr<Rule> rule;
-	
+
 	bool is_end_of_segment;
 	std::vector<Captured> captured;
 	OnigRegion* region;
@@ -114,38 +121,43 @@ struct Match {
 
 class Highlighter {
 public:
-	Highlighter()  = default;
+	Highlighter() = default;
 	~Highlighter();
-	
+
 	bool loadGrammarFile(const std::string& path);
-	
 	LineResult highlightLine(icu::UnicodeString input_string, TextMateInfo currentInfo);
-	
 	TextMateInfo getDefaultLineInfo();
 	std::string scopeName = "";
 
 private:
 	int chooseColorByScopes(std::string scopes, int def_col);
-	
+
 	int INCLUDE = 0;
 	int RANGE = 1;
 	int MATCH = 2;
 	int GROUP = 3;
-	
+
 	std::unordered_map<std::string, std::shared_ptr<Rule>> repository;
 	std::vector<std::shared_ptr<Rule>> activePatterns = {};
 	ContextFrame root;
 	std::shared_ptr<Rule> self;
-	
+
+	// --- compilation / parsing helpers ---
 	std::shared_ptr<Rule> compileRule(const nlohmann::json& r);
 	Capture compileCapture(const nlohmann::json& j);
 	RegexInfo* compileRegex(std::string patternStr);
-	
+
 	bool alreadyFoundPattern(std::shared_ptr<Rule> pattern);
 	void fetchAllPatterns(const std::vector<std::shared_ptr<Rule>>& patterns);
 	Match findEarliestPattern(std::string line, ContextFrame current, int handledUpTo, bool checkwhile, bool on_start);
 	std::pair<std::vector<Token>,TextMateInfo> analizeSection(std::string section, TextMateInfo currentInfo, bool checkwhile);
-	
+
 	bool needsDelimiter(const std::string &pat);
 	std::vector<RegexSegment> parseRegexSegments(const std::string &pattern);
+
+	// --- NEW: pattern‑set caching (perf) ---
+	std::unordered_map<int64_t, std::vector<std::shared_ptr<Rule>>> patternCache;
+	std::vector<std::shared_ptr<Rule>> getActivePatternsFor(const ContextFrame& ctx);
+	static uint64_t hashPatternPointers(const std::vector<std::shared_ptr<Rule>>& patterns);
+	std::vector<std::shared_ptr<Rule>> flattenPatterns(const std::vector<std::shared_ptr<Rule>>& patterns);
 };

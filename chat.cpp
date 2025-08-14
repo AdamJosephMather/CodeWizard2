@@ -2,7 +2,7 @@
 #include "application.h"
 #include "text_renderer.h"
 #include "curler.h"
-dsa
+
 Chat::Chat(Widget *parent) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Chat");
 	
@@ -11,7 +11,6 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 }
 
 void Chat::request_close(close_callback_type callback) {
-	
 	Widget::request_close(callback);
 }
 

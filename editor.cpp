@@ -23,6 +23,8 @@ Editor::Editor(Widget* parent) : Widget(parent) {
 	};
 	
 	tab_bar->erasing_tab = [&](TabInfo info){
+		std::lock_guard<std::mutex> lock(App::canMakeChanges);
+		
 		auto it = editors.find(info.id);
 		if (it != editors.end()) {
 			it->second->request_close([&](Widget* w){ // wait for it to delete itself

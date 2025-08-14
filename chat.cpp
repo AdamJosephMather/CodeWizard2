@@ -2,7 +2,7 @@
 #include "application.h"
 #include "text_renderer.h"
 #include "curler.h"
-
+dsa
 Chat::Chat(Widget *parent) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Chat");
 	

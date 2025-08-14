@@ -1,4 +1,5 @@
 #include <GL/glew.h>
+#include <curl/curl.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -27,6 +28,8 @@ void setSynColor(Theme* t, std::string name, int id) {
 }
 
 int main(int argc, char* argv[]) {
+	curl_global_init(CURL_GLOBAL_DEFAULT);
+	
 	App::Init();
 	
 	Theme theme;
@@ -181,6 +184,8 @@ int main(int argc, char* argv[]) {
 	}
 	
 	App::Run();
+	
+	curl_global_cleanup();
 	
 	return 0;
 }

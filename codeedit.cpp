@@ -1191,19 +1191,29 @@ bool CodeEdit::on_mouse_move_event() {
 				}
 			}
 			
-			hov_last_line = crsr.head_line;
-			hov_last_char = crsr.head_char;
+			last_mouse_x = mx;
+			last_mouse_y = my;
 			
-			std::thread([&]() {
+			if (hoverthread.joinable()) {
+				closehoverthread = true;
+				hoverthread.join();
+				closehoverthread = false;
+			}
+			
+			hoverthread = std::thread([&]() {
 				if (!lsp_client) {
 					return;
 				}
 				
-				std::this_thread::sleep_for(std::chrono::milliseconds(1200));
-				
-				if (!lsp_client) { // in case this changed in the _._ seconds
-					return;
+				for (int i = 0; i < 30; i++){
+					std::this_thread::sleep_for(std::chrono::milliseconds(10));
+					if (closehoverthread || closing) {
+						return;
+					}
 				}
+				
+				// in case this changed in the _._ seconds
+				if (!lsp_client) { return; }
 				
 				int mx = App::mouseX;
 				int my = App::mouseY;
@@ -1213,16 +1223,12 @@ bool CodeEdit::on_mouse_move_event() {
 				
 				if (!gottoit) { return; }
 				
-				if (hov_last_char != crsr.head_char || hov_last_line != crsr.head_line) {
-					return;
-				}
-				
-				hoverCrsr.head_char = hov_last_char;
-				hoverCrsr.head_line = hov_last_line;
+				hoverCrsr.head_char = crsr.head_char;
+				hoverCrsr.head_line = crsr.head_line;
 				
 				should_move_mouse_hover = false;
 				hover_id = lsp_client->requestHover(file->filepath, crsr.head_line, crsr.head_char);
-			}).detach(); // Detach the thread so it runs independently
+			});
 		}
 		
 		if (hoverbox->parent == this && !hoveringHoverbox(mx, my, TextRenderer::get_text_height())) {
@@ -1804,6 +1810,11 @@ void CodeEdit::request_close(close_callback_type callback) {
 	App::MoveWidget(hoverbox, this);
 	
 	delete highlighter;
+	
+	if (hoverthread.joinable()) {
+		closehoverthread = true;
+		hoverthread.join();
+	}
 	
 	Widget::request_close(callback);
 }

@@ -459,7 +459,7 @@ void LanguageServerClient::initialize(const std::string &rootUri)
 						{"callArgumentNames", "off"}
 					}},
 					{"memory", {
-						{"keepLibraryAst", true}
+						{"keepLibraryAst", false}
 					}}
 				}}
 			}}

@@ -98,7 +98,6 @@ std::string Curler::run_curl(std::string url, std::string json, const std::strin
 	std::string readBuffer = "";
 	worked = false;
 
-	curl_global_init(CURL_GLOBAL_DEFAULT);
 	curl = curl_easy_init();
 	if(curl) {
 		struct curl_slist *headers = NULL;
@@ -132,8 +131,6 @@ std::string Curler::run_curl(std::string url, std::string json, const std::strin
 		curl_easy_cleanup(curl);
 		curl_slist_free_all(headers);
 	}
-
-	curl_global_cleanup();
 
 	return readBuffer;
 }

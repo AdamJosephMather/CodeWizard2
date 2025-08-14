@@ -10,6 +10,11 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 //	querybox->background_color = App::theme.extras_background_color;
 }
 
+void Chat::request_close(close_callback_type callback) {
+	
+	Widget::request_close(callback);
+}
+
 void Chat::position(int x, int y, int width, int height) {
 	t_w = width;
 	t_h = height;

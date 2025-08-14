@@ -22,6 +22,8 @@ public:
 	bool on_scroll_event(double xchange, double ychange);
 	bool on_key_event(int key, int scancode, int action, int mods);
 	
+	void request_close(close_callback_type callback);
+	
 	double scrolled_to = 0;
 	int min_scroll = 0;
 	

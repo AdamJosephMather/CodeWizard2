@@ -51,6 +51,9 @@ public:
 	
 	Highlighter* highlighter = nullptr;
 	
+	std::thread hoverthread;
+	bool closehoverthread = false;
+	
 	static int indentIdentifierAfterLine(icu::UnicodeString line, icu::UnicodeString nextline);
 	
 	int completion_id = -1;
@@ -75,8 +78,8 @@ public:
 	bool on_scroll_event(double xchange, double ychange);
 	
 	bool hoveringHoverbox(int mx, int my, int padding = 0);
-	int hov_last_line = -1;
-	int hov_last_char = -1;
+	int last_mouse_x = -1;
+	int last_mouse_y = -1;
 	
 	FileInfo* file = nullptr;
 	std::string language = "";

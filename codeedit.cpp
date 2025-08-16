@@ -192,6 +192,38 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	textedit->getIndentationLevelAfterLine = indentIdentifierAfterLine;
 	
 	line_numbers->setTextedit(textedit);
+	
+	hoverthread = std::thread([&]() {
+		while (true){
+			if (closing) {
+				return;
+			}
+			
+			if (timeuntil <= 0) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			}else{
+				timeuntil -= 20;
+				if (timeuntil <= 0) {
+					if (!lsp_client) { continue; }
+					
+					int mx = App::mouseX;
+					int my = App::mouseY;
+					
+					bool gottoit = false;
+					Cursor crsr = textedit->getCursorForMousePosition(mx, my, &gottoit);
+					
+					if (!gottoit) { continue; }
+					
+					hoverCrsr.head_char = crsr.head_char;
+					hoverCrsr.head_line = crsr.head_line;
+					
+					should_move_mouse_hover = false;
+					hover_id = lsp_client->requestHover(file->filepath, crsr.head_line, crsr.head_char);
+				}
+				std::this_thread::sleep_for(std::chrono::milliseconds(20));
+			}
+		}
+	});
 }
 
 void CodeEdit::showhideerrors() {
@@ -1194,41 +1226,7 @@ bool CodeEdit::on_mouse_move_event() {
 			last_mouse_x = mx;
 			last_mouse_y = my;
 			
-			if (hoverthread.joinable()) {
-				closehoverthread = true;
-				hoverthread.join();
-				closehoverthread = false;
-			}
-			
-			hoverthread = std::thread([&]() {
-				if (!lsp_client) {
-					return;
-				}
-				
-				for (int i = 0; i < 30; i++){
-					std::this_thread::sleep_for(std::chrono::milliseconds(10));
-					if (closehoverthread || closing) {
-						return;
-					}
-				}
-				
-				// in case this changed in the _._ seconds
-				if (!lsp_client) { return; }
-				
-				int mx = App::mouseX;
-				int my = App::mouseY;
-				
-				bool gottoit = false;
-				Cursor crsr = textedit->getCursorForMousePosition(mx, my, &gottoit);
-				
-				if (!gottoit) { return; }
-				
-				hoverCrsr.head_char = crsr.head_char;
-				hoverCrsr.head_line = crsr.head_line;
-				
-				should_move_mouse_hover = false;
-				hover_id = lsp_client->requestHover(file->filepath, crsr.head_line, crsr.head_char);
-			});
+			timeuntil = 400;
 		}
 		
 		if (hoverbox->parent == this && !hoveringHoverbox(mx, my, TextRenderer::get_text_height())) {
@@ -1811,10 +1809,11 @@ void CodeEdit::request_close(close_callback_type callback) {
 	
 	delete highlighter;
 	
+	closing = true;
 	if (hoverthread.joinable()) {
-		closehoverthread = true;
 		hoverthread.join();
 	}
+	closing = false;
 	
 	Widget::request_close(callback);
 }

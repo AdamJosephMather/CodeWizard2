@@ -46,13 +46,14 @@ public:
 	App::PosFunction POS_FUNC = nullptr;
 	App::UpdateFInfoFunction FUPDATER = nullptr;
 	
+	int timeuntil = -1;
+	
 	TextEdit* textedit;
 	LineNumbers* line_numbers;
 	
 	Highlighter* highlighter = nullptr;
 	
 	std::thread hoverthread;
-	bool closehoverthread = false;
 	
 	static int indentIdentifierAfterLine(icu::UnicodeString line, icu::UnicodeString nextline);
 	

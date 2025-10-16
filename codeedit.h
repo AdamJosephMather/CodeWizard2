@@ -103,6 +103,7 @@ public:
 	void save();
 	
 	std::shared_ptr<icu::UnicodeString> lastsaved = nullptr;
+	boolean was_in_a_file = false;
 	
 	bool FILE_BROKEN_STATE = false;
 	BrokenStateMenu* broken_state_menu = nullptr;

@@ -1069,6 +1069,7 @@ bool TextEdit::handleInsertKey(int key, int scancode, int action, int mods) {
 			applyInsertToAllCursors(run_fixit_on_text(icu::UnicodeString::fromUTF8(clipboard_text)));
 		}
 		donesomthing = true;
+		tryingToEnsureCursorPos = true;
 	}else if (key == GLFW_KEY_C && (is_control_held || mode == 'n')) {
 		if (cursors.size() > 1) {
 			coppiedText.clear();

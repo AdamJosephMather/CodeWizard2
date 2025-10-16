@@ -364,6 +364,7 @@ int CodeEdit::analyzeForFixit_on_lines(const std::vector<Line>& lines) {
 }
 
 void CodeEdit::openFile() {
+	was_in_a_file = true;
 	std::unique_lock<std::mutex> lock(App::canMakeChanges, std::try_to_lock);
 	
 	REQUESTING_FIXIT = false;
@@ -602,6 +603,7 @@ void CodeEdit::triggerSaveAs() {
 		
 		detectLanguage();
 		
+		was_in_a_file = false;
 		save();
 		
 		if (lsp_client){
@@ -619,6 +621,7 @@ void CodeEdit::overwrite_file() {
 	App::RemoveWidgetFromParent(broken_state_menu);
 	
 	lastsaved = nullptr;
+	was_in_a_file = false;
 	save();
 }
 void CodeEdit::reload_file() {
@@ -641,6 +644,8 @@ void CodeEdit::save() {
 			icu::UnicodeString existingcontent = App::readFileToUnicodeString(filepath, worked);
 			
 			if (worked) {
+				was_in_a_file = true;
+				
 				if (existingcontent != *lastsaved) {
 					FILE_BROKEN_STATE = true;
 					return;
@@ -651,6 +656,11 @@ void CodeEdit::save() {
 					}
 					return;
 				}
+			}else if (was_in_a_file) {
+				// time to start to work here
+				// the file did exist, but no longer does
+				FILE_BROKEN_STATE = true;
+				return;
 			}
 		}
 		
@@ -674,6 +684,8 @@ void CodeEdit::save() {
 				newFileStream.close();
 			}
 		}
+		
+		was_in_a_file = true;
 		
 		lastsaved = std::make_shared<icu::UnicodeString>(content);
 		

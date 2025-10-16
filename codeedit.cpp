@@ -385,10 +385,6 @@ void CodeEdit::openFile() {
 	icu::UnicodeString text = App::readFileToUnicodeString(path, worked);
 	
 	if (worked) {
-		if (text.length() == 0) {
-			text = icu::UnicodeString::fromUTF8("Detected **empty** file.\nPath: "+path+"\nWorked: "+std::to_string(worked));
-		}
-		
 		textedit->setFullText(text);
 		lastsaved = std::make_shared<icu::UnicodeString>(text);
 		int indt = analyzeForFixit_on_lines(textedit->lines);
@@ -402,7 +398,7 @@ void CodeEdit::openFile() {
 			text.toUTF8String(str);
 			lsp_client->openDocument(file->filepath, App::languagemap[language].name, str);
 		}
-	} else {
+	}else {
 		file = nullptr;
 		textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: "+path));
 		lastsaved = nullptr;

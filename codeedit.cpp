@@ -375,6 +375,13 @@ void CodeEdit::openFile() {
 	
 	detectLanguage();
 	
+	if (!fileExists(path)) {
+		file = nullptr;
+		textedit->setFullText(icu::UnicodeString::fromUTF8("File does not exist: "+path));
+		lastsaved = nullptr;
+		return;
+	}
+	
 	if (isBinaryFile(path)){
 		file = nullptr;
 		textedit->setFullText(icu::UnicodeString::fromUTF8("File detected as binary file: "+path+"\nDID NOT OPEN"));

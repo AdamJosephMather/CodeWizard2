@@ -551,6 +551,10 @@ static std::string trim(const std::string& s) {
 	return s.substr(b, e - b);
 }
 
+static bool fileExists(const std::string& path) {
+	std::ifstream test(path.c_str());
+	return test.good();
+}
 
 static bool isBinaryFile(const std::string& path) {
 	std::ifstream file(path, std::ios::binary);

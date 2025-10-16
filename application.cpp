@@ -830,11 +830,21 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		setActiveLeafNode(commandPalette);
 		return;
 	}else if (action == GLFW_PRESS && key == GLFW_KEY_U && control && shift) {
+		icu::UnicodeString selectedStr = icu::UnicodeString::fromUTF8("");
+		if (auto te = dynamic_cast<TextEdit*>(activeLeafNode)) {
+			selectedStr = te->getSelectedText(te->cursors[0]);
+		}
+		
 		setActiveLeafNode(commandPalette);
 		auto cp = dynamic_cast<TextEdit*>(commandPalette);
 		cp->setFullText("&");
 		cp->cursors = { {0, 1, 0, 1, 1} };
 		cp->mode = 'i';
+		
+		if (selectedStr.length() != 0) {
+			cp->insertTextAtCursor(cp->cursors[0], selectedStr);
+		}
+		
 		return;
 	}
 	

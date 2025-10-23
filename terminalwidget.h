@@ -10,6 +10,8 @@ public:
 	
 	TerminalWidget(Widget* parent);
 	
+	Widget* findTerminal();
+	
 	bool settingup = true;
 	
 	int prev_w_cells = 0;
@@ -18,6 +20,8 @@ public:
 	void position(int x, int y, int w, int h);
 	void render();
 	void request_close(close_callback_type callback);
+	
+	void runCommand(std::string command);
 	
 	virtual bool on_key_event(int key, int scancode, int action, int mods);
 	virtual bool on_char_event(unsigned int keycode);

@@ -31,6 +31,17 @@ void TerminalWidget::request_close(close_callback_type callback) {
 	Widget::request_close(callback);
 }
 
+Widget* TerminalWidget::findTerminal() {
+	return this;
+}
+
+void TerminalWidget::runCommand(std::string command) {
+	term->sendCtrl('c');
+	term->sendCtrl('c');
+	term->sendText(command);
+	term->sendEnter();
+}
+
 void TerminalWidget::position(int x, int y, int w, int h) {
 	t_x = x;
 	t_y = y;
@@ -146,7 +157,7 @@ inline void TerminalWidget::cell_from_cursor(int& row, int& col) {
 static bool s_dragging = false;
 
 bool TerminalWidget::on_key_event(int key, int /*scancode*/, int action, int mods) {
-	if (!is_visible) { return false; }
+	if (!is_visible || App::activeLeafNode != this) { return false; }
 	
 	if (!term || settingup) return false;
 	if (action != GLFW_PRESS && action != GLFW_REPEAT) return false;
@@ -182,11 +193,7 @@ bool TerminalWidget::on_key_event(int key, int /*scancode*/, int action, int mod
 }
 
 bool TerminalWidget::on_char_event(unsigned int keycode) {
-	if (!is_visible) { return false; }
-	
-	if (App::activeLeafNode != this) {
-		return false;
-	}
+	if (!is_visible || App::activeLeafNode != this) { return false; }
 	
 	if (!term || settingup) return false;
 	// keycode is Unicode codepoint (per GLFW docs)

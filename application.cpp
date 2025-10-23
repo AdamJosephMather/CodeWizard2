@@ -9,6 +9,7 @@
 #include "helper_types.h"
 #include <vector>
 #include "panel_holder.h"
+#include "terminalwidget.h"
 #include "text_renderer.h"
 #include <cmath>
 #include "tinyfiledialogs.h"
@@ -1583,6 +1584,17 @@ icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, boo
 }
 
 void App::launchCommandNonBlocking(const std::string& command) {
+	TerminalWidget* activeTerminal = dynamic_cast<TerminalWidget*>(rootelement->findTerminal());
+	if (activeTerminal != nullptr) {
+		activeTerminal->runCommand(command);
+		if (activeLeafNode != activeTerminal) {
+			setActiveLeafNode(activeTerminal);
+		}
+		return;
+	}
+	
+	
+	
 	// Build the full parameter string: "/k \"your command\""
 	std::string params = "/k \"" + command + "\"";
 

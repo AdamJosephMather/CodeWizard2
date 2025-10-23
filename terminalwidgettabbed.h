@@ -18,5 +18,7 @@ public:
 	
 	void tabinfoclicked(TabInfo info);
 	void createNew();
+	
+	Widget* findTerminal() override;
 private:
 };

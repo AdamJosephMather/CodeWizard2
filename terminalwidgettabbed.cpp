@@ -38,6 +38,10 @@ TerminalWidgetTabbed::TerminalWidgetTabbed(Widget* parent)  : Widget(parent) {
 	createNew();
 }
 
+Widget* TerminalWidgetTabbed::findTerminal() {
+	return terminals[tab_bar->selected_id];
+}
+
 void TerminalWidgetTabbed::position(int x, int y, int w, int h) {
 	t_x = x;
 	t_y = y;

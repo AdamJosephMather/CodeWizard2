@@ -535,6 +535,16 @@ void App::DrawRect(int x, int y, int w, int h, Color* color) {
 	glEnd();
 }
 
+void App::DrawRect(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b) {
+	glColor4f((float)r/255.0f, (float)g/255.0f, (float)b/255.0f, 1.0f);
+	glBegin(GL_QUADS);
+		glVertex2f(x, y); // top-left
+		glVertex2f(x+w, y); // top-right
+		glVertex2f(x+w, y+h); // bottom-right
+		glVertex2f(x, y+h); // bottom-left
+	glEnd();
+}
+
 void App::DoFullRenderWithoutInput() {
 	//framerate
 	

@@ -5,7 +5,6 @@
 #include "settingsmanager.h"
 #include <atomic>
 #include <functional>
-#include <memory>
 
 #ifndef _WIN64
 #define _WIN64
@@ -103,6 +102,7 @@ public:
 	static GLFWwindow* window;
 	
 	static void DrawRect(int x, int y, int w, int h, Color* color);
+	static void DrawRect(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b);
 	static void DrawRoundedRect(float x, float y, float w, float h, float radius, Color* color, int segments = 5);
 	
 	static void setTheme(Theme theme);

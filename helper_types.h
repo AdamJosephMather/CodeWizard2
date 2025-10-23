@@ -644,9 +644,9 @@ static Color stringToColor(std::string s, bool& worked) {
 		}
 	}
 	
-	c.r = (float)(vals[0])/255.0;
-	c.g = (float)(vals[1])/255.0;
-	c.b = (float)(vals[2])/255.0;
+	c.r = (float)(vals[0])/255.0f;
+	c.g = (float)(vals[1])/255.0f;
+	c.b = (float)(vals[2])/255.0f;
 	
 	return c;
 }

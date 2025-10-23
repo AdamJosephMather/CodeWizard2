@@ -29,6 +29,17 @@ public:
 	virtual bool on_mouse_move_event();
 	virtual bool on_scroll_event(double xchange, double ychange);
 	
+	bool selecting = false;
+	int sel_r0 = -1, sel_c0 = -1;   // anchor
+	int sel_r1 = -1, sel_c1 = -1;   // cursor
+	// helpers:
+	static inline void normalize_sel(int& r0,int& c0,int& r1,int& c1) {
+		if (r0 > r1 || (r0 == r1 && c0 > c1)) { std::swap(r0,r1); std::swap(c0,c1); }
+	}
+	bool cell_in_selection(int r, int c) const;
+	std::string selection_text() const;
+	void clear_selection();
+	
 	void run();
 private:
 	void cell_from_cursor(int& row, int& col);

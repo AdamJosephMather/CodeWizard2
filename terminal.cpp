@@ -306,24 +306,38 @@ void Terminal::onDamage(const VTermRect& rect) {
 }
 
 OurCell Terminal::getCell(int row, int col) {
-//	std::cout << "GetCell called: " << row << ", " << col << std::endl;
 	std::lock_guard<std::mutex> lock(m_vtermMutex);
-	
+
 	if (row < 0 || col < 0 || row >= m_rows || col >= m_cols) {
 		return {(UChar32)U'?'};
 	}
-	
+
+	// If scrolled back, draw from scrollback for the top part
+	int from_sb = std::min(m_view_off, static_cast<int>(m_scrollback.size()));
+	if (from_sb > 0 && row < from_sb) {
+		// row maps into the last 'from_sb' lines of scrollback
+		const auto& line = m_scrollback[m_scrollback.size() - from_sb + row];
+		if (col < static_cast<int>(line.size())) {
+			const auto& s = line[col];
+			return s;
+		} else {
+			return { (UChar32)U' ', 0,0,0, 255,255,255 };
+		}
+	}
+
+	// Otherwise, draw from the live screen
+	int live_row = row - from_sb;
 	VTermScreenCell cell{};
-	vterm_screen_get_cell(m_screen, VTermPos{ row, col }, &cell);
+	vterm_screen_get_cell(m_screen, VTermPos{ live_row, col }, &cell);
 	char32_t cp = cell.chars[0] ? static_cast<char32_t>(cell.chars[0]) : U' ';
-	
-	VTermColor fg = cell.fg;
-	vterm_screen_convert_color_to_rgb(m_screen, &fg);
-	VTermColor bg = cell.bg;
-	vterm_screen_convert_color_to_rgb(m_screen, &bg);
-	
-	return { (UChar32)cp, bg.rgb.red, bg.rgb.green, bg.rgb.blue, fg.rgb.red, fg.rgb.green, fg.rgb.blue };
+
+	VTermColor fg = cell.fg; vterm_screen_convert_color_to_rgb(m_screen, &fg);
+	VTermColor bg = cell.bg; vterm_screen_convert_color_to_rgb(m_screen, &bg);
+
+	return { (UChar32)cp, bg.rgb.red, bg.rgb.green, bg.rgb.blue,
+										fg.rgb.red, fg.rgb.green, fg.rgb.blue };
 }
+
 
 void Terminal::dumpRow(int r) {
 	if (!m_screen) return;
@@ -399,7 +413,9 @@ int Terminal::s_screen_movecursor(VTermPos pos, VTermPos /*oldpos*/, int visible
 
 
 int Terminal::s_screen_settermprop(VTermProp prop, VTermValue* val, void* user) {
+	std::cout << "strmprop\n";
 	auto* self = static_cast<Terminal*>(user);
+	std::cout << "huh\n";
 	if (!self || !val) return 0;
 
 	switch (prop) {
@@ -411,15 +427,30 @@ int Terminal::s_screen_settermprop(VTermProp prop, VTermValue* val, void* user) 
 			break;
 		case VTERM_PROP_CURSORSHAPE: {
 			int v = val->number;
-			if (v == 0) v = 1;               // normalize odd 0-based enums
+			if (v == 0) v = 1;
 			if (v < 1 || v > 3) v = 1;
 			self->m_cursorInfo.shape = v;
 			break;
 		}
+#ifdef VTERM_PROP_ALTSCREEN
+		case VTERM_PROP_ALTSCREEN:
+			self->m_altScreen.store(!!val->boolean, std::memory_order_release);
+			break;
+#endif
+#ifdef VTERM_PROP_MOUSE
+		case VTERM_PROP_MOUSE:
+			// val->number is typical; treat non-zero as enabled
+			self->m_mouseReporting.store(val->number != 0, std::memory_order_release);
+			break;
+#endif
 		default: break;
 	}
+	
+	std::cout << "dn\n";
+	
 	return 1;
 }
+
 
 int Terminal::s_screen_bell(void* /*user*/) {
 	// Beep or flash if you want
@@ -427,23 +458,52 @@ int Terminal::s_screen_bell(void* /*user*/) {
 }
 
  int Terminal::s_screen_resize(int rows, int cols, void* user) {
+	std::cout << "s_screen_resize\n";
 	auto* self = static_cast<Terminal*>(user);
 	if (!self) return 1;
 	self->m_rows = rows;
 	self->m_cols = cols;
 	self->m_rowBuf.resize(static_cast<size_t>(cols) + 1, 0);
+	std::cout << "s_screen_resizedone\n";
 	return 1;
 }
 
-int Terminal::s_screen_sb_pushline(int /*cols*/, const VTermScreenCell* /*cells*/, void* /*user*/) {
-	// Scrollback received (line left the top); ignore or capture if you keep your own scrollback
-	return 0;
+int Terminal::s_screen_sb_pushline(int cols, const VTermScreenCell* cells, void* user) {
+	std::cout << "pshln\n";
+	auto* self = static_cast<Terminal*>(user);
+	if (!self) {
+		std::cout << "noself...\n";
+		return 1;
+	}
+//	std::lock_guard<std::mutex> lock(self->m_vtermMutex);
+	std::cout << "1.\n";
+	self->savePushLine(cols, cells);
+	std::cout << "pshlndone\n";
+	return 1; // handled
 }
 
-int Terminal::s_screen_sb_popline(int /*cols*/, VTermScreenCell* /*cells*/, void* /*user*/) {
-	// Provide a line to pop back from scrollback; we don't maintain one, so just say handled
-	return 0;
+int Terminal::s_screen_sb_popline(int cols, VTermScreenCell* cells, void* user) {
+	auto* self = static_cast<Terminal*>(user);
+	if (!self) return 1;
+
+	// IMPORTANT: libvterm expects every cell to be valid if we return 1.
+	// Initialise the whole row to blanks with sane defaults.
+	for (int i = 0; i < cols; ++i) {
+		VTermScreenCell& cell = cells[i];
+		std::memset(&cell, 0, sizeof(cell));
+		cell.width = 1;                        // single-column
+		cell.chars[0] = U' ';                  // space
+		cell.fg.type = VTERM_COLOR_DEFAULT_FG;    // let libvterm decide
+		cell.bg.type = VTERM_COLOR_DEFAULT_BG;
+	}
+
+	// Now try to actually provide a line from our scrollback.
+	bool ok = self->savePopLine(cols, cells);
+
+	// If we had nothing, return 0 so libvterm will fill the row itself.
+	return ok ? 1 : 0;
 }
+
 
 // Pulls everything libvterm wants to send *to the child PTY* and writes it.
 bool Terminal::drainVTermOutputToPty_() {
@@ -499,6 +559,13 @@ static inline int xtermMod(bool shift, bool alt, bool ctrl) {
 }
 
 bool Terminal::sendSpecialKey(SpecialKey key, bool shift, bool alt, bool ctrl) {
+	// If we’re in “emulator scrollback” mode, handle PgUp/PgDn locally
+	if (!appWantsMouse()) {
+		if (key == SpecialKey::PageUp)   { scrollbackPageUp();   VTermRect all{0,m_rows,0,m_cols}; onDamage(all); return true; }
+		if (key == SpecialKey::PageDown) { scrollbackPageDown(); VTermRect all{0,m_rows,0,m_cols}; onDamage(all); return true; }
+		// Home/End could also be mapped to top/bottom if you want
+	}
+
 	std::string seq;
 	int mod = xtermMod(shift, alt, ctrl);
 
@@ -607,19 +674,108 @@ bool Terminal::mouseDrag(int startRow, int startCol, int endRow, int endCol, int
 	return mousePress(endRow, endCol, button, false, shift, alt, ctrl);
 }
 
-bool Terminal::mouseScroll(int row, int col, int lines,
-						   bool shift, bool alt, bool ctrl) {
+bool Terminal::mouseScroll(int /*row*/, int /*col*/, int lines,
+													 bool /*shift*/, bool /*alt*/, bool /*ctrl*/) {
 	if (lines == 0) return true;
-	int n = std::abs(lines);
-	bool up = (lines > 0);
-	// SGR wheel: up=64, down=65 (no release event; always 'M')
-	int wheelCode = (up ? 64 : 65) + sgrMods(shift, alt, ctrl);
-	for (int i = 0; i < n; ++i) {
-		if (!sgrSend(this, wheelCode, row, col, /*press*/true)) return false;
+
+	if (appWantsMouse()) {
+		// Legacy behavior: send to the app
+		int n = std::abs(lines);
+		bool up = (lines > 0);
+		int wheelCode = (up ? 64 : 65); // modifiers omitted; add if needed
+		for (int i = 0; i < n; ++i) {
+			if (!sgrSend(this, wheelCode, /*row*/1, /*col*/1, /*press*/true)) return false;
+		}
+		return true;
 	}
+
+	// Terminal scrollback
+	scrollbackLines(lines);          // positive -> up, negative -> down
+	// Force a redraw: easiest is to mark damage on the whole screen
+	VTermRect all{0, m_rows, 0, m_cols};
+	onDamage(all);
 	return true;
 }
+
 
 CursorInfo Terminal::getCursorInfo() {
 	return m_cursorInfo;
 }
+
+void Terminal::clampView() {
+	if (m_view_off < 0) m_view_off = 0;
+	int maxOff = static_cast<int>(m_scrollback.size());
+	if (m_view_off > maxOff) m_view_off = maxOff;
+}
+
+bool Terminal::appWantsMouse() const {
+	// If the app enabled mouse reporting or is on alt screen, prefer sending wheel to the app
+	return m_mouseReporting.load(std::memory_order_acquire) || m_altScreen.load(std::memory_order_acquire);
+}
+
+void Terminal::savePushLine(int cols, const VTermScreenCell* cells) {
+	std::vector<OurCell> line(cols);
+	for (int i=0;i<cols;i++) {
+		const auto& c = cells[i];
+		OurCell s{};
+		char32_t cp = c.chars[0] ? static_cast<char32_t>(c.chars[0]) : U' ';
+		s.c = static_cast<uint32_t>(cp);
+
+		VTermColor fg = c.fg;
+		VTermColor bg = c.bg;
+		vterm_screen_convert_color_to_rgb(m_screen, &fg);
+		vterm_screen_convert_color_to_rgb(m_screen, &bg);
+
+		s.fg_red = fg.rgb.red;  s.fg_green = fg.rgb.green;  s.fg_blue = fg.rgb.blue;
+		s.bg_red = bg.rgb.red;  s.bg_green = bg.rgb.green;  s.bg_blue = bg.rgb.blue;
+		line[i] = s;
+	}
+
+	m_scrollback.push_back(std::move(line));
+	if (m_scrollback.size() > m_sb_max) {
+		// drop oldest
+		m_scrollback.pop_front();
+	}
+	// If user is scrolled back, maintain visual content by increasing offset up to limit
+	if (m_view_off > 0) {
+		m_view_off++;
+		clampView();
+	}
+}
+
+bool Terminal::savePopLine(int cols, VTermScreenCell* cells) {
+	if (m_scrollback.empty()) return false;
+
+	// Take the most recent line (copy out so pop_back() is safe)
+	const auto line = m_scrollback.back();
+	m_scrollback.pop_back();
+
+	const int n = std::min(cols, static_cast<int>(line.size()));
+	for (int i = 0; i < n; ++i) {
+		const auto s = line[i];
+		VTermScreenCell& cell = cells[i];   // already zero-initialised by caller
+		cell.chars[0] = static_cast<uint32_t>(s.c);
+		cell.chars[1] = 0;
+		cell.width    = 1;                  // we store only single-width glyphs
+		cell.fg.type  = VTERM_COLOR_RGB;
+		cell.fg.rgb.red   = s.fg_red;
+		cell.fg.rgb.green = s.fg_green;
+		cell.fg.rgb.blue  = s.fg_blue;
+		cell.bg.type  = VTERM_COLOR_RGB;
+		cell.bg.rgb.red   = s.bg_red;
+		cell.bg.rgb.green = s.bg_green;
+		cell.bg.rgb.blue  = s.bg_blue;
+	}
+
+	if (m_view_off > 0) { m_view_off--; }
+	return true;
+}
+
+void Terminal::scrollbackLines(int delta) {
+	if (delta == 0) return;
+	m_view_off += delta;
+	clampView();
+}
+
+void Terminal::scrollbackPageUp()   { scrollbackLines(m_rows - 1); }
+void Terminal::scrollbackPageDown() { scrollbackLines(-(m_rows - 1)); }

@@ -7,7 +7,44 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Set the icon file
 set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/resources.rc")
 
-add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_renderer.cpp application.cpp widget.cpp button.cpp titlebar.cpp panel_holder.cpp widgetchooser.cpp editor.cpp filetree.cpp tabs.cpp settings.cpp codeedit.cpp linenumbers.cpp textedit.cpp highlighter.cpp tinyfiledialogs.c brokenstatemenu.cpp checkbox.cpp settingsmanager.cpp languageserverclient.cpp listbox.cpp imageview.cpp compare.cpp curler.cpp toast.cpp chat.cpp label.cpp myrect.cpp lspdebug.cpp )
+if (MSVC)
+	add_compile_options(/wd4244 /wd4305 /wd4267)
+endif()
+
+
+include(FetchContent)
+FetchContent_Declare(
+	libvterm_src
+	GIT_REPOSITORY https://github.com/neovim/libvterm.git
+	GIT_TAG        nvim
+)
+FetchContent_MakeAvailable(libvterm_src)
+
+set(LIBVTERM_DIR ${libvterm_src_SOURCE_DIR})
+add_library(libvterm STATIC
+	${LIBVTERM_DIR}/src/encoding.c
+	${LIBVTERM_DIR}/src/keyboard.c
+	${LIBVTERM_DIR}/src/mouse.c
+	${LIBVTERM_DIR}/src/parser.c
+	${LIBVTERM_DIR}/src/pen.c
+	${LIBVTERM_DIR}/src/screen.c
+	${LIBVTERM_DIR}/src/state.c
+	${LIBVTERM_DIR}/src/unicode.c
+	${LIBVTERM_DIR}/src/vterm.c
+)
+
+set_property(TARGET libvterm PROPERTY C_STANDARD 99)
+target_include_directories(libvterm PUBLIC
+	${LIBVTERM_DIR}/include
+	${LIBVTERM_DIR}/src           # headers live here too (vterm_internal.h, utf8.h, rect.h)
+)
+
+# Windows needs these for ConPTY APIs
+add_definitions(-D_WIN32_WINNT=0x0A00 -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE)
+
+
+add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_renderer.cpp application.cpp widget.cpp button.cpp titlebar.cpp panel_holder.cpp widgetchooser.cpp editor.cpp filetree.cpp tabs.cpp settings.cpp codeedit.cpp linenumbers.cpp textedit.cpp highlighter.cpp tinyfiledialogs.c brokenstatemenu.cpp checkbox.cpp settingsmanager.cpp languageserverclient.cpp listbox.cpp imageview.cpp compare.cpp curler.cpp toast.cpp chat.cpp label.cpp myrect.cpp lspdebug.cpp terminal.cpp terminalwidget.cpp )
+
 
 # Use vcpkg-provided GLFW and ICU
 find_package(glfw3 CONFIG REQUIRED)
@@ -24,6 +61,7 @@ target_link_libraries(${PROJECT_NAME}
 	ICU::data          # ICU data blobs (formerly icudata)
 	Freetype::Freetype
 	CURL::libcurl
+	libvterm
 )
 
 find_library(ONIG_LIB
@@ -45,8 +83,8 @@ target_link_libraries(${PROJECT_NAME}
 	dwmapi
 )
 
-if (MSVC)
-	set_target_properties(${PROJECT_NAME} PROPERTIES
-	WIN32_EXECUTABLE TRUE
-	)
-endif()
+# if (MSVC)
+# 	set_target_properties(${PROJECT_NAME} PROPERTIES
+# 		WIN32_EXECUTABLE TRUE
+# 	)
+# endif()

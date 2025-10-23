@@ -13,11 +13,7 @@
 #include <poll.h>
 #endif
 
-#include <iostream>
-#include <sstream>
 #include <algorithm>
-#include <chrono>
-#include <fstream>
 
 // Global variables (keeping same structure as original)
 std::string langID;
@@ -31,6 +27,33 @@ int shutdownId = -999;
 bool alreadyDoneShutdownLoop = false;
 bool failedToStart = false;
 int initializeRequestId = -999;
+
+// 1) helpers at top of the .cpp
+static std::wstring Utf8ToWide(const std::string& s) {
+	if (s.empty()) return {};
+	int n = MultiByteToWideChar(CP_UTF8, 0, s.data(), (int)s.size(), nullptr, 0);
+	std::wstring w(n, L'\0');
+	MultiByteToWideChar(CP_UTF8, 0, s.data(), (int)s.size(), w.data(), n);
+	return w;
+}
+
+static std::wstring QuoteIfNeeded(const std::wstring& s) {
+	if (s.empty()) return L"\"\"";
+	bool need = s.find_first_of(L" \t\"") != std::wstring::npos;
+	if (!need) return s;
+	std::wstring out; out.reserve(s.size()+2);
+	out.push_back(L'"');
+	for (wchar_t ch : s) {
+		if (ch == L'"') out += L"\\\"";
+		else out.push_back(ch);
+	}
+	out.push_back(L'"');
+	return out;
+}
+
+// 2) in ProcessImpl (types already map to W with UNICODE, so keep them)
+PROCESS_INFORMATION piProcInfo{};
+STARTUPINFOW siStartInfo{};   // <-- ensure W
 
 // Process implementation
 class Process::ProcessImpl {
@@ -83,39 +106,51 @@ bool Process::start(const std::string& program, const std::vector<std::string>& 
 	SetHandleInformation(impl->hChildStdInWr, HANDLE_FLAG_INHERIT, 0);
 
 	ZeroMemory(&impl->piProcInfo, sizeof(PROCESS_INFORMATION));
-	ZeroMemory(&impl->siStartInfo, sizeof(STARTUPINFO));
-	impl->siStartInfo.cb = sizeof(STARTUPINFO);
-	impl->siStartInfo.hStdError = impl->hChildStdOutWr;
+	ZeroMemory(&impl->siStartInfo, sizeof(STARTUPINFOW));
+	impl->siStartInfo.cb = sizeof(STARTUPINFOW);
+	impl->siStartInfo.hStdError  = impl->hChildStdOutWr;
 	impl->siStartInfo.hStdOutput = impl->hChildStdOutWr;
-	impl->siStartInfo.hStdInput = impl->hChildStdInRd;
-	impl->siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
-
-	std::string cmdLine = program;
-	for (const auto& arg : arguments) {
-		cmdLine += " " + arg;
+	impl->siStartInfo.hStdInput  = impl->hChildStdInRd;
+	impl->siStartInfo.dwFlags   |= STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+	impl->siStartInfo.wShowWindow = SW_HIDE;
+	
+	// Build a PROPER, WRITABLE wide command-line buffer with quoting
+	std::wstring cmdW = QuoteIfNeeded(Utf8ToWide(program));
+	for (const auto& a : arguments) {
+		cmdW.push_back(L' ');
+		cmdW += QuoteIfNeeded(Utf8ToWide(a));
 	}
-
-	// Before CreateProcess, add:
-	impl->siStartInfo.dwFlags |= STARTF_USESTDHANDLES  // you already have this
-						   |  STARTF_USESHOWWINDOW;    // add this
-	impl->siStartInfo.wShowWindow = SW_HIDE;           // hide any window
+	std::vector<wchar_t> cmdBuf(cmdW.begin(), cmdW.end());
+	cmdBuf.push_back(L'\0');
 	
-	DWORD creationFlags = CREATE_NO_WINDOW;             // suppress console window
+	DWORD creationFlags = CREATE_NO_WINDOW;
 	
-	if (!CreateProcess(
-			nullptr,
-			const_cast<char*>(cmdLine.c_str()),
-			nullptr, nullptr,
-			TRUE,
-			creationFlags,            // use CREATE_NO_WINDOW here
-			nullptr, nullptr,
-			&impl->siStartInfo,
-			&impl->piProcInfo))
-	{
-		impl->errorStr = "Failed to create process";
+	// Only the child-ends must be inheritable.
+	// (You already cleared inheritance on the parent-ends above; good.)
+	BOOL ok = CreateProcessW(
+		/*lpApplicationName*/ nullptr,          // we’re using the parsed command line
+		/*lpCommandLine    */ cmdBuf.data(),    // MUST be mutable
+		/*proc attrs       */ nullptr,
+		/*thread attrs     */ nullptr,
+		/*inherit handles  */ TRUE,             // we want the child to inherit our pipe ends
+		/*creation flags   */ creationFlags,
+		/*environment      */ nullptr,
+		/*current dir      */ nullptr,
+		/*startup info     */ &impl->siStartInfo,
+		/*process info     */ &impl->piProcInfo);
+	
+	if (!ok) {
+		DWORD err = GetLastError();
+		wchar_t* msg = nullptr;
+		FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+					   nullptr, err, 0, (LPWSTR)&msg, 0, nullptr);
+		std::wstring w = L"CreateProcessW failed: " + std::to_wstring(err) + L" ";
+		if (msg) { w += msg; LocalFree(msg); }
+		std::string u8 = std::string(w.begin(), w.end());
+		impl->errorStr = u8;
 		return false;
 	}
-
+	
 	CloseHandle(impl->hChildStdOutWr);
 	CloseHandle(impl->hChildStdInRd);
 	impl->running = true;

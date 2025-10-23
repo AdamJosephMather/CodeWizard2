@@ -5,8 +5,6 @@
 
 TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Terminal");
-	
-	std::thread([&]() { run(); }).detach();
 }
 
 void TerminalWidget::run() {
@@ -36,6 +34,18 @@ Widget* TerminalWidget::findTerminal() {
 }
 
 void TerminalWidget::runCommand(std::string command) {
+	if (term == nullptr) {
+		std::thread([&]() {
+			run();
+			
+			term->sendCtrl('c');
+			term->sendCtrl('c');
+			term->sendText(command);
+			term->sendEnter();
+		}).detach();
+		return;
+	}
+	
 	term->sendCtrl('c');
 	term->sendCtrl('c');
 	term->sendText(command);
@@ -51,6 +61,7 @@ void TerminalWidget::position(int x, int y, int w, int h) {
 	Widget::position(x, y, w, h);
 	
 	if (term == nullptr) {
+		std::thread([&]() { run(); }).detach();
 		return;
 	}
 	
@@ -66,12 +77,20 @@ void TerminalWidget::position(int x, int y, int w, int h) {
 
 void TerminalWidget::render() {
 	if (!is_visible) { return; }
-	
 	if (term == nullptr || settingup) {
 		return;
 	}
 	
+	int row_to_use = (prev_h_cells/2);
+	int col_to_use = (prev_w_cells/2);
+	
+	OurCell bgcell = term->getCell(row_to_use, col_to_use);
+	uint8_t bgr = bgcell.bg_red;
+	uint8_t bgg = bgcell.bg_green;
+	uint8_t bbg = bgcell.bg_blue;
+	
 	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
+	App::DrawRect(t_x+App::text_padding, t_y+App::text_padding, TextRenderer::get_text_width(prev_w_cells), prev_h_cells*TextRenderer::get_text_height(), bgr, bgg, bbg);
 	
 	UChar32 empty = U' ';
 	
@@ -84,6 +103,10 @@ void TerminalWidget::render() {
 			
 			int x = t_x+App::text_padding+TextRenderer::get_text_width(c);
 			int y = t_y+App::text_padding+TextRenderer::get_text_height()*r;
+			
+			if (cell.bg_red != bgr || cell.bg_green != bgg || cell.bg_blue != bbg) {
+				App::DrawRect(x, y, TextRenderer::get_text_width(1), TextRenderer::get_text_height(), cell.bg_red, cell.bg_green, cell.bg_blue);
+			}
 			
 			if (ci.row == r && ci.col == c && ci.visible) {
 				if (ci.shape == 1) { // block

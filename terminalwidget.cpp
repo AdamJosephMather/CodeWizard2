@@ -104,9 +104,18 @@ void TerminalWidget::render() {
 			int x = t_x+App::text_padding+TextRenderer::get_text_width(c);
 			int y = t_y+App::text_padding+TextRenderer::get_text_height()*r;
 			
-			if (cell.bg_red != bgr || cell.bg_green != bgg || cell.bg_blue != bbg) {
+			// inside the (r,c) loop, after computing x,y and before drawing text
+			bool show_local_sel = !term->appWantsMouse();
+			if (show_local_sel && cell_in_selection(r, c)) {
+				App::DrawRect(x, y, TextRenderer::get_text_width(1), TextRenderer::get_text_height(), App::theme.main_text_color);
+				
+				cell.fg_red = 255-cell.fg_red;
+				cell.fg_green = 255-cell.fg_green;
+				cell.fg_blue = 255-cell.fg_blue;
+			}else if (cell.bg_red != bgr || cell.bg_green != bgg || cell.bg_blue != bbg) {
 				App::DrawRect(x, y, TextRenderer::get_text_width(1), TextRenderer::get_text_height(), cell.bg_red, cell.bg_green, cell.bg_blue);
 			}
+			
 			
 			if (ci.row == r && ci.col == c && ci.visible) {
 				if (ci.shape == 1) { // block
@@ -187,7 +196,23 @@ bool TerminalWidget::on_key_event(int key, int /*scancode*/, int action, int mod
 
 	bool shift=false, alt=false, ctrl=false;
 	mods_to_bools(mods, shift, alt, ctrl);
-
+	
+	if (ctrl && key == GLFW_KEY_C) {
+		if (!term->appWantsMouse()) {
+			std::string txt = selection_text();
+			if (!txt.empty()) {
+				SetClipboardText(txt.c_str());
+				clear_selection();
+				return true;
+			}
+		}
+	}
+	
+	Terminal::SpecialKey sk;
+	if (ctrl && key >= GLFW_KEY_A && key <= GLFW_KEY_Z || key == GLFW_KEY_ESCAPE || map_special_key(key, sk)) {
+		clear_selection();
+	}
+	
 	// Enter / Backspace / Tab / Escape
 	if (key == GLFW_KEY_ENTER || key == GLFW_KEY_KP_ENTER) {
 		return term->sendEnter();
@@ -197,8 +222,10 @@ bool TerminalWidget::on_key_event(int key, int /*scancode*/, int action, int mod
 		return term->sendText("\t");
 	} else if (key == GLFW_KEY_ESCAPE) {
 		return term->sendText("\x1b");
+	} else if (key == GLFW_KEY_V && ctrl) {
+		return term->sendText(GetClipboardText());
 	}
-
+	
 	// Ctrl+Letter (ASCII control)
 	if (ctrl && key >= GLFW_KEY_A && key <= GLFW_KEY_Z) {
 		char letter = static_cast<char>('A' + (key - GLFW_KEY_A));
@@ -206,7 +233,7 @@ bool TerminalWidget::on_key_event(int key, int /*scancode*/, int action, int mod
 	}
 
 	// Special keys (arrows, Home/End, PgUp/PgDn, F-keys) with modifiers
-	Terminal::SpecialKey sk;
+	
 	if (map_special_key(key, sk)) {
 		return term->sendSpecialKey(sk, shift, alt, ctrl);
 	}
@@ -249,47 +276,66 @@ bool TerminalWidget::on_char_event(unsigned int keycode) {
 }
 
 bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
-	if (!is_visible) { return false; }
-	
-	if (!term || settingup) return false;
+	if (!is_visible || !term || settingup) return false;
 
 	bool shift=false, alt=false, ctrl=false;
 	mods_to_bools(mods, shift, alt, ctrl);
 
-	// Map GLFW mouse button to 0/1/2
-	int b = 0;
-	if (button == GLFW_MOUSE_BUTTON_LEFT) b = 0;
-	else if (button == GLFW_MOUSE_BUTTON_MIDDLE) b = 1;
-	else if (button == GLFW_MOUSE_BUTTON_RIGHT) b = 2;
-	else return false; // ignore additional buttons
-
 	int row=0, col=0;
 	cell_from_cursor(row, col);
-	
-	if (row < 0 || col < 0) {
-		return false;
+	if (row < 0 || col < 0) return false;
+
+	if (App::activeLeafNode != this) App::setActiveLeafNode(this);
+
+	const bool left   = (button == GLFW_MOUSE_BUTTON_LEFT);
+	const bool press  = (action == GLFW_PRESS);
+	const bool release= (action == GLFW_RELEASE);
+
+	// --- Terminal-side selection when the app does NOT want mouse ---
+	if (left && !term->appWantsMouse()) {
+		if (press) {
+			selecting = true;
+			sel_r0 = sel_r1 = row;
+			sel_c0 = sel_c1 = col;
+			return true; // consume
+		} else if (release && selecting) {
+			sel_r1 = row; sel_c1 = col;
+			selecting = false;
+			// Optional: copy on mouse release (classic terminal behavior is Shift+Ctrl+C, see below)
+			// std::string txt = selection_text();
+			// if (!txt.empty()) SetClipboardText(txt.c_str());
+			return true;
+		}
 	}
-	if (App::activeLeafNode != this) {
-		App::setActiveLeafNode(this);
-	}
 
-	const bool pressed = (action == GLFW_PRESS);
-	s_dragging = pressed ? true : s_dragging && pressed; // start on press, stop on release below
+	// otherwise: forward to the app (nvim/tui, etc.)
+	int b = 0;
+	if      (button == GLFW_MOUSE_BUTTON_LEFT)   b = 0;
+	else if (button == GLFW_MOUSE_BUTTON_MIDDLE) b = 1;
+	else if (button == GLFW_MOUSE_BUTTON_RIGHT)  b = 2;
+	else return false;
 
-	bool ok = term->mousePress(row, col, b, pressed, shift, alt, ctrl);
-
-	if (action == GLFW_RELEASE) s_dragging = false;
+	s_dragging = press ? true : s_dragging && press;
+	bool ok = term->mousePress(row, col, b, press, shift, alt, ctrl);
+	if (release) s_dragging = false;
 	return ok;
 }
 
 bool TerminalWidget::on_mouse_move_event() {
-	if (!is_visible) { return false; }
-	
-	if (!term || settingup) return false;
-
+	if (!is_visible || !term || settingup) return false;
 	int row=0, col=0;
 	cell_from_cursor(row, col);
 
+	// Grow selection locally if app doesn't want mouse
+	if (!term->appWantsMouse()) {
+		if (selecting) {
+			sel_r1 = row; sel_c1 = col;
+			return true;
+		}
+		return false;
+	}
+
+	// otherwise forward motion
 	return term->mouseMove(row, col, /*buttonHeld*/ s_dragging);
 }
 
@@ -307,4 +353,65 @@ bool TerminalWidget::on_scroll_event(double /*xchange*/, double ychange) {
 	if (lines == 0) return true;
 	
 	return term->mouseScroll(row, col, lines);
+}
+
+bool TerminalWidget::cell_in_selection(int r, int c) const {
+	if (!selecting && (sel_r0 < 0 || sel_r1 < 0)) return false;
+	int r0 = sel_r0, c0 = sel_c0, r1 = sel_r1, c1 = sel_c1;
+	normalize_sel(r0, c0, r1, c1);
+	if (r < r0 || r > r1) return false;
+	if (r0 == r1) return (c >= c0 && c <= c1);
+	if (r == r0)  return c >= c0;
+	if (r == r1)  return c <= c1;
+	return true;
+}
+
+void TerminalWidget::clear_selection() {
+	selecting = false;
+	sel_r0 = sel_c0 = sel_r1 = sel_c1 = -1;
+}
+
+std::string TerminalWidget::selection_text() const {
+	if (sel_r0 < 0 || sel_r1 < 0) return {};
+	int r0 = sel_r0, c0 = sel_c0, r1 = sel_r1, c1 = sel_c1;
+	normalize_sel(r0, c0, r1, c1);
+
+	std::string out;
+	// NOTE: We read via term->getCell(), which already respects scrollback/view offset.
+	for (int r = r0; r <= r1; ++r) {
+		// determine column bounds for this row
+		int start_c = (r == r0 ? c0 : 0);
+		int end_c   = (r == r1 ? c1 : prev_w_cells - 1);
+
+		// collect chars
+		std::string line;
+		line.reserve(end_c - start_c + 1);
+		for (int c = start_c; c <= end_c; ++c) {
+			OurCell cell = term->getCell(r, c);
+			char32_t cp  = static_cast<char32_t>(cell.c ? cell.c : U' ');
+			// rudimentary UTF-8 encode (same as your on_char_event)
+			char utf8[5] = {0};
+			if (cp < 0x80) {
+				utf8[0] = static_cast<char>(cp);
+			} else if (cp < 0x800) {
+				utf8[0] = static_cast<char>(0xC0 | (cp >> 6));
+				utf8[1] = static_cast<char>(0x80 | (cp & 0x3F));
+			} else if (cp < 0x10000) {
+				utf8[0] = static_cast<char>(0xE0 | (cp >> 12));
+				utf8[1] = static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+				utf8[2] = static_cast<char>(0x80 | (cp & 0x3F));
+			} else {
+				utf8[0] = static_cast<char>(0xF0 | (cp >> 18));
+				utf8[1] = static_cast<char>(0x80 | ((cp >> 12) & 0x3F));
+				utf8[2] = static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+				utf8[3] = static_cast<char>(0x80 | (cp & 0x3F));
+			}
+			line.append(utf8);
+		}
+		// trim trailing spaces (nice for rectangular selections)
+		while (!line.empty() && line.back() == ' ') line.pop_back();
+		out += line;
+		if (r != r1) out += '\n';
+	}
+	return out;
 }

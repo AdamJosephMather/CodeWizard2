@@ -14,6 +14,8 @@
 #include <vector>
 #include <cstring>
 
+#include <deque>
+
 // ---- libvterm ----
 #define small vterm_small_avoid_winrpc   // avoid Windows 'small' collision
 extern "C" {
@@ -85,6 +87,20 @@ public:
 	
 	CursorInfo getCursorInfo();
 	
+	
+	
+	std::deque<std::vector<OurCell>> m_scrollback;
+	size_t m_sb_max = 2000;             // configurable max lines
+	int m_view_off = 0;                 // 0 = follow bottom; >0 = lines scrolled back
+	std::atomic<bool> m_altScreen{false};
+	std::atomic<bool> m_mouseReporting{false};
+	
+	// helpers:
+	void clampView();
+	bool appWantsMouse() const;         // alt-screen or explicit mouse mode
+	void savePushLine(int cols, const VTermScreenCell* cells);
+	bool savePopLine(int cols, VTermScreenCell* cells);
+	
 
 private:
 	// --- ConPTY internals ---
@@ -144,4 +160,11 @@ private:
 	static int s_screen_sb_popline(int cols, VTermScreenCell* cells, void* user);
 	
 	bool drainVTermOutputToPty_();
+	
+	
+	
+	
+	void scrollbackLines(int delta);
+	void scrollbackPageUp();
+	void scrollbackPageDown();
 };

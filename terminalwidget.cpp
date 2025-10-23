@@ -17,7 +17,7 @@ void TerminalWidget::run() {
 	term = new Terminal(width_cells, height_cells);
 	
 	if (term->start(shell)) {
-		term->enableMouseTracking(true);
+//		term->enableMouseTracking(true);
 	}else {
 		std::cerr << "Failed to create terminal..." << std::endl;
 		return;
@@ -58,7 +58,9 @@ void TerminalWidget::position(int x, int y, int w, int h) {
 	int height_cells = std::max((h-App::text_padding*2) / TextRenderer::get_text_height(), 1);
 	
 	if (!settingup && (prev_w_cells != width_cells || prev_h_cells != height_cells)) {
+		std::cout << "resize...\n";
 		term->resize(width_cells, height_cells);
+		std::cout << "done that shit!\n";
 		prev_w_cells = width_cells;
 		prev_h_cells = height_cells;
 	}
@@ -71,6 +73,8 @@ void TerminalWidget::render() {
 		return;
 	}
 	
+	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
+	
 	UChar32 empty = U' ';
 	
 	auto ci = term->getCursorInfo();
@@ -82,8 +86,6 @@ void TerminalWidget::render() {
 			
 			int x = t_x+App::text_padding+TextRenderer::get_text_width(c);
 			int y = t_y+App::text_padding+TextRenderer::get_text_height()*r;
-			
-			App::DrawRect(x, y, TextRenderer::get_text_width(prev_w_cells)+App::text_padding*2, TextRenderer::get_text_height()*prev_h_cells+App::text_padding*2, cell.bg_red, cell.bg_green, cell.bg_blue);
 			
 			if (ci.row == r && ci.col == c && ci.visible) {
 				if (ci.shape == 1) { // block

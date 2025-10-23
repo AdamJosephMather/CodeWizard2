@@ -65,7 +65,6 @@ void TerminalWidgetTabbed::render() {
 }
 
 void TerminalWidgetTabbed::createNew() {
-	std::cout << "cN\n";
 	auto ti = TabInfo();
 	
 	ti.title = icu::UnicodeString::fromUTF8("cmd.exe");

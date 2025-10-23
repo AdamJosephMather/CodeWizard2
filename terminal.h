@@ -21,8 +21,25 @@ extern "C" {
 }
 #undef small
 
+struct CursorInfo {
+	int row = 0;
+	int col = 0;
+	bool visible = true;   // as reported by libvterm
+	bool blink = false;    // DECSCUSR blink bit
+	int  shape = 1;        // libvterm cursor shape enum value
+						   // (typically 1=BLOCK, 2=UNDERLINE, 3=BAR_LEFT)
+};
+
 struct OurCell {
 	UChar32 c;
+	
+	uint8_t bg_red = 0;
+	uint8_t bg_green = 0;
+	uint8_t bg_blue = 0;
+	
+	uint8_t fg_red = 0;
+	uint8_t fg_green = 0;
+	uint8_t fg_blue = 0;
 };
 
 class Terminal {
@@ -42,6 +59,7 @@ public:
 	bool resize(int cols, int rows);
 	
 	OurCell getCell(int row, int col);
+	CursorInfo m_cursorInfo;
 	
 	// --- Keyboard ---
 	bool sendText(const std::string& utf8);
@@ -64,6 +82,8 @@ public:
 	               bool shift=false, bool alt=false, bool ctrl=false);
 	bool mouseScroll(int row, int col, int lines /*+up/-down*/,
 	                 bool shift=false, bool alt=false, bool ctrl=false);
+	
+	CursorInfo getCursorInfo();
 	
 
 private:

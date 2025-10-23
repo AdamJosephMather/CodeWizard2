@@ -300,7 +300,12 @@ OurCell Terminal::getCell(int row, int col) {
 	vterm_screen_get_cell(m_screen, VTermPos{ row, col }, &cell);
 	char32_t cp = cell.chars[0] ? static_cast<char32_t>(cell.chars[0]) : U' ';
 	
-	return {(UChar32)cp};
+	VTermColor fg = cell.fg;
+	vterm_screen_convert_color_to_rgb(m_screen, &fg);
+	VTermColor bg = cell.bg;
+	vterm_screen_convert_color_to_rgb(m_screen, &bg);
+	
+	return { (UChar32)cp, bg.rgb.red, bg.rgb.green, bg.rgb.blue, fg.rgb.red, fg.rgb.green, fg.rgb.blue };
 }
 
 void Terminal::dumpRow(int r) {
@@ -361,11 +366,37 @@ int Terminal::s_screen_moverect(VTermRect /*dest*/, VTermRect /*src*/, void* /*u
 	return 1;
 }
 
-int Terminal::s_screen_movecursor(VTermPos /*pos*/, VTermPos /*oldpos*/, int /*visible*/, void* /*user*/) {
+int Terminal::s_screen_movecursor(VTermPos pos, VTermPos /*oldpos*/, int visible, void* user) {
+	auto* self = static_cast<Terminal*>(user);
+	if (self) {
+		self->m_cursorInfo.row = pos.row;
+		self->m_cursorInfo.col = pos.col;
+		self->m_cursorInfo.visible = (visible != 0); // <-- use libvterm's visibility bit
+	}
 	return 1;
 }
 
-int Terminal::s_screen_settermprop(VTermProp /*prop*/, VTermValue* /*val*/, void* /*user*/) {
+
+int Terminal::s_screen_settermprop(VTermProp prop, VTermValue* val, void* user) {
+	auto* self = static_cast<Terminal*>(user);
+	if (!self || !val) return 0;
+
+	switch (prop) {
+		case VTERM_PROP_CURSORVISIBLE:
+			self->m_cursorInfo.visible = val->boolean;
+			break;
+		case VTERM_PROP_CURSORBLINK:
+			self->m_cursorInfo.blink = val->boolean;
+			break;
+		case VTERM_PROP_CURSORSHAPE: {
+			int v = val->number;
+			if (v == 0) v = 1;               // normalize odd 0-based enums
+			if (v < 1 || v > 3) v = 1;
+			self->m_cursorInfo.shape = v;
+			break;
+		}
+		default: break;
+	}
 	return 1;
 }
 
@@ -566,4 +597,8 @@ bool Terminal::mouseScroll(int row, int col, int lines,
 		if (!sgrSend(this, wheelCode, row, col, /*press*/true)) return false;
 	}
 	return true;
+}
+
+CursorInfo Terminal::getCursorInfo() {
+	return m_cursorInfo;
 }

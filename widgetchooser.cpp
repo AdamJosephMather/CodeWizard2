@@ -8,7 +8,7 @@
 #include "settings.h"
 #include "text_renderer.h"
 #include "application.h"
-#include "terminalwidget.h"
+#include "terminalwidgettabbed.h"
 
 WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Widgetchooser");
@@ -80,7 +80,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		button->t_x = t_x+t_w/2-tw/2;
 		button->t_y = b6->t_y+b6->t_h+20;
 	}, [&](Button* button) {
-		App::ReplaceWith(this, new TerminalWidget(nullptr));
+		App::ReplaceWith(this, new TerminalWidgetTabbed(nullptr));
 		std::cout << "Creating terminal\n";
 		delete this;
 	});

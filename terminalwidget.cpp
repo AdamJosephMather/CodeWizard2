@@ -57,22 +57,43 @@ void TerminalWidget::position(int x, int y, int w, int h) {
 }
 
 void TerminalWidget::render() {
-	if (term == nullptr) {
+	if (!is_visible) { return; }
+	
+	if (term == nullptr || settingup) {
 		return;
 	}
 	
-	App::DrawRect(t_x, t_y, TextRenderer::get_text_width(prev_w_cells)+App::text_padding*2, TextRenderer::get_text_height()*prev_h_cells+App::text_padding*2, App::theme.darker_background_color);
+	UChar32 empty = U' ';
 	
-	int th = TextRenderer::get_text_height();
+	auto ci = term->getCursorInfo();
+	int c_wid = TextRenderer::get_text_width(1)/4;
 	
 	for (int r = 0; r < prev_h_cells; r++) {
-		icu::UnicodeString todraw = icu::UnicodeString::fromUTF8("");
 		for (int c = 0; c < prev_w_cells; c++) {
 			OurCell cell = term->getCell(r, c);
-			todraw.append(cell.c);
+			
+			int x = t_x+App::text_padding+TextRenderer::get_text_width(c);
+			int y = t_y+App::text_padding+TextRenderer::get_text_height()*r;
+			
+			App::DrawRect(x, y, TextRenderer::get_text_width(prev_w_cells)+App::text_padding*2, TextRenderer::get_text_height()*prev_h_cells+App::text_padding*2, cell.bg_red, cell.bg_green, cell.bg_blue);
+			
+			if (ci.row == r && ci.col == c && ci.visible) {
+				if (ci.shape == 1) { // block
+					App::DrawRect(x, y, TextRenderer::get_text_width(1), TextRenderer::get_text_height(), App::theme.white);
+					cell.fg_red = 255-cell.fg_red;
+					cell.fg_green = 255-cell.fg_green;
+					cell.fg_blue = 255-cell.fg_blue;
+				}else if (ci.shape == 2) { // underline
+					App::DrawRect(x, y+TextRenderer::get_text_height()-c_wid, TextRenderer::get_text_width(1), c_wid, App::theme.white);
+				}else { // bar left
+					App::DrawRect(x, y, c_wid, TextRenderer::get_text_height(), App::theme.white);
+				}
+			}
+			
+			if (cell.c != empty) {
+				TextRenderer::draw_text(x, y, cell.c, cell.fg_red, cell.fg_green, cell.fg_blue);
+			}
 		}
-		
-		TextRenderer::draw_text(t_x+App::text_padding, t_y+r*th+App::text_padding, todraw, App::theme.main_text_color);
 	}
 }
 
@@ -120,14 +141,16 @@ inline void TerminalWidget::cell_from_cursor(int& row, int& col) {
 		return;
 	}
 	
-	row = (mx-t_x-App::text_padding)/TextRenderer::get_text_width(1);
-	col = (my-t_y-App::text_padding)/TextRenderer::get_text_height();
+	col = (mx-t_x-App::text_padding)/TextRenderer::get_text_width(1);
+	row = (my-t_y-App::text_padding)/TextRenderer::get_text_height();
 }
 
 // Track dragging state locally (no header change)
 static bool s_dragging = false;
 
 bool TerminalWidget::on_key_event(int key, int /*scancode*/, int action, int mods) {
+	if (!is_visible) { return false; }
+	
 	if (!term || settingup) return false;
 	if (action != GLFW_PRESS && action != GLFW_REPEAT) return false;
 
@@ -162,7 +185,7 @@ bool TerminalWidget::on_key_event(int key, int /*scancode*/, int action, int mod
 }
 
 bool TerminalWidget::on_char_event(unsigned int keycode) {
-	std::cout << "OCE\n";
+	if (!is_visible) { return false; }
 	
 	if (App::activeLeafNode != this) {
 		return false;
@@ -199,6 +222,8 @@ bool TerminalWidget::on_char_event(unsigned int keycode) {
 }
 
 bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
+	if (!is_visible) { return false; }
+	
 	if (!term || settingup) return false;
 
 	bool shift=false, alt=false, ctrl=false;
@@ -231,6 +256,8 @@ bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
 }
 
 bool TerminalWidget::on_mouse_move_event() {
+	if (!is_visible) { return false; }
+	
 	if (!term || settingup) return false;
 
 	int row=0, col=0;
@@ -240,6 +267,8 @@ bool TerminalWidget::on_mouse_move_event() {
 }
 
 bool TerminalWidget::on_scroll_event(double /*xchange*/, double ychange) {
+	if (!is_visible) { return false; }
+	
 	if (!term || settingup) return false;
 	
 	int row=0, col=0;

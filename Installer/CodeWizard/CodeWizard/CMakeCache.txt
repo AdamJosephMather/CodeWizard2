@@ -211,8 +211,31 @@ CodeWizard_IS_TOP_LEVEL:STATIC=ON
 //Value Computed by CMake
 CodeWizard_SOURCE_DIR:STATIC=D:/Users/adamj/Documents/C/CodeWizard2
 
+//Directory under which to collect all populated content
+FETCHCONTENT_BASE_DIR:PATH=D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps
+
+//Disables all attempts to download or update content and assumes
+// source dirs already exist
+FETCHCONTENT_FULLY_DISCONNECTED:BOOL=OFF
+
+//Enables QUIET option for all content population
+FETCHCONTENT_QUIET:BOOL=ON
+
+//When not empty, overrides where to find pre-populated content
+// for libvterm_src
+FETCHCONTENT_SOURCE_DIR_LIBVTERM_SRC:PATH=
+
+//Enables UPDATE_DISCONNECTED behavior for all content population
+FETCHCONTENT_UPDATES_DISCONNECTED:BOOL=OFF
+
+//Enables UPDATE_DISCONNECTED behavior just for population of libvterm_src
+FETCHCONTENT_UPDATES_DISCONNECTED_LIBVTERM_SRC:BOOL=OFF
+
 //The directory containing a CMake configuration file for Freetype.
 Freetype_DIR:PATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/share/freetype
+
+//Git command line client
+GIT_EXECUTABLE:FILEPATH=C:/Program Files/Git/bin/git.exe
 
 //ICU data library (debug)
 ICU_DATA_LIBRARY_DEBUG:FILEPATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/debug/lib/icudtd.lib
@@ -525,6 +548,8 @@ FREETYPE_LIBRARY_DEBUG:INTERNAL=D:/Users/adamj/Documents/C/vcpkg/installed/x64-w
 FREETYPE_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
 //vcpkg
 FREETYPE_LIBRARY_RELEASE:INTERNAL=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/lib/freetype.lib
+//ADVANCED property for variable: GIT_EXECUTABLE
+GIT_EXECUTABLE-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: ICU_DATA_LIBRARY_DEBUG
 ICU_DATA_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: ICU_DATA_LIBRARY_RELEASE

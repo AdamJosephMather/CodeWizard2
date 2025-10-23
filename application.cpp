@@ -1012,8 +1012,6 @@ void App::executeCommandPaletteAction() {
 		cur_sel = INDEXED_FILES.currentlyshowing[cur_sel];
 	}
 	
-	std::cout << "Selected: " << cur_sel << " Cur type: " << cur_type << std::endl;
-	
 	if (cur_type == 1) { // move er up to the top and copy it
 		auto data = cmdbx->elements[cmdbx->selected_id];
 		

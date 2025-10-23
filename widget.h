@@ -19,10 +19,10 @@ public:
 	Widget* parent;
 	std::vector<Widget*> children;
 	
-	int t_x;
-	int t_y;
-	int t_w;
-	int t_h;
+	int t_x = 1;
+	int t_y = 1;
+	int t_w = 1;
+	int t_h = 1;
 	
 	icu::UnicodeString id;
 	

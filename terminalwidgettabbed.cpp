@@ -44,8 +44,6 @@ void TerminalWidgetTabbed::position(int x, int y, int w, int h) {
 	t_w = w;
 	t_h = h;
 	
-	Widget::position(x, y, w, h);
-	
 	tab_bar->position(x, y, w, h);
 	terminals[tab_bar->selected_id]->position(x, y+tab_bar->t_h, w, h-tab_bar->t_h);
 }
@@ -63,6 +61,7 @@ void TerminalWidgetTabbed::render() {
 }
 
 void TerminalWidgetTabbed::createNew() {
+	std::cout << "cN\n";
 	auto ti = TabInfo();
 	
 	ti.title = icu::UnicodeString::fromUTF8("cmd.exe");

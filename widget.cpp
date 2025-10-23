@@ -208,6 +208,13 @@ Widget* Widget::getFirstEditor() {
 	return nullptr;
 }
 
+Widget* Widget::findTerminal() {
+	for (auto c : children) {
+		if (auto b = c->findTerminal()) { return b; }
+	}
+	return nullptr;
+}
+
 void Widget::lspmessage(std::string& from, std::string& message) {
 	for (auto c : children) {
 		c->lspmessage(from, message);

@@ -51,5 +51,6 @@ public:
 	virtual void save();
 	virtual Widget* fileOpen(std::string fname);
 	virtual Widget* getFirstEditor();
+	virtual Widget* findTerminal();
 	virtual void lspmessage(std::string& from, std::string& message);
 };

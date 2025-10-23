@@ -8,6 +8,7 @@
 #include "settings.h"
 #include "text_renderer.h"
 #include "application.h"
+#include "terminalwidget.h"
 
 WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Widgetchooser");
@@ -71,6 +72,16 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new LspDebug(nullptr));
 		std::cout << "Creating lsp debug menu\n";
+		delete this;
+	});
+	
+	auto text7 = icu::UnicodeString::fromUTF8("Terminal");
+	b7 = new Button(this, text7, [&](Button* button, int x, int y, int w, int h, int tw, int th){
+		button->t_x = t_x+t_w/2-tw/2;
+		button->t_y = b6->t_y+b6->t_h+20;
+	}, [&](Button* button) {
+		App::ReplaceWith(this, new TerminalWidget(nullptr));
+		std::cout << "Creating terminal\n";
 		delete this;
 	});
 }

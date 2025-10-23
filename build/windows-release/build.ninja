@@ -41,289 +41,415 @@ include CMakeFiles\rules.ninja
 
 cmake_ninja_workdir = D$:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\
 # =============================================================================
+# Object build statements for STATIC_LIBRARY target libvterm
+
+
+#############################################
+# Order-only phony target for libvterm
+
+build cmake_object_order_depends_target_libvterm: phony || .
+
+build CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\encoding.c.obj: C_COMPILER__libvterm_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src\encoding.c || cmake_object_order_depends_target_libvterm
+  DEFINES = -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /MD /O2 /Ob2 /DNDEBUG /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src
+  OBJECT_DIR = CMakeFiles\libvterm.dir
+  OBJECT_FILE_DIR = CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src
+  TARGET_COMPILE_PDB = CMakeFiles\libvterm.dir\libvterm.pdb
+  TARGET_PDB = libvterm.pdb
+
+build CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\keyboard.c.obj: C_COMPILER__libvterm_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src\keyboard.c || cmake_object_order_depends_target_libvterm
+  DEFINES = -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /MD /O2 /Ob2 /DNDEBUG /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src
+  OBJECT_DIR = CMakeFiles\libvterm.dir
+  OBJECT_FILE_DIR = CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src
+  TARGET_COMPILE_PDB = CMakeFiles\libvterm.dir\libvterm.pdb
+  TARGET_PDB = libvterm.pdb
+
+build CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\mouse.c.obj: C_COMPILER__libvterm_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src\mouse.c || cmake_object_order_depends_target_libvterm
+  DEFINES = -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /MD /O2 /Ob2 /DNDEBUG /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src
+  OBJECT_DIR = CMakeFiles\libvterm.dir
+  OBJECT_FILE_DIR = CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src
+  TARGET_COMPILE_PDB = CMakeFiles\libvterm.dir\libvterm.pdb
+  TARGET_PDB = libvterm.pdb
+
+build CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\parser.c.obj: C_COMPILER__libvterm_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src\parser.c || cmake_object_order_depends_target_libvterm
+  DEFINES = -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /MD /O2 /Ob2 /DNDEBUG /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src
+  OBJECT_DIR = CMakeFiles\libvterm.dir
+  OBJECT_FILE_DIR = CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src
+  TARGET_COMPILE_PDB = CMakeFiles\libvterm.dir\libvterm.pdb
+  TARGET_PDB = libvterm.pdb
+
+build CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\pen.c.obj: C_COMPILER__libvterm_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src\pen.c || cmake_object_order_depends_target_libvterm
+  DEFINES = -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /MD /O2 /Ob2 /DNDEBUG /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src
+  OBJECT_DIR = CMakeFiles\libvterm.dir
+  OBJECT_FILE_DIR = CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src
+  TARGET_COMPILE_PDB = CMakeFiles\libvterm.dir\libvterm.pdb
+  TARGET_PDB = libvterm.pdb
+
+build CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\screen.c.obj: C_COMPILER__libvterm_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src\screen.c || cmake_object_order_depends_target_libvterm
+  DEFINES = -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /MD /O2 /Ob2 /DNDEBUG /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src
+  OBJECT_DIR = CMakeFiles\libvterm.dir
+  OBJECT_FILE_DIR = CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src
+  TARGET_COMPILE_PDB = CMakeFiles\libvterm.dir\libvterm.pdb
+  TARGET_PDB = libvterm.pdb
+
+build CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\state.c.obj: C_COMPILER__libvterm_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src\state.c || cmake_object_order_depends_target_libvterm
+  DEFINES = -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /MD /O2 /Ob2 /DNDEBUG /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src
+  OBJECT_DIR = CMakeFiles\libvterm.dir
+  OBJECT_FILE_DIR = CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src
+  TARGET_COMPILE_PDB = CMakeFiles\libvterm.dir\libvterm.pdb
+  TARGET_PDB = libvterm.pdb
+
+build CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\unicode.c.obj: C_COMPILER__libvterm_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src\unicode.c || cmake_object_order_depends_target_libvterm
+  DEFINES = -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /MD /O2 /Ob2 /DNDEBUG /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src
+  OBJECT_DIR = CMakeFiles\libvterm.dir
+  OBJECT_FILE_DIR = CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src
+  TARGET_COMPILE_PDB = CMakeFiles\libvterm.dir\libvterm.pdb
+  TARGET_PDB = libvterm.pdb
+
+build CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\vterm.c.obj: C_COMPILER__libvterm_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src\vterm.c || cmake_object_order_depends_target_libvterm
+  DEFINES = -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /MD /O2 /Ob2 /DNDEBUG /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src
+  OBJECT_DIR = CMakeFiles\libvterm.dir
+  OBJECT_FILE_DIR = CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src
+  TARGET_COMPILE_PDB = CMakeFiles\libvterm.dir\libvterm.pdb
+  TARGET_PDB = libvterm.pdb
+
+
+# =============================================================================
+# Link build statements for STATIC_LIBRARY target libvterm
+
+
+#############################################
+# Link the static library libvterm.lib
+
+build libvterm.lib: C_STATIC_LIBRARY_LINKER__libvterm_Release CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\encoding.c.obj CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\keyboard.c.obj CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\mouse.c.obj CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\parser.c.obj CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\pen.c.obj CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\screen.c.obj CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\state.c.obj CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\unicode.c.obj CMakeFiles\libvterm.dir\_deps\libvterm_src-src\src\vterm.c.obj
+  LANGUAGE_COMPILE_FLAGS = /DWIN32 /D_WINDOWS /W3 /MD /O2 /Ob2 /DNDEBUG
+  LINK_FLAGS = /machine:x64
+  OBJECT_DIR = CMakeFiles\libvterm.dir
+  POST_BUILD = cd .
+  PRE_LINK = cd .
+  TARGET_COMPILE_PDB = CMakeFiles\libvterm.dir\libvterm.pdb
+  TARGET_FILE = libvterm.lib
+  TARGET_PDB = libvterm.pdb
+
+# =============================================================================
 # Object build statements for EXECUTABLE target CodeWizard
 
 
 #############################################
 # Order-only phony target for CodeWizard
 
-build cmake_object_order_depends_target_CodeWizard: phony || .
+build cmake_object_order_depends_target_CodeWizard: phony || cmake_object_order_depends_target_libvterm
 
 build CMakeFiles\CodeWizard.dir\main.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\main.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\resources.rc.res: RC_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\resources.rc || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
   DEP_FILE = CMakeFiles\CodeWizard.dir\resources.rc.res.d
   FLAGS = -DWIN32
-  INCLUDES = -I D:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include
+  INCLUDES = -I D:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -I D:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -I D:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\text_renderer.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\text_renderer.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\application.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\application.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\widget.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\widget.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\button.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\button.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\titlebar.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\titlebar.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\panel_holder.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\panel_holder.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\widgetchooser.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\widgetchooser.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\editor.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\editor.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\filetree.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\filetree.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\tabs.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\tabs.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\settings.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\settings.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\codeedit.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\codeedit.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\linenumbers.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\linenumbers.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\textedit.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\textedit.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\highlighter.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\highlighter.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\tinyfiledialogs.c.obj: C_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\tinyfiledialogs.c || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /MD /O2 /Ob2 /DNDEBUG
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /MD /O2 /Ob2 /DNDEBUG /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\brokenstatemenu.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\brokenstatemenu.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\checkbox.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\checkbox.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\settingsmanager.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\settingsmanager.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\languageserverclient.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\languageserverclient.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\listbox.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\listbox.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\imageview.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\imageview.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\compare.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\compare.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\curler.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\curler.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\toast.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\toast.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\chat.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\chat.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\label.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\label.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\myrect.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\myrect.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
   TARGET_PDB = CodeWizard.pdb
 
 build CMakeFiles\CodeWizard.dir\lspdebug.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\lspdebug.cpp || cmake_object_order_depends_target_CodeWizard
-  DEFINES = -DGLFW_DLL
-  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17
-  INCLUDES = -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  OBJECT_DIR = CMakeFiles\CodeWizard.dir
+  OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
+  TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
+  TARGET_PDB = CodeWizard.pdb
+
+build CMakeFiles\CodeWizard.dir\terminal.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\terminal.cpp || cmake_object_order_depends_target_CodeWizard
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
+  OBJECT_DIR = CMakeFiles\CodeWizard.dir
+  OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
+  TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
+  TARGET_PDB = CodeWizard.pdb
+
+build CMakeFiles\CodeWizard.dir\terminalwidget.cpp.obj: CXX_COMPILER__CodeWizard_unscanned_Release D$:\Users\adamj\Documents\C\CodeWizard2\terminalwidget.cpp || cmake_object_order_depends_target_CodeWizard
+  DEFINES = -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
+  FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267
+  INCLUDES = -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\include -ID:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\libvterm_src-src\src -external:ID:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\include -external:W0
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   OBJECT_FILE_DIR = CMakeFiles\CodeWizard.dir
   TARGET_COMPILE_PDB = CMakeFiles\CodeWizard.dir\
@@ -337,10 +463,10 @@ build CMakeFiles\CodeWizard.dir\lspdebug.cpp.obj: CXX_COMPILER__CodeWizard_unsca
 #############################################
 # Link the executable CodeWizard.exe
 
-build CodeWizard.exe: CXX_EXECUTABLE_LINKER__CodeWizard_Release CMakeFiles\CodeWizard.dir\main.cpp.obj CMakeFiles\CodeWizard.dir\resources.rc.res CMakeFiles\CodeWizard.dir\text_renderer.cpp.obj CMakeFiles\CodeWizard.dir\application.cpp.obj CMakeFiles\CodeWizard.dir\widget.cpp.obj CMakeFiles\CodeWizard.dir\button.cpp.obj CMakeFiles\CodeWizard.dir\titlebar.cpp.obj CMakeFiles\CodeWizard.dir\panel_holder.cpp.obj CMakeFiles\CodeWizard.dir\widgetchooser.cpp.obj CMakeFiles\CodeWizard.dir\editor.cpp.obj CMakeFiles\CodeWizard.dir\filetree.cpp.obj CMakeFiles\CodeWizard.dir\tabs.cpp.obj CMakeFiles\CodeWizard.dir\settings.cpp.obj CMakeFiles\CodeWizard.dir\codeedit.cpp.obj CMakeFiles\CodeWizard.dir\linenumbers.cpp.obj CMakeFiles\CodeWizard.dir\textedit.cpp.obj CMakeFiles\CodeWizard.dir\highlighter.cpp.obj CMakeFiles\CodeWizard.dir\tinyfiledialogs.c.obj CMakeFiles\CodeWizard.dir\brokenstatemenu.cpp.obj CMakeFiles\CodeWizard.dir\checkbox.cpp.obj CMakeFiles\CodeWizard.dir\settingsmanager.cpp.obj CMakeFiles\CodeWizard.dir\languageserverclient.cpp.obj CMakeFiles\CodeWizard.dir\listbox.cpp.obj CMakeFiles\CodeWizard.dir\imageview.cpp.obj CMakeFiles\CodeWizard.dir\compare.cpp.obj CMakeFiles\CodeWizard.dir\curler.cpp.obj CMakeFiles\CodeWizard.dir\toast.cpp.obj CMakeFiles\CodeWizard.dir\chat.cpp.obj CMakeFiles\CodeWizard.dir\label.cpp.obj CMakeFiles\CodeWizard.dir\myrect.cpp.obj CMakeFiles\CodeWizard.dir\lspdebug.cpp.obj | D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\glfw3dll.lib D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\icuuc.lib D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\icuin.lib D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\icudt.lib D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\libcurl.lib D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\onig.lib D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\freetype.lib
+build CodeWizard.exe: CXX_EXECUTABLE_LINKER__CodeWizard_Release CMakeFiles\CodeWizard.dir\main.cpp.obj CMakeFiles\CodeWizard.dir\resources.rc.res CMakeFiles\CodeWizard.dir\text_renderer.cpp.obj CMakeFiles\CodeWizard.dir\application.cpp.obj CMakeFiles\CodeWizard.dir\widget.cpp.obj CMakeFiles\CodeWizard.dir\button.cpp.obj CMakeFiles\CodeWizard.dir\titlebar.cpp.obj CMakeFiles\CodeWizard.dir\panel_holder.cpp.obj CMakeFiles\CodeWizard.dir\widgetchooser.cpp.obj CMakeFiles\CodeWizard.dir\editor.cpp.obj CMakeFiles\CodeWizard.dir\filetree.cpp.obj CMakeFiles\CodeWizard.dir\tabs.cpp.obj CMakeFiles\CodeWizard.dir\settings.cpp.obj CMakeFiles\CodeWizard.dir\codeedit.cpp.obj CMakeFiles\CodeWizard.dir\linenumbers.cpp.obj CMakeFiles\CodeWizard.dir\textedit.cpp.obj CMakeFiles\CodeWizard.dir\highlighter.cpp.obj CMakeFiles\CodeWizard.dir\tinyfiledialogs.c.obj CMakeFiles\CodeWizard.dir\brokenstatemenu.cpp.obj CMakeFiles\CodeWizard.dir\checkbox.cpp.obj CMakeFiles\CodeWizard.dir\settingsmanager.cpp.obj CMakeFiles\CodeWizard.dir\languageserverclient.cpp.obj CMakeFiles\CodeWizard.dir\listbox.cpp.obj CMakeFiles\CodeWizard.dir\imageview.cpp.obj CMakeFiles\CodeWizard.dir\compare.cpp.obj CMakeFiles\CodeWizard.dir\curler.cpp.obj CMakeFiles\CodeWizard.dir\toast.cpp.obj CMakeFiles\CodeWizard.dir\chat.cpp.obj CMakeFiles\CodeWizard.dir\label.cpp.obj CMakeFiles\CodeWizard.dir\myrect.cpp.obj CMakeFiles\CodeWizard.dir\lspdebug.cpp.obj CMakeFiles\CodeWizard.dir\terminal.cpp.obj CMakeFiles\CodeWizard.dir\terminalwidget.cpp.obj | D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\glfw3dll.lib D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\icuuc.lib D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\icuin.lib D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\icudt.lib D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\libcurl.lib libvterm.lib D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\onig.lib D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\freetype.lib || libvterm.lib
   FLAGS = /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG
-  LINK_FLAGS = /machine:x64 /INCREMENTAL:NO /subsystem:windows
-  LINK_LIBRARIES = D:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\glfw3dll.lib  opengl32.lib  D:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\icuuc.lib  D:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\icuin.lib  D:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\icudt.lib  D:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\libcurl.lib  D:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\onig.lib  ole32.lib  shell32.lib  strsafe.lib  dwmapi.lib  D:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\freetype.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
+  LINK_FLAGS = /machine:x64 /INCREMENTAL:NO /subsystem:console
+  LINK_LIBRARIES = D:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\glfw3dll.lib  opengl32.lib  D:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\icuuc.lib  D:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\icuin.lib  D:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\icudt.lib  D:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\libcurl.lib  libvterm.lib  D:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\onig.lib  ole32.lib  shell32.lib  strsafe.lib  dwmapi.lib  D:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\lib\freetype.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
   OBJECT_DIR = CMakeFiles\CodeWizard.dir
   POST_BUILD = C:\WINDOWS\system32\cmd.exe /C "cd /D D:\Users\adamj\Documents\C\CodeWizard2\build\windows-release && C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file D:/Users/adamj/Documents/C/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CodeWizard.exe -installedDir D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/bin -OutVariable out"
   PRE_LINK = cd .
@@ -378,6 +504,8 @@ build rebuild_cache: phony CMakeFiles\rebuild_cache.util
 
 build CodeWizard: phony CodeWizard.exe
 
+build libvterm: phony libvterm.lib
+
 # =============================================================================
 # Folder targets.
 
@@ -386,7 +514,7 @@ build CodeWizard: phony CodeWizard.exe
 #############################################
 # Folder: D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release
 
-build all: phony CodeWizard.exe
+build all: phony libvterm.lib CodeWizard.exe
 
 # =============================================================================
 # Built-in targets
@@ -395,14 +523,14 @@ build all: phony CodeWizard.exe
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeCInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeCXXInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeCommonLanguageInclude.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeDependentOption.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeFindDependencyMacro.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeGenericSystem.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeInitializeConfigs.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeLanguageInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeRCInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeSystemSpecificInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeSystemSpecificInitialize.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CheckCSourceCompiles.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CheckIncludeFile.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CheckLibraryExists.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Compiler\CMakeCommonCompilerMacros.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Compiler\MSVC-C.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Compiler\MSVC-CXX.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Compiler\MSVC.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindICU.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindPackageHandleStandardArgs.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindPackageMessage.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindThreads.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindZLIB.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Internal\CheckSourceCompiles.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows-Initialize.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows-MSVC-C.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows-MSVC-CXX.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows-MSVC.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\WindowsPaths.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\SelectLibraryConfigurations.cmake CMakeCache.txt CMakeFiles\3.30.4\CMakeCCompiler.cmake CMakeFiles\3.30.4\CMakeCXXCompiler.cmake CMakeFiles\3.30.4\CMakeRCCompiler.cmake CMakeFiles\3.30.4\CMakeSystem.cmake D$:\Users\adamj\Documents\C\CodeWizard2\CMakeLists.txt D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLConfig.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLConfigVersion.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLTargets-debug.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLTargets-release.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLTargets.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\vcpkg-cmake-wrapper.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-config-version.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-config.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-targets-debug.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-targets-release.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-targets.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\vcpkg-cmake-wrapper.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3Config.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3ConfigVersion.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets-debug.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets-release.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\icu\vcpkg-cmake-wrapper.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\zlib\vcpkg-cmake-wrapper.cmake D$:\Users\adamj\Documents\C\vcpkg\scripts\buildsystems\vcpkg.cmake
+build build.ninja: RERUN_CMAKE | C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeCInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeCXXInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeCommonLanguageInclude.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeDependentOption.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeFindDependencyMacro.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeGenericSystem.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeInitializeConfigs.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeLanguageInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeRCInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeSystemSpecificInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeSystemSpecificInitialize.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CheckCSourceCompiles.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CheckIncludeFile.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CheckLibraryExists.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Compiler\CMakeCommonCompilerMacros.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Compiler\MSVC-C.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Compiler\MSVC-CXX.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Compiler\MSVC.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\ExternalProject\shared_internal_commands.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FetchContent.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FetchContent\CMakeLists.cmake.in C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindGit.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindICU.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindPackageHandleStandardArgs.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindPackageMessage.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindThreads.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindZLIB.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Internal\CheckSourceCompiles.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows-Initialize.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows-MSVC-C.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows-MSVC-CXX.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows-MSVC.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\WindowsPaths.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\SelectLibraryConfigurations.cmake CMakeCache.txt CMakeFiles\3.30.4\CMakeCCompiler.cmake CMakeFiles\3.30.4\CMakeCXXCompiler.cmake CMakeFiles\3.30.4\CMakeRCCompiler.cmake CMakeFiles\3.30.4\CMakeSystem.cmake D$:\Users\adamj\Documents\C\CodeWizard2\CMakeLists.txt D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLConfig.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLConfigVersion.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLTargets-debug.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLTargets-release.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLTargets.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\vcpkg-cmake-wrapper.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-config-version.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-config.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-targets-debug.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-targets-release.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-targets.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\vcpkg-cmake-wrapper.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3Config.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3ConfigVersion.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets-debug.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets-release.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\icu\vcpkg-cmake-wrapper.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\zlib\vcpkg-cmake-wrapper.cmake D$:\Users\adamj\Documents\C\vcpkg\scripts\buildsystems\vcpkg.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeCInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeCXXInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeCommonLanguageInclude.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeDependentOption.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeFindDependencyMacro.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeGenericSystem.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeInitializeConfigs.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeLanguageInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeRCInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeSystemSpecificInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeSystemSpecificInitialize.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CheckCSourceCompiles.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CheckIncludeFile.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CheckLibraryExists.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Compiler\CMakeCommonCompilerMacros.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Compiler\MSVC-C.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Compiler\MSVC-CXX.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Compiler\MSVC.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindICU.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindPackageHandleStandardArgs.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindPackageMessage.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindThreads.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindZLIB.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Internal\CheckSourceCompiles.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows-Initialize.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows-MSVC-C.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows-MSVC-CXX.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows-MSVC.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\WindowsPaths.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\SelectLibraryConfigurations.cmake CMakeCache.txt CMakeFiles\3.30.4\CMakeCCompiler.cmake CMakeFiles\3.30.4\CMakeCXXCompiler.cmake CMakeFiles\3.30.4\CMakeRCCompiler.cmake CMakeFiles\3.30.4\CMakeSystem.cmake D$:\Users\adamj\Documents\C\CodeWizard2\CMakeLists.txt D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLConfig.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLConfigVersion.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLTargets-debug.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLTargets-release.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLTargets.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\vcpkg-cmake-wrapper.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-config-version.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-config.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-targets-debug.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-targets-release.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-targets.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\vcpkg-cmake-wrapper.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3Config.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3ConfigVersion.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets-debug.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets-release.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\icu\vcpkg-cmake-wrapper.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\zlib\vcpkg-cmake-wrapper.cmake D$:\Users\adamj\Documents\C\vcpkg\scripts\buildsystems\vcpkg.cmake: phony
+build C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeCInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeCXXInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeCommonLanguageInclude.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeDependentOption.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeFindDependencyMacro.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeGenericSystem.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeInitializeConfigs.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeLanguageInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeRCInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeSystemSpecificInformation.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CMakeSystemSpecificInitialize.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CheckCSourceCompiles.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CheckIncludeFile.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\CheckLibraryExists.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Compiler\CMakeCommonCompilerMacros.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Compiler\MSVC-C.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Compiler\MSVC-CXX.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Compiler\MSVC.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\ExternalProject\shared_internal_commands.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FetchContent.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FetchContent\CMakeLists.cmake.in C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindGit.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindICU.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindPackageHandleStandardArgs.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindPackageMessage.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindThreads.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\FindZLIB.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Internal\CheckSourceCompiles.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows-Initialize.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows-MSVC-C.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows-MSVC-CXX.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows-MSVC.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\Windows.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\Platform\WindowsPaths.cmake C$:\Program$ Files\Python310\Lib\site-packages\cmake\data\share\cmake-3.30\Modules\SelectLibraryConfigurations.cmake CMakeCache.txt CMakeFiles\3.30.4\CMakeCCompiler.cmake CMakeFiles\3.30.4\CMakeCXXCompiler.cmake CMakeFiles\3.30.4\CMakeRCCompiler.cmake CMakeFiles\3.30.4\CMakeSystem.cmake D$:\Users\adamj\Documents\C\CodeWizard2\CMakeLists.txt D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLConfig.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLConfigVersion.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLTargets-debug.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLTargets-release.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\CURLTargets.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\curl\vcpkg-cmake-wrapper.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-config-version.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-config.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-targets-debug.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-targets-release.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\freetype-targets.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\freetype\vcpkg-cmake-wrapper.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3Config.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3ConfigVersion.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets-debug.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets-release.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\icu\vcpkg-cmake-wrapper.cmake D$:\Users\adamj\Documents\C\vcpkg\installed\x64-windows\share\zlib\vcpkg-cmake-wrapper.cmake D$:\Users\adamj\Documents\C\vcpkg\scripts\buildsystems\vcpkg.cmake: phony
 
 
 #############################################

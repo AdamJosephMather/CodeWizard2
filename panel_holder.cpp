@@ -4,8 +4,8 @@
 #include "chat.h"
 #include "editor.h"
 #include "lspdebug.h"
+#include "terminalwidget.h"
 #include "widgetchooser.h"
-#include "codeedit.h"
 #include "settings.h"
 #include "filetree.h"
 #include "text_renderer.h"
@@ -278,6 +278,8 @@ void PanelHolder::setState(nlohmann::json state) {
 			new Chat(this);
 		}else if (c == "LspDebug"){
 			new LspDebug(this);
+		}else if (c == "Terminal"){
+			new TerminalWidget(this);
 		}else { // any unknown, or editor
 			new Editor(this);
 		}
@@ -307,6 +309,8 @@ nlohmann::json PanelHolder::saveConfiguration() {
 			thisitm["children"][i] = "Chat";
 		}else if (auto pe = dynamic_cast<LspDebug*>(c)){
 			thisitm["children"][i] = "LspDebug";
+		}else if (auto pe = dynamic_cast<TerminalWidget*>(c)){
+			thisitm["children"][i] = "Terminal";
 		}else {
 			thisitm["children"][i] = "Ehhhhh";
 		}

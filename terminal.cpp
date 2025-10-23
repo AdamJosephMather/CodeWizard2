@@ -62,35 +62,52 @@ bool Terminal::start(const std::wstring& shell) {
 }
 
 void Terminal::stop() {
-	if (!m_running.exchange(false)) {
-		// not running
+	// Flip the flag (cleanup still proceeds if it was already false)
+	m_running.exchange(false);
+
+	// Unblock any pending I/O *first* to let readerLoop exit quickly.
+	if (m_hFromPty != INVALID_HANDLE_VALUE) {
+		::CancelIoEx(m_hFromPty, nullptr);
+	}
+	if (m_hToPty != INVALID_HANDLE_VALUE) {
+		::CancelIoEx(m_hToPty, nullptr);
 	}
 
+	// Now join the reader thread; at this point ReadFile should have unwound.
+	if (m_reader.joinable()) {
+		m_reader.join();
+	}
+
+	// Close our pipe handles after the thread is gone.
 	closeHandleIfValid(m_hToPty);
 	closeHandleIfValid(m_hFromPty);
 
-	if (m_reader.joinable()) m_reader.join();
-
+	// Ask the child to die; if it’s already exited, these are no-ops.
 	if (m_pi.hProcess) {
-		::WaitForSingleObject(m_pi.hProcess, 500);
+		::WaitForSingleObject(m_pi.hProcess, 200);
 		::TerminateProcess(m_pi.hProcess, 0);
 		closeHandleIfValid(m_pi.hProcess);
 	}
 
+	// Tear down the ConPTY after the reader is joined and pipes are closed.
 	if (m_hPC) {
 		::ClosePseudoConsole(m_hPC);
 		m_hPC = nullptr;
 	}
 
+	// Finally, free libvterm under the mutex.
 	teardownVTerm();
 }
 
 bool Terminal::writeInput(const void* data, size_t bytes) {
-	if (m_hToPty == INVALID_HANDLE_VALUE) return false;
+	if (!m_running.load()) return false;
+	HANDLE h = m_hToPty;
+	if (h == INVALID_HANDLE_VALUE) return false;
 	DWORD written = 0;
-	BOOL ok = ::WriteFile(m_hToPty, data, static_cast<DWORD>(bytes), &written, nullptr);
+	BOOL ok = ::WriteFile(h, data, static_cast<DWORD>(bytes), &written, nullptr);
 	return ok && written == bytes;
 }
+
 
 bool Terminal::resize(int cols, int rows) {
 	{
@@ -334,22 +351,26 @@ void Terminal::readerLoop() {
 	constexpr DWORD BUF = 4096;
 	std::vector<char> buffer(BUF);
 
-	while (m_running.load()) {
-		DWORD got = 0;
-		BOOL ok = ::ReadFile(m_hFromPty, buffer.data(), BUF, &got, nullptr);
-		if (!ok || got == 0) break;
+	for (;;) {
+		if (!m_running.load()) break;
+		HANDLE h = m_hFromPty;
+		if (h == INVALID_HANDLE_VALUE) break;
 
-		{
-			std::lock_guard<std::mutex> lock(m_vtermMutex);
-			if (m_vt) {
-				// My libvterm doesn't have push_bytes; input_write is fine here.
-				vterm_input_write(m_vt, buffer.data(), static_cast<size_t>(got));
-				flushVTermDamage();
-			} else {
-				std::fwrite(buffer.data(), 1, got, stdout);
-				std::fflush(stdout);
-			}
+		DWORD got = 0;
+		BOOL ok = ::ReadFile(h, buffer.data(), BUF, &got, nullptr);
+		if (!ok) {
+			// If we cancelled I/O during shutdown, bail out quietly.
+			DWORD err = ::GetLastError();
+			if (err == ERROR_OPERATION_ABORTED || err == ERROR_BROKEN_PIPE) break;
+			// Other errors: also exit; nothing sane to do on teardown.
+			break;
 		}
+		if (got == 0) break;
+
+		std::lock_guard<std::mutex> lock(m_vtermMutex);
+		if (!m_vt) continue;
+		vterm_input_write(m_vt, buffer.data(), static_cast<size_t>(got));
+		flushVTermDamage();
 	}
 }
 

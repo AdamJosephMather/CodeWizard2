@@ -5,29 +5,29 @@
 
 TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Terminal");
+	
+	std::thread([&]() { run(); }).detach();
 }
 
 void TerminalWidget::run() {
 	int width_cells = std::max((t_w-App::text_padding*2) / TextRenderer::get_text_width(1), 1);
 	int height_cells = std::max((t_h-App::text_padding*2) / TextRenderer::get_text_height(), 1);
 	
-	std::cout << "Terminal readying " << width_cells << "x" << height_cells << std::endl;
-	
 	const std::wstring shell = L"cmd.exe";
 	term = new Terminal(width_cells, height_cells);
-	std::cout << "Terminal starting\n";
 	
 	if (term->start(shell)) {
-		std::cout << "Terminal created!\n";
 		term->enableMouseTracking(true);
 	}else {
-		std::cout << "Failed to create terminal...\n";
+		std::cerr << "Failed to create terminal..." << std::endl;
+		return;
 	}
 	
 	settingup = false;
 }
 
 void TerminalWidget::request_close(close_callback_type callback) {
+	term->stop();
 	Widget::request_close(callback);
 }
 
@@ -40,7 +40,6 @@ void TerminalWidget::position(int x, int y, int w, int h) {
 	Widget::position(x, y, w, h);
 	
 	if (term == nullptr) {
-		std::thread([&]() { run(); }).detach();
 		return;
 	}
 	
@@ -48,9 +47,7 @@ void TerminalWidget::position(int x, int y, int w, int h) {
 	int height_cells = std::max((h-App::text_padding*2) / TextRenderer::get_text_height(), 1);
 	
 	if (!settingup && (prev_w_cells != width_cells || prev_h_cells != height_cells)) {
-		std::cout << "resizing: " << width_cells << "x" << height_cells << std::endl;
 		term->resize(width_cells, height_cells);
-		std::cout << "done" << std::endl;
 		prev_w_cells = width_cells;
 		prev_h_cells = height_cells;
 	}

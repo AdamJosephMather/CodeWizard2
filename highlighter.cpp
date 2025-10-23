@@ -512,13 +512,29 @@ std::pair<std::vector<Token>,TextMateInfo> Highlighter::analizeSection(std::stri
 	return { tokens, currentInfo };
 }
 
+std::string Highlighter::to_ascii_replacing_non_ascii(const icu::UnicodeString& ustr, char replacement) {
+	std::string out;
+	out.reserve(ustr.length()); // rough lower bound
+
+	for (int32_t i = 0; i < ustr.length(); ) {
+		UChar32 cp = ustr.char32At(i);
+		i += U16_LENGTH(cp);
+
+		if (cp >= 0 && cp <= 0x7F) {
+			out.push_back(static_cast<char>(cp));  // ASCII byte
+		} else {
+			out.push_back(replacement);            // replace multi-byte chars
+		}
+	}
+	return out;
+}
+
 LineResult Highlighter::highlightLine(icu::UnicodeString input_string, TextMateInfo currentInfo) {
 	for (int i = 0; i < currentInfo.contextStack.size(); i++) {
 		currentInfo.contextStack[i].started_here = false;
 	}
 	
-	std::string line_string;
-	input_string.toUTF8String(line_string);
+	std::string line_string = to_ascii_replacing_non_ascii(input_string);
 	line_string += "\n";
 	
 	auto out = analizeSection(line_string, currentInfo, true);

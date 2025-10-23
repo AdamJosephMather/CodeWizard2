@@ -148,4 +148,6 @@ private:
 	
 	bool needsDelimiter(const std::string &pat);
 	std::vector<RegexSegment> parseRegexSegments(const std::string &pattern);
+	
+	std::string to_ascii_replacing_non_ascii(const icu::UnicodeString& ustr, char replacement='?');
 };

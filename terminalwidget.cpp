@@ -58,9 +58,7 @@ void TerminalWidget::position(int x, int y, int w, int h) {
 	int height_cells = std::max((h-App::text_padding*2) / TextRenderer::get_text_height(), 1);
 	
 	if (!settingup && (prev_w_cells != width_cells || prev_h_cells != height_cells)) {
-		std::cout << "resize...\n";
 		term->resize(width_cells, height_cells);
-		std::cout << "done that shit!\n";
 		prev_w_cells = width_cells;
 		prev_h_cells = height_cells;
 	}
@@ -280,7 +278,7 @@ bool TerminalWidget::on_scroll_event(double /*xchange*/, double ychange) {
 	int row=0, col=0;
 	cell_from_cursor(row, col);
 	
-	ychange *= -1;
+	ychange *= -6;
 	
 	int lines = static_cast<int>( (ychange > 0) ? std::floor(ychange + 0.5) : std::ceil (ychange - 0.5) );
 	if (lines == 0) return true;

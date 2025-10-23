@@ -234,50 +234,39 @@ void Terminal::teardownConPty() {
 
 bool Terminal::initVTerm() {
 	m_vt = vterm_new(m_rows, m_cols);
-	if (!m_vt) {
-		return false;
-	}
+	if (!m_vt) return false;
 	vterm_set_utf8(m_vt, 1);
 
 	m_screen = vterm_obtain_screen(m_vt);
-	if (!m_screen) {
-		vterm_free(m_vt); m_vt = nullptr;
-		return false;
-	}
+	if (!m_screen) { vterm_free(m_vt); m_vt = nullptr; return false; }
 
-	// IMPORTANT: allocate row buffer BEFORE callbacks/reset,
-	// because reset will emit damage immediately.
+	// NEW: honor applications' use of the alternate screen buffer
+	vterm_screen_enable_altscreen(m_screen, 1);
+
+	// allocate row buffer BEFORE callbacks/reset
 	m_rowBuf.resize(static_cast<size_t>(m_cols) + 1, 0);
 
 	static const VTermScreenCallbacks Cbs = {
-		/* damage      */ &Terminal::s_screen_damage,
-		/* moverect    */ &Terminal::s_screen_moverect,
-		/* movecursor  */ &Terminal::s_screen_movecursor,
-		/* settermprop */ &Terminal::s_screen_settermprop,
-		/* bell        */ &Terminal::s_screen_bell,
-		/* resize      */ &Terminal::s_screen_resize,
-		/* sb_pushline */ &Terminal::s_screen_sb_pushline,
-		/* sb_popline  */ &Terminal::s_screen_sb_popline
+		&Terminal::s_screen_damage,
+		&Terminal::s_screen_moverect,
+		&Terminal::s_screen_movecursor,
+		&Terminal::s_screen_settermprop,
+		&Terminal::s_screen_bell,
+		&Terminal::s_screen_resize,
+		&Terminal::s_screen_sb_pushline,
+		&Terminal::s_screen_sb_popline
 	};
 	vterm_screen_set_callbacks(m_screen, &Cbs, this);
-	
-	// Optional but recommended: select SGR mouse protocol so TUIs see mouse events.
+
+	// Use SGR mouse protocol for outgoing mouse events
 	#ifdef VTERM_MOUSE_PROTO_SGR
 		vterm_mouse_set_protocol(m_vt, VTERM_MOUSE_PROTO_SGR);
 	#elif defined(VTERM_MOUSE_PROTOCOL_SGR)
 		vterm_mouse_set_protocol(m_vt, VTERM_MOUSE_PROTOCOL_SGR);
 	#endif
-	
-	// Some apps want focus / extended modes; harmless if unsupported.
-	#ifdef VTERM_PROP_MOUSE
-		// nothing needed; just documenting that mouse goes via keyboard output
-	#endif
-	
 
-	// Now safe to reset (may trigger damage callbacks)
 	m_screenReady.store(true, std::memory_order_release);
 	vterm_screen_reset(m_screen, 1 /* hard */);
-
 	return true;
 }
 
@@ -413,18 +402,12 @@ int Terminal::s_screen_movecursor(VTermPos pos, VTermPos /*oldpos*/, int visible
 
 
 int Terminal::s_screen_settermprop(VTermProp prop, VTermValue* val, void* user) {
-	std::cout << "strmprop\n";
 	auto* self = static_cast<Terminal*>(user);
-	std::cout << "huh\n";
 	if (!self || !val) return 0;
 
 	switch (prop) {
-		case VTERM_PROP_CURSORVISIBLE:
-			self->m_cursorInfo.visible = val->boolean;
-			break;
-		case VTERM_PROP_CURSORBLINK:
-			self->m_cursorInfo.blink = val->boolean;
-			break;
+		case VTERM_PROP_CURSORVISIBLE: self->m_cursorInfo.visible = val->boolean; break;
+		case VTERM_PROP_CURSORBLINK:   self->m_cursorInfo.blink   = val->boolean; break;
 		case VTERM_PROP_CURSORSHAPE: {
 			int v = val->number;
 			if (v == 0) v = 1;
@@ -432,22 +415,22 @@ int Terminal::s_screen_settermprop(VTermProp prop, VTermValue* val, void* user) 
 			self->m_cursorInfo.shape = v;
 			break;
 		}
-#ifdef VTERM_PROP_ALTSCREEN
-		case VTERM_PROP_ALTSCREEN:
-			self->m_altScreen.store(!!val->boolean, std::memory_order_release);
+		case VTERM_PROP_ALTSCREEN: {
+			bool on = !!val->boolean;
+			self->m_altScreen.store(on, std::memory_order_release);
+			if (on) {
+				// While in alt-screen, don't show terminal scrollback.
+				self->m_view_off = 0;
+			}
 			break;
-#endif
-#ifdef VTERM_PROP_MOUSE
-		case VTERM_PROP_MOUSE:
-			// val->number is typical; treat non-zero as enabled
+		}
+		case VTERM_PROP_MOUSE: {
+			// Nonzero means app enabled mouse tracking (DECSET ?1000/1002/1006/etc.)
 			self->m_mouseReporting.store(val->number != 0, std::memory_order_release);
 			break;
-#endif
+		}
 		default: break;
 	}
-	
-	std::cout << "dn\n";
-	
 	return 1;
 }
 
@@ -457,37 +440,34 @@ int Terminal::s_screen_bell(void* /*user*/) {
 	return 1;
 }
 
- int Terminal::s_screen_resize(int rows, int cols, void* user) {
-	std::cout << "s_screen_resize\n";
+int Terminal::s_screen_resize(int rows, int cols, void* user) {
 	auto* self = static_cast<Terminal*>(user);
 	if (!self) return 1;
 	self->m_rows = rows;
 	self->m_cols = cols;
 	self->m_rowBuf.resize(static_cast<size_t>(cols) + 1, 0);
-	std::cout << "s_screen_resizedone\n";
 	return 1;
 }
 
 int Terminal::s_screen_sb_pushline(int cols, const VTermScreenCell* cells, void* user) {
-	std::cout << "pshln\n";
 	auto* self = static_cast<Terminal*>(user);
-	if (!self) {
-		std::cout << "noself...\n";
+	if (!self) return 1;
+	if (self->m_altScreen.load(std::memory_order_acquire)) {
+		// In alternate screen, do not accumulate into scrollback.
 		return 1;
 	}
-//	std::lock_guard<std::mutex> lock(self->m_vtermMutex);
-	std::cout << "1.\n";
 	self->savePushLine(cols, cells);
-	std::cout << "pshlndone\n";
-	return 1; // handled
+	return 1;
 }
 
 int Terminal::s_screen_sb_popline(int cols, VTermScreenCell* cells, void* user) {
 	auto* self = static_cast<Terminal*>(user);
 	if (!self) return 1;
-
-	// IMPORTANT: libvterm expects every cell to be valid if we return 1.
-	// Initialise the whole row to blanks with sane defaults.
+	if (self->m_altScreen.load(std::memory_order_acquire)) {
+		// No terminal scrollback in alt-screen.
+		return 0;
+	}
+	
 	for (int i = 0; i < cols; ++i) {
 		VTermScreenCell& cell = cells[i];
 		std::memset(&cell, 0, sizeof(cell));
@@ -503,7 +483,6 @@ int Terminal::s_screen_sb_popline(int cols, VTermScreenCell* cells, void* user) 
 	// If we had nothing, return 0 so libvterm will fill the row itself.
 	return ok ? 1 : 0;
 }
-
 
 // Pulls everything libvterm wants to send *to the child PTY* and writes it.
 bool Terminal::drainVTermOutputToPty_() {
@@ -674,32 +653,54 @@ bool Terminal::mouseDrag(int startRow, int startCol, int endRow, int endCol, int
 	return mousePress(endRow, endCol, button, false, shift, alt, ctrl);
 }
 
-bool Terminal::mouseScroll(int /*row*/, int /*col*/, int lines,
-													 bool /*shift*/, bool /*alt*/, bool /*ctrl*/) {
+bool Terminal::mouseScroll(int row, int col, int lines,
+						   bool shift, bool alt, bool ctrl) {
 	if (lines == 0) return true;
 
-	if (appWantsMouse()) {
-		// Legacy behavior: send to the app
+	const bool altScreen = m_altScreen.load(std::memory_order_acquire);
+	const bool mouseOn   = m_mouseReporting.load(std::memory_order_acquire);
+
+	if (altScreen || mouseOn) {
+		// Send SGR wheel events to the app.
 		int n = std::abs(lines);
 		bool up = (lines > 0);
-		int wheelCode = (up ? 64 : 65); // modifiers omitted; add if needed
+		int wheelCode = up ? 64 : 65; // SGR: 64=wheel up, 65=wheel down
+		// Use actual mouse coordinates if you have them; (row,col) are provided here.
 		for (int i = 0; i < n; ++i) {
-			if (!sgrSend(this, wheelCode, /*row*/1, /*col*/1, /*press*/true)) return false;
+			if (!sgrSend(this, wheelCode, row, col, /*press*/true)) return false;
 		}
 		return true;
 	}
 
-	// Terminal scrollback
-	scrollbackLines(lines);          // positive -> up, negative -> down
-	// Force a redraw: easiest is to mark damage on the whole screen
+	// Not in alt screen and app didn't enable mouse -> terminal scrollback
+	scrollbackLines(lines);
 	VTermRect all{0, m_rows, 0, m_cols};
 	onDamage(all);
 	return true;
 }
 
-
 CursorInfo Terminal::getCursorInfo() {
-	return m_cursorInfo;
+	CursorInfo ci = m_cursorInfo;
+
+	// If the user has scrolled back, adjust the cursor's display row.
+	int from_sb = std::min(m_view_off, static_cast<int>(m_scrollback.size()));
+	if (from_sb > 0) {
+		// Cursor is in live area at row ci.row; display is shifted down by from_sb.
+		int disp_row = ci.row + from_sb;
+
+		// If shifted cursor falls outside the visible grid, hide it to avoid drawing off-screen.
+		if (disp_row < 0 || disp_row >= m_rows) {
+			ci.visible = false;
+		} else {
+			ci.row = disp_row;
+		}
+	}
+
+	if (!m_screenReady.load(std::memory_order_acquire)) {
+		ci.visible = false;
+	}
+
+	return ci;
 }
 
 void Terminal::clampView() {

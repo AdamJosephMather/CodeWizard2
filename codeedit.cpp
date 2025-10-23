@@ -676,21 +676,18 @@ void CodeEdit::save() {
 			App::RemoveWidgetFromParent(broken_state_menu);
 		}
 		
-		std::ifstream checkFile(filepath);
-		if (checkFile.good()) {
-			std::ofstream fileStream(filepath);
-			if (fileStream.is_open()) {
-				fileStream << str;
-				fileStream.close();
-			}
-		} else {
-			checkFile.close();
-			std::ofstream newFileStream(filepath);
-			if (newFileStream.is_open()) {
-				newFileStream << str;
-				newFileStream.close();
+		// CodeEdit::save() — replace the entire checkFile/ofstream block
+		{
+			std::string err;
+			std::filesystem::path toPath = filepath; // ensure includes <filesystem>
+		
+			if (!atomicWriteReplace(toPath, str, &err)) {
+				std::cerr << "Atomic save failed for " << toPath << ": " << err << "\n";
+				// You can surface a toast or set FILE_BROKEN_STATE here if you want.
+				return;
 			}
 		}
+		
 		
 		was_in_a_file = true;
 		
@@ -1133,6 +1130,13 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 					activateReplace(forwards, findTextEdit->getFullText(), replaceTextEdit->getFullText(), case_sensitive);
 				}
 				
+				return true;
+			}else if (key == GLFW_KEY_TAB && is_press && shift_held) {
+				if (findTextEdit == App::activeLeafNode) {
+					App::setActiveLeafNode(replaceTextEdit);
+				}else{
+					App::setActiveLeafNode(findTextEdit);
+				}
 				return true;
 			}
 			

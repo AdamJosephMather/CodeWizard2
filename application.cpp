@@ -1425,107 +1425,73 @@ void App::save() {
 
 icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, bool& worked) {
 	worked = false;
-
-	// Read file as binary
-	std::ifstream file(filename, std::ios::binary | std::ios::ate);
-	if (!file.is_open()) {
-		return icu::UnicodeString::fromUTF8("Failed to open file - file.is_open");
-	}
-
-	std::streamsize fileSize = file.tellg();
-	if (fileSize < 0) {
-		file.close();
-		return icu::UnicodeString::fromUTF8("Failed to open file - fileSize < 0");
-	}
-
-	file.seekg(0, std::ios::beg);
-	std::vector<char> buffer(static_cast<size_t>(fileSize));
-	if (fileSize > 0 && !file.read(buffer.data(), fileSize)) {
-		file.close();
-		return icu::UnicodeString::fromUTF8("Failed to open file - couldn't read data");
-	}
-	file.close();
-
-	// Empty file on disk → success with empty string
-	if (buffer.empty()) {
-		worked = true;
-		return icu::UnicodeString();
-	}
-
-	UErrorCode status = U_ZERO_ERROR;
-
-	// Charset detector
-	UCharsetDetector* detector = ucsdet_open(&status);
-	if (U_FAILURE(status) || !detector) {
-		return icu::UnicodeString::fromUTF8("Failed to open file - couldn't create charset detector");
-	}
-
-	ucsdet_setText(detector, buffer.data(), static_cast<int32_t>(fileSize), &status);
-	if (U_FAILURE(status)) {
-		ucsdet_close(detector);
-		return icu::UnicodeString::fromUTF8("Failed to open file - couldn't set input data for charset detector");
-	}
-
-	int32_t matchCount = 0;
-	const UCharsetMatch** matches = ucsdet_detectAll(detector, &matchCount, &status);
-	if (U_FAILURE(status) || matchCount == 0) {
-		ucsdet_close(detector);
-		return icu::UnicodeString::fromUTF8("Failed to open file - no matches on charset detector");
-	}
-
-	icu::UnicodeString result;
-	bool conversionSucceeded = false;
-
-	// Try detected encodings
-	for (int32_t i = 0; i < matchCount && !conversionSucceeded; ++i) {
-		status = U_ZERO_ERROR;
-		const char* encodingName = ucsdet_getName(matches[i], &status);
-		if (U_FAILURE(status) || !encodingName) continue;
-
-		int32_t confidence = ucsdet_getConfidence(matches[i], &status);
-		if (U_FAILURE(status) || confidence < 10) continue;
-
-		UConverter* converter = ucnv_open(encodingName, &status);
-		if (U_FAILURE(status) || !converter) continue;
-
-		int32_t targetCapacity = static_cast<int32_t>(fileSize * 2 + 1);
-		std::vector<UChar> targetBuffer(static_cast<size_t>(targetCapacity));
-
-		int32_t targetLength = ucnv_toUChars(
-			converter,
-			targetBuffer.data(),
-			targetCapacity,
-			buffer.data(),
-			static_cast<int32_t>(fileSize),
-			&status
-		);
-
-		ucnv_close(converter);
-
-		if (U_SUCCESS(status)) {
-			result = icu::UnicodeString(targetBuffer.data(), targetLength);
-			conversionSucceeded = true;
+	
+	
+	for (int i = 0; i < 5; i++) {
+		// Read file as binary
+		std::ifstream file(filename, std::ios::binary | std::ios::ate);
+		if (!file.is_open()) {
+			return icu::UnicodeString::fromUTF8("Failed to open file - file.is_open");
 		}
-	}
-
-	ucsdet_close(detector);
-
-	// Fallback encodings
-	if (!conversionSucceeded) {
-		const char* fallbackEncodings[] = {
-			"UTF-8","UTF-16","UTF-16BE","UTF-16LE",
-			"UTF-32","UTF-32BE","UTF-32LE",
-			"ISO-8859-1","Windows-1252","ASCII"
-		};
-
-		for (const char* enc : fallbackEncodings) {
+	
+		std::streamsize fileSize = file.tellg();
+		if (fileSize < 0) {
+			file.close();
+			return icu::UnicodeString::fromUTF8("Failed to open file - fileSize < 0");
+		}
+	
+		file.seekg(0, std::ios::beg);
+		std::vector<char> buffer(static_cast<size_t>(fileSize));
+		if (fileSize > 0 && !file.read(buffer.data(), fileSize)) {
+			file.close();
+			return icu::UnicodeString::fromUTF8("Failed to open file - couldn't read data");
+		}
+		file.close();
+		
+		// Empty file on disk → try again
+		if (buffer.empty()) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(25));
+		}
+		
+		UErrorCode status = U_ZERO_ERROR;
+		
+		// Charset detector
+		UCharsetDetector* detector = ucsdet_open(&status);
+		if (U_FAILURE(status) || !detector) {
+			return icu::UnicodeString::fromUTF8("Failed to open file - couldn't create charset detector");
+		}
+		
+		ucsdet_setText(detector, buffer.data(), static_cast<int32_t>(fileSize), &status);
+		if (U_FAILURE(status)) {
+			ucsdet_close(detector);
+			return icu::UnicodeString::fromUTF8("Failed to open file - couldn't set input data for charset detector");
+		}
+		
+		int32_t matchCount = 0;
+		const UCharsetMatch** matches = ucsdet_detectAll(detector, &matchCount, &status);
+		if (U_FAILURE(status) || matchCount == 0) {
+			ucsdet_close(detector);
+			return icu::UnicodeString::fromUTF8("Failed to open file - no matches on charset detector");
+		}
+		
+		icu::UnicodeString result;
+		bool conversionSucceeded = false;
+		
+		// Try detected encodings
+		for (int32_t i = 0; i < matchCount && !conversionSucceeded; ++i) {
 			status = U_ZERO_ERROR;
-			UConverter* converter = ucnv_open(enc, &status);
+			const char* encodingName = ucsdet_getName(matches[i], &status);
+			if (U_FAILURE(status) || !encodingName) continue;
+			
+			int32_t confidence = ucsdet_getConfidence(matches[i], &status);
+			if (U_FAILURE(status) || confidence < 10) continue;
+			
+			UConverter* converter = ucnv_open(encodingName, &status);
 			if (U_FAILURE(status) || !converter) continue;
-
+			
 			int32_t targetCapacity = static_cast<int32_t>(fileSize * 2 + 1);
 			std::vector<UChar> targetBuffer(static_cast<size_t>(targetCapacity));
-
+			
 			int32_t targetLength = ucnv_toUChars(
 				converter,
 				targetBuffer.data(),
@@ -1534,53 +1500,87 @@ icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, boo
 				static_cast<int32_t>(fileSize),
 				&status
 			);
-
+	
 			ucnv_close(converter);
-
+	
 			if (U_SUCCESS(status)) {
 				result = icu::UnicodeString(targetBuffer.data(), targetLength);
 				conversionSucceeded = true;
-				break;
 			}
 		}
-	}
-
-	// Final fallback: assume UTF-8 and sanity-check replacement chars
-	if (!conversionSucceeded) {
-		status = U_ZERO_ERROR;
-		result = icu::UnicodeString::fromUTF8(icu::StringPiece(buffer.data(), static_cast<int32_t>(fileSize)));
-
-		int32_t replacementCount = 0;
-		const int32_t totalLength = result.length();
-		for (int32_t i = 0; i < totalLength; ++i) {
-			if (result.charAt(i) == 0xFFFD) replacementCount++;
-		}
-		if (totalLength > 0 && (replacementCount * 100 / totalLength) < 5) {
-			conversionSucceeded = true;
-		}
-	}
 	
-	// Normalize (strip CR) on success
-	if (conversionSucceeded) {
-		icu::UnicodeString normalized;
-		for (int32_t i = 0; i < result.length(); ++i) {
-			UChar ch = result.charAt(i);
-			if (ch != 0x000D) normalized.append(ch);
-		}
-		result = normalized;
-	}
+		ucsdet_close(detector);
 	
-
-	// >>> Your requested guard <<<
-	// If decode produced empty text but the file on disk is non-empty,
-	// mark as not worked so caller can "open it" anyway.
-	if (fileSize > 0 && result.length() == 0) {
-		worked = false;
-		return result; // empty string, signals caller to open raw/anyway
+		// Fallback encodings
+		if (!conversionSucceeded) {
+			const char* fallbackEncodings[] = {
+				"UTF-8","UTF-16","UTF-16BE","UTF-16LE",
+				"UTF-32","UTF-32BE","UTF-32LE",
+				"ISO-8859-1","Windows-1252","ASCII"
+			};
+	
+			for (const char* enc : fallbackEncodings) {
+				status = U_ZERO_ERROR;
+				UConverter* converter = ucnv_open(enc, &status);
+				if (U_FAILURE(status) || !converter) continue;
+	
+				int32_t targetCapacity = static_cast<int32_t>(fileSize * 2 + 1);
+				std::vector<UChar> targetBuffer(static_cast<size_t>(targetCapacity));
+	
+				int32_t targetLength = ucnv_toUChars(
+					converter,
+					targetBuffer.data(),
+					targetCapacity,
+					buffer.data(),
+					static_cast<int32_t>(fileSize),
+					&status
+				);
+	
+				ucnv_close(converter);
+	
+				if (U_SUCCESS(status)) {
+					result = icu::UnicodeString(targetBuffer.data(), targetLength);
+					conversionSucceeded = true;
+					break;
+				}
+			}
+		}
+	
+		// Final fallback: assume UTF-8 and sanity-check replacement chars
+		if (!conversionSucceeded) {
+			status = U_ZERO_ERROR;
+			result = icu::UnicodeString::fromUTF8(icu::StringPiece(buffer.data(), static_cast<int32_t>(fileSize)));
+	
+			int32_t replacementCount = 0;
+			const int32_t totalLength = result.length();
+			for (int32_t i = 0; i < totalLength; ++i) {
+				if (result.charAt(i) == 0xFFFD) replacementCount++;
+			}
+			if (totalLength > 0 && (replacementCount * 100 / totalLength) < 5) {
+				conversionSucceeded = true;
+			}
+		}
+		
+		// Normalize (strip CR) on success
+		if (conversionSucceeded) {
+			icu::UnicodeString normalized;
+			for (int32_t i = 0; i < result.length(); ++i) {
+				UChar ch = result.charAt(i);
+				if (ch != 0x000D) normalized.append(ch);
+			}
+			result = normalized;
+		}
+		
+	
+		if (result.length() != 0 || !conversionSucceeded) {
+			worked = conversionSucceeded;
+			return result;
+		}
+		
+		std::this_thread::sleep_for(std::chrono::milliseconds(25));
 	}
-
-	worked = conversionSucceeded;
-	return result;
+	worked = true;
+	return icu::UnicodeString();
 }
 
 void App::launchCommandNonBlocking(const std::string& command) {

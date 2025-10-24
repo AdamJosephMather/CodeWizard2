@@ -408,7 +408,7 @@ void CodeEdit::openFile() {
 		}
 	}else {
 		file = nullptr;
-		textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: "+path));
+		textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: "+path+"\n\n")+text);
 		lastsaved = nullptr;
 	}
 }

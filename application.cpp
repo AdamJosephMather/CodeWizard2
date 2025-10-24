@@ -1449,6 +1449,7 @@ icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, boo
 		// Empty file on disk → try again
 		if (buffer.empty()) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(25));
+			continue;
 		}
 		
 		UErrorCode status = U_ZERO_ERROR;
@@ -1577,6 +1578,7 @@ icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, boo
 		
 		std::this_thread::sleep_for(std::chrono::milliseconds(25));
 	}
+	
 	worked = true;
 	return icu::UnicodeString();
 }

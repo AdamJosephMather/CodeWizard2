@@ -21,6 +21,17 @@ Just to show off a little
 ![image](https://github.com/user-attachments/assets/e8b650bc-4fbd-429c-a919-a5790c723c83)
 No, there's no limit to the number or configuration of panels.
 
+## Widgets
+
+CodeWizard2 uses `widgets`, of which we have:
+1. Editor View (code, images)
+2. File Tree
+3. Settings Menu
+4. File Compare (compairs two files)
+5. AI Chat
+6. LSP Debug Window
+7. Terminal
+
 ## Quick Note
 
 CodeWizard2 is only available on Windows. There is a modal option (which I quite enjoy but doesn't match any other editors) available in the settings.

@@ -68,6 +68,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		w->t_h = App::text_padding*2+TextRenderer::get_text_height();
 	});
 	renamebox->background_color = App::theme.extras_background_color;
+	renamebox->border = true;
 	
 	completionbox = new ListBox(this, [&](Widget* w){
 		Cursor c = textedit->cursors[0];
@@ -94,6 +95,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		w->t_h = w->t_w/2;
 	});
 	hoverbox->background_color = App::theme.extras_background_color;
+	hoverbox->border = true;
 	
 	
 	find_menu_open = false;
@@ -620,6 +622,7 @@ void CodeEdit::triggerSaveAs() {
 		detectLanguage();
 		
 		was_in_a_file = false;
+		f->is_opening = false;
 		save();
 		
 		if (lsp_client){

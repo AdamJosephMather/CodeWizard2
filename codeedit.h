@@ -43,6 +43,8 @@ public:
 	
 	int TABID;
 	
+	std::atomic<bool> is_loading{false};
+	
 	App::PosFunction POS_FUNC = nullptr;
 	App::UpdateFInfoFunction FUPDATER = nullptr;
 	

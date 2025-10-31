@@ -59,7 +59,9 @@ public:
 	
 	static bool recording_macro;
 	static bool replaying_macro;
-	static std::vector<KeyboardEvent> keyboard_events;
+	static int current_step;
+	static int rep_count;
+	static std::vector<std::vector<KeyboardEvent>> keyboard_events;
 	
 	static bool REQUESTING_STRING;
 	static StringGivenFunc ON_STRING_GIVEN;
@@ -67,6 +69,8 @@ public:
 	static Widget* commandPalette;
 	static Widget* commandBox;
 	static Widget* toastBox;
+	
+	static Widget* before_reps_request;
 	
 	static std::mutex canMakeChanges;
 	

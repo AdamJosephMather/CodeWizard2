@@ -155,8 +155,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	findTextEdit->border = true;
 	caseSensitivity->border = true;
 	
-	
-	
 	line_numbers = new LineNumbers(this);
 	
 	textedit = new TextEdit(this, [&](Widget* t){
@@ -402,8 +400,9 @@ void CodeEdit::openFile() {
 	icu::UnicodeString text = App::readFileToUnicodeString(path, worked);
 	
 	if (worked) {
-		textedit->setFullText(text);
 		lastsaved = std::make_shared<icu::UnicodeString>(text);
+		textedit->setFullText(text);
+		
 		int indt = analyzeForFixit_on_lines(textedit->lines);
 		if (indt != 0) {
 			REQUESTING_FIXIT = true;
@@ -420,6 +419,8 @@ void CodeEdit::openFile() {
 		textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: "+path+"\n\n")+text);
 		lastsaved = nullptr;
 	}
+	
+	file->is_opening = false;
 }
 
 LineResult CodeEdit::highlightline(icu::UnicodeString line, TextMateInfo info) {
@@ -609,7 +610,6 @@ void CodeEdit::triggerSaveAs() {
 		FileInfo *f = new FileInfo();
 		f->filepath = filePath;
 		f->filename = filename;
-		f->ondisk = true;
 		
 		FUPDATER(this, f);
 		
@@ -648,7 +648,7 @@ void CodeEdit::reload_file() {
 }
 
 void CodeEdit::save() {
-	if (file) {
+	if (file && !file->is_opening) {
 		std::string filepath = file->filepath;
 		icu::UnicodeString content = textedit->getFullText();
 		
@@ -685,14 +685,12 @@ void CodeEdit::save() {
 			App::RemoveWidgetFromParent(broken_state_menu);
 		}
 		
-		// CodeEdit::save() — replace the entire checkFile/ofstream block
 		{
 			std::string err;
 			std::filesystem::path toPath = filepath; // ensure includes <filesystem>
 		
 			if (!atomicWriteReplace(toPath, str, &err)) {
 				std::cerr << "Atomic save failed for " << toPath << ": " << err << "\n";
-				// You can surface a toast or set FILE_BROKEN_STATE here if you want.
 				return;
 			}
 		}
@@ -907,7 +905,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 	Cursor svdCrsr = textedit->cursors[0];
 	
 	if (parent == App::activeEditor) {
-		if (key == GLFW_KEY_F5 && is_press && language != "" && file && file->ondisk) {
+		if (key == GLFW_KEY_F5 && is_press && language != "" && file) {
 			// at this point we've already tried project build commands
 			auto l = App::languagemap[language];
 			std::cout << "Lang.bc = " << l.build_command << std::endl;
@@ -1087,7 +1085,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 		if (key == GLFW_KEY_S && is_press && shift_held && control_held){
 			triggerSaveAs();
 			return true;
-		}else if (key == GLFW_KEY_S && is_press && !shift_held && control_held && (!file || !file->ondisk)){
+		}else if (key == GLFW_KEY_S && is_press && !shift_held && control_held && !file){
 			triggerSaveAs();
 			return true;
 		}else if (key == GLFW_KEY_F && is_press && (control_held || (App::activeLeafNode == textedit && textedit->mode == 'n'))) {
@@ -1589,7 +1587,6 @@ void CodeEdit::gotoDef(int id, int line1, int character1, int line, int characte
 			std::string filename = fullPath.filename().string();
 			
 			FileInfo* finfo = new FileInfo();
-			finfo->ondisk = true;
 			finfo->filepath = pointing_to;
 			finfo->filename = filename;
 			
@@ -1821,6 +1818,8 @@ std::vector<EditSection> CodeEdit::gatherCurrentFileSections(const std::vector<F
 }
 
 void CodeEdit::request_close(close_callback_type callback) {
+	save();
+	
 	App::MoveWidget(replaceTextEdit, this); // ensure all of these will be deleted
 	App::MoveWidget(findTextEdit, this);
 	App::MoveWidget(caseSensitivity, this);

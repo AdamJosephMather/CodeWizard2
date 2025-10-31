@@ -80,7 +80,7 @@ void TextEdit::Highlight(int first_visible_line, int last_visible_line) {
 
 		if (line->changed) {
 			int ln = 0;
-
+			
 			for (int c_indx = 0; c_indx < line->line_text.length(); c_indx++) {
 				UChar32 c = line->line_text.char32At(c_indx);
 
@@ -98,7 +98,7 @@ void TextEdit::Highlight(int first_visible_line, int last_visible_line) {
 			max_line_len = line->visual_length;
 		}
 	}
-
+	
 	if (highlighter) {
 		auto first_info = getblankhighlighting();
 
@@ -107,7 +107,7 @@ void TextEdit::Highlight(int first_visible_line, int last_visible_line) {
 		for (int i = 0; i < lines.size(); i ++) {
 			Line* line = &lines[i];
 
-			if (line->changed) { // I know - DRY and all that. (we have to do it here because the previous one doesn't loop over all of them, and this one sets changed = false)
+			if (line->changed) {
 				int ln = 0;
 				line->changed = false;
 				line->highlightinguptodate = false;
@@ -1575,6 +1575,10 @@ void TextEdit::render() {
 	}
 
 	Widget::render();
+	
+	if (border) {
+		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+	}
 }
 
 Color* TextEdit::getColorFromTokens(int indx, std::vector<ColoredTokens> tokens, bool* aragne) {

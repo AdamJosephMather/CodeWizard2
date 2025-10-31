@@ -117,6 +117,9 @@ void Tabs::render() {
 				}
 				
 				TextRenderer::draw_text(lc.end+tsx, t_y+text_height, "X", App::theme.main_text_color);
+				App::DrawBorder(lc.start, t_y, tab_width+end_len, t_h, App::theme.border);
+			}else{
+				App::DrawBorder(lc.start, t_y, tab_width, t_h, App::theme.border);
 			}
 			
 			TextRenderer::draw_text(lc.start+5, t_y+text_height, info.title, App::theme.main_text_color);
@@ -147,6 +150,7 @@ void Tabs::render() {
 			}
 			
 			TextRenderer::draw_text(add_loc+tsx, t_y+text_height, "+", App::theme.main_text_color);
+			App::DrawBorder(add_loc, t_y, end_len, t_h, App::theme.border);
 		}
 		
 		screen_add_x = add_loc;

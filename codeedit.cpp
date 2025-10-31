@@ -147,6 +147,15 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		c->t_y = findTextEdit->t_y;
 	}, nullptr);
 	
+	allButton->border = true;
+	nextReplButton->border = true;
+	nextButton->border = true;
+	prevButton->border = true;
+	replaceTextEdit->border = true;
+	findTextEdit->border = true;
+	caseSensitivity->border = true;
+	
+	
 	
 	line_numbers = new LineNumbers(this);
 	

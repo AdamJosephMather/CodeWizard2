@@ -1,5 +1,4 @@
 #include "editor.h"
-#include "text_renderer.h"
 #include "application.h"
 #include "codeedit.h"
 #include "tinyfiledialogs.h"

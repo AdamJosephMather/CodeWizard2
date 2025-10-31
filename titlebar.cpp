@@ -39,7 +39,7 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 
 void TitleBar::position(int x, int y, int width, int height) {
 	t_w = width;
-	t_h = children[0]->t_h;
+	t_h = children[0]->t_h+1;
 	
 	Widget::position(0, 0, t_w, t_h);
 }
@@ -112,7 +112,7 @@ void TitleBar::render() {
 	}
 	
 	glDisable(GL_SCISSOR_TEST);
-	App::DrawRect(0, 0, t_w, 1, App::theme.main_background_color);
-	App::DrawRect(0, t_h, t_w, 1, App::theme.main_background_color);
+//	App::DrawRect(0, 0, t_w, 1, App::theme.main_background_color);
+	App::DrawRect(0, t_h-1, t_w, 1, App::theme.main_background_color);
 	glEnable(GL_SCISSOR_TEST);
 }

@@ -8,6 +8,9 @@ class Label : public Widget {
 public:
 	Label(Widget* parent);
 	
+	bool border = true;
+	bool rect = true;
+	
 	icu::UnicodeString fulltext;
 	std::vector<icu::UnicodeString> drawlines;
 	

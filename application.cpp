@@ -74,6 +74,7 @@ GLFWwindow* App::window = nullptr;
 Widget* App::rootelement = nullptr;
 
 int App::text_padding = 5;
+int App::border_width = 1;
 
 Color* App::bgcolor = MakeColor(0.5, 0.5, 0.5);
 
@@ -131,6 +132,8 @@ bool App::Init() {
 		w->t_y = STRING_REQUEST_RECTANGLE->t_y;
 		w->t_h = h;
 	};
+	STRING_REQUEST_LABEL->rect = false;
+	STRING_REQUEST_LABEL->border = false;
 	
 	settings->loadSettings();
 	WINDOW_WIDTH = settings->getValue("window_width", 1200);
@@ -540,6 +543,13 @@ void App::DrawRect(int x, int y, int w, int h, Color* color) {
 	glEnd();
 }
 
+void App::DrawBorder(int x, int y, int w, int h, Color* color) {
+	DrawRect(x, y, w, border_width, color);
+	DrawRect(x, y, border_width, h, color);
+	DrawRect(x+w-border_width, y, border_width, h, color);
+	DrawRect(x, y+h-border_width, w, border_width, color);
+}
+
 void App::DrawRect(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b) {
 	glColor4f((float)r/255.0f, (float)g/255.0f, (float)b/255.0f, 1.0f);
 	glBegin(GL_QUADS);
@@ -766,6 +776,10 @@ void App::mouse_button_callback(GLFWwindow* window, int button, int action, int 
 			RemoveWidgetFromParent(STRING_REQUEST_LABEL);
 			setActiveLeafNode(nullptr);
 		}
+	}
+	
+	if (action == GLFW_PRESS && activeLeafNode == commandPalette && (mx < commandPalette->t_x || my < commandPalette->t_y || mx > commandPalette->t_x+commandPalette->t_w || my > commandPalette->t_y+commandPalette->t_h)) {
+		setActiveLeafNode(beforeCommandLeafNode);
 	}
 	
 	if (rootelement) { rootelement->on_mouse_button_event(button, action, mods); }
@@ -1395,6 +1409,10 @@ void App::setActiveLeafNode(Widget* w) {
 	activeLeafNode = w;
 	activeEditor = nullptr;
 	
+	if (w != commandPalette) {
+		commandUnfocused();
+	}
+	
 	if (!w) {
 		return;
 	}
@@ -1411,10 +1429,6 @@ void App::setActiveLeafNode(Widget* w) {
 			activeEditor = edtr;
 			break;
 		}
-	}
-	
-	if (w != commandPalette) {
-		commandUnfocused();
 	}
 	
 	if (w == commandPalette) { // we must have just moved to the commandPalette (let's clear it)
@@ -1806,12 +1820,11 @@ void App::updateFromTintColor(Theme* t) {
 	setTintedColor(t->tint_color, t->extras_background_color,  0.164706);
 	setTintedColor(t->tint_color, t->hover_background_color,   0.23);
 	setTintedColor(t->tint_color, t->main_text_color,          1.0);
+	setTintedColor(t->tint_color, t->border,                   0.35);
 	setTintedColor(t->tint_color, t->syntax_colors[0],         1.0);
 	setTintedColor(t->tint_color, t->darker_background_color,  0.05);
 	setTintedColor(t->tint_color, t->overlay_background_color, 0.12);
 	setTintedColor(t->tint_color, t->lesser_text_color,        0.392157);
-	
-	t->border = MakeColor(0, 0, 0);
 }
 
 void App::displayToast(icu::UnicodeString text) {

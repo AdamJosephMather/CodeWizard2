@@ -28,17 +28,17 @@ void PanelHolder::position(int x, int y, int width, int height) {
 	if (hastwo) {
 		if (is_horizontal) {
 			c1_x = x;
-			c1_w = width*ratio;
-			c2_x = x+c1_w;
-			c2_w = width-c1_w;
+			c1_w = width*ratio-2;
+			c2_x = x+c1_w+4;
+			c2_w = width-c1_w-4;
 			
 			c1_y = c2_y = y;
 			c1_h = c2_h = height;
 		}else{
 			c1_y = y;
-			c1_h = height*ratio;
-			c2_y = y+c1_h;
-			c2_h = height-c1_h;
+			c1_h = height*ratio-2;
+			c2_y = y+c1_h+4;
+			c2_h = height-c1_h-4;
 			
 			c1_x = c2_x = x;
 			c1_w = c2_w = width;
@@ -261,7 +261,7 @@ void PanelHolder::render() {
 			App::DrawRect(t_x, ypos_h-2, t_w, 4, App::theme.main_background_color);
 		}
 		
-		App::DrawRoundedRect(xpos_h-width_h/2, ypos_h-height_h/2, width_h, height_h, 5, App::theme.lesser_text_color);
+		App::DrawRoundedRect(xpos_h-width_h/2, ypos_h-height_h/2, width_h, height_h, 5, App::theme.border);
 	}
 }
 

@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
 	theme.main_text_color = MakeColor(0.5137254902, 0.7960784314, 0.9725490196);
 	theme.darker_background_color = MakeColor(0.0274509804, 0.0470588235, 0.0549019608);
 	theme.overlay_background_color = MakeColor(0.1, 0.15, 0.2);
-	theme.border = MakeColor(0, 0, 0);
+	theme.border = MakeColor(0.8, 0.8, 0.8);
 	
 	theme.error_color = MakeColor(1.0, 0.3, 0.3);
 	theme.warning_color = MakeColor(1.0, 0.6431372549, 0.21);
@@ -132,6 +132,7 @@ int main(int argc, char* argv[]) {
 		w->t_h = App::tb->children[0]->t_h;
 	});
 	commandPalette->background_color = App::theme.extras_background_color;
+	commandPalette->border = true;
 	
 	ListBox* commandBox = new ListBox(nullptr, [&](Widget* w){
 		w->t_x = commandPalette->t_x;

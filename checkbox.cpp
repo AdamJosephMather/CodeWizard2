@@ -74,4 +74,8 @@ void CheckBox::render() {
 	}
 	
 	Widget::render();
+	
+	if (border) {
+		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+	}
 }

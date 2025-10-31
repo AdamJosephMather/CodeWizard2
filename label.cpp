@@ -46,7 +46,13 @@ bool Label::on_mouse_button_event(int button, int action, int mods) {
 }
 
 void Label::render() {
-	App::DrawRect(t_x, t_y, t_w, t_h, background_color);
+	if (rect) {
+		App::DrawRect(t_x, t_y, t_w, t_h, background_color);
+	}
+	if (border) {
+		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+	}
+	
 	
 	int ypos = t_y+App::text_padding;
 	

@@ -24,6 +24,7 @@ public:
 	bool window_button;
 	
 	int padding_button = 5;
+	bool border = false;
 private:
 	icu::UnicodeString BUTTON_LABEL;
 	Positioner POSITIONER;

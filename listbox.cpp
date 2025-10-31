@@ -31,6 +31,8 @@ void ListBox::render() {
 		TextRenderer::draw_text(t_x+5, y+5, elements[indx].tempSubStringBetween(0, maxlen), App::theme.main_text_color);
 		y += th;
 	}
+	
+	App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
 }
 
 void ListBox::setElements(std::vector<icu::UnicodeString> el) {

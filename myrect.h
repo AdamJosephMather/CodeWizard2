@@ -10,6 +10,8 @@ public:
 	void render();
 	void position(int x, int y, int width, int height);
 	
+	bool border = true;
+	
 	Color* background_color = nullptr;
 	App::PosFunction POSITIONER;
 };

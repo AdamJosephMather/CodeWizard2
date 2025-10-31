@@ -21,6 +21,7 @@ public:
 	bool on_mouse_move_event();
 	
 	bool is_checked = false;
+	bool border = false;
 
 private:
 	CheckPositioner POSITIONER;

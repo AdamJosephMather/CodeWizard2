@@ -86,6 +86,7 @@ public:
 	static double lastUpdate;
 	
 	static int text_padding;
+	static int border_width;
 	
 	static Widget* rootelement;
 	static int WINDOW_WIDTH;
@@ -121,6 +122,7 @@ public:
 	static void DrawRect(int x, int y, int w, int h, Color* color);
 	static void DrawRect(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b);
 	static void DrawRoundedRect(float x, float y, float w, float h, float radius, Color* color, int segments = 5);
+	static void DrawBorder(int x, int y, int w, int h, Color* color);
 	
 	static void setTheme(Theme theme);
 	

@@ -22,4 +22,7 @@ void MyRect::render() {
 	}
 	
 	App::DrawRect(t_x, t_y, t_w, t_h, background_color);
+	if (border) {
+		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+	}
 }

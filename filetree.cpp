@@ -16,6 +16,8 @@ void FileTree::render() {
 			App::DrawRect(itm.x+2, itm.y+2, itm.w-4, itm.h-4, App::theme.hover_background_color);
 		}
 		TextRenderer::draw_text(itm.x+App::text_padding, itm.y+App::text_padding, itm.name, App::theme.main_text_color);
+		
+		App::DrawBorder(itm.x+2, itm.y+2, itm.w-4, itm.h-4, App::theme.border);
 	}
 	
 	Widget::render();

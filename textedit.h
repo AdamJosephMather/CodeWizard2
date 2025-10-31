@@ -82,6 +82,8 @@ public:
 	
 	TextEdit(Widget* parent, App::PosFunction fnct);
 	
+	bool border = false;
+	
 	HighlightFunct highlighter = nullptr;
 	HighlightBeginFunct getblankhighlighting = nullptr;
 	CompareHighlightInfo highlighterNotEqual = nullptr;

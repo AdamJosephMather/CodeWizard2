@@ -73,11 +73,20 @@ void Button::render() {
 		if (hovered) {
 			App::DrawRect(t_x, t_y, t_w, t_h, App::theme.hover_background_color);
 		}
+		if (border){
+			App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+		}
 	}else{
+		int our_offset = 0;
+		if (border) {
+			our_offset = App::border_width;
+			App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, App::theme.border);
+		}
+		
 		if (hovered) {
-			App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, App::theme.hover_background_color);
+			App::DrawRoundedRect(t_x+our_offset, t_y+our_offset, t_w-our_offset*2, t_h-our_offset*2, radius, App::theme.hover_background_color);
 		}else if (!transparent){
-			App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, App::theme.darker_background_color);
+			App::DrawRoundedRect(t_x+our_offset, t_y+our_offset, t_w-our_offset*2, t_h-our_offset*2, radius, App::theme.darker_background_color);
 		}
 	}
 	

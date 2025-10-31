@@ -15,6 +15,7 @@ BrokenStateMenu::BrokenStateMenu(Widget* parent, std::string firsttext, std::str
 			first_callback();
 		}
 	});
+	firstbutton->border = true;
 	
 	secondbutton = new Button(this, icu::UnicodeString::fromUTF8(secondtext), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
@@ -26,6 +27,7 @@ BrokenStateMenu::BrokenStateMenu(Widget* parent, std::string firsttext, std::str
 			second_callback();
 		}
 	});
+	secondbutton->border = true;
 }
 
 void BrokenStateMenu::render() {

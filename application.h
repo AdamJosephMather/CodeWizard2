@@ -36,6 +36,19 @@ struct StoredSearch {
 	int line;
 };
 
+struct KeyboardEvent {
+	bool character_callback = false;
+	
+	GLFWwindow* window;
+	
+	unsigned int cc_codepoint;
+	
+	int key;
+	int scancode;
+	int action;
+	int mods;
+};
+
 class App {
 public:
 	using add_rem_func = std::function<void(bool,bool,bool)>;
@@ -43,6 +56,10 @@ public:
 	using PosFunction = std::function<void(Widget*)>;
 	using UpdateFInfoFunction = std::function<void(Widget*, FileInfo*)>;
 	using StringGivenFunc = std::function<void(icu::UnicodeString)>;
+	
+	static bool recording_macro;
+	static bool replaying_macro;
+	static std::vector<KeyboardEvent> keyboard_events;
 	
 	static bool REQUESTING_STRING;
 	static StringGivenFunc ON_STRING_GIVEN;

@@ -107,7 +107,7 @@ void TerminalWidget::render() {
 			// inside the (r,c) loop, after computing x,y and before drawing text
 			bool show_local_sel = !term->appWantsMouse();
 			if (show_local_sel && cell_in_selection(r, c)) {
-				App::DrawRect(x, y, TextRenderer::get_text_width(1), TextRenderer::get_text_height(), App::theme.main_text_color);
+				App::DrawRect(x, y, TextRenderer::get_text_width(1), TextRenderer::get_text_height(), App::theme.white);
 				
 				cell.fg_red = 255-cell.fg_red;
 				cell.fg_green = 255-cell.fg_green;
@@ -209,7 +209,7 @@ bool TerminalWidget::on_key_event(int key, int /*scancode*/, int action, int mod
 	}
 	
 	Terminal::SpecialKey sk;
-	if (ctrl && key >= GLFW_KEY_A && key <= GLFW_KEY_Z || key == GLFW_KEY_ESCAPE || map_special_key(key, sk)) {
+	if ((ctrl && key >= GLFW_KEY_A && key <= GLFW_KEY_Z) || key == GLFW_KEY_ESCAPE || map_special_key(key, sk)) {
 		clear_selection();
 	}
 	
@@ -272,6 +272,11 @@ bool TerminalWidget::on_char_event(unsigned int keycode) {
 		utf8[4] = '\0';
 	}
 	
+	std::string txt = selection_text();
+	if (!txt.empty()) {
+		clear_selection();
+	}
+	
 	return term->sendText(utf8);
 }
 
@@ -295,18 +300,18 @@ bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
 	if (left && !term->appWantsMouse()) {
 		if (press) {
 			selecting = true;
-			sel_r0 = sel_r1 = row;
+			int doc = term->docLineIdForScreenRow(row);
+			sel_doc_r0 = sel_doc_r1 = doc;
 			sel_c0 = sel_c1 = col;
-			return true; // consume
+			return true;
 		} else if (release && selecting) {
-			sel_r1 = row; sel_c1 = col;
+			sel_doc_r1 = term->docLineIdForScreenRow(row);
+			sel_c1 = col;
 			selecting = false;
-			// Optional: copy on mouse release (classic terminal behavior is Shift+Ctrl+C, see below)
-			// std::string txt = selection_text();
-			// if (!txt.empty()) SetClipboardText(txt.c_str());
 			return true;
 		}
 	}
+	
 
 	// otherwise: forward to the app (nvim/tui, etc.)
 	int b = 0;
@@ -329,17 +334,24 @@ bool TerminalWidget::on_mouse_move_event() {
 	// Grow selection locally if app doesn't want mouse
 	if (!term->appWantsMouse()) {
 		if (selecting) {
-			sel_r1 = row; sel_c1 = col;
+			sel_doc_r1 = term->docLineIdForScreenRow(row);
+			sel_c1 = col;
 			return true;
 		}
 		return false;
 	}
+	
 
 	// otherwise forward motion
 	return term->mouseMove(row, col, /*buttonHeld*/ s_dragging);
 }
 
 bool TerminalWidget::on_scroll_event(double /*xchange*/, double ychange) {
+	int mx = App::mouseX;
+	int my = App::mouseY;
+	
+	if (mx < t_x || mx > t_x + t_w || my < t_y || my > t_y + t_h) return false;
+	
 	if (!is_visible) { return false; }
 	
 	if (!term || settingup) return false;
@@ -355,63 +367,86 @@ bool TerminalWidget::on_scroll_event(double /*xchange*/, double ychange) {
 	return term->mouseScroll(row, col, lines);
 }
 
-bool TerminalWidget::cell_in_selection(int r, int c) const {
-	if (!selecting && (sel_r0 < 0 || sel_r1 < 0)) return false;
-	int r0 = sel_r0, c0 = sel_c0, r1 = sel_r1, c1 = sel_c1;
+bool TerminalWidget::cell_in_selection(int screen_r, int c) const {
+	if (sel_doc_r0 == sel_doc_r1 && sel_c0 == sel_c1) { return false; }
+	
+	if (!selecting && (sel_doc_r0 < 0 || sel_doc_r1 < 0)) return false;
+
+	// Map this screen row to its stable document id
+	int doc = term->docLineIdForScreenRow(screen_r);
+	if (doc < 0) return false;
+
+	int r0 = sel_doc_r0, c0 = sel_c0, r1 = sel_doc_r1, c1 = sel_c1;
 	normalize_sel(r0, c0, r1, c1);
-	if (r < r0 || r > r1) return false;
-	if (r0 == r1) return (c >= c0 && c <= c1);
-	if (r == r0)  return c >= c0;
-	if (r == r1)  return c <= c1;
+
+	if (doc < r0 || doc > r1) return false;
+	if (r0 == r1)  return (c >= c0 && c <= c1);
+	if (doc == r0) return (c >= c0);
+	if (doc == r1) return (c <= c1);
 	return true;
 }
 
 void TerminalWidget::clear_selection() {
 	selecting = false;
-	sel_r0 = sel_c0 = sel_r1 = sel_c1 = -1;
+	sel_doc_r0 = sel_c0 = sel_doc_r1 = sel_c1 = -1;
 }
 
 std::string TerminalWidget::selection_text() const {
-	if (sel_r0 < 0 || sel_r1 < 0) return {};
-	int r0 = sel_r0, c0 = sel_c0, r1 = sel_r1, c1 = sel_c1;
+	if (sel_doc_r0 < 0 || sel_doc_r1 < 0) return {};
+
+	int r0 = sel_doc_r0, c0 = sel_c0, r1 = sel_doc_r1, c1 = sel_c1;
 	normalize_sel(r0, c0, r1, c1);
 
+	// Use terminal's authoritative width to walk columns
+	const int W = term->docCols();
 	std::string out;
-	// NOTE: We read via term->getCell(), which already respects scrollback/view offset.
-	for (int r = r0; r <= r1; ++r) {
-		// determine column bounds for this row
-		int start_c = (r == r0 ? c0 : 0);
-		int end_c   = (r == r1 ? c1 : prev_w_cells - 1);
+	out.reserve((r1 - r0 + 1) * (W + 1)); // rough prealloc
 
-		// collect chars
+	auto append_utf8 = [&](char32_t cp, std::string& s) {
+		char u[5] = {0};
+		if (cp < 0x80) { u[0] = static_cast<char>(cp); s.append(u, u+1); }
+		else if (cp < 0x800) {
+			u[0] = static_cast<char>(0xC0 | (cp >> 6));
+			u[1] = static_cast<char>(0x80 | (cp & 0x3F));
+			s.append(u, u+2);
+		} else if (cp < 0x10000) {
+			u[0] = static_cast<char>(0xE0 | (cp >> 12));
+			u[1] = static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+			u[2] = static_cast<char>(0x80 | (cp & 0x3F));
+			s.append(u, u+3);
+		} else {
+			u[0] = static_cast<char>(0xF0 | (cp >> 18));
+			u[1] = static_cast<char>(0x80 | ((cp >> 12) & 0x3F));
+			u[2] = static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+			u[3] = static_cast<char>(0x80 | (cp & 0x3F));
+			s.append(u, u+4);
+		}
+	};
+
+	for (int doc = r0; doc <= r1; ++doc) {
+		const int start_c = (doc == r0 ? c0 : 0);
+		const int end_c   = (doc == r1 ? c1 : (W - 1));
+
 		std::string line;
 		line.reserve(end_c - start_c + 1);
+
 		for (int c = start_c; c <= end_c; ++c) {
-			OurCell cell = term->getCell(r, c);
-			char32_t cp  = static_cast<char32_t>(cell.c ? cell.c : U' ');
-			// rudimentary UTF-8 encode (same as your on_char_event)
-			char utf8[5] = {0};
-			if (cp < 0x80) {
-				utf8[0] = static_cast<char>(cp);
-			} else if (cp < 0x800) {
-				utf8[0] = static_cast<char>(0xC0 | (cp >> 6));
-				utf8[1] = static_cast<char>(0x80 | (cp & 0x3F));
-			} else if (cp < 0x10000) {
-				utf8[0] = static_cast<char>(0xE0 | (cp >> 12));
-				utf8[1] = static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
-				utf8[2] = static_cast<char>(0x80 | (cp & 0x3F));
-			} else {
-				utf8[0] = static_cast<char>(0xF0 | (cp >> 18));
-				utf8[1] = static_cast<char>(0x80 | ((cp >> 12) & 0x3F));
-				utf8[2] = static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
-				utf8[3] = static_cast<char>(0x80 | (cp & 0x3F));
+			OurCell cell{};
+			if (!term->getDocCell(doc, c, cell)) {
+				// Out of range of the document; stop this line gracefully
+				break;
 			}
-			line.append(utf8);
+
+			// Treat cell.c == 0 as space; otherwise encode UTF-8
+			char32_t cp = static_cast<char32_t>(cell.c ? cell.c : U' ');
+			append_utf8(cp, line);
 		}
-		// trim trailing spaces (nice for rectangular selections)
+
+		// Trim right spaces (so we don't copy terminal padding)
 		while (!line.empty() && line.back() == ' ') line.pop_back();
+
 		out += line;
-		if (r != r1) out += '\n';
+		if (doc != r1) out += '\n';
 	}
 	return out;
 }

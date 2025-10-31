@@ -209,6 +209,7 @@ bool PanelHolder::on_mouse_button_event(int button, int action, int mods) {
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && hastwo) {
 		if (mx > xpos_h - width_h/2 && mx < xpos_h + width_h/2 && my > ypos_h-height_h/2 && my < ypos_h+height_h/2){
 			dragging_handle = true;
+			return true;
 		}
 	}else if (dragging_handle && button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE){
 		dragging_handle = false;
@@ -236,6 +237,7 @@ bool PanelHolder::on_mouse_move_event() {
 		}else if (ratio > 0.975) {
 			ratio = 0.975;
 		}
+		return true;
 	}
 	
 	Widget::on_mouse_move_event();

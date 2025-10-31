@@ -1,7 +1,12 @@
+// ============================================================================
+// terminal.cpp
+// ============================================================================
 #include "terminal.h"
+#include "application.h"
 
 #include <iostream>
 #include <cassert>
+#include <algorithm>
 
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0A00
@@ -10,9 +15,8 @@
 #define NOMINMAX
 #include <windows.h>
 #include <processthreadsapi.h>
-#include <consoleapi2.h> // ResizePseudoConsole
-#include <consoleapi3.h> // CreatePseudoConsole, ClosePseudoConsole
-#include "application.h"
+#include <consoleapi2.h>
+#include <consoleapi3.h>
 
 namespace {
 
@@ -29,6 +33,10 @@ inline std::wstring defaultShell() {
 
 } // namespace
 
+// ============================================================================
+// Construction / Destruction
+// ============================================================================
+
 Terminal::Terminal(int cols, int rows) : m_cols(cols), m_rows(rows) {
 	ZeroMemory(&m_pi, sizeof(m_pi));
 }
@@ -36,6 +44,10 @@ Terminal::Terminal(int cols, int rows) : m_cols(cols), m_rows(rows) {
 Terminal::~Terminal() {
 	stop();
 }
+
+// ============================================================================
+// Lifecycle
+// ============================================================================
 
 bool Terminal::start(const std::wstring& shell) {
 	if (m_running.load()) return true;
@@ -62,10 +74,9 @@ bool Terminal::start(const std::wstring& shell) {
 }
 
 void Terminal::stop() {
-	// Flip the flag (cleanup still proceeds if it was already false)
 	m_running.exchange(false);
 
-	// Unblock any pending I/O *first* to let readerLoop exit quickly.
+	// Unblock pending I/O first to let readerLoop exit quickly
 	if (m_hFromPty != INVALID_HANDLE_VALUE) {
 		::CancelIoEx(m_hFromPty, nullptr);
 	}
@@ -73,57 +84,44 @@ void Terminal::stop() {
 		::CancelIoEx(m_hToPty, nullptr);
 	}
 
-	// Now join the reader thread; at this point ReadFile should have unwound.
+	// Join the reader thread
 	if (m_reader.joinable()) {
 		m_reader.join();
 	}
 
-	// Close our pipe handles after the thread is gone.
+	// Close pipe handles
 	closeHandleIfValid(m_hToPty);
 	closeHandleIfValid(m_hFromPty);
 
-	// Ask the child to die; if it’s already exited, these are no-ops.
+	// Terminate child process
 	if (m_pi.hProcess) {
 		::WaitForSingleObject(m_pi.hProcess, 200);
 		::TerminateProcess(m_pi.hProcess, 0);
 		closeHandleIfValid(m_pi.hProcess);
 	}
 
-	// Tear down the ConPTY after the reader is joined and pipes are closed.
+	// Close ConPTY
 	if (m_hPC) {
 		::ClosePseudoConsole(m_hPC);
 		m_hPC = nullptr;
 	}
 
-	// Finally, free libvterm under the mutex.
+	// Free libvterm
 	teardownVTerm();
 }
-
-bool Terminal::writeInput(const void* data, size_t bytes) {
-	if (!m_running.load()) return false;
-	HANDLE h = m_hToPty;
-	if (h == INVALID_HANDLE_VALUE) return false;
-	DWORD written = 0;
-	BOOL ok = ::WriteFile(h, data, static_cast<DWORD>(bytes), &written, nullptr);
-	return ok && written == bytes;
-}
-
 
 bool Terminal::resize(int cols, int rows) {
 	{
 		std::lock_guard<std::mutex> lock(m_vtermMutex);
-	
 		if (m_vt) {
 			vterm_set_size(m_vt, rows, cols);
 		} else {
-			// vterm not up yet — keep our members coherent anyway
 			m_rows = rows;
 			m_cols = cols;
 			m_rowBuf.resize(static_cast<size_t>(m_cols) + 1, 0);
 		}
 	}
 	
-	// 2) Now resize the ConPTY
 	if (m_hPC) {
 		COORD size{};
 		size.X = static_cast<SHORT>(cols);
@@ -136,7 +134,9 @@ bool Terminal::resize(int cols, int rows) {
 	return true;
 }
 
-// ----------------- ConPTY helpers -----------------
+// ============================================================================
+// ConPTY
+// ============================================================================
 
 bool Terminal::initConPty() {
 	HANDLE hPtyInRead = INVALID_HANDLE_VALUE;
@@ -230,7 +230,34 @@ void Terminal::teardownConPty() {
 	}
 }
 
-// ----------------- vterm helpers -----------------
+void Terminal::readerLoop() {
+	constexpr DWORD BUF = 4096;
+	std::vector<char> buffer(BUF);
+
+	for (;;) {
+		if (!m_running.load()) break;
+		HANDLE h = m_hFromPty;
+		if (h == INVALID_HANDLE_VALUE) break;
+
+		DWORD got = 0;
+		BOOL ok = ::ReadFile(h, buffer.data(), BUF, &got, nullptr);
+		if (!ok) {
+			DWORD err = ::GetLastError();
+			if (err == ERROR_OPERATION_ABORTED || err == ERROR_BROKEN_PIPE) break;
+			break;
+		}
+		if (got == 0) break;
+
+		std::lock_guard<std::mutex> lock(m_vtermMutex);
+		if (!m_vt) continue;
+		vterm_input_write(m_vt, buffer.data(), static_cast<size_t>(got));
+		flushVTermDamage();
+	}
+}
+
+// ============================================================================
+// vterm
+// ============================================================================
 
 bool Terminal::initVTerm() {
 	m_vt = vterm_new(m_rows, m_cols);
@@ -238,12 +265,13 @@ bool Terminal::initVTerm() {
 	vterm_set_utf8(m_vt, 1);
 
 	m_screen = vterm_obtain_screen(m_vt);
-	if (!m_screen) { vterm_free(m_vt); m_vt = nullptr; return false; }
+	if (!m_screen) {
+		vterm_free(m_vt);
+		m_vt = nullptr;
+		return false;
+	}
 
-	// NEW: honor applications' use of the alternate screen buffer
 	vterm_screen_enable_altscreen(m_screen, 1);
-
-	// allocate row buffer BEFORE callbacks/reset
 	m_rowBuf.resize(static_cast<size_t>(m_cols) + 1, 0);
 
 	static const VTermScreenCallbacks Cbs = {
@@ -258,21 +286,19 @@ bool Terminal::initVTerm() {
 	};
 	vterm_screen_set_callbacks(m_screen, &Cbs, this);
 
-	// Use SGR mouse protocol for outgoing mouse events
-	#ifdef VTERM_MOUSE_PROTO_SGR
-		vterm_mouse_set_protocol(m_vt, VTERM_MOUSE_PROTO_SGR);
-	#elif defined(VTERM_MOUSE_PROTOCOL_SGR)
-		vterm_mouse_set_protocol(m_vt, VTERM_MOUSE_PROTOCOL_SGR);
-	#endif
+#ifdef VTERM_MOUSE_PROTO_SGR
+	vterm_mouse_set_protocol(m_vt, VTERM_MOUSE_PROTO_SGR);
+#elif defined(VTERM_MOUSE_PROTOCOL_SGR)
+	vterm_mouse_set_protocol(m_vt, VTERM_MOUSE_PROTOCOL_SGR);
+#endif
 
 	m_screenReady.store(true, std::memory_order_release);
-	vterm_screen_reset(m_screen, 1 /* hard */);
+	vterm_screen_reset(m_screen, 1);
 	return true;
 }
 
-
 void Terminal::teardownVTerm() {
-	std::lock_guard<std::mutex> lock(m_vtermMutex); // <-- ADD THIS LOCK
+	std::lock_guard<std::mutex> lock(m_vtermMutex);
 	if (m_vt) {
 		vterm_free(m_vt);
 		m_vt = nullptr;
@@ -286,47 +312,12 @@ void Terminal::flushVTermDamage() {
 }
 
 void Terminal::onDamage(const VTermRect& rect) {
-	// Avoid printing if someone calls before we're ready (belt & suspenders)
 	if (!m_screenReady.load(std::memory_order_acquire)) return;
 	
 	for (int r = rect.start_row; r < rect.end_row; ++r) {
 		dumpRow(r);
 	}
 }
-
-OurCell Terminal::getCell(int row, int col) {
-	std::lock_guard<std::mutex> lock(m_vtermMutex);
-
-	if (row < 0 || col < 0 || row >= m_rows || col >= m_cols) {
-		return {(UChar32)U'?'};
-	}
-
-	// If scrolled back, draw from scrollback for the top part
-	int from_sb = std::min(m_view_off, static_cast<int>(m_scrollback.size()));
-	if (from_sb > 0 && row < from_sb) {
-		// row maps into the last 'from_sb' lines of scrollback
-		const auto& line = m_scrollback[m_scrollback.size() - from_sb + row];
-		if (col < static_cast<int>(line.size())) {
-			const auto& s = line[col];
-			return s;
-		} else {
-			return { (UChar32)U' ', 0,0,0, 255,255,255 };
-		}
-	}
-
-	// Otherwise, draw from the live screen
-	int live_row = row - from_sb;
-	VTermScreenCell cell{};
-	vterm_screen_get_cell(m_screen, VTermPos{ live_row, col }, &cell);
-	char32_t cp = cell.chars[0] ? static_cast<char32_t>(cell.chars[0]) : U' ';
-
-	VTermColor fg = cell.fg; vterm_screen_convert_color_to_rgb(m_screen, &fg);
-	VTermColor bg = cell.bg; vterm_screen_convert_color_to_rgb(m_screen, &bg);
-
-	return { (UChar32)cp, bg.rgb.red, bg.rgb.green, bg.rgb.blue,
-										fg.rgb.red, fg.rgb.green, fg.rgb.blue };
-}
-
 
 void Terminal::dumpRow(int r) {
 	if (!m_screen) return;
@@ -344,40 +335,408 @@ void Terminal::dumpRow(int r) {
 	m_rowBuf[out] = '\0';
 	
 	std::fflush(stdout);
-	
 	App::time_till_regular = std::max(App::time_till_regular, 2);
 }
 
-// ----------------- Reader loop -----------------
+// ============================================================================
+// Cell Access
+// ============================================================================
 
-void Terminal::readerLoop() {
-	constexpr DWORD BUF = 4096;
-	std::vector<char> buffer(BUF);
+OurCell Terminal::getCell(int row, int col) {
+	std::lock_guard<std::mutex> lock(m_vtermMutex);
 
-	for (;;) {
-		if (!m_running.load()) break;
-		HANDLE h = m_hFromPty;
-		if (h == INVALID_HANDLE_VALUE) break;
+	if (row < 0 || col < 0 || row >= m_rows || col >= m_cols) {
+		return { (UChar32)U'?' };
+	}
 
-		DWORD got = 0;
-		BOOL ok = ::ReadFile(h, buffer.data(), BUF, &got, nullptr);
-		if (!ok) {
-			// If we cancelled I/O during shutdown, bail out quietly.
-			DWORD err = ::GetLastError();
-			if (err == ERROR_OPERATION_ABORTED || err == ERROR_BROKEN_PIPE) break;
-			// Other errors: also exit; nothing sane to do on teardown.
-			break;
+	// If scrolled back, draw from scrollback for the top part
+	int from_sb = std::min(m_view_off, static_cast<int>(m_scrollback.size()));
+	if (from_sb > 0 && row < from_sb) {
+		const auto& line = m_scrollback[m_scrollback.size() - from_sb + row];
+		if (col < static_cast<int>(line.size())) {
+			return line[col];
+		} else {
+			return { (UChar32)U' ', 0, 0, 0, 255, 255, 255 };
 		}
-		if (got == 0) break;
+	}
 
-		std::lock_guard<std::mutex> lock(m_vtermMutex);
-		if (!m_vt) continue;
-		vterm_input_write(m_vt, buffer.data(), static_cast<size_t>(got));
-		flushVTermDamage();
+	// Otherwise, draw from the live screen
+	int live_row = row - from_sb;
+	VTermScreenCell cell{};
+	vterm_screen_get_cell(m_screen, VTermPos{ live_row, col }, &cell);
+	char32_t cp = cell.chars[0] ? static_cast<char32_t>(cell.chars[0]) : U' ';
+
+	VTermColor fg = cell.fg;
+	vterm_screen_convert_color_to_rgb(m_screen, &fg);
+	VTermColor bg = cell.bg;
+	vterm_screen_convert_color_to_rgb(m_screen, &bg);
+
+	return { (UChar32)cp, bg.rgb.red, bg.rgb.green, bg.rgb.blue,
+	         fg.rgb.red, fg.rgb.green, fg.rgb.blue };
+}
+
+CursorInfo Terminal::getCursorInfo() {
+	CursorInfo ci = m_cursorInfo;
+
+	int from_sb = std::min(m_view_off, static_cast<int>(m_scrollback.size()));
+	if (from_sb > 0) {
+		int disp_row = ci.row + from_sb;
+		if (disp_row < 0 || disp_row >= m_rows) {
+			ci.visible = false;
+		} else {
+			ci.row = disp_row;
+		}
+	}
+
+	if (!m_screenReady.load(std::memory_order_acquire)) {
+		ci.visible = false;
+	}
+
+	return ci;
+}
+
+// ============================================================================
+// Input
+// ============================================================================
+
+bool Terminal::writeInput(const void* data, size_t bytes) {
+	if (!m_running.load()) return false;
+	HANDLE h = m_hToPty;
+	if (h == INVALID_HANDLE_VALUE) return false;
+	DWORD written = 0;
+	BOOL ok = ::WriteFile(h, data, static_cast<DWORD>(bytes), &written, nullptr);
+	return ok && written == bytes;
+}
+
+// ============================================================================
+// Keyboard
+// ============================================================================
+
+bool Terminal::sendText(const std::string& utf8) {
+	if (utf8.empty()) return true;
+	return writeInput(utf8.data(), utf8.size());
+}
+
+bool Terminal::sendEnter() {
+	const char cr = '\r';
+	return writeInput(&cr, 1);
+}
+
+bool Terminal::sendBackspace() {
+	const char del = 0x7F;
+	return writeInput(&del, 1);
+}
+
+bool Terminal::sendCtrl(char letter) {
+	unsigned char c = static_cast<unsigned char>(letter);
+	if (c >= 'a' && c <= 'z') c = static_cast<unsigned char>(c - 'a' + 1);
+	else if (c >= 'A' && c <= 'Z') c = static_cast<unsigned char>(c - 'A' + 1);
+	else return false;
+	char b = static_cast<char>(c);
+	return writeInput(&b, 1);
+}
+
+static inline std::string CSI(const std::string& tail) {
+	return "\x1b[" + tail;
+}
+
+static inline int xtermMod(bool shift, bool alt, bool ctrl) {
+	return 1 + (shift ? 1 : 0) + (alt ? 2 : 0) + (ctrl ? 4 : 0);
+}
+
+bool Terminal::sendSpecialKey(SpecialKey key, bool shift, bool alt, bool ctrl) {
+	// Handle local scrollback for PgUp/PgDn when app doesn't want mouse
+	if (!appWantsMouse()) {
+		if (key == SpecialKey::PageUp) {
+			scrollbackPageUp();
+			VTermRect all{ 0, m_rows, 0, m_cols };
+			onDamage(all);
+			return true;
+		}
+		if (key == SpecialKey::PageDown) {
+			scrollbackPageDown();
+			VTermRect all{ 0, m_rows, 0, m_cols };
+			onDamage(all);
+			return true;
+		}
+	}
+
+	std::string seq;
+	int mod = xtermMod(shift, alt, ctrl);
+
+	auto withMod = [&](const char* /*base*/, char code) {
+		seq = CSI("1;" + std::to_string(mod) + std::string(1, code));
+	};
+
+	switch (key) {
+		case SpecialKey::Up:        withMod("\x1b[", 'A'); break;
+		case SpecialKey::Down:      withMod("\x1b[", 'B'); break;
+		case SpecialKey::Right:     withMod("\x1b[", 'C'); break;
+		case SpecialKey::Left:      withMod("\x1b[", 'D'); break;
+		case SpecialKey::Home:      withMod("\x1b[", 'H'); break;
+		case SpecialKey::End:       withMod("\x1b[", 'F'); break;
+		case SpecialKey::InsertKey: seq = CSI("2~"); break;
+		case SpecialKey::DeleteKey: seq = CSI("3~"); break;
+		case SpecialKey::PageUp:    seq = CSI("5~"); break;
+		case SpecialKey::PageDown:  seq = CSI("6~"); break;
+		case SpecialKey::F1:        seq = "\x1bOP"; break;
+		case SpecialKey::F2:        seq = "\x1bOQ"; break;
+		case SpecialKey::F3:        seq = "\x1bOR"; break;
+		case SpecialKey::F4:        seq = "\x1bOS"; break;
+		case SpecialKey::F5:        seq = CSI("15~"); break;
+		case SpecialKey::F6:        seq = CSI("17~"); break;
+		case SpecialKey::F7:        seq = CSI("18~"); break;
+		case SpecialKey::F8:        seq = CSI("19~"); break;
+		case SpecialKey::F9:        seq = CSI("20~"); break;
+		case SpecialKey::F10:       seq = CSI("21~"); break;
+		case SpecialKey::F11:       seq = CSI("23~"); break;
+		case SpecialKey::F12:       seq = CSI("24~"); break;
+	}
+
+	return writeInput(seq.data(), seq.size());
+}
+
+// ============================================================================
+// Mouse
+// ============================================================================
+
+bool Terminal::enableMouseTracking(bool enable) {
+	std::string seq;
+	if (enable) {
+		seq = CSI("?1002h") + CSI("?1006h");
+	} else {
+		seq = CSI("?1002l") + CSI("?1006l");
+	}
+	return writeInput(seq.data(), seq.size());
+}
+
+static inline int sgrMods(bool shift, bool alt, bool ctrl) {
+	int m = 0;
+	if (shift) m |= 4;
+	if (alt) m |= 8;
+	if (ctrl) m |= 16;
+	return m;
+}
+
+static inline bool sgrSend(Terminal* t, int b, int row, int col, bool press) {
+	int x = col + 1;
+	int y = row + 1;
+	char final = press ? 'M' : 'm';
+	std::string seq = CSI("<" + std::to_string(b) + ";" + std::to_string(x) + ";" + std::to_string(y) + final);
+	return t->writeInput(seq.data(), seq.size());
+}
+
+bool Terminal::mousePress(int row, int col, int button, bool pressed,
+                          bool shift, bool alt, bool ctrl) {
+	int base = (button == 0 ? 0 : button == 1 ? 1 : 2);
+	int b = (pressed ? base : 3) + sgrMods(shift, alt, ctrl);
+	return sgrSend(this, b, row, col, pressed);
+}
+
+bool Terminal::mouseMove(int row, int col, bool buttonHeld,
+                         bool shift, bool alt, bool ctrl) {
+	int b = 32 + sgrMods(shift, alt, ctrl);
+	if (!buttonHeld) {
+		b = 35 + sgrMods(shift, alt, ctrl);
+	}
+	return sgrSend(this, b, row, col, true);
+}
+
+bool Terminal::mouseDrag(int startRow, int startCol, int endRow, int endCol, int button,
+                         bool shift, bool alt, bool ctrl) {
+	if (!mousePress(startRow, startCol, button, true, shift, alt, ctrl)) return false;
+
+	int steps = std::max(std::abs(endRow - startRow), std::abs(endCol - startCol));
+	steps = std::max(steps, 1);
+	for (int i = 1; i <= steps; ++i) {
+		int r = startRow + (endRow - startRow) * i / steps;
+		int c = startCol + (endCol - startCol) * i / steps;
+		if (!mouseMove(r, c, true, shift, alt, ctrl)) return false;
+	}
+
+	return mousePress(endRow, endCol, button, false, shift, alt, ctrl);
+}
+
+bool Terminal::mouseScroll(int row, int col, int lines,
+                           bool shift, bool alt, bool ctrl) {
+	if (lines == 0) return true;
+
+	const bool altScreen = m_altScreen.load(std::memory_order_acquire);
+	const bool mouseOn = m_mouseReporting.load(std::memory_order_acquire);
+
+	if (altScreen || mouseOn) {
+		int n = std::abs(lines);
+		bool up = (lines > 0);
+		int wheelCode = up ? 64 : 65;
+		for (int i = 0; i < n; ++i) {
+			if (!sgrSend(this, wheelCode, row, col, true)) return false;
+		}
+		return true;
+	}
+
+	// Terminal scrollback
+	scrollbackLines(lines);
+	VTermRect all{ 0, m_rows, 0, m_cols };
+	onDamage(all);
+	return true;
+}
+
+// ============================================================================
+// Scrollback
+// ============================================================================
+
+void Terminal::clampView() {
+	if (m_view_off < 0) m_view_off = 0;
+	int maxOff = static_cast<int>(m_scrollback.size());
+	if (m_view_off > maxOff) m_view_off = maxOff;
+}
+
+bool Terminal::appWantsMouse() const {
+	return m_mouseReporting.load(std::memory_order_acquire) ||
+	       m_altScreen.load(std::memory_order_acquire);
+}
+
+void Terminal::savePushLine(int cols, const VTermScreenCell* cells) {
+	std::vector<OurCell> line(cols);
+	for (int i = 0; i < cols; i++) {
+		const auto& c = cells[i];
+		char32_t cp = c.chars[0] ? static_cast<char32_t>(c.chars[0]) : U' ';
+
+		VTermColor fg = c.fg;
+		VTermColor bg = c.bg;
+		vterm_screen_convert_color_to_rgb(m_screen, &fg);
+		vterm_screen_convert_color_to_rgb(m_screen, &bg);
+
+		line[i] = {
+			static_cast<UChar32>(cp),
+			bg.rgb.red, bg.rgb.green, bg.rgb.blue,
+			fg.rgb.red, fg.rgb.green, fg.rgb.blue
+		};
+	}
+
+	m_scrollback.push_back(std::move(line));
+	if (m_scrollback.size() > m_sb_max) {
+		m_scrollback.pop_front();
+	}
+	if (m_view_off > 0) {
+		m_view_off++;
+		clampView();
 	}
 }
 
-// ----------------- vterm callback trampolines (definitions) -----------------
+bool Terminal::savePopLine(int cols, VTermScreenCell* cells) {
+	if (m_scrollback.empty()) return false;
+
+	const auto line = m_scrollback.back();
+	m_scrollback.pop_back();
+
+	const int n = std::min(cols, static_cast<int>(line.size()));
+	for (int i = 0; i < n; ++i) {
+		const auto s = line[i];
+		VTermScreenCell& cell = cells[i];
+		cell.chars[0] = static_cast<uint32_t>(s.c);
+		cell.chars[1] = 0;
+		cell.width = 1;
+		cell.fg.type = VTERM_COLOR_RGB;
+		cell.fg.rgb.red = s.fg_red;
+		cell.fg.rgb.green = s.fg_green;
+		cell.fg.rgb.blue = s.fg_blue;
+		cell.bg.type = VTERM_COLOR_RGB;
+		cell.bg.rgb.red = s.bg_red;
+		cell.bg.rgb.green = s.bg_green;
+		cell.bg.rgb.blue = s.bg_blue;
+	}
+
+	if (m_view_off > 0) {
+		m_view_off--;
+	}
+	return true;
+}
+
+void Terminal::scrollbackLines(int delta) {
+	if (delta == 0) return;
+	m_view_off += delta;
+	clampView();
+}
+
+void Terminal::scrollbackPageUp() {
+	scrollbackLines(m_rows - 1);
+}
+
+void Terminal::scrollbackPageDown() {
+	scrollbackLines(-(m_rows - 1));
+}
+
+// ============================================================================
+// Document Access
+// ============================================================================
+
+int Terminal::docLineIdForScreenRow(int screenRow) const {
+	int from_sb = std::min(m_view_off, static_cast<int>(m_scrollback.size()));
+	if (screenRow < 0 || screenRow >= m_rows) return -1;
+	if (screenRow < from_sb) {
+		return static_cast<int>(m_scrollback.size()) - from_sb + screenRow;
+	}
+	int live_row = screenRow - from_sb;
+	return static_cast<int>(m_scrollback.size()) + live_row;
+}
+
+int Terminal::screenRowForDocLineId(int docId) const {
+	int from_sb = std::min(m_view_off, static_cast<int>(m_scrollback.size()));
+	int sb_size = static_cast<int>(m_scrollback.size());
+	
+	if (docId >= sb_size - from_sb && docId < sb_size) {
+		return docId - (sb_size - from_sb);
+	}
+	
+	int live_start_doc = sb_size;
+	int live_end_doc = sb_size + (m_rows - from_sb);
+	if (docId >= live_start_doc && docId < live_end_doc) {
+		return (docId - live_start_doc) + from_sb;
+	}
+	return -1;
+}
+
+bool Terminal::getDocCell(int docId, int col, OurCell& out) {
+	std::lock_guard<std::mutex> lock(m_vtermMutex);
+	
+	if (col < 0 || col >= m_cols || docId < 0) return false;
+
+	const int sb_size = static_cast<int>(m_scrollback.size());
+	if (docId < sb_size) {
+		// From scrollback
+		const auto& line = m_scrollback[docId];
+		if (col < static_cast<int>(line.size())) {
+			out = line[col];
+		} else {
+			out = OurCell{};
+			out.c = 0;
+		}
+		return true;
+	}
+
+	// From live screen
+	int live_row = docId - sb_size;
+	if (live_row < 0 || live_row >= m_rows) return false;
+	
+	if (!m_screen) return false;
+	VTermScreenCell cell{};
+	vterm_screen_get_cell(m_screen, VTermPos{ live_row, col }, &cell);
+	char32_t cp = cell.chars[0] ? static_cast<char32_t>(cell.chars[0]) : U' ';
+
+	VTermColor fg = cell.fg;
+	vterm_screen_convert_color_to_rgb(m_screen, &fg);
+	VTermColor bg = cell.bg;
+	vterm_screen_convert_color_to_rgb(m_screen, &bg);
+
+	out = { (UChar32)cp, bg.rgb.red, bg.rgb.green, bg.rgb.blue,
+	                     fg.rgb.red, fg.rgb.green, fg.rgb.blue };
+	return true;
+}
+
+// ============================================================================
+// vterm callbacks
+// ============================================================================
 
 int Terminal::s_screen_damage(VTermRect rect, void* user) {
 	auto* self = static_cast<Terminal*>(user);
@@ -386,7 +745,6 @@ int Terminal::s_screen_damage(VTermRect rect, void* user) {
 }
 
 int Terminal::s_screen_moverect(VTermRect /*dest*/, VTermRect /*src*/, void* /*user*/) {
-	// You could choose to redraw dest rows; returning 1 = handled
 	return 1;
 }
 
@@ -395,19 +753,22 @@ int Terminal::s_screen_movecursor(VTermPos pos, VTermPos /*oldpos*/, int visible
 	if (self) {
 		self->m_cursorInfo.row = pos.row;
 		self->m_cursorInfo.col = pos.col;
-		self->m_cursorInfo.visible = (visible != 0); // <-- use libvterm's visibility bit
+		self->m_cursorInfo.visible = (visible != 0);
 	}
 	return 1;
 }
-
 
 int Terminal::s_screen_settermprop(VTermProp prop, VTermValue* val, void* user) {
 	auto* self = static_cast<Terminal*>(user);
 	if (!self || !val) return 0;
 
 	switch (prop) {
-		case VTERM_PROP_CURSORVISIBLE: self->m_cursorInfo.visible = val->boolean; break;
-		case VTERM_PROP_CURSORBLINK:   self->m_cursorInfo.blink   = val->boolean; break;
+		case VTERM_PROP_CURSORVISIBLE:
+			self->m_cursorInfo.visible = val->boolean;
+			break;
+		case VTERM_PROP_CURSORBLINK:
+			self->m_cursorInfo.blink = val->boolean;
+			break;
 		case VTERM_PROP_CURSORSHAPE: {
 			int v = val->number;
 			if (v == 0) v = 1;
@@ -419,24 +780,20 @@ int Terminal::s_screen_settermprop(VTermProp prop, VTermValue* val, void* user) 
 			bool on = !!val->boolean;
 			self->m_altScreen.store(on, std::memory_order_release);
 			if (on) {
-				// While in alt-screen, don't show terminal scrollback.
 				self->m_view_off = 0;
 			}
 			break;
 		}
-		case VTERM_PROP_MOUSE: {
-			// Nonzero means app enabled mouse tracking (DECSET ?1000/1002/1006/etc.)
+		case VTERM_PROP_MOUSE:
 			self->m_mouseReporting.store(val->number != 0, std::memory_order_release);
 			break;
-		}
-		default: break;
+		default:
+			break;
 	}
 	return 1;
 }
 
-
 int Terminal::s_screen_bell(void* /*user*/) {
-	// Beep or flash if you want
 	return 1;
 }
 
@@ -453,7 +810,6 @@ int Terminal::s_screen_sb_pushline(int cols, const VTermScreenCell* cells, void*
 	auto* self = static_cast<Terminal*>(user);
 	if (!self) return 1;
 	if (self->m_altScreen.load(std::memory_order_acquire)) {
-		// In alternate screen, do not accumulate into scrollback.
 		return 1;
 	}
 	self->savePushLine(cols, cells);
@@ -464,319 +820,18 @@ int Terminal::s_screen_sb_popline(int cols, VTermScreenCell* cells, void* user) 
 	auto* self = static_cast<Terminal*>(user);
 	if (!self) return 1;
 	if (self->m_altScreen.load(std::memory_order_acquire)) {
-		// No terminal scrollback in alt-screen.
 		return 0;
 	}
 	
 	for (int i = 0; i < cols; ++i) {
 		VTermScreenCell& cell = cells[i];
 		std::memset(&cell, 0, sizeof(cell));
-		cell.width = 1;                        // single-column
-		cell.chars[0] = U' ';                  // space
-		cell.fg.type = VTERM_COLOR_DEFAULT_FG;    // let libvterm decide
+		cell.width = 1;
+		cell.chars[0] = U' ';
+		cell.fg.type = VTERM_COLOR_DEFAULT_FG;
 		cell.bg.type = VTERM_COLOR_DEFAULT_BG;
 	}
 
-	// Now try to actually provide a line from our scrollback.
 	bool ok = self->savePopLine(cols, cells);
-
-	// If we had nothing, return 0 so libvterm will fill the row itself.
 	return ok ? 1 : 0;
 }
-
-// Pulls everything libvterm wants to send *to the child PTY* and writes it.
-bool Terminal::drainVTermOutputToPty_() {
-	if (!m_vt || m_hToPty == INVALID_HANDLE_VALUE) return false;
-
-	// libvterm exposes an output buffer you can read from in chunks.
-	// Typical signatures:
-	//   size_t vterm_output_read(VTerm*, char* buffer, size_t len);
-	//   size_t vterm_output_get_buffer_size(VTerm*);
-	// We’ll use a loop until it returns 0.
-	char outbuf[4096];
-	bool any = false;
-	for (;;) {
-		size_t n = vterm_output_read(m_vt, outbuf, sizeof(outbuf));
-		if (n == 0) break;
-		any = true;
-		if (!writeInput(outbuf, n)) return false;
-	}
-	return any || true;
-}
-
-// --- small helper: write an ESC sequence ---
-static inline bool writeEscSeq(Terminal* t, const std::string& s) {
-	return t->writeInput(s.data(), s.size());
-}
-
-// --- Keyboard ---
-
-bool Terminal::sendText(const std::string& utf8) {
-	if (utf8.empty()) return true;
-	return writeInput(utf8.data(), utf8.size());
-}
-bool Terminal::sendEnter()     { const char cr = '\r'; return writeInput(&cr, 1); }
-bool Terminal::sendBackspace() { const char del = 0x7F; return writeInput(&del, 1); }
-
-bool Terminal::sendCtrl(char letter) {
-	// Map A-Z or a-z to control (Ctrl+A = 0x01 ... Ctrl+Z = 0x1A)
-	unsigned char c = static_cast<unsigned char>(letter);
-	if (c >= 'a' && c <= 'z') c = static_cast<unsigned char>(c - 'a' + 1);
-	else if (c >= 'A' && c <= 'Z') c = static_cast<unsigned char>(c - 'A' + 1);
-	else return false;
-	char b = static_cast<char>(c);
-	return writeInput(&b, 1);
-}
-
-// xterm CSI helper
-static inline std::string CSI(const std::string& tail) { return "\x1b[" + tail; }
-
-// xterm “modifyOtherKeys” style for arrows/Home/End etc: ESC [ 1 ; <mod> <code>
-// mod = 1 + (shift?1:0) + (alt?2:0) + (ctrl?4:0)
-static inline int xtermMod(bool shift, bool alt, bool ctrl) {
-	return 1 + (shift ? 1 : 0) + (alt ? 2 : 0) + (ctrl ? 4 : 0);
-}
-
-bool Terminal::sendSpecialKey(SpecialKey key, bool shift, bool alt, bool ctrl) {
-	// If we’re in “emulator scrollback” mode, handle PgUp/PgDn locally
-	if (!appWantsMouse()) {
-		if (key == SpecialKey::PageUp)   { scrollbackPageUp();   VTermRect all{0,m_rows,0,m_cols}; onDamage(all); return true; }
-		if (key == SpecialKey::PageDown) { scrollbackPageDown(); VTermRect all{0,m_rows,0,m_cols}; onDamage(all); return true; }
-		// Home/End could also be mapped to top/bottom if you want
-	}
-
-	std::string seq;
-	int mod = xtermMod(shift, alt, ctrl);
-
-	auto withMod = [&](const char* base, char code) {
-		// ESC [ 1 ; <mod> <code>
-		seq = CSI("1;" + std::to_string(mod) + std::string(1, code));
-	};
-
-	switch (key) {
-		case SpecialKey::Up:       withMod("\x1b[", 'A'); break;
-		case SpecialKey::Down:     withMod("\x1b[", 'B'); break;
-		case SpecialKey::Right:    withMod("\x1b[", 'C'); break;
-		case SpecialKey::Left:     withMod("\x1b[", 'D'); break;
-		case SpecialKey::Home:     withMod("\x1b[", 'H'); break;
-		case SpecialKey::End:      withMod("\x1b[", 'F'); break;
-		case SpecialKey::InsertKey: seq = CSI("2~"); break;
-		case SpecialKey::DeleteKey: seq = CSI("3~"); break;
-		case SpecialKey::PageUp:    seq = CSI("5~"); break;
-		case SpecialKey::PageDown:  seq = CSI("6~"); break;
-		case SpecialKey::F1:        seq = "\x1bOP"; break; // F1..F4 old style
-		case SpecialKey::F2:        seq = "\x1bOQ"; break;
-		case SpecialKey::F3:        seq = "\x1bOR"; break;
-		case SpecialKey::F4:        seq = "\x1bOS"; break;
-		case SpecialKey::F5:        seq = CSI("15~"); break;
-		case SpecialKey::F6:        seq = CSI("17~"); break;
-		case SpecialKey::F7:        seq = CSI("18~"); break;
-		case SpecialKey::F8:        seq = CSI("19~"); break;
-		case SpecialKey::F9:        seq = CSI("20~"); break;
-		case SpecialKey::F10:       seq = CSI("21~"); break;
-		case SpecialKey::F11:       seq = CSI("23~"); break;
-		case SpecialKey::F12:       seq = CSI("24~"); break;
-	}
-
-	// If modifiers requested for keys that don't include them by default,
-	// many terminals use “;mod” forms; basic mapping above covers arrows/home/end.
-	return writeEscSeq(this, seq);
-}
-
-// --- Mouse via SGR (1006) ---
-
-// Enable (?1002h + ?1006h) or disable (?1002l + ?1006l) mouse reporting
-bool Terminal::enableMouseTracking(bool enable) {
-	std::string seq;
-	if (enable) {
-		seq = CSI("?1002h") + CSI("?1006h");  // button-event + SGR
-	} else {
-		seq = CSI("?1002l") + CSI("?1006l");
-	}
-	return writeEscSeq(this, seq);
-}
-
-// Build SGR report: ESC [ < b ; x ; y (M|m)
-// b: base button code + modifiers (+32 if motion while button held)
-// coords are 1-based (x=col+1, y=row+1)
-static inline int sgrMods(bool shift, bool alt, bool ctrl) {
-	int m = 0;
-	if (shift) m |= 4;
-	if (alt)   m |= 8;
-	if (ctrl)  m |= 16;
-	return m;
-}
-
-static inline bool sgrSend(Terminal* t, int b, int row, int col, bool press) {
-	int x = col + 1;
-	int y = row + 1;
-	char final = press ? 'M' : 'm';
-	std::string seq = CSI("<" + std::to_string(b) + ";" + std::to_string(x) + ";" + std::to_string(y) + final);
-	return writeEscSeq(t, seq);
-}
-
-bool Terminal::mousePress(int row, int col, int button, bool pressed,
-						  bool shift, bool alt, bool ctrl) {
-	// base button: 0=L,1=M,2=R; release uses b=3 but SGR prefers final='m'
-	int base = (button == 0 ? 0 : button == 1 ? 1 : 2);
-	int b = (pressed ? base : 3) + sgrMods(shift, alt, ctrl);
-	// In SGR, releases should use 'm' and b=3+mods (xterm-compatible).
-	return sgrSend(this, b, row, col, /*press*/pressed);
-}
-
-bool Terminal::mouseMove(int row, int col, bool buttonHeld,
-						 bool shift, bool alt, bool ctrl) {
-	// Motion with any button held: base=0 + 32; without button held, many apps ignore.
-	int b = 32 + sgrMods(shift, alt, ctrl);
-	// Use 'M' (press form) for motion events.
-	if (!buttonHeld) {
-		// Some apps expect 35 for plain motion; but usually they only listen when held.
-		b = 35 + sgrMods(shift, alt, ctrl);
-	}
-	return sgrSend(this, b, row, col, /*press*/true);
-}
-
-bool Terminal::mouseDrag(int startRow, int startCol, int endRow, int endCol, int button,
-						 bool shift, bool alt, bool ctrl) {
-	// Press
-	if (!mousePress(startRow, startCol, button, true, shift, alt, ctrl)) return false;
-
-	int steps = std::max(std::abs(endRow - startRow), std::abs(endCol - startCol));
-	steps = std::max(steps, 1);
-	for (int i = 1; i <= steps; ++i) {
-		int r = startRow + (endRow - startRow) * i / steps;
-		int c = startCol + (endCol - startCol) * i / steps;
-		if (!mouseMove(r, c, /*buttonHeld*/true, shift, alt, ctrl)) return false;
-	}
-
-	// Release
-	return mousePress(endRow, endCol, button, false, shift, alt, ctrl);
-}
-
-bool Terminal::mouseScroll(int row, int col, int lines,
-						   bool shift, bool alt, bool ctrl) {
-	if (lines == 0) return true;
-
-	const bool altScreen = m_altScreen.load(std::memory_order_acquire);
-	const bool mouseOn   = m_mouseReporting.load(std::memory_order_acquire);
-
-	if (altScreen || mouseOn) {
-		// Send SGR wheel events to the app.
-		int n = std::abs(lines);
-		bool up = (lines > 0);
-		int wheelCode = up ? 64 : 65; // SGR: 64=wheel up, 65=wheel down
-		// Use actual mouse coordinates if you have them; (row,col) are provided here.
-		for (int i = 0; i < n; ++i) {
-			if (!sgrSend(this, wheelCode, row, col, /*press*/true)) return false;
-		}
-		return true;
-	}
-
-	// Not in alt screen and app didn't enable mouse -> terminal scrollback
-	scrollbackLines(lines);
-	VTermRect all{0, m_rows, 0, m_cols};
-	onDamage(all);
-	return true;
-}
-
-CursorInfo Terminal::getCursorInfo() {
-	CursorInfo ci = m_cursorInfo;
-
-	// If the user has scrolled back, adjust the cursor's display row.
-	int from_sb = std::min(m_view_off, static_cast<int>(m_scrollback.size()));
-	if (from_sb > 0) {
-		// Cursor is in live area at row ci.row; display is shifted down by from_sb.
-		int disp_row = ci.row + from_sb;
-
-		// If shifted cursor falls outside the visible grid, hide it to avoid drawing off-screen.
-		if (disp_row < 0 || disp_row >= m_rows) {
-			ci.visible = false;
-		} else {
-			ci.row = disp_row;
-		}
-	}
-
-	if (!m_screenReady.load(std::memory_order_acquire)) {
-		ci.visible = false;
-	}
-
-	return ci;
-}
-
-void Terminal::clampView() {
-	if (m_view_off < 0) m_view_off = 0;
-	int maxOff = static_cast<int>(m_scrollback.size());
-	if (m_view_off > maxOff) m_view_off = maxOff;
-}
-
-bool Terminal::appWantsMouse() const {
-	// If the app enabled mouse reporting or is on alt screen, prefer sending wheel to the app
-	return m_mouseReporting.load(std::memory_order_acquire) || m_altScreen.load(std::memory_order_acquire);
-}
-
-void Terminal::savePushLine(int cols, const VTermScreenCell* cells) {
-	std::vector<OurCell> line(cols);
-	for (int i=0;i<cols;i++) {
-		const auto& c = cells[i];
-		OurCell s{};
-		char32_t cp = c.chars[0] ? static_cast<char32_t>(c.chars[0]) : U' ';
-		s.c = static_cast<uint32_t>(cp);
-
-		VTermColor fg = c.fg;
-		VTermColor bg = c.bg;
-		vterm_screen_convert_color_to_rgb(m_screen, &fg);
-		vterm_screen_convert_color_to_rgb(m_screen, &bg);
-
-		s.fg_red = fg.rgb.red;  s.fg_green = fg.rgb.green;  s.fg_blue = fg.rgb.blue;
-		s.bg_red = bg.rgb.red;  s.bg_green = bg.rgb.green;  s.bg_blue = bg.rgb.blue;
-		line[i] = s;
-	}
-
-	m_scrollback.push_back(std::move(line));
-	if (m_scrollback.size() > m_sb_max) {
-		// drop oldest
-		m_scrollback.pop_front();
-	}
-	// If user is scrolled back, maintain visual content by increasing offset up to limit
-	if (m_view_off > 0) {
-		m_view_off++;
-		clampView();
-	}
-}
-
-bool Terminal::savePopLine(int cols, VTermScreenCell* cells) {
-	if (m_scrollback.empty()) return false;
-
-	// Take the most recent line (copy out so pop_back() is safe)
-	const auto line = m_scrollback.back();
-	m_scrollback.pop_back();
-
-	const int n = std::min(cols, static_cast<int>(line.size()));
-	for (int i = 0; i < n; ++i) {
-		const auto s = line[i];
-		VTermScreenCell& cell = cells[i];   // already zero-initialised by caller
-		cell.chars[0] = static_cast<uint32_t>(s.c);
-		cell.chars[1] = 0;
-		cell.width    = 1;                  // we store only single-width glyphs
-		cell.fg.type  = VTERM_COLOR_RGB;
-		cell.fg.rgb.red   = s.fg_red;
-		cell.fg.rgb.green = s.fg_green;
-		cell.fg.rgb.blue  = s.fg_blue;
-		cell.bg.type  = VTERM_COLOR_RGB;
-		cell.bg.rgb.red   = s.bg_red;
-		cell.bg.rgb.green = s.bg_green;
-		cell.bg.rgb.blue  = s.bg_blue;
-	}
-
-	if (m_view_off > 0) { m_view_off--; }
-	return true;
-}
-
-void Terminal::scrollbackLines(int delta) {
-	if (delta == 0) return;
-	m_view_off += delta;
-	clampView();
-}
-
-void Terminal::scrollbackPageUp()   { scrollbackLines(m_rows - 1); }
-void Terminal::scrollbackPageDown() { scrollbackLines(-(m_rows - 1)); }

@@ -36,6 +36,10 @@
 int App::moveMouseToX = -1;
 int App::moveMouseToY = -1;
 
+bool App::recording_macro = false;
+bool App::replaying_macro = false;
+std::vector<KeyboardEvent> App::keyboard_events = std::vector<KeyboardEvent>();
+
 bool App::REQUESTING_STRING = false;
 App::StringGivenFunc App::ON_STRING_GIVEN = nullptr;
 TextEdit* STRING_REQUEST_TEXTEDIT = nullptr;
@@ -547,8 +551,6 @@ void App::DrawRect(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b) 
 }
 
 void App::DoFullRenderWithoutInput() {
-	//framerate
-	
 	double currentTime = glfwGetTime();
 	frameCount++;
 	
@@ -573,7 +575,7 @@ void App::DoFullRenderWithoutInput() {
 	//render
 	
 	if (!rerender && time_till_regular == 0) {
-		if (forceWaitTime) { // we don't want to hold up operations happening over multiple frames (think highlighting out of view lines that we don't need to re-render for)
+		if (forceWaitTime && !replaying_macro) { // we don't want to hold up operations happening over multiple frames (think highlighting out of view lines that we don't need to re-render for)
 			int time = 10;
 			
 			if (currentTime-lastUpdate > 5) { 
@@ -677,6 +679,17 @@ void App::Run() {
 		rerender = false;
 		forceWaitTime = true;
 		glfwPollEvents();
+		
+		if (replaying_macro) {
+			for (int i = 0; i < keyboard_events.size(); i++){
+				KeyboardEvent e = keyboard_events.at(i);
+				if (e.character_callback) {
+					character_callback(e.window, e.cc_codepoint);
+				}else{
+					key_callback(e.window, e.key, e.scancode, e.action, e.mods);
+				}
+			}
+		}
 		DoFullRenderWithoutInput();
 	}
 	
@@ -760,6 +773,48 @@ void App::mouse_button_callback(GLFWwindow* window, int button, int action, int 
 
 void App::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	rerender = true;
+	
+	if (recording_macro) {
+		if (key == GLFW_KEY_F12 && action == GLFW_PRESS) {
+			recording_macro = false;
+			displayToast(icu::UnicodeString::fromUTF8("Macro Recording Over ("+std::to_string(keyboard_events.size())+")"));
+			return;
+		}
+		
+		KeyboardEvent event = {};
+		event.character_callback = false;
+		event.window = window;
+		event.key = key;
+		event.scancode = scancode;
+		event.action = action;
+		event.mods = mods;
+		keyboard_events.push_back(event);
+	}else if (key == GLFW_KEY_F12 && action == GLFW_PRESS) {
+		if (replaying_macro) {
+			displayToast(icu::UnicodeString::fromUTF8("Stopped Macro Replay"));
+			replaying_macro = false;
+		}else{
+			displayToast(icu::UnicodeString::fromUTF8("Starting Macro Recording"));
+			recording_macro = true;
+			keyboard_events.clear();
+		}
+		return;
+	}
+	
+	if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
+		if (replaying_macro) {
+			displayToast(icu::UnicodeString::fromUTF8("Stopped Macro Replay"));
+			replaying_macro = false;
+		}else{
+			if (keyboard_events.size() == 0) {
+				displayToast(icu::UnicodeString::fromUTF8("No Recorded Keystrokes"));
+				return;
+			}
+			displayToast(icu::UnicodeString::fromUTF8("Replaying Macro Recording"));
+			replaying_macro = true;
+		}
+		return;
+	}
 	
 	bool control = ((mods & GLFW_MOD_CONTROL) != 0);
 	bool shift = ((mods & GLFW_MOD_SHIFT) != 0);
@@ -888,6 +943,14 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 
 void App::character_callback(GLFWwindow* window, unsigned int codepoint) {
 	rerender = true;
+	
+	if (recording_macro) {
+		KeyboardEvent event = {};
+		event.character_callback = true;
+		event.window = window;
+		event.cc_codepoint = codepoint;
+		keyboard_events.push_back(event);
+	}
 	
 	if (on_char_event) {
 		on_char_event(codepoint);

@@ -90,8 +90,8 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		
 		w->t_x = x;
 		w->t_y = y;
-		w->t_w = textedit->t_w/3;
-		w->t_h = w->t_w/3;
+		w->t_w = textedit->t_w/2;
+		w->t_h = w->t_w/2;
 	});
 	hoverbox->background_color = App::theme.extras_background_color;
 	

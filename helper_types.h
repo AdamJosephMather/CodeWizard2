@@ -45,7 +45,7 @@ struct Language {
 struct FileInfo {
 	std::string filepath;
 	std::string filename;
-	bool ondisk;
+	bool is_opening = true;
 };
 
 struct Color {

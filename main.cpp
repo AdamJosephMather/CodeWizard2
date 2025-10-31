@@ -177,7 +177,6 @@ int main(int argc, char* argv[]) {
 			if (std::filesystem::exists(p) && std::filesystem::is_regular_file(p)) {
 				FileInfo* f = new FileInfo;
 				
-				f->ondisk = true;
 				f->filepath = p.string();
 				f->filename = p.filename().string();
 				

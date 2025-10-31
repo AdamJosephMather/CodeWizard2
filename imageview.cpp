@@ -22,7 +22,7 @@ void ImageView::openFile() {
 		hasTexture = false;
 	}
 
-	if (!file || !file->ondisk) {
+	if (!file) {
 		return;
 	}
 

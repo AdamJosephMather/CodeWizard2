@@ -48,7 +48,6 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 		f1 = new FileInfo();
 		f1->filepath = filePath;
 		f1->filename = filename;
-		f1->ondisk = true;
 	}else{
 		textedit->setFullText(icu::UnicodeString::fromUTF8("All you had to do, was select two files. Was is **that** hard?"));
 		return;
@@ -70,7 +69,6 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 		f2 = new FileInfo();
 		f2->filepath = filePath;
 		f2->filename = filename;
-		f2->ondisk = true;
 	}else{
 		textedit->setFullText(icu::UnicodeString::fromUTF8("All you had to do, was select two files. Was is **that** hard?"));
 		return;

@@ -213,7 +213,6 @@ void Editor::fileOpenRequested(FileInfo* f, int lns, int chrs, int ln, int chr) 
 			f = new FileInfo();
 			f->filepath = filePath;
 			f->filename = filename;
-			f->ondisk = true;
 		}else{
 			App::commandUnfocused();
 			return;
@@ -246,7 +245,7 @@ void Editor::fileOpenRequested(FileInfo* f, int lns, int chrs, int ln, int chr) 
 	createNew(f);
 	
 	if (auto ce = dynamic_cast<CodeEdit*>(editors[tabbeforetab])) { // we do this cast because not all widgets have FileInfo file; variables.
-		if (!ce->file || ce->file->ondisk == false) {
+		if (!ce->file) {
 			if (ce->textedit->getFullText() == "") { // empty file only in memory - let's remove it.
 				closeFile(tabbeforetab);
 			}

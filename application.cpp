@@ -38,7 +38,9 @@ int App::moveMouseToY = -1;
 
 bool App::recording_macro = false;
 bool App::replaying_macro = false;
-std::vector<KeyboardEvent> App::keyboard_events = std::vector<KeyboardEvent>();
+int App::rep_count = 0;
+int App::current_step = 0;
+std::vector<std::vector<KeyboardEvent>> App::keyboard_events = {{}};
 
 bool App::REQUESTING_STRING = false;
 App::StringGivenFunc App::ON_STRING_GIVEN = nullptr;
@@ -54,6 +56,8 @@ std::vector<StoredSearch> App::storedsearches = {};
 Widget* App::commandPalette = nullptr;
 Widget* App::commandBox = nullptr;
 Widget* App::toastBox = nullptr;
+
+Widget* App::before_reps_request = nullptr;
 
 int App::WINDOW_WIDTH = 1200;
 int App::WINDOW_HEIGHT = 800;
@@ -688,15 +692,37 @@ void App::Run() {
 		// Handle input/events
 		rerender = false;
 		forceWaitTime = true;
+		if (!keyboard_events.back().empty()) {
+			keyboard_events.push_back({});
+		}
 		glfwPollEvents();
 		
 		if (replaying_macro) {
-			for (int i = 0; i < keyboard_events.size(); i++){
-				KeyboardEvent e = keyboard_events.at(i);
-				if (e.character_callback) {
-					character_callback(e.window, e.cc_codepoint);
+			if (keyboard_events.size() == 0) {
+				glfwSwapInterval(1); // Enable vsync
+				replaying_macro = false;
+			} else{
+				if (current_step >= keyboard_events.size()) {
+					current_step = 0;
+					if (rep_count > 0) {
+						rep_count -= 1;
+					}
+				}
+				if (rep_count != 0) {
+					current_step = current_step%keyboard_events.size();
+					std::vector<KeyboardEvent> es = keyboard_events.at(current_step);
+					for (KeyboardEvent e : es) {
+						if (e.character_callback) {
+							character_callback(e.window, e.cc_codepoint);
+						}else{
+							key_callback(e.window, e.key, e.scancode, e.action, e.mods);
+						}
+					}
+					current_step++;
 				}else{
-					key_callback(e.window, e.key, e.scancode, e.action, e.mods);
+					glfwSwapInterval(1); // Enable vsync
+					replaying_macro = false;
+					displayToast(icu::UnicodeString::fromUTF8("Finished Executing Macro"));
 				}
 			}
 		}
@@ -802,15 +828,17 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		event.scancode = scancode;
 		event.action = action;
 		event.mods = mods;
-		keyboard_events.push_back(event);
+		keyboard_events.back().push_back(event);
 	}else if (key == GLFW_KEY_F12 && action == GLFW_PRESS) {
 		if (replaying_macro) {
 			displayToast(icu::UnicodeString::fromUTF8("Stopped Macro Replay"));
+			glfwSwapInterval(1); // Enable vsync
 			replaying_macro = false;
 		}else{
 			displayToast(icu::UnicodeString::fromUTF8("Starting Macro Recording"));
 			recording_macro = true;
 			keyboard_events.clear();
+			keyboard_events.push_back({});
 		}
 		return;
 	}
@@ -818,6 +846,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 	if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
 		if (replaying_macro) {
 			displayToast(icu::UnicodeString::fromUTF8("Stopped Macro Replay"));
+			glfwSwapInterval(1); // Enable vsync
 			replaying_macro = false;
 		}else{
 			if (keyboard_events.size() == 0) {
@@ -825,7 +854,45 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 				return;
 			}
 			displayToast(icu::UnicodeString::fromUTF8("Replaying Macro Recording"));
-			replaying_macro = true;
+			
+			ON_STRING_GIVEN = [&](icu::UnicodeString str){
+				setActiveLeafNode(before_reps_request);
+				
+				if (str.length() == 0) {
+					displayToast(icu::UnicodeString::fromUTF8("Canceled"));
+					return;
+				}
+				
+				std::string as_string;
+				str.toUTF8String(as_string);
+				
+				try {
+					rep_count = std::stoi(as_string);
+				}catch(const std::invalid_argument& e) {
+					displayToast(icu::UnicodeString::fromUTF8("Invalid Number, Canceled"));
+					return;
+				}
+				
+				if (rep_count < 0) {
+					displayToast(icu::UnicodeString::fromUTF8("Invalid Number, Canceled"));
+					return;
+				}else if (rep_count == 0) {
+					rep_count = -1;
+				}
+				
+				glfwSwapInterval(0); // Enable vsync
+				replaying_macro = true;
+				current_step = 0;
+			};
+			REQUESTING_STRING = true;
+			STRING_REQUEST_TEXTEDIT->setFullText(icu::UnicodeString());
+			STRING_REQUEST_TEXTEDIT->mode = 'i';
+			STRING_REQUEST_LABEL->setFullText(icu::UnicodeString::fromUTF8("Number of Repetitions (0 for Infinite)?"));
+			MoveWidget(STRING_REQUEST_RECTANGLE, rootelement);
+			MoveWidget(STRING_REQUEST_TEXTEDIT, rootelement);
+			MoveWidget(STRING_REQUEST_LABEL, rootelement);
+			before_reps_request = activeLeafNode;
+			setActiveLeafNode(STRING_REQUEST_TEXTEDIT);
 		}
 		return;
 	}
@@ -963,7 +1030,7 @@ void App::character_callback(GLFWwindow* window, unsigned int codepoint) {
 		event.character_callback = true;
 		event.window = window;
 		event.cc_codepoint = codepoint;
-		keyboard_events.push_back(event);
+		keyboard_events.back().push_back(event);
 	}
 	
 	if (on_char_event) {
@@ -1180,7 +1247,6 @@ void App::openFromCMD(std::string filepath, std::string filename, int line) {
 	FileInfo* finfo = new FileInfo();
 	finfo->filepath = filepath;
 	finfo->filename = filename;
-	finfo->ondisk = true;
 	
 	if (auto edtr = dynamic_cast<Editor*>(rootelement->fileOpen(filepath))) { // first check if *an* editor currently has it open
 		if (line != -1) {

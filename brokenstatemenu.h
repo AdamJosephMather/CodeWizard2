@@ -21,8 +21,8 @@ public:
 	
 	std::string Q = "";
 	
-	bool on_key_event(int key, int scancode, int action, int mods);
-//	bool on_char_event(unsigned int keycode) override;
+	bool on_key_event(int key, int scancode, int action, int mods) override;
+	bool on_char_event(unsigned int keycode) override;
 //	bool on_mouse_button_event(int button, int action, int mods);
 //	bool on_mouse_move_event();
 //	bool on_scroll_event(double xchange, double ychange);

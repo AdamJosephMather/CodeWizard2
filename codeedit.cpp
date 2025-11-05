@@ -848,6 +848,8 @@ bool CodeEdit::on_char_event(unsigned int keycode) {
 		return false;
 	}
 	
+	if (FILE_BROKEN_STATE) { return broken_state_menu->on_char_event(keycode); }
+	
 	if (App::activeLeafNode != hoverbox) {
 		if (hoverbox->parent == this) {
 			App::RemoveWidgetFromParent(hoverbox);
@@ -900,6 +902,8 @@ std::string CodeEdit::augmentBuildCommand(std::string inital) {
 }
 
 bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
+	if (FILE_BROKEN_STATE) { return broken_state_menu->on_key_event(key, scancode, action, mods); }
+	
 	bool shift_held = (mods & GLFW_MOD_SHIFT) != 0;
 	bool control_held = (mods & GLFW_MOD_CONTROL) != 0;
 	bool alt_held = (mods & GLFW_MOD_ALT) != 0;

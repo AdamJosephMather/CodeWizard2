@@ -1,5 +1,6 @@
 #include "brokenstatemenu.h"
 #include "text_renderer.h"
+#include <cctype>
 
 BrokenStateMenu::BrokenStateMenu(Widget* parent, std::string firsttext, std::string secondtext, std::string query) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("BrokenStateMenu");
@@ -29,8 +30,8 @@ BrokenStateMenu::BrokenStateMenu(Widget* parent, std::string firsttext, std::str
 	});
 	secondbutton->border = true;
 	
-	char_1 = firsttext.at(0);
-	char_2 = secondtext.at(0);
+	char_1 = std::tolower(firsttext.at(0));
+	char_2 = std::tolower(secondtext.at(0));
 }
 
 void BrokenStateMenu::render() {
@@ -57,10 +58,12 @@ bool BrokenStateMenu::on_key_event(int key, int scancode, int action, int mods) 
 	}
 	
 	if (char_1 == char_2) {
-		return false;
+		return true;
 	}
 	
-	if (action == GLFW_PRESS && key == char_1) {
+	key = std::tolower(key);
+	
+	if (action == GLFW_RELEASE && key == char_1) {
 		first_callback();
 		return true;
 	}else if (action == GLFW_PRESS && key == char_2) {
@@ -68,5 +71,13 @@ bool BrokenStateMenu::on_key_event(int key, int scancode, int action, int mods) 
 		return true;
 	}
 	
-	return false;
+	return true;
+}
+
+bool BrokenStateMenu::on_char_event(unsigned int keycode) {
+	if (!is_visible || !parent) {
+		return false;
+	}
+	
+	return true;
 }

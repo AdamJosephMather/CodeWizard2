@@ -38,5 +38,7 @@ public:
 	icu::UnicodeString getPaletteName();
 	
 	Widget* getFirstEditor() override;
+	std::vector<std::vector<std::string>> getOpenFiles() override;
+	int openUnnamedFile(int count) override;
 private:
 };

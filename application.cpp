@@ -54,8 +54,12 @@ FileIndexResult App::INDEXED_FILES = FileIndexResult();
 std::vector<StoredSearch> App::storedsearches = {};
 
 Widget* App::commandPalette = nullptr;
+Widget* App::filesButton = nullptr;
+Widget* App::filesList = nullptr;
 Widget* App::commandBox = nullptr;
 Widget* App::toastBox = nullptr;
+
+std::vector<std::vector<std::string>> App::files_in_box = {};
 
 Widget* App::before_reps_request = nullptr;
 
@@ -791,6 +795,15 @@ void App::mouse_button_callback(GLFWwindow* window, int button, int action, int 
 			return;
 		}
 	}
+	if (filesList->parent != nullptr) {
+		if (mx >= filesList->t_x && mx <= filesList->t_x+filesList->t_w && my >= filesList->t_y && my <= filesList->t_y+filesList->t_h) {
+			filesList->on_mouse_button_event(button, action, mods);
+			return;
+		}else if (action == GLFW_PRESS) {
+			closeFilesList();
+			return;
+		}
+	}
 	if (REQUESTING_STRING) {
 		if (mx >= STRING_REQUEST_TEXTEDIT->t_x && mx <= STRING_REQUEST_TEXTEDIT->t_x+STRING_REQUEST_TEXTEDIT->t_w && my >= STRING_REQUEST_TEXTEDIT->t_y && my <= STRING_REQUEST_TEXTEDIT->t_y+STRING_REQUEST_TEXTEDIT->t_h) {
 			STRING_REQUEST_TEXTEDIT->on_mouse_button_event(button, action, mods);
@@ -902,6 +915,11 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 	
 	if (on_key_event) {
 		if (on_key_event(key, scancode, action, mods)) { return; };
+	}
+	
+	if (filesList->parent != nullptr) {
+		closeFilesList();
+		return;
 	}
 	
 	if (REQUESTING_STRING) {
@@ -1037,6 +1055,11 @@ void App::character_callback(GLFWwindow* window, unsigned int codepoint) {
 		on_char_event(codepoint);
 	}
 	
+	if (filesList->parent != nullptr) {
+		closeFilesList();
+		return;
+	}
+	
 	if (rootelement) { rootelement->on_char_event(codepoint); }
 }
 
@@ -1059,6 +1082,12 @@ void App::scroll_callback(GLFWwindow* window, double xpos, double ypos) {
 	if (commandBox->parent != nullptr) {
 		if (mx >= commandBox->t_x && mx <= commandBox->t_x+commandBox->t_w && my >= commandBox->t_y && my <= commandBox->t_y+commandBox->t_h) {
 			commandBox->on_scroll_event(-xpos, -ypos);
+			return;
+		}
+	}
+	if (filesList->parent != nullptr) {
+		if (mx >= filesList->t_x && mx <= filesList->t_x+filesList->t_w && my >= filesList->t_y && my <= filesList->t_y+filesList->t_h) {
+			filesList->on_scroll_event(-xpos, -ypos);
 			return;
 		}
 	}
@@ -1134,6 +1163,32 @@ void App::commandUnfocused() {
 	// here let's remove the cp_listbox from the rootwidget
 	if (commandBox && commandBox->parent != nullptr) {
 		RemoveWidgetFromParent(commandBox);
+	}
+}
+
+void App::closeFilesList() {
+	if (filesList && filesList->parent != nullptr) {
+		RemoveWidgetFromParent(filesList);
+	}
+}
+
+void App::openFilesList() {
+	if (!filesList) { return; }
+	
+	if (filesList->parent == nullptr) {
+		App::MoveWidget(filesList, rootelement);
+	}
+	
+	files_in_box = rootelement->getOpenFiles();
+	
+	if (auto lb = dynamic_cast<ListBox*>(filesList)) {
+		std::vector<icu::UnicodeString> items;
+		for (auto v : files_in_box) {
+			items.push_back(icu::UnicodeString::fromUTF8(v[0]));
+		}
+		
+		lb->setElements(items);
+		lb->toshow = min(12, items.size());
 	}
 }
 
@@ -1475,26 +1530,28 @@ void App::setActiveLeafNode(Widget* w) {
 	activeLeafNode = w;
 	activeEditor = nullptr;
 	
+	if (w) {
+		Widget* cur_at = w;
+		while (true) {
+			if (cur_at->parent) {
+				cur_at = cur_at->parent;
+			}else{
+				break;
+			}
+			
+			if (Editor* edtr = dynamic_cast<Editor*>(cur_at)) {
+				activeEditor = edtr;
+				break;
+			}
+		}
+	}
+	
 	if (w != commandPalette) {
 		commandUnfocused();
 	}
 	
 	if (!w) {
 		return;
-	}
-	
-	Widget* cur_at = w;
-	while (true) {
-		if (cur_at->parent) {
-			cur_at = cur_at->parent;
-		}else{
-			break;
-		}
-		
-		if (Editor* edtr = dynamic_cast<Editor*>(cur_at)) {
-			activeEditor = edtr;
-			break;
-		}
 	}
 	
 	if (w == commandPalette) { // we must have just moved to the commandPalette (let's clear it)

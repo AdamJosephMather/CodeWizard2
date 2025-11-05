@@ -53,4 +53,7 @@ public:
 	virtual Widget* getFirstEditor();
 	virtual Widget* findTerminal();
 	virtual void lspmessage(std::string& from, std::string& message);
+	
+	virtual std::vector<std::vector<std::string>> getOpenFiles();
+	virtual int openUnnamedFile(int count);
 };

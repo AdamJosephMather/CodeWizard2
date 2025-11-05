@@ -7,6 +7,20 @@ ListBox::ListBox(Widget* parent, App::PosFunction pf) : Widget(parent) {
 	pFunc = pf;
 }
 
+void ListBox::fillElementalPositions() {	
+	elementalPositions.clear();
+	
+	int th = TextRenderer::get_text_height()+10;
+	
+	int maxlen = floor(t_w/TextRenderer::get_text_width(1));
+	int y = t_y;
+	
+	for (int indx = scrolled_to; indx < fmin(elements.size(), scrolled_to+toshow); indx++) {
+		elementalPositions.push_back({t_x, y, t_w, th, indx});
+		y += th;
+	}
+}
+
 void ListBox::render() {
 	if (!is_visible || !is_visible_layered) {
 		return;
@@ -110,6 +124,16 @@ bool ListBox::on_scroll_event(double xchange, double ychange) {
 		scrolled_to = 0;
 	}
 	
+	fillElementalPositions();
+	
+	for (int thisone = 0; thisone < elementalPositions.size(); thisone++) {
+		auto ep = elementalPositions[thisone];
+		
+		if (mx >= ep[0] && mx <= ep[0]+ep[2] && my >= ep[1] && my <= ep[1]+ep[3]) {
+			selected_id = ep[4];
+		}
+	}
+	
 	return true;
 }
 
@@ -133,4 +157,27 @@ bool ListBox::on_mouse_button_event(int button, int action, int mods) {
 	}
 	
 	return false;
+}
+
+bool ListBox::on_mouse_move_event() {
+	if (!is_visible || !is_visible_layered) {
+		return false;
+	}
+	
+	int mx = App::mouseX;
+	int my = App::mouseY;
+	
+	if (mx < t_x || mx > t_x+t_w || my < t_y || my > t_y+t_h) {
+		return false;
+	}
+	
+	for (int thisone = 0; thisone < elementalPositions.size(); thisone++) {
+		auto ep = elementalPositions[thisone];
+		
+		if (mx >= ep[0] && mx <= ep[0]+ep[2] && my >= ep[1] && my <= ep[1]+ep[3]) {
+			selected_id = ep[4];
+		}
+	}
+	
+	return true;
 }

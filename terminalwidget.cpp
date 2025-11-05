@@ -290,7 +290,7 @@ bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
 	cell_from_cursor(row, col);
 	if (row < 0 || col < 0) return false;
 
-	if (App::activeLeafNode != this) App::setActiveLeafNode(this);
+	if (App::activeLeafNode != this && action == GLFW_PRESS) App::setActiveLeafNode(this);
 
 	const bool left   = (button == GLFW_MOUSE_BUTTON_LEFT);
 	const bool press  = (action == GLFW_PRESS);

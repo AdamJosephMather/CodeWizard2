@@ -28,6 +28,9 @@ BrokenStateMenu::BrokenStateMenu(Widget* parent, std::string firsttext, std::str
 		}
 	});
 	secondbutton->border = true;
+	
+	char_1 = firsttext.at(0);
+	char_2 = secondtext.at(0);
 }
 
 void BrokenStateMenu::render() {
@@ -46,4 +49,24 @@ void BrokenStateMenu::position(int x, int y, int w, int h) {
 	t_h = h;
 	
 	Widget::position(t_x, t_y, t_w, t_h);
+}
+
+bool BrokenStateMenu::on_key_event(int key, int scancode, int action, int mods) {
+	if (!is_visible || !parent) {
+		return false;
+	}
+	
+	if (char_1 == char_2) {
+		return false;
+	}
+	
+	if (action == GLFW_PRESS && key == char_1) {
+		first_callback();
+		return true;
+	}else if (action == GLFW_PRESS && key == char_2) {
+		second_callback();
+		return true;
+	}
+	
+	return false;
 }

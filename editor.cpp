@@ -329,3 +329,52 @@ Widget* Editor::fileOpen(std::string fname) { // this is a widget function to fi
 Widget* Editor::getFirstEditor() {
 	return this;
 }
+
+std::vector<std::vector<std::string>> Editor::getOpenFiles() {
+	std::vector<std::vector<std::string>> out = {};
+	
+	for (auto itm : tab_bar->tabs_list) {
+		if (auto te = dynamic_cast<CodeEdit*>(editors[itm.id])) {
+			if (te->file) {
+				out.push_back({te->file->filename, te->file->filepath});
+			}else{
+				out.push_back({"Untitled", ""});
+			}
+		}else if(auto te = dynamic_cast<ImageView*>(editors[itm.id])){
+			if (te->file) {
+				out.push_back({te->file->filename, te->file->filepath});
+			}else{
+				out.push_back({"Untitled Image", ""});
+			}
+		}
+	}
+	
+	return out;
+}
+
+int Editor::openUnnamedFile(int count) {
+	for (auto itm : tab_bar->tabs_list) {
+		if (auto te = dynamic_cast<CodeEdit*>(editors[itm.id])) {
+			if (!te->file) {
+				if (count == 0) {
+					tab_bar->selected_id = itm.id;
+					tabinfoclicked(itm);
+					App::commandUnfocused();
+					return count - 1;
+				}
+				count --;
+			}
+		}else if(auto te = dynamic_cast<ImageView*>(editors[itm.id])){
+			if (!te->file) {
+				if (count == 0) {
+					tab_bar->selected_id = itm.id;
+					tabinfoclicked(itm);
+					App::commandUnfocused();
+					return count - 1;
+				}
+				count --;
+			}
+		}
+	}
+	return count;
+}

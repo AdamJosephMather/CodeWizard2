@@ -220,3 +220,22 @@ void Widget::lspmessage(std::string& from, std::string& message) {
 		c->lspmessage(from, message);
 	}
 }
+
+std::vector<std::vector<std::string>> Widget::getOpenFiles() {
+	std::vector<std::vector<std::string>> out = {};
+	for (auto c : children) {
+		auto of = c->getOpenFiles();
+		out.insert(out.end(), of.begin(), of.end());
+	}
+	return out;
+}
+
+int Widget::openUnnamedFile(int count) {
+	for (auto c : children) {
+		count = c->openUnnamedFile(count);
+		if (count < 0) {
+			return count;
+		}
+	}
+	return count;
+}

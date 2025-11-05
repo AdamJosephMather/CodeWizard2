@@ -98,8 +98,6 @@ int main(int argc, char* argv[]) {
 		App::languagemap[l.name] = l;
 	}
 	
-	
-	
 	Widget* mainwidget = App::rootelement;
 	
 	nlohmann::json state = App::settings->getConfig();
@@ -153,8 +151,62 @@ int main(int argc, char* argv[]) {
 		App::fillCmdBox();
 	};
 	
+	ListBox* filesList = new ListBox(nullptr, [&](Widget* w) {
+		w->t_x = App::filesButton->t_x;
+		w->t_y = App::filesButton->t_y + App::filesButton->t_h + App::text_padding;
+		w->t_w = std::min(App::WINDOW_WIDTH-w->t_x, App::WINDOW_WIDTH/5);
+	});
+	filesList->is_visible_layered = true;
+	filesList->ONCLICK = [&](Widget* w, int sel_id) {
+		App::closeFilesList();
+		
+		if (sel_id >= App::files_in_box.size()) {
+			return;
+		}
+		
+		std::string filepath = App::files_in_box[sel_id][1];
+		std::string filename = App::files_in_box[sel_id][0];
+		if (filepath == "") {
+			int count = 0;
+			
+			for (int i = 0; i < sel_id; i++) {
+				if (App::files_in_box[i][1] == "") {
+					count ++;
+				}
+			}
+			
+			App::rootelement->openUnnamedFile(count);
+			return;
+		}
+		
+		if (auto edtr = dynamic_cast<Editor*>(App::rootelement->fileOpen(filepath))) { // first check if *an* editor currently has it open
+			FileInfo* fi = new FileInfo();
+			fi->filepath = filepath;
+			fi->filename = filename;
+			fi->is_opening = false;
+			edtr->fileOpenRequested(fi);
+		}else{
+			App::displayToast(icu::UnicodeString::fromUTF8("File No Longer Open"));
+		}
+	};
+	
+	Button* filesButton = new Button(App::tb, icu::UnicodeString::fromUTF8("0 Active"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
+		button->t_x = commandPalette->t_x+commandPalette->t_w+App::text_padding;
+		button->t_y = 0;
+		button->BUTTON_LABEL = icu::UnicodeString::fromUTF8(std::to_string(App::rootelement->getOpenFiles().size())+" Active");
+	}, [&](Button* button) {
+		if (filesList->parent) {
+			App::closeFilesList();
+		}else{
+			App::openFilesList();
+		}
+	});
+	filesButton->background_color = App::theme.main_background_color;
+	
 	App::commandPalette = commandPalette;
 	App::commandBox = commandBox;
+	App::filesButton = filesButton;
+	App::filesList = filesList;
 	
 	add_button->window_button = true;
 	remove_button->window_button = true;

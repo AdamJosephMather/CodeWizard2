@@ -13,6 +13,8 @@ Button::Button(Widget *parent, icu::UnicodeString text, Positioner positioner, O
 	window_button = false;
 	hovered = false;
 	
+	background_color = App::theme.darker_background_color;
+	
 	id = icu::UnicodeString::fromUTF8("Button - ") + text;
 }
 
@@ -30,6 +32,10 @@ void Button::position(int x, int y, int width, int height) {
 
 bool Button::on_mouse_button_event(int button, int action, int mods) {
 	if (!is_visible) {
+		return false;
+	}
+	
+	if (!parent) {
 		return false;
 	}
 	
@@ -86,7 +92,7 @@ void Button::render() {
 		if (hovered) {
 			App::DrawRoundedRect(t_x+our_offset, t_y+our_offset, t_w-our_offset*2, t_h-our_offset*2, radius, App::theme.hover_background_color);
 		}else if (!transparent){
-			App::DrawRoundedRect(t_x+our_offset, t_y+our_offset, t_w-our_offset*2, t_h-our_offset*2, radius, App::theme.darker_background_color);
+			App::DrawRoundedRect(t_x+our_offset, t_y+our_offset, t_w-our_offset*2, t_h-our_offset*2, radius, background_color);
 		}
 	}
 	

@@ -67,8 +67,12 @@ public:
 	static StringGivenFunc ON_STRING_GIVEN;
 		
 	static Widget* commandPalette;
+	static Widget* filesButton;
+	static Widget* filesList;
 	static Widget* commandBox;
 	static Widget* toastBox;
+	
+	static std::vector<std::vector<std::string>> files_in_box;
 	
 	static Widget* before_reps_request;
 	
@@ -176,6 +180,9 @@ public:
 	static void indexFiles();
 	static std::vector<std::string> extractStringWords(std::string word);
 	static SearchResult searchAcrossFiles(const std::string& searchTerm);
+	
+	static void closeFilesList();
+	static void openFilesList();
 	
 	static void openFromCMD(std::string filepath, std::string filename, int line = -1);
 	

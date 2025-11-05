@@ -643,6 +643,7 @@ void CodeEdit::overwrite_file() {
 	was_in_a_file = false;
 	save();
 }
+
 void CodeEdit::reload_file() {
 	FILE_BROKEN_STATE = false;
 	App::RemoveWidgetFromParent(broken_state_menu);
@@ -911,7 +912,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 		if (key == GLFW_KEY_F5 && is_press && language != "" && file) {
 			// at this point we've already tried project build commands
 			auto l = App::languagemap[language];
-			std::cout << "Lang.bc = " << l.build_command << std::endl;
+			
 			if (l.build_command != "") {
 				App::launchCommandNonBlocking(augmentBuildCommand(l.build_command));
 				return true;

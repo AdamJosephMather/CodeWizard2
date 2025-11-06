@@ -42,10 +42,12 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	
 	fixit_request_menu = new BrokenStateMenu(nullptr, "Yes", "No", "Detected space based indenting, Fixit?");
 	fixit_request_menu->first_callback = [&](){
+		App::RemoveWidgetFromParent(fixit_request_menu);
 		run_fixit();
 		REQUESTING_FIXIT = false;
 	};
 	fixit_request_menu->second_callback = [&](){
+		App::RemoveWidgetFromParent(fixit_request_menu);
 		REQUESTING_FIXIT = false;
 	};
 	

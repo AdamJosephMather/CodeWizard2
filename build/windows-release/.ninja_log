@@ -14,7 +14,7 @@
 238	1146	7845394378723805	CMakeFiles/CodeWizard.dir/resources.rc.res	9eb926a82f111704
 359	3240	7845394380048708	CMakeFiles/CodeWizard.dir/text_renderer.cpp.obj	5ec0eda8fe0cef87
 420	3517	7845394380552378	CMakeFiles/CodeWizard.dir/titlebar.cpp.obj	536564a890c19164
-3925	5878	7845434493551325	CodeWizard.exe	bc7da8756c845457
+1837	3839	7845444210888081	CodeWizard.exe	bc7da8756c845457
 396	3764	7845394380331581	CMakeFiles/CodeWizard.dir/widget.cpp.obj	1b0b511c938452d5
 406	3942	7845394380414874	CMakeFiles/CodeWizard.dir/button.cpp.obj	62acd3d52d55f519
 9093	15883	7845394468158804	CMakeFiles/CodeWizard.dir/checkbox.cpp.obj	540bc44d02d575a9
@@ -27,9 +27,9 @@
 15872	22491	7845394535076009	CMakeFiles/CodeWizard.dir/label.cpp.obj	956dc098319f7fc7
 3320	8994	7845394410154338	CMakeFiles/CodeWizard.dir/tabs.cpp.obj	1484b501cb479af5
 7617	9203	7845394452523039	CMakeFiles/CodeWizard.dir/tinyfiledialogs.c.obj	9becdee66ed8c81f
-72	3923	7845434455037832	CMakeFiles/CodeWizard.dir/application.cpp.obj	33755329f695c48f
+63	3939	7845441189662582	CMakeFiles/CodeWizard.dir/application.cpp.obj	33755329f695c48f
 15884	22517	7845394535196008	CMakeFiles/CodeWizard.dir/myrect.cpp.obj	25345bbb755fb306
-92	2560	7845434455221944	CMakeFiles/CodeWizard.dir/terminal.cpp.obj	615c32fee03cf534
+81	2441	7845441189843058	CMakeFiles/CodeWizard.dir/terminal.cpp.obj	615c32fee03cf534
 2626	9570	7845394402788114	CMakeFiles/CodeWizard.dir/filetree.cpp.obj	d7bbdc92e4954e80
 66	5216	7845400401627848	CMakeFiles/CodeWizard.dir/textedit.cpp.obj	6e48e9ca6876e3d0
 7654	14980	7845394452895477	CMakeFiles/CodeWizard.dir/brokenstatemenu.cpp.obj	57955de6b7ff596
@@ -41,11 +41,8 @@
 16703	21942	7845394543390034	CMakeFiles/CodeWizard.dir/lspdebug.cpp.obj	a9a3fb797d2e8dc2
 13640	22721	7845394512754863	CMakeFiles/CodeWizard.dir/curler.cpp.obj	574cd35983c45e73
 15630	23201	7845394532654033	CMakeFiles/CodeWizard.dir/chat.cpp.obj	5c5a7e6d374ca548
-105	2363	7845434455357126	CMakeFiles/CodeWizard.dir/terminalwidget.cpp.obj	5f9cfde1cd5ca69d
+55	1835	7845444193073581	CMakeFiles/CodeWizard.dir/terminalwidget.cpp.obj	5f9cfde1cd5ca69d
 73	8381	7845400401697385	CMakeFiles/CodeWizard.dir/languageserverclient.cpp.obj	9152c5d657596c4
-115	2407	7845434455447538	CMakeFiles/CodeWizard.dir/terminalwidgettabbed.cpp.obj	21eaa965b7f87d67
-94	2205	7845441189978094	CMakeFiles/CodeWizard.dir/terminalwidget.cpp.obj	5f9cfde1cd5ca69d
 106	2336	7845441190090206	CMakeFiles/CodeWizard.dir/terminalwidgettabbed.cpp.obj	21eaa965b7f87d67
-81	2441	7845441189843058	CMakeFiles/CodeWizard.dir/terminal.cpp.obj	615c32fee03cf534
-63	3939	7845441189662582	CMakeFiles/CodeWizard.dir/application.cpp.obj	33755329f695c48f
-3941	6005	7845441228442042	CodeWizard.exe	bc7da8756c845457
+61	2657	7845447374631160	CMakeFiles/CodeWizard.dir/textedit.cpp.obj	6e48e9ca6876e3d0
+2659	4676	7845447400602080	CodeWizard.exe	bc7da8756c845457

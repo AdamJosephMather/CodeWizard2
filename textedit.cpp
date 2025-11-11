@@ -1110,7 +1110,7 @@ bool TextEdit::handleInsertKey(int key, int scancode, int action, int mods) {
 				SetClipboardText(text);
 			}
 		}
-		applyDeleteToAllCursors(GLFW_KEY_BACKSPACE, false);
+		applyDeleteToAllCursors(GLFW_KEY_DELETE, false);
 		donesomthing = true;
 	}else if (key == GLFW_KEY_Z && !is_shift_held && (is_control_held || mode == 'n')) {
 		activateUndo();

@@ -285,24 +285,28 @@ bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
 
 	bool shift=false, alt=false, ctrl=false;
 	mods_to_bools(mods, shift, alt, ctrl);
-
+	
 	int row=0, col=0;
 	cell_from_cursor(row, col);
 	if (row < 0 || col < 0) return false;
-
+	
 	if (App::activeLeafNode != this && action == GLFW_PRESS) App::setActiveLeafNode(this);
-
+	
 	const bool left   = (button == GLFW_MOUSE_BUTTON_LEFT);
 	const bool press  = (action == GLFW_PRESS);
 	const bool release= (action == GLFW_RELEASE);
-
+	
 	// --- Terminal-side selection when the app does NOT want mouse ---
 	if (left && !term->appWantsMouse()) {
 		if (press) {
 			selecting = true;
 			int doc = term->docLineIdForScreenRow(row);
-			sel_doc_r0 = sel_doc_r1 = doc;
-			sel_c0 = sel_c1 = col;
+			sel_doc_r1 = doc;
+			sel_c1 = col;
+			if (!shift) {
+				sel_doc_r0 = sel_doc_r1;
+				sel_c0 = sel_c1;
+			}
 			return true;
 		} else if (release && selecting) {
 			sel_doc_r1 = term->docLineIdForScreenRow(row);
@@ -312,14 +316,13 @@ bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
 		}
 	}
 	
-
 	// otherwise: forward to the app (nvim/tui, etc.)
 	int b = 0;
 	if      (button == GLFW_MOUSE_BUTTON_LEFT)   b = 0;
 	else if (button == GLFW_MOUSE_BUTTON_MIDDLE) b = 1;
 	else if (button == GLFW_MOUSE_BUTTON_RIGHT)  b = 2;
 	else return false;
-
+	
 	s_dragging = press ? true : s_dragging && press;
 	bool ok = term->mousePress(row, col, b, press, shift, alt, ctrl);
 	if (release) s_dragging = false;

@@ -10,7 +10,7 @@
 	  "name": "default",
 	  "hidden": true,
 	  "generator": "Ninja",
-	  "toolchainFile": "D:/Users/adamj/Documents/C/vcpkg/scripts/buildsystems/vcpkg.cmake"
+	  "toolchainFile": "C:/Users/adamj/vcpkg/scripts/buildsystems/vcpkg.cmake"
 	},
 	{
 	  "name": "windows-release",

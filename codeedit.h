@@ -153,5 +153,8 @@ public:
 	std::vector<EditSection> gatherCurrentFileSections(const std::vector<FileEdit>& edits, const std::string& currentFilePath);
 	
 	std::string augmentBuildCommand(std::string inital);
+	
+	void setComments();
+	void removeComments();
 private:
 };

@@ -1049,7 +1049,18 @@ bool TextEdit::handleInsertKey(int key, int scancode, int action, int mods) {
 	bool donesomthing = false;
 
 	if (key == GLFW_KEY_TAB) {
-		applyInsertToAllCursors(icu::UnicodeString::fromUTF8("\t"));
+		if (cursors.size() == 1) {
+			if (getSelectedText(cursors[0]).length() == 0) {
+				applyInsertToAllCursors(icu::UnicodeString::fromUTF8("\t"));
+			}else if (is_shift_held) {
+				applyIndentChangeToAllCursors(-1);
+			}else{
+				applyIndentChangeToAllCursors(1);
+			}
+		}else{
+			applyInsertToAllCursors(icu::UnicodeString::fromUTF8("\t"));
+		}
+		
 		donesomthing = true;
 	}else if (key == GLFW_KEY_SPACE) {
 		applyInsertToAllCursors(icu::UnicodeString::fromUTF8(" "));

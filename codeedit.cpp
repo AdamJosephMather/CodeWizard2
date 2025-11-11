@@ -1031,63 +1031,32 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 					hover_id = lsp_client->requestHover(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
 				}
 			}if (key == GLFW_KEY_3 && alt_held && is_press && language != "" && App::languagemap[language].line_comment != "") {
-				for (auto c : textedit->cursors) {
-					auto slelscec = textedit->_getCursSelec(c);
-					
-					for (auto l = slelscec.first.first; l < slelscec.first.second+1; l++) {
-						Cursor comc = Cursor();
-						comc.head_char = 0;
-						comc.anchor_char = 0;
-						comc.head_line = l;
-						comc.anchor_line = l;
-						textedit->insertTextAtCursor(comc, icu::UnicodeString( App::languagemap[language].line_comment ));
-					}
-				}
-				textedit->tryingToEnsureCursorPos = true;
+				setComments();
 				return true;
 			}else if (key == GLFW_KEY_4 && alt_held && is_press && language != "" && App::languagemap[language].line_comment != "") {
-				auto remove = App::languagemap[language].line_comment;
+				removeComments();
+				return true;
+			}else if (key == GLFW_KEY_SLASH && control_held && is_press && language != "" && App::languagemap[language].line_comment != "") {
+				auto find = App::languagemap[language].line_comment;
+	
+				Cursor c = textedit->cursors[0];
+				auto slelscec = textedit->_getCursSelec(c);
+				int l = slelscec.first.first;
+				auto line_text = textedit->lines[l].line_text;
+				int indx = line_text.indexOf(find);
+				if (indx == -1) {
+					setComments();
+					return true;
+				}
 				
-				for (auto c : textedit->cursors) {
-					auto slelscec = textedit->_getCursSelec(c);
-					
-					for (auto l = slelscec.first.first; l < slelscec.first.second+1; l++) {
-						auto line_text = textedit->lines[l].line_text;
-						
-						int indx = line_text.indexOf(remove);
-						if (indx == -1) {
-							continue;
-						}
-						
-						bool works = true;
-						
-						for (int z = 0; z < indx; z++) {
-							if (!whitespace_before_comment.count(line_text.char32At(z))){
-								works = false;
-								break;
-							}
-						}
-						
-						if (!works) {
-							continue;
-						}
-						
-						Cursor comc = Cursor();
-						comc.head_char = indx;
-						comc.anchor_char = indx+remove.length();
-						
-						if (indx+remove.length() < line_text.length()) {
-							if (line_text.char32At(indx+remove.length()) == U' ') {
-								comc.anchor_char ++;
-							}
-						}
-						
-						comc.head_line = l;
-						comc.anchor_line = l;
-						textedit->deleteTextAtCursor(comc, GLFW_KEY_BACKSPACE, false);
+				for (int z = 0; z < indx; z++) {
+					if (!whitespace_before_comment.count(line_text.char32At(z))){
+						setComments();
+						return true;
 					}
 				}
-				textedit->tryingToEnsureCursorPos = true;
+				
+				removeComments();
 				return true;
 			}
 		}
@@ -1188,6 +1157,67 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 		
 		return wrkd;
 	}
+}
+
+void CodeEdit::setComments() {
+	for (auto c : textedit->cursors) {
+		auto slelscec = textedit->_getCursSelec(c);
+		
+		for (auto l = slelscec.first.first; l < slelscec.first.second+1; l++) {
+			Cursor comc = Cursor();
+			comc.head_char = 0;
+			comc.anchor_char = 0;
+			comc.head_line = l;
+			comc.anchor_line = l;
+			textedit->insertTextAtCursor(comc, icu::UnicodeString( App::languagemap[language].line_comment ));
+		}
+	}
+	textedit->tryingToEnsureCursorPos = true;
+}
+
+void CodeEdit::removeComments() {
+	auto remove = App::languagemap[language].line_comment;
+	
+	for (auto c : textedit->cursors) {
+		auto slelscec = textedit->_getCursSelec(c);
+		
+		for (auto l = slelscec.first.first; l < slelscec.first.second+1; l++) {
+			auto line_text = textedit->lines[l].line_text;
+			
+			int indx = line_text.indexOf(remove);
+			if (indx == -1) {
+				continue;
+			}
+			
+			bool works = true;
+			
+			for (int z = 0; z < indx; z++) {
+				if (!whitespace_before_comment.count(line_text.char32At(z))){
+					works = false;
+					break;
+				}
+			}
+			
+			if (!works) {
+				continue;
+			}
+			
+			Cursor comc = Cursor();
+			comc.head_char = indx;
+			comc.anchor_char = indx+remove.length();
+			
+			if (indx+remove.length() < line_text.length()) {
+				if (line_text.char32At(indx+remove.length()) == U' ') {
+					comc.anchor_char ++;
+				}
+			}
+			
+			comc.head_line = l;
+			comc.anchor_line = l;
+			textedit->deleteTextAtCursor(comc, GLFW_KEY_BACKSPACE, false);
+		}
+	}
+	textedit->tryingToEnsureCursorPos = true;
 }
 
 bool CodeEdit::on_mouse_button_event(int button, int action, int mods) {

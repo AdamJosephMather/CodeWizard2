@@ -446,7 +446,11 @@ std::string TerminalWidget::selection_text() const {
 		while (!line.empty() && line.back() == ' ') line.pop_back();
 
 		out += line;
-		if (doc != r1) out += '\n';
+		
+		if (!term->getDocWraps(doc+1) && doc != r1) {
+			out += '\n';
+		}
+		
 	}
 	return out;
 }

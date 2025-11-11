@@ -44,6 +44,11 @@ struct OurCell {
 	uint8_t fg_blue = 0;
 };
 
+struct OurLine {
+	std::vector<OurCell> cells;
+	bool continuation;
+};
+
 class Terminal {
 public:
 	Terminal(int cols, int rows);
@@ -95,7 +100,8 @@ public:
 	int docLineCount() const { return static_cast<int>(m_scrollback.size()) + m_rows; }
 	
 	bool appWantsMouse() const;
-
+	bool getDocWraps(int docId);
+	
 private:
 	// --- ConPTY ---
 	bool initConPty();
@@ -148,7 +154,7 @@ private:
 	std::vector<char> m_rowBuf;
 
 	CursorInfo m_cursorInfo;
-	std::deque<std::vector<OurCell>> m_scrollback;
+	std::deque<OurLine> m_scrollback;
 	size_t m_sb_max = 2000;
 	int m_view_off = 0;
 	std::atomic<bool> m_altScreen{ false };

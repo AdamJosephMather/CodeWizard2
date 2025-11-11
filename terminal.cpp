@@ -353,8 +353,8 @@ OurCell Terminal::getCell(int row, int col) {
 	int from_sb = std::min(m_view_off, static_cast<int>(m_scrollback.size()));
 	if (from_sb > 0 && row < from_sb) {
 		const auto& line = m_scrollback[m_scrollback.size() - from_sb + row];
-		if (col < static_cast<int>(line.size())) {
-			return line[col];
+		if (col < static_cast<int>(line.cells.size())) {
+			return line.cells[col];
 		} else {
 			return { (UChar32)U' ', 0, 0, 0, 255, 255, 255 };
 		}
@@ -613,8 +613,10 @@ void Terminal::savePushLine(int cols, const VTermScreenCell* cells) {
 			fg.rgb.red, fg.rgb.green, fg.rgb.blue
 		};
 	}
-
-	m_scrollback.push_back(std::move(line));
+	
+	int wrapped = vterm_state_get_lineinfo(vterm_obtain_state(m_vt), 0)->continuation;
+	OurLine l = {std::move(line), static_cast<bool>(wrapped)};
+	m_scrollback.push_back(l);
 	if (m_scrollback.size() > m_sb_max) {
 		m_scrollback.pop_front();
 	}
@@ -630,9 +632,9 @@ bool Terminal::savePopLine(int cols, VTermScreenCell* cells) {
 	const auto line = m_scrollback.back();
 	m_scrollback.pop_back();
 
-	const int n = std::min(cols, static_cast<int>(line.size()));
+	const int n = std::min(cols, static_cast<int>(line.cells.size()));
 	for (int i = 0; i < n; ++i) {
-		const auto s = line[i];
+		const auto s = line.cells[i];
 		VTermScreenCell& cell = cells[i];
 		cell.chars[0] = static_cast<uint32_t>(s.c);
 		cell.chars[1] = 0;
@@ -706,8 +708,8 @@ bool Terminal::getDocCell(int docId, int col, OurCell& out) {
 	if (docId < sb_size) {
 		// From scrollback
 		const auto& line = m_scrollback[docId];
-		if (col < static_cast<int>(line.size())) {
-			out = line[col];
+		if (col < static_cast<int>(line.cells.size())) {
+			out = line.cells[col];
 		} else {
 			out = OurCell{};
 			out.c = 0;
@@ -732,6 +734,27 @@ bool Terminal::getDocCell(int docId, int col, OurCell& out) {
 	out = { (UChar32)cp, bg.rgb.red, bg.rgb.green, bg.rgb.blue,
 	                     fg.rgb.red, fg.rgb.green, fg.rgb.blue };
 	return true;
+}
+
+bool Terminal::getDocWraps(int docId) {
+	std::lock_guard<std::mutex> lock(m_vtermMutex);
+	
+	if (docId < 0) return false;
+
+	const int sb_size = static_cast<int>(m_scrollback.size());
+	if (docId < sb_size) {
+		// From scrollback
+		const auto& line = m_scrollback[docId];
+		return line.continuation;
+	}
+	
+	// From live screen
+	int live_row = docId - sb_size;
+	if (live_row < 0 || live_row >= m_rows) return false;
+	
+	
+	int wrapped = vterm_state_get_lineinfo(vterm_obtain_state(m_vt), live_row)->continuation;
+	return wrapped;
 }
 
 // ============================================================================

@@ -109,21 +109,21 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		replaceAll(findTextEdit->getFullText(), replaceTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
 	
-	nextReplButton = new Button(nullptr, icu::UnicodeString("=>"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
+	nextReplButton = new Button(nullptr, icu::UnicodeString::fromUTF8("-→"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = allButton->t_x-5-tw;
 		b->t_y = t_y+t_h-replaceTextEdit->t_h-5;
 	}, [&](Button* b){
 		activateReplace(true, findTextEdit->getFullText(), replaceTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
 	
-	nextButton = new Button(nullptr, icu::UnicodeString("=>"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
+	nextButton = new Button(nullptr, icu::UnicodeString::fromUTF8("-→"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = t_x+t_w-5-tw;
 		b->t_y = t_y+t_h-replaceTextEdit->t_h-findTextEdit->t_h-10;
 	}, [&](Button* b){
 		activateFind(true, findTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
 	
-	prevButton = new Button(nullptr, icu::UnicodeString("<="), [&](Button* b, int x, int y, int w, int h, int tw, int th){
+	prevButton = new Button(nullptr, icu::UnicodeString::fromUTF8("←-"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = nextButton->t_x-5-tw;
 		b->t_y = t_y+t_h-replaceTextEdit->t_h-findTextEdit->t_h-10;
 	}, [&](Button* b){
@@ -793,12 +793,14 @@ void CodeEdit::activateFind(bool forwards, icu::UnicodeString tofind, bool case_
 	int cur_line;
 	int start_char;
 	
+	auto slelscec = textedit->_getCursSelec(textedit->cursors[0]);
+	
 	if (forwards){
-		cur_line = textedit->cursors[0].head_line;
-		start_char = textedit->cursors[0].head_char;
+		cur_line = slelscec.first.second;
+		start_char = slelscec.second.second;
 	}else{
-		cur_line = textedit->cursors[0].anchor_line;
-		start_char = textedit->cursors[0].anchor_char;
+		cur_line = slelscec.first.first;
+		start_char = slelscec.second.first;
 	}
 	
 	for (int _ = 0; _ < textedit->lines.size()+1; _++) {

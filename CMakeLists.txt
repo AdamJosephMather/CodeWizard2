@@ -43,7 +43,7 @@ target_include_directories(libvterm PUBLIC
 add_definitions(-D_WIN32_WINNT=0x0A00 -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE)
 
 
-add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_renderer.cpp application.cpp widget.cpp button.cpp titlebar.cpp panel_holder.cpp widgetchooser.cpp editor.cpp filetree.cpp tabs.cpp settings.cpp codeedit.cpp linenumbers.cpp textedit.cpp highlighter.cpp tinyfiledialogs.c brokenstatemenu.cpp checkbox.cpp settingsmanager.cpp languageserverclient.cpp listbox.cpp imageview.cpp compare.cpp curler.cpp toast.cpp chat.cpp label.cpp myrect.cpp lspdebug.cpp terminal.cpp terminalwidget.cpp terminalwidgettabbed.cpp )
+add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_renderer.cpp application.cpp widget.cpp button.cpp titlebar.cpp panel_holder.cpp widgetchooser.cpp editor.cpp filetree.cpp tabs.cpp settings.cpp codeedit.cpp linenumbers.cpp textedit.cpp highlighter.cpp tinyfiledialogs.c brokenstatemenu.cpp checkbox.cpp settingsmanager.cpp languageserverclient.cpp listbox.cpp imageview.cpp compare.cpp curler.cpp toast.cpp chat.cpp label.cpp myrect.cpp lspdebug.cpp terminal.cpp terminalwidget.cpp terminalwidgettabbed.cpp helpmenu.cpp )
 
 
 # Use vcpkg-provided GLFW and ICU

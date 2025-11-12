@@ -36,6 +36,8 @@
 int App::moveMouseToX = -1;
 int App::moveMouseToY = -1;
 
+Widget* App::helpMenu = nullptr;
+
 bool App::recording_macro = false;
 bool App::replaying_macro = false;
 int App::rep_count = 0;
@@ -771,6 +773,10 @@ void App::cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 		on_mouse_move_event();
 	}
 	
+	if (helpMenu->parent != nullptr) {
+		if (helpMenu->on_mouse_move_event()) { return; }
+	}
+	
 	if (rootelement) {
 		rootelement->on_mouse_move_event();
 	}
@@ -783,11 +789,15 @@ void App::mouse_button_callback(GLFWwindow* window, int button, int action, int 
 	// button - GLFW_MOUSE_BUTTON(LEFT/RIGHT)
 	
 	if (on_mouse_button_event) {
-		if (on_mouse_button_event(button, action, mods)) { return; };
+		if (on_mouse_button_event(button, action, mods)) { return; }
 	}
 	
 	int mx = mouseX;
 	int my = mouseY;
+	
+	if (helpMenu->parent != nullptr) {
+		if (helpMenu->on_mouse_button_event(button, action, mods)) { return; }
+	}
 	
 	if (commandBox->parent != nullptr) {
 		if (mx >= commandBox->t_x && mx <= commandBox->t_x+commandBox->t_w && my >= commandBox->t_y && my <= commandBox->t_y+commandBox->t_h) {
@@ -915,6 +925,10 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 	
 	if (on_key_event) {
 		if (on_key_event(key, scancode, action, mods)) { return; };
+	}
+	
+	if (helpMenu->parent != nullptr) {
+		if (helpMenu->on_key_event(key, scancode, action, mods)) { return; }
 	}
 	
 	if (filesList->parent != nullptr) {
@@ -1055,6 +1069,10 @@ void App::character_callback(GLFWwindow* window, unsigned int codepoint) {
 		on_char_event(codepoint);
 	}
 	
+	if (helpMenu->parent != nullptr) {
+		if (helpMenu->on_char_event(codepoint)) { return; }
+	}
+	
 	if (filesList->parent != nullptr) {
 		closeFilesList();
 		return;
@@ -1078,6 +1096,10 @@ void App::scroll_callback(GLFWwindow* window, double xpos, double ypos) {
 	
 	int mx = mouseX;
 	int my = mouseY;
+	
+	if (helpMenu->parent != nullptr) {
+		if (helpMenu->on_scroll_event(-xpos, -ypos)) { return; }
+	}
 	
 	if (commandBox->parent != nullptr) {
 		if (mx >= commandBox->t_x && mx <= commandBox->t_x+commandBox->t_w && my >= commandBox->t_y && my <= commandBox->t_y+commandBox->t_h) {
@@ -1288,6 +1310,8 @@ void App::executeCommandPaletteAction() {
 		}else if (filepath == ":Git Force Pull") {
 			std::string folder = settings->getValue("current_folder", getExecutableDir());
 			launchCommandNonBlocking("cd /d "+folder+" && git reset --hard && git pull");
+		}else if (filepath == ":Help") {
+			MoveWidget(helpMenu, rootelement);
 		}
 		
 		return;
@@ -1399,7 +1423,7 @@ void App::indexFiles() {
 	}
 	
 	static const std::vector<std::string> commands = {
-		"Git Push","Git Pull","Git Force Pull"
+		"Git Push","Git Pull","Git Force Pull","Help"
 	};
 
 	for (auto const& cmd : commands) {

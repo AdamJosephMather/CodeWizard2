@@ -1,6 +1,5 @@
 #pragma once
 
-//#include <GL/glew.h>
 #include "languageserverclient.h"
 #include "settingsmanager.h"
 #include <atomic>
@@ -194,4 +193,6 @@ public:
 	
 	static int moveMouseToX;
 	static int moveMouseToY;
+	
+	static Widget* helpMenu;
 };

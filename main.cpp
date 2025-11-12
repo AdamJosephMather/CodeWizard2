@@ -9,10 +9,13 @@
 #include <unicode/unistr.h>
 #include <unicode/ustream.h>
 #include "application.h"
+#include "helpmenu.h"
 #include "button.h"
 #include "editor.h"
-#include "panel_holder.h"
+#include "listbox.h"
+#include "textedit.h"
 #include "codeedit.h"
+#include "panel_holder.h"
 
 #include <Windows.h>
 
@@ -106,7 +109,7 @@ int main(int argc, char* argv[]) {
 		auto ph = dynamic_cast<PanelHolder*>(mainwidget->children[0]);
 		ph->setState(state);
 	}else{
-		Editor* first_widget = new Editor(mainwidget->children[0]);
+		new Editor(mainwidget->children[0]);
 	}
 	
 	Button* add_button = new Button(App::tb, icu::UnicodeString::fromUTF8("+"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -236,6 +239,9 @@ int main(int argc, char* argv[]) {
 			}
 		}
 	}
+	
+	HelpMenu* helpMenu = new HelpMenu(nullptr);
+	App::helpMenu = helpMenu;
 	
 	App::Run();
 	

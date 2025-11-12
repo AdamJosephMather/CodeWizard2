@@ -14,12 +14,11 @@ A rewrite of CodeWizard. CodeWizard2 is *probably not* a useful project to anybo
 
 ## Screenshot(s)
 
-![image](https://github.com/user-attachments/assets/1eebe5f3-637c-4890-98dc-a1e50f01dd62)
-With multiple panels open
-![image](https://github.com/user-attachments/assets/6ec91b67-7702-49cd-b942-298cdb7dc8f9)
-Just to show off a little
-![image](https://github.com/user-attachments/assets/e8b650bc-4fbd-429c-a919-a5790c723c83)
-No, there's no limit to the number or configuration of panels.
+<img width="2256" height="1443" alt="image" src="https://github.com/user-attachments/assets/7a6047ab-9142-4dcd-8c1e-c08aff03f668" />
+<img width="2256" height="1443" alt="image" src="https://github.com/user-attachments/assets/33505874-9c8c-4f47-9ec2-f151e6d3654d" />
+<img width="2256" height="1443" alt="image" src="https://github.com/user-attachments/assets/d84af091-4e4f-4b24-ae9f-7cebd3ea0272" />
+<img width="2256" height="1443" alt="image" src="https://github.com/user-attachments/assets/25459e65-62de-4ae9-9395-b1fe7c00e71b" />
+
 
 ## Widgets
 

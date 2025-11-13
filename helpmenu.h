@@ -2,6 +2,7 @@
 
 #include "button.h"
 #include "label.h"
+#include "tabs.h"
 #include "widget.h"
 #include <GLFW/glfw3.h>
 
@@ -17,7 +18,13 @@ public:
 	
 	void position(int x, int y, int w, int h);
 	void render();
+	
+	void setToIndex(int index);
+	
+	std::vector<std::vector<icu::UnicodeString>> helpInformation = {};
 private:
 	Label* label;
 	Button* closebutton;
+	Tabs* tb;
+	std::vector<double> scrolled_to = {};
 };

@@ -3,7 +3,6 @@
 #include <iostream>
 #include <random>
 #include <set>
-#include "application.h"
 
 std::set<char> punctuationset = {'!', '#', '$', '%', '&', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~'};
 
@@ -143,7 +142,7 @@ void Highlighter::fetchAllPatterns(const std::vector<std::shared_ptr<Rule>>& pat
 	}
 }
 
-Match Highlighter::findEarliestPattern(std::string line, ContextFrame currentContext, int handledUpTo, bool checkWhile, bool on_start) {
+Match Highlighter::findEarliestPattern(const std::string& line, ContextFrame currentContext, int handledUpTo, bool checkWhile, bool on_start) {
 	int first_index = -1;
 	std::shared_ptr<Rule> first_rule;
 	int length = -1;
@@ -258,6 +257,10 @@ Match Highlighter::findEarliestPattern(std::string line, ContextFrame currentCon
 			continue;
 		}
 		
+		if (!((on_start || !G) && (!on_start || !bangG))){
+			continue;
+		}
+		
 		OnigRegion* region = onig_region_new();
 		
 		int r = onig_search(
@@ -268,15 +271,18 @@ Match Highlighter::findEarliestPattern(std::string line, ContextFrame currentCon
 			ONIG_OPTION_NONE
 		);
 		
-		if (r >= 0 && (on_start || !G) && (!on_start || !bangG)) {
+		if (r >= 0) {
 			int start = region->beg[0];
 			int len = region->end[0] - region->beg[0];
 			
-			if (first_index == -1 || start < first_index) { // || (start == first_index && len > length) || (start == first_index && length == len && type_of_thing == RANGE && p->type_of_rule == MATCH)) {
+			if (first_index == -1 || start < first_index) {
 				first_index = start;
 				length = len;
 				first_rule = p;
 				is_end_of_segment = false;
+				
+				end = str+first_index;
+				
 				// create copy of the region
 				OnigRegion* copy = onig_region_new();
 				onig_region_copy(copy, region);
@@ -331,11 +337,8 @@ bool Highlighter::needsDelimiter(const std::string &pat) {
 
 std::pair<std::vector<Token>,TextMateInfo> Highlighter::analizeSection(std::string section, TextMateInfo currentInfo, bool is_start_of_line) {
 	bool need_to_find_patterns = true;
-	
 	int handledUpTo = 0;
-	
 	std::vector<Token> tokens = {};
-	
 	bool on_start_of_scope = true;
 	
 	while (true) {
@@ -383,7 +386,7 @@ std::pair<std::vector<Token>,TextMateInfo> Highlighter::analizeSection(std::stri
 //			std::cout << "Token to fill range spans from: " << token_range.start << " to "  << token_range.start+token_range.length << " w/ name " << token_range.name << std::endl;
 			
 			need_to_find_patterns = true;
-		}else {
+		} else {
 			auto rule = match.rule;
 			
 			if (rule->type_of_rule == RANGE){

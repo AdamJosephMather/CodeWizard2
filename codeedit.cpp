@@ -118,7 +118,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	
 	nextButton = new Button(nullptr, icu::UnicodeString::fromUTF8("-→"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = t_x+t_w-5-tw;
-		b->t_y = t_y+t_h-replaceTextEdit->t_h-findTextEdit->t_h-10;
+		b->t_y = t_y+t_h-replaceTextEdit->t_h-findTextEdit->t_h-10;		
 	}, [&](Button* b){
 		activateFind(true, findTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
@@ -131,17 +131,31 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	});
 	
 	replaceTextEdit = new TextEdit(nullptr, [&](Widget* t){
+		int h = TextRenderer::get_text_height()*min(replaceTextEdit->lines.size(), 3)+10;
+		
 		replaceTextEdit->t_x = t_x+5;
 		replaceTextEdit->t_w = (nextReplButton->t_x - replaceTextEdit->t_x)-5;
-		replaceTextEdit->t_h = TextRenderer::get_text_height()+10;
-		replaceTextEdit->t_y = t_y+t_h-replaceTextEdit->t_h-5;
+		replaceTextEdit->t_h = h;
+		replaceTextEdit->t_y = t_y+t_h-h-5;
+		
+		allButton->t_h = h;
+		allButton->t_y = replaceTextEdit->t_y;
+		nextReplButton->t_h = h;
+		nextReplButton->t_y = replaceTextEdit->t_y;
 	});
 	
 	findTextEdit = new TextEdit(nullptr, [&](Widget* t){
+		int h = TextRenderer::get_text_height()*min(findTextEdit->lines.size(), 3)+10;
+		
 		findTextEdit->t_x = t_x+5;
-		findTextEdit->t_h = TextRenderer::get_text_height()+10;
+		findTextEdit->t_h = h;
 		findTextEdit->t_w = (prevButton->t_x - findTextEdit->t_x)-10-findTextEdit->t_h; // the space of the bar, and the width of the checkbox, and the padding for each
-		findTextEdit->t_y = t_y+t_h-replaceTextEdit->t_h-findTextEdit->t_h-10;
+		findTextEdit->t_y = t_y+t_h-replaceTextEdit->t_h-h-10;
+		
+		nextButton->t_h = h;
+		nextButton->t_y = findTextEdit->t_y;
+		prevButton->t_h = h;
+		prevButton->t_y = findTextEdit->t_y;
 	});
 	
 	caseSensitivity = new CheckBox(nullptr, [&](CheckBox* c, int,int,int,int){
@@ -774,9 +788,16 @@ void CodeEdit::activateReplace(bool forwards, icu::UnicodeString tofind, icu::Un
 	}
 	
 	if (has == tofind) {
+		auto slelscec = textedit->_getCursSelec(textedit->cursors[0]);
+		int start_char = slelscec.second.first;
+		int start_line = slelscec.first.first;
+		
 		textedit->cursors = {textedit->cursors[0]}; // eliminate all other cursors
 		textedit->applyInsertToAllCursors(toreplace);
-		textedit->cursors[0].anchor_char -= toreplace.length();
+		
+		
+		textedit->cursors[0].anchor_char = start_char;
+		textedit->cursors[0].anchor_line = start_line;
 	}
 	
 	activateFind(forwards, tofind, case_sensitive);
@@ -792,58 +813,125 @@ void CodeEdit::activateFind(bool forwards, icu::UnicodeString tofind, bool case_
 	}
 	
 	int cur_line;
-	int start_char;
-	
 	auto slelscec = textedit->_getCursSelec(textedit->cursors[0]);
 	
-	if (forwards){
-		cur_line = slelscec.first.second;
-		start_char = slelscec.second.second;
-	}else{
-		cur_line = slelscec.first.first;
-		start_char = slelscec.second.first;
-	}
+	auto lines = splitByChar(tofind, '\n');
 	
-	for (int _ = 0; _ < textedit->lines.size()+1; _++) {
-		int index;
+	if (lines.size() > 1) {
+		cur_line = slelscec.first.first;
 		
-		auto text = textedit->lines[cur_line].line_text;
-		if (!case_sensitive) {
-			text = text.toLower();
-		}
-		
-		if (forwards) {
-			index = text.indexOf(tofind, start_char);
-		}else{
-			index = text.lastIndexOf(tofind, 0, start_char);
-		}
-		
-		if ( index != -1 ) {
-			Cursor c;
-			c.anchor_line = cur_line;
-			c.anchor_char = index;
-			c.head_line = cur_line;
-			c.head_char = index+tofind.length();
-			c.preffered_collumn = c.head_char;
-			textedit->cursors = {c};
-			textedit->ensureCursorVisible(textedit->cursors[0]);
-			return;
-		}
-		
-		if (forwards) {
-			start_char = 0;
-			
-			cur_line++;
-			if (cur_line >= textedit->lines.size()) {
-				cur_line = 0;
-			}
-		}else{
-			cur_line--;
-			if (cur_line < 0) {
-				cur_line = textedit->lines.size()-1;
+		for (int _ = 0; _ < textedit->lines.size()+1; _++) {
+			if (forwards) {
+				cur_line++;
+				if (cur_line >= textedit->lines.size()) {
+					cur_line = 0;
+				}
+			}else{
+				cur_line--;
+				if (cur_line < 0) {
+					cur_line = textedit->lines.size()-1;
+				}
 			}
 			
-			start_char = textedit->lines[cur_line].line_text.length();
+			auto text = textedit->lines[cur_line].line_text;
+			if (!case_sensitive) {
+				text = text.toLower();
+			}
+			
+			if (text.endsWith(lines[0])) {
+				bool matches = true;
+				for (int li = 1; li < lines.size()-1; li++) {
+					int idx = cur_line+li;
+					if (idx >= textedit->lines.size()) {
+						matches = false;
+						break;
+					}
+					
+					auto t2 = textedit->lines[idx].line_text;
+					if (!case_sensitive) {
+						t2 = t2.toLower();
+					}
+					
+					if (t2 != lines[li]) {
+						matches = false;
+						break;
+					}
+				}
+				if (matches) {
+					int idx = cur_line + lines.size() - 1;
+					
+					auto t2 = textedit->lines[idx].line_text;
+					if (!case_sensitive) {
+						t2 = t2.toLower();
+					}
+					
+					if (t2.startsWith(lines[lines.size()-1])) {
+						// we've found a full match
+						Cursor c;
+						c.anchor_line = cur_line;
+						c.anchor_char = text.length()-lines[0].length();
+						c.head_line = idx;
+						c.head_char = lines[lines.size()-1].length();
+						c.preffered_collumn = c.head_char;
+						textedit->cursors = {c};
+						textedit->ensureCursorVisible(textedit->cursors[0]);
+						return;
+					}
+				}
+			}
+		}
+	}else{
+		int start_char;
+		
+		if (forwards){
+			cur_line = slelscec.first.second;
+			start_char = slelscec.second.second;
+		}else{
+			cur_line = slelscec.first.first;
+			start_char = slelscec.second.first;
+		}
+		
+		for (int _ = 0; _ < textedit->lines.size()+1; _++) {
+			int index;
+			
+			auto text = textedit->lines[cur_line].line_text;
+			if (!case_sensitive) {
+				text = text.toLower();
+			}
+			
+			if (forwards) {
+				index = text.indexOf(tofind, start_char);
+			}else{
+				index = text.lastIndexOf(tofind, 0, start_char);
+			}
+			
+			if ( index != -1 ) {
+				Cursor c;
+				c.anchor_line = cur_line;
+				c.anchor_char = index;
+				c.head_line = cur_line;
+				c.head_char = index+tofind.length();
+				c.preffered_collumn = c.head_char;
+				textedit->cursors = {c};
+				textedit->ensureCursorVisible(textedit->cursors[0]);
+				return;
+			}
+			
+			if (forwards) {
+				start_char = 0;
+				
+				cur_line++;
+				if (cur_line >= textedit->lines.size()) {
+					cur_line = 0;
+				}
+			}else{
+				cur_line--;
+				if (cur_line < 0) {
+					cur_line = textedit->lines.size()-1;
+				}
+				
+				start_char = textedit->lines[cur_line].line_text.length();
+			}
 		}
 	}
 }
@@ -1109,7 +1197,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 				in_normal = (te->mode == 'n');
 			}
 			
-			if (key == GLFW_KEY_ENTER && is_press) {
+			if (key == GLFW_KEY_ENTER && is_press && !control_held) {
 				bool forwards = !shift_held;
 				bool case_sensitive = caseSensitivity->is_checked;
 				

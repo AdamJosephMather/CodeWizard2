@@ -1487,7 +1487,7 @@ void App::fillCmdBox() {
 			
 			els.push_back(icu::UnicodeString::fromUTF8(p.filename().string()));
 			
-			StoredSearch itm = {p.filename().string(), 0};
+			StoredSearch itm = {filePath, 0};
 			storedsearches.push_back(itm);
 			
 			INDEXED_FILES.currentlyshowing.push_back(storedsearches.size()-1);
@@ -1967,7 +1967,7 @@ void App::setTintedColor(Color* tint_c, Color* c, float b) {
 void App::updateFromTintColor(Theme* t) {
 	setTintedColor(t->tint_color, t->main_background_color,    0.098039);
 	setTintedColor(t->tint_color, t->extras_background_color,  0.164706);
-	setTintedColor(t->tint_color, t->hover_background_color,   0.23);
+	setTintedColor(t->tint_color, t->hover_background_color,   0.26);
 	setTintedColor(t->tint_color, t->main_text_color,          1.0);
 	setTintedColor(t->tint_color, t->border,                   0.35);
 	setTintedColor(t->tint_color, t->syntax_colors[0],         1.0);

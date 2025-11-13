@@ -144,7 +144,7 @@ private:
 	bool alreadyFoundPattern(std::shared_ptr<Rule> pattern);
 	void fetchAllPatterns(const std::vector<std::shared_ptr<Rule>>& patterns);
 	Match findEarliestPattern(const std::string& line, ContextFrame current, int handledUpTo, bool checkwhile, bool on_start);
-	std::pair<std::vector<Token>,TextMateInfo> analizeSection(std::string section, TextMateInfo currentInfo, bool checkwhile);
+	std::pair<std::vector<Token>,TextMateInfo> analizeSection(const std::string& section, TextMateInfo currentInfo, bool checkwhile);
 	
 	bool needsDelimiter(const std::string &pat);
 	std::vector<RegexSegment> parseRegexSegments(const std::string &pattern);

@@ -211,20 +211,21 @@ func writeZipFile(f *zip.File, target string) error {
 func register(installLoc string) error {
 	exe := filepath.Join(installLoc, "CodeWizard", "CodeWizard.exe")
 
-	// NOTE: path is relative to registry root (no HKEY_CURRENT_USER prefix)
+	// App Paths registration
 	const subkey = `Software\Microsoft\Windows\CurrentVersion\App Paths\CodeWizard.exe`
 
 	k, _, err := registry.CreateKey(registry.CURRENT_USER, subkey, registry.WRITE|registry.SET_VALUE)
 	if err != nil { return err }
 	defer k.Close()
 
-	// (Default) value = full path to the exe
 	if err := k.SetStringValue("", exe); err != nil { return err }
-
-	// Optional: semicolon-separated extra lookup paths for DLLs/etc.
 	if err := k.SetStringValue("Path", filepath.Join(installLoc, "CodeWizard")); err != nil { return err }
-	
+
+	// Start menu shortcut
 	fatalIf(createStartMenuShortcut("CodeWizard", exe, "", filepath.Dir(exe), exe))
+
+	// ➜ NEW: register right-click context menu
+	fatalIf(registerContextMenu(exe))
 
 	return nil
 }
@@ -261,12 +262,13 @@ $S.Save()`,
 }
 
 func unregister() error {
-	// 1) Remove App Paths entry (HKCU\Software\...\App Paths\CodeWizard.exe)
 	const subkey = `Software\Microsoft\Windows\CurrentVersion\App Paths\CodeWizard.exe`
-	_ = registry.DeleteKey(registry.CURRENT_USER, subkey) // ignore if it doesn't exist
+	_ = registry.DeleteKey(registry.CURRENT_USER, subkey)
 
-	// 2) Remove Start menu shortcut(s)
 	removeStartMenuShortcut("CodeWizard")
+
+	// ➜ NEW: remove context menu
+	unregisterContextMenu()
 
 	return nil
 }
@@ -299,4 +301,42 @@ func fatalIf(err error) {
 func fatal(msg string) {
 	fmt.Fprintln(os.Stderr, "ERROR:", msg)
 	os.Exit(1)
+}
+
+func registerContextMenu(exePath string) error {
+	// HKCU\Software\Classes\*\shell\CodeWizard
+	const base = `Software\Classes\*\shell\CodeWizard`
+
+	k, _, err := registry.CreateKey(registry.CURRENT_USER, base, registry.WRITE|registry.SET_VALUE)
+	if err != nil { return err }
+	defer k.Close()
+
+	// Human-readable menu text
+	if err := k.SetStringValue("", "Edit with CodeWizard"); err != nil {
+		return err
+	}
+
+	// Icon (optional but nice)
+	if err := k.SetStringValue("Icon", exePath); err != nil {
+		return err
+	}
+
+	// Now create the command subkey
+	cmdKey, _, err := registry.CreateKey(registry.CURRENT_USER, base+`\command`, registry.WRITE|registry.SET_VALUE)
+	if err != nil { return err }
+	defer cmdKey.Close()
+
+	// "%1" = the selected file path
+	cmd := fmt.Sprintf(`"%s" "%%1"`, exePath)
+	if err := cmdKey.SetStringValue("", cmd); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func unregisterContextMenu() {
+	const base = `Software\Classes\*\shell\CodeWizard`
+	_ = registry.DeleteKey(registry.CURRENT_USER, base+`\command`)
+	_ = registry.DeleteKey(registry.CURRENT_USER, base)
 }

@@ -335,7 +335,7 @@ bool Highlighter::needsDelimiter(const std::string &pat) {
 	return std::regex_search(pat, backref);
 }
 
-std::pair<std::vector<Token>,TextMateInfo> Highlighter::analizeSection(std::string section, TextMateInfo currentInfo, bool is_start_of_line) {
+std::pair<std::vector<Token>,TextMateInfo> Highlighter::analizeSection(const std::string& section, TextMateInfo currentInfo, bool is_start_of_line) {
 	bool need_to_find_patterns = true;
 	int handledUpTo = 0;
 	std::vector<Token> tokens = {};

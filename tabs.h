@@ -2,6 +2,7 @@
 
 #include "widget.h"
 #include <GLFW/glfw3.h>
+#include "application.h"
 
 struct TabInfo {
 	int xloc;
@@ -23,6 +24,8 @@ struct hit {
 class Tabs : public Widget {
 public:
 	Tabs(Widget* parent);
+	
+	App::PosFunction POSITIONER = nullptr;
 	
 	using TCC = std::function<void(TabInfo info)>;
 	using ATCC = std::function<void()>;

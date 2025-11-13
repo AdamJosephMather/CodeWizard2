@@ -12,6 +12,7 @@ Button::Button(Widget *parent, icu::UnicodeString text, Positioner positioner, O
 	transparent = false;
 	window_button = false;
 	hovered = false;
+	rounded = false;
 	
 	background_color = App::theme.darker_background_color;
 	
@@ -84,15 +85,27 @@ void Button::render() {
 		}
 	}else{
 		int our_offset = 0;
-		if (border) {
+		if (border && rounded) {
 			our_offset = App::border_width;
 			App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, App::theme.border);
 		}
 		
 		if (hovered) {
-			App::DrawRoundedRect(t_x+our_offset, t_y+our_offset, t_w-our_offset*2, t_h-our_offset*2, radius, App::theme.hover_background_color);
+			if (rounded) {
+				App::DrawRoundedRect(t_x+our_offset, t_y+our_offset, t_w-our_offset*2, t_h-our_offset*2, radius, App::theme.hover_background_color);
+			}else{
+				App::DrawRect(t_x, t_y, t_w, t_h, App::theme.hover_background_color);
+			}
 		}else if (!transparent){
-			App::DrawRoundedRect(t_x+our_offset, t_y+our_offset, t_w-our_offset*2, t_h-our_offset*2, radius, background_color);
+			if (rounded) {
+				App::DrawRoundedRect(t_x+our_offset, t_y+our_offset, t_w-our_offset*2, t_h-our_offset*2, radius, background_color);
+			}else{
+				App::DrawRect(t_x, t_y, t_w, t_h, background_color);
+			}
+		}
+		
+		if (!rounded && border) {
+			App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
 		}
 	}
 	

@@ -204,6 +204,7 @@ int main(int argc, char* argv[]) {
 			App::openFilesList();
 		}
 	});
+	filesButton->rounded = true;
 	filesButton->background_color = App::theme.main_background_color;
 	
 	App::commandPalette = commandPalette;

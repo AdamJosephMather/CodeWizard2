@@ -818,12 +818,14 @@ void App::mouse_button_callback(GLFWwindow* window, int button, int action, int 
 		if (mx >= STRING_REQUEST_TEXTEDIT->t_x && mx <= STRING_REQUEST_TEXTEDIT->t_x+STRING_REQUEST_TEXTEDIT->t_w && my >= STRING_REQUEST_TEXTEDIT->t_y && my <= STRING_REQUEST_TEXTEDIT->t_y+STRING_REQUEST_TEXTEDIT->t_h) {
 			STRING_REQUEST_TEXTEDIT->on_mouse_button_event(button, action, mods);
 			return;
-		}else{
+		}else if (action == GLFW_PRESS){
 			REQUESTING_STRING = false;
 			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 			RemoveWidgetFromParent(STRING_REQUEST_RECTANGLE);
 			RemoveWidgetFromParent(STRING_REQUEST_LABEL);
 			setActiveLeafNode(nullptr);
+		}else{
+			return;
 		}
 	}
 	

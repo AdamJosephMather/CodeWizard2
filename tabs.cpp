@@ -297,6 +297,10 @@ void Tabs::position(int x, int y, int w, int h) {
 	t_x = x;
 	t_y = y;
 	
+	if (POSITIONER) {
+		POSITIONER(this);
+	}
+	
 	Widget::position(x, y, w, h);
 }
 

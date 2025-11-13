@@ -179,6 +179,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	}, [&](Button* b){
 		showhideerrors();
 	});
+	showErrorsButton->rounded = true;
 	
 	errorMenu = new ListBox(this, [&](Widget* w){
 		w->t_w = textedit->t_w/3; // height is set by the listbox

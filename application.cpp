@@ -452,8 +452,8 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 			GetMonitorInfo(hMon, &mi);
 		
 			// your minimum tracking size
-			mmi->ptMinTrackSize.x = 300;
-			mmi->ptMinTrackSize.y = 200;
+			mmi->ptMinTrackSize.x = 480;
+			mmi->ptMinTrackSize.y = 300;
 		
 			// compute the maximized size and position *relative* to this monitor
 			RECT&  work    = mi.rcWork;

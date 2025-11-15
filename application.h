@@ -56,6 +56,12 @@ public:
 	using UpdateFInfoFunction = std::function<void(Widget*, FileInfo*)>;
 	using StringGivenFunc = std::function<void(icu::UnicodeString)>;
 	
+	static int major_version;
+	static int minor_version;
+	static int patch_version;
+	static icu::UnicodeString vnum;
+	static std::string vnumstr;
+	
 	static bool recording_macro;
 	static bool replaying_macro;
 	static int current_step;

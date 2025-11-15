@@ -33,6 +33,12 @@
 #include "myrect.h"
 #include "label.h"
 
+int App::major_version = 2;
+int App::minor_version = 1;
+int App::patch_version = 7;
+icu::UnicodeString App::vnum = icu::UnicodeString();
+std::string App::vnumstr = "";
+
 int App::moveMouseToX = -1;
 int App::moveMouseToY = -1;
 
@@ -67,7 +73,7 @@ Widget* App::before_reps_request = nullptr;
 
 int App::WINDOW_WIDTH = 1200;
 int App::WINDOW_HEIGHT = 800;
-std::string App::WINDOW_TITLE = "CodeWizard";
+std::string App::WINDOW_TITLE = "CodeWizard2 V";
 
 int App::mouseX = 0;
 int App::mouseY = 0;
@@ -118,6 +124,10 @@ std::unordered_map<std::string, Language> App::languagemap = {};
 std::unordered_map<std::string, LanguageServerClient*> App::lsp_client_map = {};
 
 bool App::Init() {
+	icu::UnicodeString vnum = icu::UnicodeString::fromUTF8(std::to_string(App::major_version)+"."+std::to_string(App::minor_version)+"."+std::to_string(App::patch_version));
+	vnum.toUTF8String(vnumstr);
+	WINDOW_TITLE += vnumstr;
+	
 	STRING_REQUEST_TEXTEDIT = new TextEdit(nullptr, [&](Widget* w){
 		w->t_x = w->t_x+w->t_w/2-(w->t_w/4);
 		w->t_w /= 2;

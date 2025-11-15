@@ -73,6 +73,7 @@ public:
 	bool are_code_actions = false;
 	std::vector<json> code_actions = {};
 	ListBox* errorMenu;
+	std::filesystem::file_time_type last_file_mod_time = {};
 	
 	bool on_key_event(int key, int scancode, int action, int mods);
 	bool on_char_event(unsigned int keycode);
@@ -104,7 +105,6 @@ public:
 	
 	void save();
 	
-	std::shared_ptr<icu::UnicodeString> lastsaved = nullptr;
 	boolean was_in_a_file = false;
 	
 	bool FILE_BROKEN_STATE = false;
@@ -124,6 +124,10 @@ public:
 	Button* nextReplButton = nullptr;
 	Button* allButton = nullptr;
 	Button* showErrorsButton = nullptr;
+	
+	bool madeChangeBetweenSaves = false;
+	
+	std::mutex saving_lock;
 	
 	void activateCompletion();
 	void activateFind(bool forwards, icu::UnicodeString tofind, bool case_sensitive);

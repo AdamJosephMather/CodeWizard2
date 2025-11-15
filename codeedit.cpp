@@ -272,6 +272,8 @@ void CodeEdit::gotoerror(int s) {
 }
 
 void CodeEdit::detectLanguage() {
+	std::cout << "DT" << std::endl;
+	
 	if (lsp_client) {
 		for (int i = static_cast<int>(lsp_client->connected_edits.size())-1; i >= 0; i--) {
 			if (lsp_client->connected_edits[i] == this) { 
@@ -286,8 +288,16 @@ void CodeEdit::detectLanguage() {
 	textedit->getblankhighlighting = nullptr;
 	textedit->highlighterNotEqual = nullptr;
 	
+	std::cout << "HT" << std::endl;
+	
 	if (highlighter) {
 		delete highlighter;
+		highlighter = nullptr;
+	}
+	
+	for (int i = 0; i < textedit->lines.size(); i++) { // forcefully rehighlight the document
+		textedit->lines[i].highlightinguptodate = false;
+		textedit->lines[i].diagnostics.clear();
 	}
 	
 	std::string path = file->filepath;
@@ -364,10 +374,6 @@ void CodeEdit::detectLanguage() {
 	textedit->highlighterNotEqual = [&](TextMateInfo* one, TextMateInfo* two){
 		return one->contextStack.back().hash != two->contextStack.back().hash;
 	};
-	
-	for (int i = 0; i < textedit->lines.size(); i++) { // forcefully rehighlight the document
-		textedit->lines[i].highlightinguptodate = false;
-	}
 }
 
 void CodeEdit::run_fixit() {
@@ -390,8 +396,10 @@ int CodeEdit::analyzeForFixit_on_lines(const std::vector<Line>& lines) {
 }
 
 void CodeEdit::openFile() {
+	madeChangeBetweenSaves = true;
 	was_in_a_file = true;
 	std::unique_lock<std::mutex> lock(App::canMakeChanges, std::try_to_lock);
+	std::unique_lock<std::mutex> lock2(saving_lock);
 	
 	REQUESTING_FIXIT = false;
 	if (fixit_request_menu->parent == this) {
@@ -404,14 +412,14 @@ void CodeEdit::openFile() {
 	if (!fileExists(path)) {
 		file = nullptr;
 		textedit->setFullText(icu::UnicodeString::fromUTF8("File does not exist: "+path));
-		lastsaved = nullptr;
+		last_file_mod_time = {};
 		return;
 	}
 	
 	if (isBinaryFile(path)){
 		file = nullptr;
 		textedit->setFullText(icu::UnicodeString::fromUTF8("File detected as binary file: "+path+"\nDID NOT OPEN"));
-		lastsaved = nullptr;
+		last_file_mod_time = {};
 		return;
 	}
 	
@@ -419,7 +427,8 @@ void CodeEdit::openFile() {
 	icu::UnicodeString text = App::readFileToUnicodeString(path, worked);
 	
 	if (worked) {
-		lastsaved = std::make_shared<icu::UnicodeString>(text);
+		last_file_mod_time = std::filesystem::last_write_time(path);
+		
 		textedit->setFullText(text);
 		
 		int indt = analyzeForFixit_on_lines(textedit->lines);
@@ -436,7 +445,7 @@ void CodeEdit::openFile() {
 	}else {
 		file = nullptr;
 		textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: "+path+"\n\n")+text);
-		lastsaved = nullptr;
+		last_file_mod_time = {};
 	}
 	
 	file->is_opening = false;
@@ -634,12 +643,14 @@ void CodeEdit::triggerSaveAs() {
 		
 		file = f;
 		
-		lastsaved = nullptr;
+		std::error_code ec;
+		last_file_mod_time = std::filesystem::last_write_time(file->filepath, ec); // a hack to think we edited the file instead of whatever happened to it.
 		
 		detectLanguage();
 		
 		was_in_a_file = false;
 		f->is_opening = false;
+		madeChangeBetweenSaves = true;
 		save();
 		
 		if (lsp_client){
@@ -656,7 +667,8 @@ void CodeEdit::overwrite_file() {
 	FILE_BROKEN_STATE = false;
 	App::RemoveWidgetFromParent(broken_state_menu);
 	
-	lastsaved = nullptr;
+	std::error_code ec;
+	last_file_mod_time = std::filesystem::last_write_time(file->filepath, ec); // a hack to think we edited the file instead of whatever happened to it.
 	was_in_a_file = false;
 	save();
 }
@@ -669,42 +681,42 @@ void CodeEdit::reload_file() {
 }
 
 void CodeEdit::save() {
+	std::lock_guard<std::mutex> lock(saving_lock);
+	
 	if (file && !file->is_opening) {
 		std::string filepath = file->filepath;
-		icu::UnicodeString content = textedit->getFullText();
 		
-		std::string str;
-		content.toUTF8String(str);
+		std::error_code ec;
+		auto current = std::filesystem::last_write_time(file->filepath, ec);
 		
-		if (lastsaved) {
-			bool worked = true;
-			icu::UnicodeString existingcontent = App::readFileToUnicodeString(filepath, worked);
+		if (!ec) {
+			was_in_a_file = true;
 			
-			if (worked) {
-				was_in_a_file = true;
-				
-				if (existingcontent != *lastsaved) {
-					FILE_BROKEN_STATE = true;
-					return;
-				}else if (content == existingcontent) { // so here the lastsaved is equal to the existingContent and our current content is equal - no reason to save it now.
-					FILE_BROKEN_STATE = false;
-					if (broken_state_menu->parent == this) {
-						App::RemoveWidgetFromParent(broken_state_menu);
-					}
-					return;
-				}
-			}else if (was_in_a_file) {
-				// time to start to work here
-				// the file did exist, but no longer does
+			if (current != last_file_mod_time) { // some other process edited the file since we touched it
 				FILE_BROKEN_STATE = true;
 				return;
+			}else if (!madeChangeBetweenSaves) { // we did not make any changes to the file - return early
+				FILE_BROKEN_STATE = false;
+				if (broken_state_menu->parent == this) {
+					App::RemoveWidgetFromParent(broken_state_menu);
+				}
+				return;
 			}
+		}else if (was_in_a_file) { // there's an error and we were in the file - file must have been deleted. Clever me.
+			// time to start to work here
+			// the file did exist, but no longer does
+			FILE_BROKEN_STATE = true;
+			return;
 		}
 		
 		FILE_BROKEN_STATE = false;
 		if (broken_state_menu->parent == this) {
 			App::RemoveWidgetFromParent(broken_state_menu);
 		}
+		
+		icu::UnicodeString content = textedit->getFullText();
+		std::string str;
+		content.toUTF8String(str);
 		
 		{
 			std::string err;
@@ -714,12 +726,12 @@ void CodeEdit::save() {
 				std::cerr << "Atomic save failed for " << toPath << ": " << err << "\n";
 				return;
 			}
+			last_file_mod_time = std::filesystem::last_write_time(file->filepath, ec);
+			madeChangeBetweenSaves = false;
 		}
-		
 		
 		was_in_a_file = true;
 		
-		lastsaved = std::make_shared<icu::UnicodeString>(content);
 		
 		if (lsp_client) {
 			lsp_client->documentSaved(file->filepath, str);
@@ -1750,6 +1762,8 @@ void CodeEdit::hoverRecieved(std::string content, std::string type, int id) {
 }
 
 void CodeEdit::onTextChanged(Widget* w) {
+	madeChangeBetweenSaves = true;
+	
 	auto te = dynamic_cast<TextEdit*>(w);
 	if (!te) {return;}
 	

@@ -25,7 +25,7 @@ void LineNumbers::render() {
 	
 	int cursor_line = toFollow->cursors[0].head_line+1;
 	
-	for (int cur_line = line_start+1; cur_line < cur_line+num_lines+1; cur_line++) {
+	for (int cur_line = line_start+1; cur_line < line_start+1+num_lines+1; cur_line++) {
 		if (cur_line > number_of_lines) {
 			break;
 		}

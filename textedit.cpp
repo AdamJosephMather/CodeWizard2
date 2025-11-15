@@ -55,9 +55,9 @@ void TextEdit::setFullText(icu::UnicodeString text) {
 	undo_stack.clear();
 	redo_stack.clear();
 	historyThisUpdate = createHistory();
-
+	
 	cursors = {Cursor()};
-
+	
 	if (!largereditblock && ontextchange) {
 		ontextchange(this);
 	}
@@ -153,16 +153,6 @@ void TextEdit::Highlight(int first_visible_line, int last_visible_line) {
 				}else if (i >= first_visible_line && highlighted > 10) {
 					break; // we'll break faster if we're past the first visible line. (because it's slow.)
 				}
-			}
-		}
-	}else {
-		for (int i = 0; i < last_visible_line; i ++) {
-			auto line = lines[i];
-			if (!line.highlightinguptodate){
-				line.tokens = {};
-				line.changed = false;
-				line.highlightinguptodate = true;
-				lines[i] = line;
 			}
 		}
 	}
@@ -629,7 +619,7 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 		if (res.first != -1 && res.second != -1) {
 			c.head_line = res.first;
 			c.head_char = res.second+1;
-			c.preffered_collumn = c.head_char;
+			c.preffered_collumn = _mapFromRealToVisual(c.head_line, c.head_char);
 		}
 	}else if (key == CODEWIZARD_MATCHING_BRACKET_RIGHT) {
 		UChar32 left_of = U' ';
@@ -655,7 +645,7 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 		if (res.first != -1 && res.second != -1) {
 			c.head_line = res.first;
 			c.head_char = res.second;
-			c.preffered_collumn = c.head_char;
+			c.preffered_collumn = _mapFromRealToVisual(c.head_line, c.head_char);
 		}
 	}
 
@@ -1029,14 +1019,14 @@ void TextEdit::applyIndentChangeToAllCursors(int change_by) {
 
 icu::UnicodeString TextEdit::getFullText() {
 	icu::UnicodeString text;
-
+	
 	for (int i = 0; i < lines.size(); i++) {
 		text += lines[i].line_text;
 		if (i != lines.size()-1) {
 			text += icu::UnicodeString::fromUTF8("\n");
 		}
 	}
-
+	
 	return text;
 }
 
@@ -1520,10 +1510,10 @@ bool TextEdit::on_key_event(int key, int scancode, int action, int mods) {
 		if (action == GLFW_RELEASE) {
 			return true;
 		}
-
+		
 		return handleUserKey(key, scancode, action, mods);
 	}
-
+	
 	return false;
 }
 
@@ -1564,7 +1554,7 @@ void TextEdit::render() {
 		App::DrawRect(sx, y+TextRenderer::get_text_height(), w, 2, c);
 	}
 
-	for (int ln_ren = 0; ln_ren < draw_text.size(); ln_ren++) {;
+	for (int ln_ren = 0; ln_ren < draw_text.size(); ln_ren++) {
 		TextRenderer::draw_text(curx, cury, draw_text[ln_ren], draw_color[ln_ren]);
 		cury += TextRenderer::get_text_height();
 	}
@@ -1803,15 +1793,19 @@ void TextEdit::position(int x, int y, int w, int h) {
 			for (auto c : tohandle) {
 				if (cur_char >= char_start) {
 					final_line.append(c);
-
-					bool arange = false;
-					Color* col = getColorFromTokens(true_char_indx, lines[ln_num].tokens, &arange);
-
-					if (!arange && punctuationset.count(chr)) {
-						col = App::theme.syntax_colors[7];
+					
+					if (!highlighter) {
+						final_color.push_back(App::theme.main_text_color);
+					}else{
+						bool arange = false;
+						Color* col = getColorFromTokens(true_char_indx, lines[ln_num].tokens, &arange);
+	
+						if (!arange && punctuationset.count(chr)) {
+							col = App::theme.syntax_colors[7];
+						}
+	
+						final_color.push_back(col);
 					}
-
-					final_color.push_back(col);
 				}
 
 				cur_char ++;

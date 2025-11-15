@@ -28,7 +28,9 @@ HelpMenu::HelpMenu(Widget* parent) : Widget(parent) {
 	helpInformation = {
 		{
 			icu::UnicodeString::fromUTF8("General"),
-			icu::UnicodeString::fromUTF8(R":(    CodeWizard2 is a performant code editor/ide written in C++. CodeWizard is designed to be extendable to a number of languages and configurations. Highlighting is provided using the same syntax highlighting system that VSCode uses (but written completely in C++ by yours truly,) and supports the Language Server Protocol. Note that the LSP support is not perfect, and doesn't support everything available. But, it's been tested with gopls, rust analyzer, clangd, and of course pypls (my multi-purpose LSP.)
+			icu::UnicodeString::fromUTF8(R":(CodeWizard2 V):" + App::vnumstr + R":(
+
+	CodeWizard2 is a performant code editor/ide written in C++. CodeWizard is designed to be extendable to a number of languages and configurations. Highlighting is provided using the same syntax highlighting system that VSCode uses (but written completely in C++ by yours truly,) and supports the Language Server Protocol. Note that the LSP support is not perfect, and doesn't support everything available. But, it's been tested with gopls, rust analyzer, clangd, and of course pypls (my multi-purpose LSP.)
 
 CodeWizard was created by Adam Mather.):"),
 		},{
@@ -97,6 +99,13 @@ In these settings, the following are available as variables in your build comman
 	● Ctrl+N ----------- New empty file
 	● Ctrl+< ----------- Jump to corresponding opening bracket
 	● Ctrl+> ----------- Jump to corresponding closing bracket
+	● Tab -------------- When selecting text, indent one tab
+	● Shift+Tab -------- When selecting text, unindent one tab
+	● Ctrl+] ----------- When selecting text, indent one tab
+	● Ctrl+[ ----------- When selecting text, unindent one tab
+	● Alt+3 ------------ Comment selcted region
+	● Alt+4 ------------ Uncomment selcted region
+	● Ctrl+/ ----------- Toggle comment on selected region
 	● F5 --------------- Run code (see 'Using CodeWizard')
 	● Ctrl+F ----------- Open the find/replace menu
 

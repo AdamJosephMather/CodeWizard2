@@ -11,7 +11,7 @@ void Scrollbar::render() {
 		return;
 	}
 	
-	App::DrawRoundedRect(r_x+1, r_y+1, r_w-2, r_h-2, (bar_width-2)/2.0, App::theme.main_text_color);
+	App::DrawRoundedRect(r_x+2, r_y+2, r_w-4, r_h-4, (bar_width-4)/2.0, App::theme.main_text_color);
 }
 
 void Scrollbar::position(int x, int y, int width, int height) {
@@ -69,7 +69,7 @@ void Scrollbar::position(int x, int y, int width, int height) {
 }
 
 bool Scrollbar::on_mouse_button_event(int button, int action, int mods) {
-	if (!is_visible || !getScrollInfo || start >= end || end >= 1) {
+	if (!is_visible || !getScrollInfo || start >= end || end > 1) {
 		return false;
 	}
 	
@@ -99,7 +99,7 @@ bool Scrollbar::on_mouse_button_event(int button, int action, int mods) {
 			}else{
 				scrollTo((double)(my-t_y)/(double)t_h);
 			}
-		}else{
+		}else {
 			if (horizontal) {
 				offset = r_x-mx;
 			}else{
@@ -115,9 +115,11 @@ bool Scrollbar::on_mouse_button_event(int button, int action, int mods) {
 }
 
 bool Scrollbar::on_mouse_move_event() {
-	if (!is_visible || !getScrollInfo || start >= end || end >= 1) {
+	if (!is_visible || !getScrollInfo || start >= end || end > 1) {
 		return false;
 	}
+	
+	std::cout << "Holding: " << holding << std::endl;
 	
 	if (scrollTo == nullptr || !holding) {
 		return false;

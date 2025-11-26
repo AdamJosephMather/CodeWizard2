@@ -262,5 +262,11 @@
   "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00 -IC:\\Users\\adamj\\Documents\\C\\CodeWizard\\build\\windows-release\\_deps\\libvterm_src-src\\include -IC:\\Users\\adamj\\Documents\\C\\CodeWizard\\build\\windows-release\\_deps\\libvterm_src-src\\src -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267 /FoCMakeFiles\\CodeWizard.dir\\helpmenu.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\helpmenu.cpp",
   "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\helpmenu.cpp",
   "output": "CMakeFiles\\CodeWizard.dir\\helpmenu.cpp.obj"
+},
+{
+  "directory": "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release",
+  "command": "C:\\PROGRA~1\\MICROS~2\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1440~1.338\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DGLFW_DLL -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00 -IC:\\Users\\adamj\\Documents\\C\\CodeWizard\\build\\windows-release\\_deps\\libvterm_src-src\\include -IC:\\Users\\adamj\\Documents\\C\\CodeWizard\\build\\windows-release\\_deps\\libvterm_src-src\\src -external:IC:\\Users\\adamj\\vcpkg\\installed\\x64-windows\\include -external:W0 /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG -std:c++17 /wd4244 /wd4305 /wd4267 /FoCMakeFiles\\CodeWizard.dir\\scrollbar.cpp.obj /FdCMakeFiles\\CodeWizard.dir\\ /FS -c C:\\Users\\adamj\\Documents\\C\\CodeWizard\\scrollbar.cpp",
+  "file": "C:\\Users\\adamj\\Documents\\C\\CodeWizard\\scrollbar.cpp",
+  "output": "CMakeFiles\\CodeWizard.dir\\scrollbar.cpp.obj"
 }
 ]

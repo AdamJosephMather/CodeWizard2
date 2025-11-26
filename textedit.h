@@ -1,5 +1,6 @@
 #pragma once
 
+#include "scrollbar.h"
 #include "widget.h"
 #include <GLFW/glfw3.h>
 #include <map>
@@ -81,6 +82,9 @@ public:
 	using CompareHighlightInfo = std::function<bool(TextMateInfo*, TextMateInfo*)>;
 	
 	TextEdit(Widget* parent, App::PosFunction fnct);
+	
+	bool scrollbar_vertical = false;
+	Scrollbar* scrollbar_v = nullptr;
 	
 	bool border = false;
 	

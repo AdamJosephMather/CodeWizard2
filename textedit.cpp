@@ -37,6 +37,39 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 
 	draw_cursor = {};
 	draw_diagnostics = {};
+	
+	scrollbar_v = new Scrollbar(this);
+	scrollbar_v->getScrollInfo = [&](){
+		std::vector<double> out = {0.0, 0.0};
+		double screenlines = (double)t_h/(double)TextRenderer::get_text_height();
+		double end_line = scrolled_to_vert+screenlines;
+		
+		out[0] = scrolled_to_vert/((double)lines.size()+screenlines-1);
+		out[1] = end_line/((double)lines.size()+screenlines-1);
+		
+		if (out[1]-out[0] < 0.03) { // it's small
+			out[1] = out[0] + 0.03;
+			if (out[1] > 1) {
+				double diff = out[1]-1;
+				out[0] -= diff;
+				out[1] -= diff;
+			}
+		}
+		
+		return out;
+	};
+	scrollbar_v->scrollTo = [&](double newval){
+		std::cout << "Scrollto: " << newval << "\n";
+		
+		double screenlines = (double)t_h/(double)TextRenderer::get_text_height();
+		scrolled_to_vert = newval*((double)lines.size()+screenlines-1);
+		
+		if (scrolled_to_vert > max_scroll_vert) {
+			scrolled_to_vert = max_scroll_vert;
+		}else if (scrolled_to_vert < 0.0) {
+			scrolled_to_vert = 0.0;
+		}
+	};
 }
 
 void TextEdit::setFullText(icu::UnicodeString text) {
@@ -1613,11 +1646,11 @@ void TextEdit::position(int x, int y, int w, int h) {
 	t_y = y;
 	t_w = w;
 	t_h = h;
-
+	
 	POS_FUNC(this);
-
+	
 	Widget::position(x, y, w, h);
-
+	
 	// let's make sure vim mode is allowed...
 
 	if (!App::settings->getValue("use_vim", false)) {
@@ -1956,7 +1989,9 @@ bool TextEdit::on_mouse_button_event(int button, int action, int mods) {
 	if (action == GLFW_PRESS && App::activeLeafNode != this) {
 		App::setActiveLeafNode(this);
 	}
-
+	
+	if (scrollbar_vertical && scrollbar_v->on_mouse_button_event(button, action, mods)) { return true; };
+	
 	if (App::activeLeafNode != this) {
 		return false;
 	}
@@ -2002,7 +2037,7 @@ bool TextEdit::on_mouse_move_event() {
 
 		tryingToEnsureCursorPos = true;
 	}
-
+	
 	return Widget::on_mouse_move_event();
 }
 

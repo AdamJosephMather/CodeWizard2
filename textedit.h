@@ -89,6 +89,7 @@ public:
 	bool border = false;
 	
 	HighlightFunct highlighter = nullptr;
+	bool alreadyHighlighted = false;
 	HighlightBeginFunct getblankhighlighting = nullptr;
 	CompareHighlightInfo highlighterNotEqual = nullptr;
 	

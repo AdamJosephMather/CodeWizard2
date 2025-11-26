@@ -1657,6 +1657,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 		ensureCursorVisible(cursors[0]);
 	}
 	
+	scrollbar_v->is_visible = scrollbar_vertical;
 	Widget::position(x, y, w, h);
 	
 	// let's make sure vim mode is allowed...
@@ -1825,7 +1826,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 				if (cur_char >= char_start) {
 					final_line.append(c);
 					
-					if (!highlighter) {
+					if (!highlighter && !alreadyHighlighted) {
 						final_color.push_back(App::theme.main_text_color);
 					}else{
 						bool arange = false;

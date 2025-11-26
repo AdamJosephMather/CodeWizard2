@@ -23,11 +23,12 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 	});
 	
 	textedit->highlighter = nullptr;
+	textedit->scrollbar_vertical = true;
 	textedit->getblankhighlighting = nullptr;
 	textedit->highlighterNotEqual = nullptr;
+	textedit->alreadyHighlighted = true;
 	
 	line_numbers->setTextedit(textedit);
-	
 	
 	FileInfo* f1 = nullptr;
 	FileInfo* f2 = nullptr;
@@ -163,7 +164,7 @@ bool Compare::on_key_event(int key, int scancode, int action, int mods) {
 }
 
 bool Compare::on_mouse_button_event(int button, int action, int mods) {
-	return false;
+	return textedit->scrollbar_v->on_mouse_button_event(button, action, mods);
 }
 
 std::vector<std::pair<int,icu::UnicodeString>> Compare::calculateDifferences(const std::vector<icu::UnicodeString>& t1, const std::vector<icu::UnicodeString>& t2) {

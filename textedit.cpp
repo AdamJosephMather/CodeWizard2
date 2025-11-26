@@ -59,8 +59,6 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 		return out;
 	};
 	scrollbar_v->scrollTo = [&](double newval){
-		std::cout << "Scrollto: " << newval << "\n";
-		
 		double screenlines = (double)t_h/(double)TextRenderer::get_text_height();
 		scrolled_to_vert = newval*((double)lines.size()+screenlines-1);
 		

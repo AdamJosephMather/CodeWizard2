@@ -47,8 +47,10 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 		out[0] = scrolled_to_vert/((double)lines.size()+screenlines-1);
 		out[1] = end_line/((double)lines.size()+screenlines-1);
 		
-		if (out[1]-out[0] < 0.03) { // it's small
-			out[1] = out[0] + 0.03;
+		double minsize = (double)TextRenderer::get_text_height()*3 / ((double)t_h);
+		
+		if (out[1]-out[0] < minsize) { // it's small
+			out[1] = out[0] + minsize;
 			if (out[1] > 1) {
 				double diff = out[1]-1;
 				out[0] -= diff;
@@ -1647,26 +1649,24 @@ void TextEdit::position(int x, int y, int w, int h) {
 	
 	POS_FUNC(this);
 	
-	Widget::position(x, y, w, h);
-	
-	// let's make sure vim mode is allowed...
-
-	if (!App::settings->getValue("use_vim", false)) {
-		mode = 'i';
-	}
-
-	// this used to run before position, but we had issues.
-
 	max_scroll_vert = lines.size()-1;
 	max_scroll_horz = max_line_len-1;
-
+	
 	if (tryingToEnsureCursorPos) {
 		tryingToEnsureCursorPos = false;
 		ensureCursorVisible(cursors[0]);
 	}
-
+	
+	Widget::position(x, y, w, h);
+	
+	// let's make sure vim mode is allowed...
+	
+	if (!App::settings->getValue("use_vim", false)) {
+		mode = 'i';
+	}
+	
 	// all widgets positioned, time to determine visible text
-
+	
 	draw_text.clear();
 	draw_color.clear();
 	draw_cursor.clear();

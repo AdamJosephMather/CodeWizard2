@@ -11,8 +11,7 @@ void Scrollbar::render() {
 		return;
 	}
 	
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.hover_background_color);
-	App::DrawRoundedRect(r_x, r_y, r_w, r_h, bar_width/2.0, App::theme.main_text_color);
+	App::DrawRoundedRect(r_x+1, r_y+1, r_w-2, r_h-2, (bar_width-2)/2.0, App::theme.main_text_color);
 }
 
 void Scrollbar::position(int x, int y, int width, int height) {
@@ -74,6 +73,10 @@ bool Scrollbar::on_mouse_button_event(int button, int action, int mods) {
 		return false;
 	}
 	
+	if (button != GLFW_MOUSE_BUTTON_LEFT) {
+		return false;
+	}
+	
 	if (scrollTo == nullptr) {
 		return false;
 	}
@@ -119,6 +122,9 @@ bool Scrollbar::on_mouse_move_event() {
 	if (scrollTo == nullptr || !holding) {
 		return false;
 	}
+	
+	int state = glfwGetMouseButton(App::window, GLFW_MOUSE_BUTTON_LEFT);
+	if (state != GLFW_PRESS) { holding = false; return false; }
 	
 	int mx = App::mouseX;
 	int my = App::mouseY;

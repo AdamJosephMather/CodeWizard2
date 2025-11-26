@@ -174,7 +174,7 @@ static inline bool map_special_key(int key, Terminal::SpecialKey& out) {
 inline void TerminalWidget::cell_from_cursor(int& row, int& col) {
 	int mx = App::mouseX;
 	int my = App::mouseY;
-
+	
 	if (mx < t_x || my < t_y || mx > t_x+t_w || my > t_y+t_h) {
 		row = -1;
 		col = -1;
@@ -333,10 +333,14 @@ bool TerminalWidget::on_mouse_move_event() {
 	if (!is_visible || !term || settingup) return false;
 	int row=0, col=0;
 	cell_from_cursor(row, col);
-
+	
 	// Grow selection locally if app doesn't want mouse
 	if (!term->appWantsMouse()) {
+		
 		if (selecting) {
+			int state = glfwGetMouseButton(App::window, GLFW_MOUSE_BUTTON_LEFT);
+			if (state != GLFW_PRESS) { selecting = false; return false; }
+			
 			sel_doc_r1 = term->docLineIdForScreenRow(row);
 			sel_c1 = col;
 			return true;
@@ -344,7 +348,6 @@ bool TerminalWidget::on_mouse_move_event() {
 		return false;
 	}
 	
-
 	// otherwise forward motion
 	return term->mouseMove(row, col, /*buttonHeld*/ s_dragging);
 }

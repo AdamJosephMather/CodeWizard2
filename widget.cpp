@@ -46,7 +46,7 @@ bool Widget::on_mouse_button_event(int button, int action, int mods){
 	}
 	
 	for (auto w : children) {
-		if (w->on_mouse_button_event(button, action, mods) && action != GLFW_RELEASE) {
+		if (w->on_mouse_button_event(button, action, mods)) {
 			return true;
 		}
 	}

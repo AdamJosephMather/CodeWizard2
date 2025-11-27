@@ -75,6 +75,11 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 	
 	
 	settings_menus[0] = {
+		makeBool(
+			"Dark Mode",
+			"dark_mode",
+			true
+		),
 		makeFloat(
 			"Font Size",
 			"font_size",
@@ -480,7 +485,10 @@ bool Settings::validate_input(SettingsInt* el) {
 }
 
 bool Settings::validate_input(SettingsBool* el) {
-	
+	if (el->key_name == "dark_mode") {
+		App::darkmode = el->value;
+		App::updateFromTintColor(&App::theme);
+	}
 	
 	return true;
 }

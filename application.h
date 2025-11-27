@@ -62,6 +62,8 @@ public:
 	static icu::UnicodeString vnum;
 	static std::string vnumstr;
 	
+	static bool darkmode;
+	
 	static bool recording_macro;
 	static bool replaying_macro;
 	static int current_step;

@@ -33,6 +33,8 @@
 #include "myrect.h"
 #include "label.h"
 
+bool App::darkmode = true;
+
 int App::major_version = 2;
 int App::minor_version = 1;
 int App::patch_version = 7;
@@ -156,6 +158,7 @@ bool App::Init() {
 	STRING_REQUEST_LABEL->border = false;
 	
 	settings->loadSettings();
+	darkmode = settings->getValue("dark_mode", true);
 	WINDOW_WIDTH = settings->getValue("window_width", 1200);
 	WINDOW_HEIGHT = settings->getValue("window_height", 800);
 	
@@ -1975,15 +1978,27 @@ void App::setTintedColor(Color* tint_c, Color* c, float b) {
 }
 
 void App::updateFromTintColor(Theme* t) {
-	setTintedColor(t->tint_color, t->main_background_color,    0.098039);
-	setTintedColor(t->tint_color, t->extras_background_color,  0.164706);
-	setTintedColor(t->tint_color, t->hover_background_color,   0.26);
-	setTintedColor(t->tint_color, t->main_text_color,          1.0);
-	setTintedColor(t->tint_color, t->border,                   0.35);
-	setTintedColor(t->tint_color, t->syntax_colors[0],         1.0);
-	setTintedColor(t->tint_color, t->darker_background_color,  0.05);
-	setTintedColor(t->tint_color, t->overlay_background_color, 0.12);
-	setTintedColor(t->tint_color, t->lesser_text_color,        0.392157);
+	if (darkmode) {
+		setTintedColor(t->tint_color, t->main_background_color,    0.098039);
+		setTintedColor(t->tint_color, t->extras_background_color,  0.164706);
+		setTintedColor(t->tint_color, t->hover_background_color,   0.26);
+		setTintedColor(t->tint_color, t->main_text_color,          1.0);
+		setTintedColor(t->tint_color, t->border,                   0.35);
+		setTintedColor(t->tint_color, t->syntax_colors[0],         1.0);
+		setTintedColor(t->tint_color, t->darker_background_color,  0.05);
+		setTintedColor(t->tint_color, t->overlay_background_color, 0.12);
+		setTintedColor(t->tint_color, t->lesser_text_color,        0.392157);
+	}else{
+		setTintedColor(t->tint_color, t->main_background_color,    0.9);
+		setTintedColor(t->tint_color, t->extras_background_color,  0.8);
+		setTintedColor(t->tint_color, t->hover_background_color,   0.7);
+		setTintedColor(t->tint_color, t->main_text_color,          0.0);
+		setTintedColor(t->tint_color, t->border,                   0.6);
+		setTintedColor(t->tint_color, t->syntax_colors[0],         0.0);
+		setTintedColor(t->tint_color, t->darker_background_color,  0.95);
+		setTintedColor(t->tint_color, t->overlay_background_color, 0.8);
+		setTintedColor(t->tint_color, t->lesser_text_color,        0.4);
+	}
 }
 
 void App::displayToast(icu::UnicodeString text) {

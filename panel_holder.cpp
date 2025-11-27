@@ -9,7 +9,6 @@
 #include "widgetchooser.h"
 #include "settings.h"
 #include "filetree.h"
-#include "text_renderer.h"
 
 PanelHolder::PanelHolder(Widget *parent) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Panel holder");
@@ -21,25 +20,24 @@ void PanelHolder::position(int x, int y, int width, int height) {
 	t_w = width;
 	t_h = height;
 	
-	handle_long = TextRenderer::get_text_height()*2;
-	handle_short = TextRenderer::get_text_width(1);
+	handle_short = 4;
 	
 	hastwo = (children.size() == 2);
 	
 	if (hastwo) {
 		if (is_horizontal) {
 			c1_x = x;
-			c1_w = width*ratio-2;
-			c2_x = x+c1_w+4;
-			c2_w = width-c1_w-4;
+			c1_w = width*ratio-handle_short;
+			c2_x = x+c1_w+handle_short*2;
+			c2_w = width-c1_w-handle_short*2;
 			
 			c1_y = c2_y = y;
 			c1_h = c2_h = height;
 		}else{
 			c1_y = y;
-			c1_h = height*ratio-2;
-			c2_y = y+c1_h+4;
-			c2_h = height-c1_h-4;
+			c1_h = height*ratio-handle_short;
+			c2_y = y+c1_h+handle_short*2;
+			c2_h = height-c1_h-handle_short*2;
 			
 			c1_x = c2_x = x;
 			c1_w = c2_w = width;
@@ -121,16 +119,16 @@ void PanelHolder::position(int x, int y, int width, int height) {
 	
 	if (hastwo) {
 		if (is_horizontal) {
-			xpos_h = t_x + t_w*ratio;
-			ypos_h = t_y + t_h/2;
+			xpos_h = t_x + t_w*ratio - handle_short/2;
+			ypos_h = t_y + handle_short;
 			
 			width_h = handle_short;
-			height_h = handle_long;
+			height_h = t_h - handle_short * 2;
 		}else{
-			xpos_h = t_x + t_w/2;
-			ypos_h = t_y + t_h*ratio;
+			xpos_h = t_x + handle_short;
+			ypos_h = t_y + t_h*ratio - handle_short/2;
 			
-			width_h = handle_long;
+			width_h = t_w - handle_short * 2;
 			height_h = handle_short;
 		}
 	}
@@ -158,9 +156,6 @@ void PanelHolder::addWidget(bool horz, bool frst, Widget* new_wid) {
 }
 
 bool PanelHolder::on_mouse_button_event(int button, int action, int mods) {
-	int mx = App::mouseX;
-	int my = App::mouseY;
-	
 	if (has_one_to_add && button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
 		addWidget(is_horizontal, adding_first_pos, new WidgetChooser(nullptr));
 		return true;
@@ -208,7 +203,7 @@ bool PanelHolder::on_mouse_button_event(int button, int action, int mods) {
 	}
 	
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && hastwo) {
-		if (mx > xpos_h - width_h/2 && mx < xpos_h + width_h/2 && my > ypos_h-height_h/2 && my < ypos_h+height_h/2){
+		if (hoveringHandle()){
 			dragging_handle = true;
 			return true;
 		}
@@ -224,6 +219,12 @@ bool PanelHolder::on_mouse_button_event(int button, int action, int mods) {
 	
 	return false;
 }
+
+bool PanelHolder::hoveringHandle() {
+	int mx = App::mouseX;
+	int my = App::mouseY;
+	return mx > xpos_h - handle_short && mx < xpos_h + width_h + handle_short && my > ypos_h - handle_short && my < ypos_h + height_h + handle_short;
+};
 
 bool PanelHolder::on_mouse_move_event() {
 	if (dragging_handle) {
@@ -257,12 +258,15 @@ void PanelHolder::render() {
 	// draw the handles
 	if (hastwo) {
 		if (is_horizontal) {
-			App::DrawRect(xpos_h-2, t_y, 4, t_h, App::theme.main_background_color);
+			App::DrawRect(xpos_h-handle_short, t_y, width_h+handle_short*2, t_h, App::theme.main_background_color);
 		}else{
-			App::DrawRect(t_x, ypos_h-2, t_w, 4, App::theme.main_background_color);
+			App::DrawRect(t_x, ypos_h-handle_short, t_w, height_h+handle_short*2, App::theme.main_background_color);
 		}
 		
-		App::DrawRoundedRect(xpos_h-width_h/2, ypos_h-height_h/2, width_h, height_h, 5, App::theme.border);
+		if (dragging_handle || hoveringHandle()) {
+			int rad = min(width_h, height_h)/2;
+			App::DrawRoundedRect(xpos_h, ypos_h, width_h, height_h, rad, App::theme.main_text_color);
+		}
 	}
 }
 

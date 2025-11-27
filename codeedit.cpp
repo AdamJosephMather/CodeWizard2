@@ -25,7 +25,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		}
 	};
 	
-	
 	TABID = tabid;
 	POS_FUNC = positioner;
 	FUPDATER = fupdater;
@@ -195,6 +194,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	}, [&](Button* b){
 		showhideerrors();
 	});
+	showErrorsButton->transparent = true;
 	showErrorsButton->rounded = true;
 	
 	errorMenu = new ListBox(this, [&](Widget* w){

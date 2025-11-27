@@ -5,11 +5,12 @@
 #include "json.hpp"
 
 class PanelHolder : public Widget {
-public:	
+public:
 	PanelHolder(Widget* parent);
 	
 	void render();
 	void position(int x, int y, int width, int height);
+	bool hoveringHandle();
 	
 	bool on_mouse_button_event(int button, int action, int mods);
 	bool on_mouse_move_event();
@@ -56,8 +57,7 @@ private:
 	bool first_hovered = false;
 	bool second_hovered = false;
 	
-	float handle_long = 40;
-	float handle_short = 10;
+	float handle_short = 4;
 	
 	int xpos_h;
 	int ypos_h;

@@ -85,6 +85,8 @@ public:
 	
 	bool scrollbar_vertical = false;
 	Scrollbar* scrollbar_v = nullptr;
+	bool scrollbar_horizontal = false;
+	Scrollbar* scrollbar_h = nullptr;
 	
 	bool border = false;
 	
@@ -94,6 +96,8 @@ public:
 	CompareHighlightInfo highlighterNotEqual = nullptr;
 	
 	using IndentIdentifier = std::function<int(icu::UnicodeString line, icu::UnicodeString nextline)>;
+	
+	int getVisLen(const icu::UnicodeString& line);
 	
 	App::PosFunction POS_FUNC = nullptr;
 	IndentIdentifier getIndentationLevelAfterLine = nullptr;

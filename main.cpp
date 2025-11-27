@@ -78,11 +78,11 @@ int main(int argc, char* argv[]) {
 		}
 	}
 	
-	App::updateFromTintColor(&theme);
+	App::updateFromTintColor(&theme); 
 	App::setTheme(theme);
 
 	
-	std::vector<Language> langs = App::settings->loadLanguages();
+	std::vector<Language> langs = App::settings->loadLanguages(); 
 	
 	for (auto l : langs) {
 		App::languagemap[l.name] = l;
@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
 	
 	Widget* mainwidget = App::rootelement;
 	
-	nlohmann::json state = App::settings->getConfig();
+	nlohmann::json state = App::settings->getConfig(); 
 	
 	if (state.contains("children")) {
 		auto ph = dynamic_cast<PanelHolder*>(mainwidget->children[0]);
@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
 	commandPalette->border = true;
 	
 	ListBox* commandBox = new ListBox(nullptr, [&](Widget* w){
-		w->t_x = commandPalette->t_x;
+		w->t_x = commandPalette->t_x; 
 		w->t_w = commandPalette->t_w;
 		w->t_y = commandPalette->t_y+5+commandPalette->t_h;
 	});

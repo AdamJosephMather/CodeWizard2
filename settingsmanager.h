@@ -33,6 +33,9 @@ public:
 	nlohmann::json getProjSettings();
 	std::string getProjectSettingsPath();
 	std::string getProjectBuild();
+	
+	std::string getSubSet(std::vector<std::string> items);
+	bool bringInSubset(std::string);
 private:
 	nlohmann::json internalSettings;
 	std::string getLocalAppDataPath();

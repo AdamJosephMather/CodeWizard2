@@ -38,6 +38,34 @@ void SettingsManager::loadSettings() {
 	}
 }
 
+std::string SettingsManager::getSubSet(std::vector<std::string> items) {
+	nlohmann::json out = nlohmann::json::object();
+	
+	for (std::string key : items) {
+		if (settings["simple"].contains(key)) {
+			out[key] = settings["simple"][key];
+		}
+	}
+	
+	return out.dump();
+}
+
+bool SettingsManager::bringInSubset(std::string instr) {
+	nlohmann::json in;
+	try {
+		in = nlohmann::json::parse(instr);
+	} catch (const std::exception& e) {
+		std::cerr << "Failed to parse subset settings: " << e.what() << std::endl;
+		return false;
+	}
+	
+	for (auto const& [key, val] : in.items()) {
+		settings["simple"][key] = val;
+    }
+	
+	return true;
+}
+
 std::string SettingsManager::makeUUID() {
 	// Generate 16 random bytes
 	std::array<uint8_t, 16> uuid{};

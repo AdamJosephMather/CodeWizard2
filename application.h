@@ -64,6 +64,9 @@ public:
 	
 	static bool darkmode;
 	
+	static std::string empty;
+	static void setSynColor(Theme* t, std::string name, int id);
+	
 	static bool recording_macro;
 	static bool replaying_macro;
 	static int current_step;

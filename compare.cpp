@@ -15,11 +15,72 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 	
 	line_numbers = new LineNumbers(this);
 	
+	f1Button = new Button(this, icu::UnicodeString::fromUTF8("Select File 1"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+		// position
+		btn->t_x = t_x+t_w/2-w-App::text_padding/2;
+		btn->t_y = t_y+App::text_padding;
+	},  [&](Button* btn){
+		// onclick
+		const char * fp1 = tinyfd_openFileDialog(
+			"Select first file", // dialog title
+			"",                  // default path and filename
+			0, NULL, NULL,       // filter count and filters
+			0                    // allow multiple selections (0 = no)
+		);
+		
+		if (!fp1) { return; }
+		
+		std::string filePath(fp1);
+		
+		std::filesystem::path fullPath = filePath;
+		std::string filename = fullPath.filename().string();
+		
+		f1 = new FileInfo();
+		f1->filepath = filePath;
+		f1->filename = filename;
+		
+		btn->BUTTON_LABEL = icu::UnicodeString::fromUTF8(filename);
+		
+		reload();
+	});
+	
+	f2Button = new Button(this, icu::UnicodeString::fromUTF8("Select File 2"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+		// position
+		btn->t_x = t_x+t_w/2+App::text_padding/2;
+		btn->t_y = t_y+App::text_padding;
+	},  [&](Button* btn){
+		// onclick
+		const char * fp2 = tinyfd_openFileDialog(
+			"Select second file", // dialog title
+			"",                   // default path and filename
+			0, NULL, NULL,        // filter count and filters
+			0                     // allow multiple selections (0 = no)
+		);
+		
+		if (!fp2) { return; }
+		
+		std::string filePath(fp2);
+		
+		std::filesystem::path fullPath = filePath;
+		std::string filename = fullPath.filename().string();
+		
+		f2 = new FileInfo();
+		f2->filepath = filePath;
+		f2->filename = filename;
+		
+		btn->BUTTON_LABEL = icu::UnicodeString::fromUTF8(filename);
+		
+		reload();
+	});
+	
+	f1Button->border = true;
+	f2Button->border = true;
+	
 	textedit = new TextEdit(this, [&](Widget* t){
 		textedit->t_x = t_x+line_numbers->t_w;
-		textedit->t_y = t_y;
+		textedit->t_y = f1Button->t_h+f1Button->t_y+App::text_padding;
 		textedit->t_w = t_w-line_numbers->t_w;
-		textedit->t_h = t_h;
+		textedit->t_h = (t_y+t_h) - (f1Button->t_h+f1Button->t_y+App::text_padding);
 	});
 	
 	textedit->highlighter = nullptr;
@@ -29,49 +90,50 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 	textedit->alreadyHighlighted = true;
 	
 	line_numbers->setTextedit(textedit);
+}
+
+void Compare::setOnlyTo(FileInfo* f) {
+	bool worked = true;
+	auto txt = App::readFileToUnicodeString(f->filepath, worked);
+	if (!worked) { textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: " + f->filepath)); return; }
 	
-	FileInfo* f1 = nullptr;
-	FileInfo* f2 = nullptr;
+	auto lines = splitByChar(txt, U'\n');
 	
-	const char * fp1 = tinyfd_openFileDialog(
-		"Select a file",    // dialog title
-		"",                 // default path and filename
-		0, NULL, NULL,      // filter count and filters
-		0                   // allow multiple selections (0 = no)
-	);
+	icu::UnicodeString text;
+	UChar32 newlinechar = U'\n';
 	
-	if (fp1) {
-		std::string filePath(fp1);
+	for (int i = 0; i < lines.size(); i++) {
+		text += icu::UnicodeString::fromUTF8("++ ")+lines[i];
 		
-		std::filesystem::path fullPath = filePath;
-		std::string filename = fullPath.filename().string();
-		
-		f1 = new FileInfo();
-		f1->filepath = filePath;
-		f1->filename = filename;
-	}else{
-		textedit->setFullText(icu::UnicodeString::fromUTF8("All you had to do, was select two files. Was is **that** hard?"));
-		return;
+		if (i < lines.size()-1) {
+			text.append(newlinechar);
+		}
 	}
 	
-	const char * fp2 = tinyfd_openFileDialog(
-		"Select a file",    // dialog title
-		"",                 // default path and filename
-		0, NULL, NULL,      // filter count and filters
-		0                   // allow multiple selections (0 = no)
-	);
+	textedit->setFullText(text);
+	textedit->position(t_x, t_y, t_w, t_h);
 	
-	if (fp2) {
-		std::string filePath(fp2);
+	for (int i = 0; i < textedit->lines.size(); i++) {
+		ColoredTokens col;
+		col.start = 0;
+		col.end = textedit->lines[i].line_text.length()+1;
+		col.color = 1;
 		
-		std::filesystem::path fullPath = filePath;
-		std::string filename = fullPath.filename().string();
-		
-		f2 = new FileInfo();
-		f2->filepath = filePath;
-		f2->filename = filename;
-	}else{
-		textedit->setFullText(icu::UnicodeString::fromUTF8("All you had to do, was select two files. Was is **that** hard?"));
+		textedit->lines[i].tokens = {col};
+		textedit->lines[i].changed = false;
+		textedit->lines[i].highlightinguptodate = true;
+	}
+}
+
+void Compare::reload() {
+	if (!f1 && !f2) {
+		textedit->setFullText(icu::UnicodeString());
+		return;
+	}else if (!f1) {
+		setOnlyTo(f2);
+		return;
+	}else if (!f2) {
+		setOnlyTo(f1);
 		return;
 	}
 	
@@ -118,14 +180,6 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 		
 		col.color = (-c.first)-1;
 		
-//		if (c.first == 2) {
-//			col.color = -3;
-//		}else if (c.first == 1){
-//			col.color = -2;
-//		}else if (c.first == 0){
-//			col.color = -1;
-//		}
-		
 		textedit->lines[i].tokens = {col};
 		textedit->lines[i].changed = false;
 		textedit->lines[i].highlightinguptodate = true;
@@ -135,6 +189,12 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 void Compare::render() {
 	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
 	
+	App::runWithSKIZ(f1Button->t_x, f1Button->t_y, f1Button->t_w, textedit->t_h, [&](){
+		f1Button->render();
+	});
+	App::runWithSKIZ(f2Button->t_x, f2Button->t_y, f2Button->t_w, f2Button->t_h, [&](){
+		f2Button->render();
+	});
 	App::runWithSKIZ(line_numbers->t_x, line_numbers->t_y, line_numbers->t_w, textedit->t_h, [&](){
 		line_numbers->render();
 	});
@@ -151,6 +211,8 @@ void Compare::position(int x, int y, int w, int h) {
 	
 	POS_FUNC(this);
 	
+	f1Button->position(t_x, t_y, t_w, t_h);
+	f2Button->position(t_x, t_y, t_w, t_h);
 	line_numbers->position(t_x, t_y, t_w, t_h);
 	textedit->position(t_x, t_y, t_w, t_h);
 }
@@ -164,6 +226,8 @@ bool Compare::on_key_event(int key, int scancode, int action, int mods) {
 }
 
 bool Compare::on_mouse_button_event(int button, int action, int mods) {
+	if (f1Button->on_mouse_button_event(button, action, mods)) { return true; }
+	if (f2Button->on_mouse_button_event(button, action, mods)) { return true; }
 	return textedit->scrollbar_v->on_mouse_button_event(button, action, mods);
 }
 

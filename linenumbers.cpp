@@ -104,6 +104,7 @@ void LineNumbers::position(int x, int y, int w, int h) {
 	}else{
 		t_w = TextRenderer::get_text_width(max_len) + App::text_padding*2;
 		t_h = toFollow->t_h;
+		t_y = toFollow->t_y;
 	}
 	
 	Widget::position(t_x, t_y, t_w, t_h);

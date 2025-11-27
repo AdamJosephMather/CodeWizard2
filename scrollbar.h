@@ -22,6 +22,7 @@ public:
 	bool on_mouse_button_event(int button, int action, int mods) override;
 	bool on_mouse_move_event() override;
 private:
+	bool hovering = false;
 	double start = 0;
 	double end = 0;
 	bool holding = false;

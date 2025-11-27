@@ -1,5 +1,6 @@
 #pragma once
 
+#include "button.h"
 #include "linenumbers.h"
 #include "textedit.h"
 #include "widget.h"
@@ -26,5 +27,13 @@ public:
 	
 	void position(int x, int y, int w, int h);
 	void render();
+	
+	void reload();
+	void setOnlyTo(FileInfo* f);
 private:
+	FileInfo* f1 = nullptr;
+	FileInfo* f2 = nullptr;
+	
+	Button* f1Button = nullptr;
+	Button* f2Button = nullptr;
 };

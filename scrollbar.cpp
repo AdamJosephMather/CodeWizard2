@@ -11,7 +11,11 @@ void Scrollbar::render() {
 		return;
 	}
 	
-	App::DrawRoundedRect(r_x+2, r_y+2, r_w-4, r_h-4, (bar_width-4)/2.0, App::theme.main_text_color);
+	if (hovering) {
+		App::DrawRoundedRect(r_x+2, r_y+2, r_w-4, r_h-4, (bar_width-4)/2.0, App::theme.main_text_color);
+	}else{
+		App::DrawRoundedRect(r_x+2, r_y+2, r_w-4, r_h-4, (bar_width-4)/2.0, App::theme.hover_background_color);
+	}
 }
 
 void Scrollbar::position(int x, int y, int width, int height) {
@@ -91,23 +95,15 @@ bool Scrollbar::on_mouse_button_event(int button, int action, int mods) {
 	
 	if (mx < t_x || mx > t_x+t_w || my < t_y || my > t_y+t_h) { return false; }
 	
-	if (action == GLFW_PRESS) {
-		if (mx < r_x || mx > r_x+r_w || my < r_y || my > r_y+r_h) {
-			offset = 0;
-			if (horizontal) {
-				scrollTo((double)(mx-t_x)/(double)t_w);
-			}else{
-				scrollTo((double)(my-t_y)/(double)t_h);
-			}
-		}else {
-			if (horizontal) {
-				offset = r_x-mx;
-			}else{
-				offset = r_y-my;
-			}
+	if (action == GLFW_PRESS && hovering) {
+		if (horizontal) {
+			offset = r_x-mx;
+		}else{
+			offset = r_y-my;
 		}
 		
 		holding = true;
+		hovering = true;
 		return true;
 	}
 	
@@ -121,15 +117,17 @@ bool Scrollbar::on_mouse_move_event() {
 	
 	std::cout << "Holding: " << holding << std::endl;
 	
+	int mx = App::mouseX;
+	int my = App::mouseY;
+	
+	hovering = holding | (mx >= r_x && mx <= r_x+r_w && my >= r_y && my <= r_y+r_h);
+	
 	if (scrollTo == nullptr || !holding) {
 		return false;
 	}
 	
 	int state = glfwGetMouseButton(App::window, GLFW_MOUSE_BUTTON_LEFT);
 	if (state != GLFW_PRESS) { holding = false; return false; }
-	
-	int mx = App::mouseX;
-	int my = App::mouseY;
 	
 	if (horizontal) {
 		double newvalue = mx+offset;

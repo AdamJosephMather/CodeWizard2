@@ -85,6 +85,7 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 	
 	textedit->highlighter = nullptr;
 	textedit->scrollbar_vertical = true;
+	textedit->scrollbar_horizontal = true;
 	textedit->getblankhighlighting = nullptr;
 	textedit->highlighterNotEqual = nullptr;
 	textedit->alreadyHighlighted = true;
@@ -119,6 +120,7 @@ void Compare::setOnlyTo(FileInfo* f) {
 		col.end = textedit->lines[i].line_text.length()+1;
 		col.color = 1;
 		
+		textedit->lines[i].visual_length = textedit->getVisLen(textedit->lines[i].line_text);
 		textedit->lines[i].tokens = {col};
 		textedit->lines[i].changed = false;
 		textedit->lines[i].highlightinguptodate = true;
@@ -180,6 +182,7 @@ void Compare::reload() {
 		
 		col.color = (-c.first)-1;
 		
+		textedit->lines[i].visual_length = textedit->getVisLen(textedit->lines[i].line_text);
 		textedit->lines[i].tokens = {col};
 		textedit->lines[i].changed = false;
 		textedit->lines[i].highlightinguptodate = true;
@@ -228,7 +231,9 @@ bool Compare::on_key_event(int key, int scancode, int action, int mods) {
 bool Compare::on_mouse_button_event(int button, int action, int mods) {
 	if (f1Button->on_mouse_button_event(button, action, mods)) { return true; }
 	if (f2Button->on_mouse_button_event(button, action, mods)) { return true; }
-	return textedit->scrollbar_v->on_mouse_button_event(button, action, mods);
+	if (textedit->scrollbar_v->on_mouse_button_event(button, action, mods)) { return true; }
+	if (textedit->scrollbar_h->on_mouse_button_event(button, action, mods)) { return true; }
+	return false;
 }
 
 std::vector<std::pair<int,icu::UnicodeString>> Compare::calculateDifferences(const std::vector<icu::UnicodeString>& t1, const std::vector<icu::UnicodeString>& t2) {

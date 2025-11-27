@@ -186,6 +186,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		}
 	});
 	textedit->scrollbar_vertical = true;
+	textedit->scrollbar_horizontal = true;
 	
 	
 	showErrorsButton = new Button(nullptr, icu::UnicodeString("Show/Hide Errors"), [&](Button* b, int x, int y, int w, int h, int tw, int th){

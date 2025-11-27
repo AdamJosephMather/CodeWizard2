@@ -70,6 +70,55 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 			scrolled_to_vert = 0.0;
 		}
 	};
+	
+	scrollbar_h = new Scrollbar(this);
+	scrollbar_h->getScrollInfo = [&](){
+		std::vector<double> out = {0.0, 0.0};
+		double screenchars = (double)t_w/(double)TextRenderer::get_text_width(1);
+		double end_char = scrolled_to_horz+screenchars;
+		
+		out[0] = scrolled_to_horz / ((double)max_scroll_horz+screenchars-1);
+		out[1] = end_char/((double)max_scroll_horz+screenchars-1);
+		
+		double minsize = (double)TextRenderer::get_text_height()*3 / ((double)t_w);
+		
+		if (out[1]-out[0] < minsize) { // it's small
+			out[1] = out[0] + minsize;
+			if (out[1] > 1) {
+				double diff = out[1]-1;
+				out[0] -= diff;
+				out[1] -= diff;
+			}
+		}
+		
+		return out;
+	};
+	scrollbar_h->scrollTo = [&](double newval){
+		double screenchars = (double)t_w/(double)TextRenderer::get_text_width(1);
+		scrolled_to_horz = newval*((double)max_scroll_horz+screenchars-1);
+		
+		if (scrolled_to_horz > max_scroll_horz) {
+			scrolled_to_horz = max_scroll_horz;
+		}else if (scrolled_to_horz < 0.0) {
+			scrolled_to_horz = 0.0;
+		}
+	};
+	scrollbar_h->horizontal = true;
+}
+
+int TextEdit::getVisLen(const icu::UnicodeString& line) {
+	int ln = 0;
+	
+	for (int c_indx = 0; c_indx < line.length(); c_indx++) {
+		UChar32 c = line.char32At(c_indx);
+
+		if (c == U'\t') {
+			ln += 4;
+		}else{
+			ln ++;
+		}
+	}
+	return ln;
 }
 
 void TextEdit::setFullText(icu::UnicodeString text) {
@@ -112,19 +161,7 @@ void TextEdit::Highlight(int first_visible_line, int last_visible_line) {
 		Line* line = &lines[i];
 
 		if (line->changed) {
-			int ln = 0;
-			
-			for (int c_indx = 0; c_indx < line->line_text.length(); c_indx++) {
-				UChar32 c = line->line_text.char32At(c_indx);
-
-				if (c == U'\t') {
-					ln += 4;
-				}else{
-					ln ++;
-				}
-			}
-
-			line->visual_length = ln;
+			line->visual_length = getVisLen(line->line_text);
 		}
 
 		if (line->visual_length > max_line_len) {
@@ -1658,6 +1695,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 	}
 	
 	scrollbar_v->is_visible = scrollbar_vertical;
+	scrollbar_h->is_visible = scrollbar_horizontal;
 	Widget::position(x, y, w, h);
 	
 	// let's make sure vim mode is allowed...
@@ -1990,6 +2028,7 @@ bool TextEdit::on_mouse_button_event(int button, int action, int mods) {
 	}
 	
 	if (scrollbar_vertical && scrollbar_v->on_mouse_button_event(button, action, mods)) { return true; };
+	if (scrollbar_horizontal && scrollbar_h->on_mouse_button_event(button, action, mods)) { return true; };
 	
 	if (App::activeLeafNode != this) {
 		return false;

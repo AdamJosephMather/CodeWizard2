@@ -187,7 +187,7 @@ void Compare::reload() {
 }
 
 void Compare::render() {
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
+	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.main_background_color);
 	
 	App::runWithSKIZ(f1Button->t_x, f1Button->t_y, f1Button->t_w, textedit->t_h, [&](){
 		f1Button->render();

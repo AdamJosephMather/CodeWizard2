@@ -2,6 +2,7 @@
 
 #include "application.h"
 #include "chat.h"
+#include "compare.h"
 #include "editor.h"
 #include "lspdebug.h"
 #include "terminalwidgettabbed.h"
@@ -272,6 +273,8 @@ void PanelHolder::setState(nlohmann::json state) {
 			ph->setState(c);
 		}else if (c == "FileTree"){
 			new FileTree(this);
+		}else if (c == "Compare"){
+			new Compare(this, [&](Widget* w){ return; });
 		}else if (c == "Settings"){
 			new Settings(this);
 		}else if (c == "WidgetChooser"){
@@ -307,8 +310,10 @@ nlohmann::json PanelHolder::saveConfiguration() {
 			thisitm["children"][i] = "Settings";
 		}else if (auto pe = dynamic_cast<WidgetChooser*>(c)){
 			thisitm["children"][i] = "WidgetChooser";
-		}else if (auto pe = dynamic_cast<Chat*>(c)){
-			thisitm["children"][i] = "Chat";
+		}else if (auto pe = dynamic_cast<WidgetChooser*>(c)){
+			thisitm["children"][i] = "WidgetChooser";
+		}else if (auto pe = dynamic_cast<Compare*>(c)){
+			thisitm["children"][i] = "Compare";
 		}else if (auto pe = dynamic_cast<LspDebug*>(c)){
 			thisitm["children"][i] = "LspDebug";
 		}else if (auto pe = dynamic_cast<TerminalWidgetTabbed*>(c)){

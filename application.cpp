@@ -38,7 +38,7 @@ std::string App::empty = "";
 
 int App::major_version = 2;
 int App::minor_version = 1;
-int App::patch_version = 7;
+int App::patch_version = 8;
 icu::UnicodeString App::vnum = icu::UnicodeString();
 std::string App::vnumstr = "";
 

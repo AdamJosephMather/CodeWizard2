@@ -34,6 +34,7 @@
 #include "label.h"
 
 bool App::darkmode = true;
+std::string App::empty = "";
 
 int App::major_version = 2;
 int App::minor_version = 1;
@@ -1327,12 +1328,87 @@ void App::executeCommandPaletteAction() {
 			launchCommandNonBlocking("cd /d "+folder+" && git reset --hard && git pull");
 		}else if (filepath == ":Help") {
 			MoveWidget(helpMenu, rootelement);
+		}else if (filepath == ":Save Theme Settings To File") {
+			const char * fp = tinyfd_saveFileDialog(
+				"Save as?", // dialog title
+				"CodeWizard2Theme.json", // default path and filename
+				0, NULL, // filter count and filters
+				0 // allow multiple selections (0 = no)
+			);
+			
+			if (fp) {
+				std::string filePath(fp);
+				
+				std::string tosave = settings->getSubSet({"dark_mode", "c_comments_color", "c_functs_color", "c_keywords_color", "c_literals_color", "c_punctuation_color", "c_strings_color", "c_tint_color", "c_types_color", "c_vars_color"});
+				std::string err;
+				if (!atomicWriteReplace(filePath, tosave, &err)) {
+					displayToast(icu::UnicodeString::fromUTF8("Failed to write file: "+err));
+				}else{
+					displayToast(icu::UnicodeString::fromUTF8("Saved theme to file!"));
+				}
+			}
+		}else if (filepath == ":Load Theme Settings From File") {
+			const char * fp = tinyfd_openFileDialog(
+				"Select theme",    // dialog title
+				"",                 // default path and filename
+				0, NULL, NULL,      // filter count and filters
+				0                   // allow multiple selections (0 = no)
+			);
+			
+			if (fp) {
+				std::string filePath(fp);
+				bool worked = false;
+				icu::UnicodeString text = readFileToUnicodeString(filePath, worked);
+				if (!worked) {
+					displayToast(icu::UnicodeString::fromUTF8("Could not read file. ")+text);
+				}else{
+					std::string str;
+					text.toUTF8String(str);
+					
+					if (!settings->bringInSubset(str)) {
+						displayToast(icu::UnicodeString::fromUTF8("Could not load settings."));
+					}else{
+						std::string cl = App::settings->getValue("c_tint_color", App::empty);
+						if (cl != empty) {
+							bool worked;
+							Color c = stringToColor(cl, worked);
+							if (worked) {
+								theme.tint_color->r = c.r;
+								theme.tint_color->g = c.g;
+								theme.tint_color->b = c.b;
+							}
+						}
+						darkmode = settings->getValue("dark_mode", true);
+						updateFromTintColor(&theme);
+						setSynColor(&theme, "c_strings_color", 1);
+						setSynColor(&theme, "c_comments_color", 2);
+						setSynColor(&theme, "c_vars_color", 3);
+						setSynColor(&theme, "c_types_color", 4);
+						setSynColor(&theme, "c_functs_color", 5);
+						setSynColor(&theme, "c_keywords_color", 6);
+						setSynColor(&theme, "c_punctuation_color", 7);
+						setSynColor(&theme, "c_literals_color", 8);
+						displayToast(icu::UnicodeString::fromUTF8("Done!"));
+					}
+				}
+			}
 		}
 		
 		return;
 	}
 	
 	openFromCMD(filepath, INDEXED_FILES.indexedNames[cur_sel]);
+}
+
+void App::setSynColor(Theme* t, std::string name, int id) {
+	std::string cl = App::settings->getValue(name, empty);
+	if (cl == empty) { return; }
+	bool worked;
+	Color c = stringToColor(cl, worked);
+	if (!worked) { return; }
+	t->syntax_colors[id]->r = c.r;
+	t->syntax_colors[id]->g = c.g;
+	t->syntax_colors[id]->b = c.b;
 }
 
 void App::openFromCMD(std::string filepath, std::string filename, int line) {
@@ -1438,7 +1514,7 @@ void App::indexFiles() {
 	}
 	
 	static const std::vector<std::string> commands = {
-		"Git Push","Git Pull","Git Force Pull","Help"
+		"Git Push","Git Pull","Git Force Pull","Help","Save Theme Settings To File","Load Theme Settings From File"
 	};
 
 	for (auto const& cmd : commands) {

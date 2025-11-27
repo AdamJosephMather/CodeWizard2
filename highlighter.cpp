@@ -12,7 +12,7 @@ std::vector<std::vector<std::string>> matches = {
 	{"comment"},
 	{"variable", "paramater", "argument"},
 	{"name.function", "function-call"},
-	{"keyword"},
+	{"scope", "keyword"},
 	{"punctuation"},
 	{"literal", "number", "bool", "constant"}
 };
@@ -73,8 +73,6 @@ bool Highlighter::loadGrammarFile(const std::string& path) {
 	
 	scopeName = grammarJson["scopeName"];
 	
-	std::cout << "scopeName:" << scopeName << std::endl;
-	
 	auto patterns = grammarJson["patterns"];
 	// for every pattern, we need to recursively anaszize it and compile the regexes. We'll leave any include statemtents as is, so we don't hit circular import problems
 	
@@ -97,14 +95,11 @@ bool Highlighter::loadGrammarFile(const std::string& path) {
 	for (auto it = r.begin(); it != r.end(); ++it) {
 		auto id = it.key();
 		auto repoRule = it.value();
-		auto compiled_repo_rule = compileRule(repoRule);
+		auto compiled_repo_rule = compileRule(repoRule, id);
 		repository[id] = compiled_repo_rule;
 	}
 	
 	repository["self"] = self;
-	
-	std::cout << patterns.size() << std::endl;
-	std::cout << repository.size() << std::endl;
 	
 	return true;
 }
@@ -281,7 +276,7 @@ Match Highlighter::findEarliestPattern(const std::string& line, ContextFrame cur
 				first_rule = p;
 				is_end_of_segment = false;
 				
-				end = str+first_index;
+				end = str+first_index+length;
 				
 				// create copy of the region
 				OnigRegion* copy = onig_region_new();
@@ -376,14 +371,7 @@ std::pair<std::vector<Token>,TextMateInfo> Highlighter::analizeSection(const std
 			token_range.name = name;
 			tokens.push_back(token_range);
 			
-//			std::cout << "Popping context from stack: " << currentInfo.contextStack.back().contentName;
-			
 			currentInfo.contextStack.pop_back();
-			
-//			std::cout << " back to context: " << currentInfo.contextStack.back().contentName << std::endl;
-//			std::cout << "That context was initialized at: " << currentContext.start_char << " On this line? " << currentContext.started_here << std::endl;
-//			std::cout << "Pop occured because of match at index: " << match.index << " with length and text of " << match.length << " and \"" << section.substr(match.index, match.length) << "\"" << std::endl;
-//			std::cout << "Token to fill range spans from: " << token_range.start << " to "  << token_range.start+token_range.length << " w/ name " << token_range.name << std::endl;
 			
 			need_to_find_patterns = true;
 		} else {
@@ -434,9 +422,6 @@ std::pair<std::vector<Token>,TextMateInfo> Highlighter::analizeSection(const std
 				
 				currentInfo.contextStack.push_back(newFrame);
 				need_to_find_patterns = true;
-				
-//				std::cout << "Pushed a new context to the stack: " << newFrame.contentName << "\n";
-//				std::cout << "Said context was found at: " << match.index << " With len: " << match.length << " Text: " << section.substr(match.index, match.length) << std::endl;
 			}
 			
 			if (match.rule->name != "") {
@@ -555,7 +540,6 @@ LineResult Highlighter::highlightLine(icu::UnicodeString input_string, TextMateI
 	std::sort(tokens.begin(), tokens.end(), [](const auto& a, const auto& b) { return a.length > b.length; });
 	
 	outTokens.push_back({0, input_string.length(), variable_color}); // a single token covering all
-//	std::cout << "\n\nHIGHLIGHT:\n\n";
 	for (auto token : tokens) {
 		if (token.name == "") {
 			continue;
@@ -625,8 +609,6 @@ RegexInfo* Highlighter::compileRegex(std::string patternStr) {
 	);
 
 	if (result != ONIG_NORMAL) {
-		std::cout << "Uh oh...\n\n" << orig << "\n\n - \n\n" << pattern << "\n\n - REGEX COMPILATION FAILED " << std::endl;
-		
 		OnigUChar errorMessage[ONIG_MAX_ERROR_MESSAGE_LEN];
 		onig_error_code_to_str(errorMessage, result, &errorInfo);
 		fprintf(stderr, "Oniguruma regex compile error: %s\n", errorMessage);
@@ -709,7 +691,7 @@ std::vector<RegexSegment> Highlighter::parseRegexSegments(const std::string &pat
 	return out;
 }
 
-std::shared_ptr<Rule> Highlighter::compileRule(const nlohmann::json& r) {
+std::shared_ptr<Rule> Highlighter::compileRule(const nlohmann::json& r, std::string id) {
 	auto rule = std::make_shared<Rule>();
 	
 	if (r.contains("patterns")
@@ -726,6 +708,8 @@ std::shared_ptr<Rule> Highlighter::compileRule(const nlohmann::json& r) {
 	// Optional metadata
 	if (r.contains("name")) {
 		rule->name = r["name"].get<std::string>();
+	}else if (id != ""){
+		rule->name = id;
 	}
 	
 	// 1) Include rule
@@ -815,13 +799,9 @@ std::shared_ptr<Rule> Highlighter::compileRule(const nlohmann::json& r) {
 		return rule;
 	}
 	
-	std::cout << "Could not parse rule - may want to add more logging.\n";
-	
 	// print json as string
 	
 	std::cout << r.dump(4) << std::endl;
-	
-	// 4) Fallback — you might want to log or throw here if nothing matched!
 	return rule;
 }
 

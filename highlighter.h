@@ -137,7 +137,7 @@ private:
 	ContextFrame root;
 	std::shared_ptr<Rule> self;
 	
-	std::shared_ptr<Rule> compileRule(const nlohmann::json& r);
+	std::shared_ptr<Rule> compileRule(const nlohmann::json& r, std::string id="");
 	Capture compileCapture(const nlohmann::json& j);
 	RegexInfo* compileRegex(std::string patternStr);
 	

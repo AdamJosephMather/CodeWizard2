@@ -2,7 +2,7 @@
 #include "application.h"
 #include "text_renderer.h"
 
-Scrollbar::Scrollbar(Widget* parent) : Widget(parent) {
+Scrollbar::Scrollbar(Widget* parent) : Widget(parent) { 
 	id = icu::UnicodeString::fromUTF8("scrollbar");
 }
 
@@ -114,8 +114,6 @@ bool Scrollbar::on_mouse_move_event() {
 	if (!is_visible || !getScrollInfo || start >= end || end > 1) {
 		return false;
 	}
-	
-	std::cout << "Holding: " << holding << std::endl;
 	
 	int mx = App::mouseX;
 	int my = App::mouseY;

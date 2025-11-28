@@ -28,17 +28,17 @@ void PanelHolder::position(int x, int y, int width, int height) {
 	if (hastwo) {
 		if (is_horizontal) {
 			c1_x = x;
-			c1_w = width*ratio-handle_short/2;
-			c2_x = x+c1_w+handle_short;
-			c2_w = width-c1_w-handle_short;
+			c1_w = width*ratio-width_h/2-handle_short/2;
+			c2_x = x+c1_w+handle_short+width_h;
+			c2_w = width-c1_w-handle_short/2-width_h/2;
 			
 			c1_y = c2_y = y;
 			c1_h = c2_h = height;
 		}else{
 			c1_y = y;
-			c1_h = height*ratio-handle_short/2;
-			c2_y = y+c1_h+handle_short;
-			c2_h = height-c1_h-handle_short;
+			c1_h = height*ratio-height_h/2-handle_short/2;
+			c2_y = y+c1_h+handle_short+height_h;
+			c2_h = height-c1_h-handle_short/2-height_h/2;
 			
 			c1_x = c2_x = x;
 			c1_w = c2_w = width;

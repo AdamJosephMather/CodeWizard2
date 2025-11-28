@@ -28,6 +28,10 @@ void Button::position(int x, int y, int width, int height) {
 		t_h = TextRenderer::get_text_height() + padding_button*2;
 	}
 	
+	if (hovered) {
+		App::expectedCursorType = 3;
+	}
+	
 	POSITIONER(this, x, y, width, height, t_w, t_h);
 }
 

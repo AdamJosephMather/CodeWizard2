@@ -93,6 +93,14 @@ public:
 	static std::unordered_map<std::string, Language> languagemap;
 	static std::unordered_map<std::string, LanguageServerClient*> lsp_client_map;
 	
+	static GLFWcursor* regularCursor;
+	static GLFWcursor* hResizeCursor;
+	static GLFWcursor* vResizeCursor;
+	static GLFWcursor* textCursor;
+	static GLFWcursor* handCursor;
+	static int currentCursorType;
+	static int expectedCursorType;
+	
 	static LanguageServerClient* getLSP(std::string lsp_command);
 	
 	static FileIndexResult INDEXED_FILES;

@@ -57,7 +57,7 @@ private:
 	bool first_hovered = false;
 	bool second_hovered = false;
 	
-	float handle_short = 4;
+	int handle_short = 4;
 	
 	int xpos_h;
 	int ypos_h;

@@ -62,8 +62,8 @@ private:
 	int xpos_h;
 	int ypos_h;
 	
-	float width_h;
-	float height_h;
+	int width_h;
+	int height_h;
 	
 	bool dragging_handle = false;
 };

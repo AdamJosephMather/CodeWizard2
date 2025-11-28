@@ -14,7 +14,7 @@ void Toast::position(int x, int y, int width, int height) {
 	t_y = y+pad;
 	
 	if (time != -1) {
-		if (glfwGetTime()-time > 2) {
+		if (glfwGetTime()-time > 4) {
 			time = -1;
 			App::time_till_regular += 2;
 		}

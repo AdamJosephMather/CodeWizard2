@@ -73,6 +73,8 @@ public:
 	static int rep_count;
 	static std::vector<std::vector<KeyboardEvent>> keyboard_events;
 	
+	static void checkForUpdates();
+	
 	static bool REQUESTING_STRING;
 	static StringGivenFunc ON_STRING_GIVEN;
 		

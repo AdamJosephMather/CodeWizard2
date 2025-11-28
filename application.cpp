@@ -32,13 +32,19 @@
 #include "curler.h"
 #include "myrect.h"
 #include "label.h"
+#include "updatechecker.h"
+
+
+
+int App::major_version = 2;
+int App::minor_version = 1;
+int App::patch_version = 9;
+
+
 
 bool App::darkmode = true;
 std::string App::empty = "";
 
-int App::major_version = 2;
-int App::minor_version = 1;
-int App::patch_version = 8;
 icu::UnicodeString App::vnum = icu::UnicodeString();
 std::string App::vnumstr = "";
 
@@ -322,7 +328,30 @@ bool App::Init() {
 		Curler::loadModel();
 	}
 	
+	std::thread t(checkForUpdates);
+	t.detach();
+//	checkForUpdates();
+	
 	return true;
+}
+
+void App::checkForUpdates() {
+	std::vector<int> latest = UpdateChecker::getLatestVersion();
+	if (latest.size() != 3) {
+		return;
+	}
+	
+	int f1 = latest[0]-major_version;
+	int f2 = latest[1]-minor_version;
+	int f3 = latest[2]-patch_version;
+	
+	if (f1 > 0 || (f1 == 0 && f2 > 0) || (f1 == 0 && f2 == 0 && f3 > 0)) {
+		displayToast(icu::UnicodeString::fromUTF8("There is a new version of CodeWizard available!"));
+	}else if (f1 < 0 || (f1 == 0 && f2 < 0) || (f1 == 0 && f2 == 0 && f3 < 0)) {
+		displayToast(icu::UnicodeString::fromUTF8("This CodeWizard is ahead of the latest release!"));
+	}else{
+//		displayToast(icu::UnicodeString::fromUTF8("This is the latest release!"));
+	}
 }
 
 LanguageServerClient* App::getLSP(std::string lsp_command) {

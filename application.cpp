@@ -126,6 +126,14 @@ double App::lastUpdate = 0;
 std::unordered_map<std::string, Language> App::languagemap = {};
 std::unordered_map<std::string, LanguageServerClient*> App::lsp_client_map = {};
 
+GLFWcursor* App::regularCursor = nullptr;
+GLFWcursor* App::hResizeCursor = nullptr;
+GLFWcursor* App::vResizeCursor = nullptr;
+GLFWcursor* App::textCursor = nullptr;
+GLFWcursor* App::handCursor = nullptr;
+int App::currentCursorType = 0;
+int App::expectedCursorType = 0;
+
 bool App::Init() {
 	icu::UnicodeString vnum = icu::UnicodeString::fromUTF8(std::to_string(App::major_version)+"."+std::to_string(App::minor_version)+"."+std::to_string(App::patch_version));
 	vnum.toUTF8String(vnumstr);
@@ -177,6 +185,27 @@ bool App::Init() {
 		std::cerr << "Failed to create window\n";
 		glfwTerminate();
 		return false;
+	}
+	
+	regularCursor = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+	if (!regularCursor) {
+		std::cerr << "Failed to create arrow cursor" << std::endl;
+	}
+	hResizeCursor = glfwCreateStandardCursor(GLFW_RESIZE_EW_CURSOR);
+	if (!hResizeCursor) {
+		std::cerr << "Failed to create resize ew cursor" << std::endl;
+	}
+	vResizeCursor = glfwCreateStandardCursor(GLFW_RESIZE_NS_CURSOR);
+	if (!vResizeCursor) {
+		std::cerr << "Failed to create resize ns cursor" << std::endl;
+	}
+	textCursor = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
+	if (!textCursor) {
+		std::cerr << "Failed to create ibeam cursor" << std::endl;
+	}
+	handCursor = glfwCreateStandardCursor(GLFW_POINTING_HAND_CURSOR);
+	if (!handCursor) {
+		std::cerr << "Failed to create hand cursor" << std::endl;
 	}
 	
 	glfwMakeContextCurrent(window);
@@ -600,10 +629,26 @@ void App::DoFullRenderWithoutInput() {
 		moveMouseToY = -1;
 	}
 	
+	expectedCursorType = 0; // must be reset every position call
 	std::lock_guard<std::mutex> lock(canMakeChanges); // this prevents separate threads (the lsp clients) from messing with shit while positioning/rendering
 	if (rootelement) {
 		rootelement->position(0, tb->t_h, WINDOW_WIDTH, WINDOW_HEIGHT-tb->t_h);
 		toastBox->position(0, tb->t_h, WINDOW_WIDTH, WINDOW_HEIGHT-tb->t_h);
+	}
+	
+	if (expectedCursorType != currentCursorType) {
+		if (expectedCursorType == 0 && regularCursor) {
+			glfwSetCursor(window, regularCursor);
+		}else if (expectedCursorType == 1 && hResizeCursor) {
+			glfwSetCursor(window, hResizeCursor);
+		}else if (expectedCursorType == 2 && vResizeCursor) {
+			glfwSetCursor(window, vResizeCursor);
+		}else if (expectedCursorType == 3 && handCursor) {
+			glfwSetCursor(window, handCursor);
+		}else if (expectedCursorType == 4 && textCursor) {
+			glfwSetCursor(window, textCursor);
+		}
+		currentCursorType = expectedCursorType;
 	}
 	
 	//render

@@ -22,19 +22,19 @@ std::vector<int> DIGITS_KEYS = {GLFW_KEY_0, GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3, 
 
 TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("TextEdit");
-
+	
 	POS_FUNC = fnct;
-
+	
 	Line ln = Line();
 	ln.line_text = icu::UnicodeString::fromUTF8("");
 	ln.tokens = {};
 	changed_during_update = true;
-
+	
 	lines = {ln}; // one empty line.
 	cursors = {Cursor()}; // we have to set these two before we init the undo history.
 	coppiedText = {};
 	historyThisUpdate = createHistory();
-
+	
 	draw_cursor = {};
 	draw_diagnostics = {};
 	
@@ -1103,7 +1103,7 @@ icu::UnicodeString TextEdit::getFullText() {
 bool TextEdit::handleInsertKey(int key, int scancode, int action, int mods) {
 	bool is_shift_held = ((mods & GLFW_MOD_SHIFT) != 0);
 	bool is_control_held = ((mods & GLFW_MOD_CONTROL) != 0);
-	bool is_alt_held = ((mods & GLFW_MOD_ALT) != 0);
+//	bool is_alt_held = ((mods & GLFW_MOD_ALT) != 0);
 
 	largereditblock = true;
 	bool donesomthing = false;
@@ -1931,11 +1931,17 @@ void TextEdit::position(int x, int y, int w, int h) {
 		draw_text.push_back(final_line);
 		draw_color.push_back(final_color);
 	}
-
+	
 	wasmode = mode;
-
+	
 	changed_during_update = false;
 	updateUndoHistory();
+	
+	const int mx = App::mouseX;
+	const int my = App::mouseY;
+	if (App::expectedCursorType == 0 && mx >= t_x && mx <= t_x+t_w && my >= t_y && my <= t_y+t_h) { // only set cursor if expected to be arrow right now
+		App::expectedCursorType = 4; // ibar
+	}
 }
 
 bool TextEdit::on_scroll_event(double xchange, double ychange) {

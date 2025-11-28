@@ -154,7 +154,7 @@ void Tabs::render() {
 		}
 		
 		screen_add_x = add_loc;
-		screen_add_y = add_loc+end_len;
+		screen_add_y = add_loc+end_len; // WHAT THE FUCK. SCREEN ADD Y?? THAT'S AN X COORD DUMBASS
 		
 		curx += end_len+5;
 	}
@@ -302,6 +302,10 @@ void Tabs::position(int x, int y, int w, int h) {
 	}
 	
 	Widget::position(x, y, w, h);
+	
+	if (hovering.indx != -1 || hoveringNewTab()) {
+		App::expectedCursorType = 3;
+	}
 }
 
 void Tabs::updateTab(TabInfo info) {

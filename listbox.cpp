@@ -93,6 +93,12 @@ void ListBox::position(int x, int y, int w, int h) {
 	t_h = (TextRenderer::get_text_height()+10)*toshow;
 	
 	pFunc(this);
+	
+	const int mx = App::mouseX;
+	const int my = App::mouseY;
+	if (mx >= t_x && mx <= t_x+t_w && my >= t_y && my <= t_y+t_h) {
+		App::expectedCursorType = 3;
+	}
 }
 
 bool ListBox::on_scroll_event(double xchange, double ychange) {

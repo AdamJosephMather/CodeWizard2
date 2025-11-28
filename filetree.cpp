@@ -163,31 +163,33 @@ bool FileTree::on_mouse_button_event(int button, int action, int mods){
 		return false;
 	}
 	
+	if (button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS) {
+		return false;
+	}
+	
 	for (auto vs : toRender) {
 		if (vs.x <= mx && vs.y <= my && vs.x+vs.w >= mx && vs.y+vs.h >= my) {
-			if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-				if (!vs.ts) {
-					break;
-				}
-				if (vs.ts->is_folder) {
-					auto it = std::find(openpaths.begin(), openpaths.end(), vs.ts->path);
-					if (it != openpaths.end()) {
-						openpaths.erase(it);
-					}else{
-						openpaths.push_back(vs.ts->path);
-					}
-				}else{
-					// let's open the file now
-					std::filesystem::path p(vs.ts->path);
-					App::openFromCMD(vs.ts->path, p.filename().string());
-				}
-				
-				deleteTree(root);
-				root = new TreeStructure();
-				root->path = App::settings->getValue("current_folder", getExecutableDir());
-				root->name = icu::UnicodeString::fromUTF8(std::filesystem::path(root->path).filename().string());
-				fillOutTree(root);
+			if (!vs.ts) {
+				break;
 			}
+			if (vs.ts->is_folder) {
+				auto it = std::find(openpaths.begin(), openpaths.end(), vs.ts->path);
+				if (it != openpaths.end()) {
+					openpaths.erase(it);
+				}else{
+					openpaths.push_back(vs.ts->path);
+				}
+			}else{
+				// let's open the file now
+				std::filesystem::path p(vs.ts->path);
+				App::openFromCMD(vs.ts->path, p.filename().string());
+			}
+			
+			deleteTree(root);
+			root = new TreeStructure();
+			root->path = App::settings->getValue("current_folder", getExecutableDir());
+			root->name = icu::UnicodeString::fromUTF8(std::filesystem::path(root->path).filename().string());
+			fillOutTree(root);
 			break;
 		}
 	}

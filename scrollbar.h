@@ -21,6 +21,8 @@ public:
 	
 	bool on_mouse_button_event(int button, int action, int mods) override;
 	bool on_mouse_move_event() override;
+	
+	void setErrors(std::vector<double> r, std::vector<double> o, std::vector<double> b);
 private:
 	bool hovering = false;
 	double start = 0;
@@ -33,4 +35,8 @@ private:
 	int r_y = 0;
 	int r_w = 0;
 	int r_h = 0;
+	
+	std::vector<double> red = {};
+	std::vector<double> orange = {};
+	std::vector<double> blue = {};
 };

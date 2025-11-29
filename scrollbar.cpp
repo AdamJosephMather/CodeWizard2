@@ -16,6 +16,27 @@ void Scrollbar::render() {
 	}else{
 		App::DrawRoundedRect(r_x+2, r_y+2, r_w-4, r_h-4, (bar_width-4)/2.0, App::theme.hover_background_color);
 	}
+	
+	int errHeight = bar_width / 3;
+	
+	for (double r : red) {
+		int pos = t_y + (r * t_h);
+		App::DrawRect(r_x, pos, r_w, errHeight, App::theme.error_color);
+	}
+	for (double r : orange) {
+		int pos = t_y + (r * t_h);
+		App::DrawRect(r_x, pos, r_w, errHeight, App::theme.warning_color);
+	}
+	for (double r : blue) {
+		int pos = t_y + (r * t_h);
+		App::DrawRect(r_x, pos, r_w, errHeight, App::theme.suggestion_color);
+	}
+}
+
+void Scrollbar::setErrors(std::vector<double> r, std::vector<double> o, std::vector<double> b) {
+	red = r;
+	orange = o;
+	blue = b;
 }
 
 void Scrollbar::position(int x, int y, int width, int height) {

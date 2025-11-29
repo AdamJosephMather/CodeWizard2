@@ -955,6 +955,7 @@ bool CodeEdit::on_char_event(unsigned int keycode) {
 	}
 	
 	if (FILE_BROKEN_STATE) { return broken_state_menu->on_char_event(keycode); }
+	if (REQUESTING_FIXIT) { return fixit_request_menu->on_char_event(keycode); }
 	
 	if (App::activeLeafNode != hoverbox) {
 		if (hoverbox->parent == this) {

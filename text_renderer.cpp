@@ -1,8 +1,3 @@
-// text_renderer.cpp (FreeType-based implementation)
-// Replaces stb_truetype with FreeType for higher‑quality glyph rasterization while
-// preserving the external TextRenderer API and baked‑atlas workflow.
-// Build note: link against freetype (e.g. via vcpkg install freetype).
-
 #include "text_renderer.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -12,10 +7,6 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-// ────────────────────────────────────────────────────────────────────────────────
-// Internal data structures mimicking stbtt_packedchar / stbtt_aligned_quad so
-// that the calling code can stay almost unchanged.
-// ────────────────────────────────────────────────────────────────────────────────
 struct PackedChar {
 	unsigned short x0, y0, x1, y1; // bounding box in atlas
 	float xoff, yoff, xadvance;    // layout metrics (PX)
@@ -62,9 +53,6 @@ struct RangeInfo {
 	int offset;  // starting index in cdata[]
 };
 
-// ────────────────────────────────────────────────────────────────────────────────
-// Globals (kept similar to original for minimal surface‑level change)
-// ────────────────────────────────────────────────────────────────────────────────
 static FT_Library ftLib = nullptr;     // shared FreeType handle
 static FT_Face    ftFace = nullptr;    // font face currently active
 static float      font_size = 19.0f;   // px
@@ -86,16 +74,10 @@ static int lookup_packedchar_index(int cp)
 	return -1;
 }
 
-// ────────────────────────────────────────────────────────────────────────────────
-// Public API (unchanged signatures)
-// ────────────────────────────────────────────────────────────────────────────────
 void TextRenderer::set_font_size(float sz) { font_size = sz; }
 
 bool TextRenderer::init_font(const char* fontPath)
 {
-	// --------------------------------------------------------------------------
-	// Load font file into memory
-	// --------------------------------------------------------------------------
 	std::ifstream fontFile(fontPath, std::ios::binary | std::ios::ate);
 	if (!fontFile) {
 		std::cerr << "Failed to load font\n";
@@ -109,9 +91,6 @@ bool TextRenderer::init_font(const char* fontPath)
 		return false;
 	}
 
-	// --------------------------------------------------------------------------
-	// FreeType setup (one‑time per process)
-	// --------------------------------------------------------------------------
 	if (!ftLib) {
 		if (FT_Init_FreeType(&ftLib) != 0) {
 			std::cerr << "FT_Init_FreeType failed\n";
@@ -134,9 +113,6 @@ bool TextRenderer::init_font(const char* fontPath)
 		return false;
 	}
 
-	// --------------------------------------------------------------------------
-	// Prepare atlas and glyph packing
-	// --------------------------------------------------------------------------
 	std::vector<unsigned char> atlas(TEX_W * TEX_H, 0); // 8‑bit alpha
 
 	struct Range { int first, count; };
@@ -231,9 +207,6 @@ bool TextRenderer::init_font(const char* fontPath)
 		}
 	}
 
-	// --------------------------------------------------------------------------
-	// Create OpenGL texture (white RGB, atlas alpha)
-	// --------------------------------------------------------------------------
 	std::vector<unsigned char> rgba(TEX_W * TEX_H * 4);
 	for (int i = 0; i < TEX_W * TEX_H; ++i) {
 		rgba[i*4+0] = 255;
@@ -263,9 +236,6 @@ bool TextRenderer::init_font(const char* fontPath)
 //		}
 //	}
 
-	// --------------------------------------------------------------------------
-	// Layout constants (monospaced assumption as in original)
-	// --------------------------------------------------------------------------
 	int sampleIdx = lookup_packedchar_index('Q'); // pick representative char
 	if (sampleIdx < 0) sampleIdx = 0;
 	TEXT_WIDTH = static_cast<int>(cdata[sampleIdx].xadvance + 0.5f);

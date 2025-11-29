@@ -59,11 +59,11 @@ private:
 	
 	int handle_short = 4;
 	
-	int xpos_h;
-	int ypos_h;
+	int xpos_h = 0;
+	int ypos_h = 0;
 	
-	int width_h;
-	int height_h;
+	int width_h = 0;
+	int height_h = 0;
 	
 	bool dragging_handle = false;
 };

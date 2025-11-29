@@ -1,6 +1,28 @@
 cmake_minimum_required(VERSION 3.10)
 project(CodeWizard)
 
+# debug...
+
+# if (MSVC)
+# 	message(STATUS "Building with MSVC AddressSanitizer enabled")
+# 
+# 	# MUST use dynamic debug CRT for ASan
+# 	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebugDLL")
+# 
+# 	# Compile flags
+# 	add_compile_options(
+# 		/fsanitize=address   # Enable ASan
+# 		/Zi                  # Full PDB debug info
+# 	)
+# 
+# 	# Link flags
+# 	add_link_options(
+# 		/fsanitize=address   # ASan runtime
+# 		/INCREMENTAL:NO      # Required
+# 		/DEBUG:FULL          # Required to resolve addresses to line numbers
+# 	)
+# endif()
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 

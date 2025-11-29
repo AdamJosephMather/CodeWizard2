@@ -57,26 +57,26 @@ bool BrokenStateMenu::on_key_event(int key, int scancode, int action, int mods) 
 		return false;
 	}
 	
+	return false;
+}
+
+bool BrokenStateMenu::on_char_event(unsigned int codepoint) {
+	if (!is_visible || !parent) {
+		return false;
+	}
+	
 	if (char_1 == char_2) {
 		return true;
 	}
 	
-	key = std::tolower(key);
+	char input_char = std::tolower(static_cast<char>(codepoint));
 	
-	if (action == GLFW_RELEASE && key == char_1) {
+	if (input_char == char_1) {
 		first_callback();
 		return true;
-	}else if (action == GLFW_PRESS && key == char_2) {
+	} else if (input_char == char_2) {
 		second_callback();
 		return true;
-	}
-	
-	return true;
-}
-
-bool BrokenStateMenu::on_char_event(unsigned int keycode) {
-	if (!is_visible || !parent) {
-		return false;
 	}
 	
 	return true;

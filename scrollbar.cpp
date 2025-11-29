@@ -70,6 +70,10 @@ void Scrollbar::position(int x, int y, int width, int height) {
 		t_y = parent->t_y;
 		t_h = parent->t_h;
 	}
+	
+	if (hovering) {
+		App::expectedCursorType = 0;
+	}
 }
 
 bool Scrollbar::on_mouse_button_event(int button, int action, int mods) {

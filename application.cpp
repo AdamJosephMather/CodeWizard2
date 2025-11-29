@@ -38,7 +38,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 1;
-int App::patch_version = 9;
+int App::patch_version = 10;
 
 
 
@@ -137,8 +137,8 @@ GLFWcursor* App::hResizeCursor = nullptr;
 GLFWcursor* App::vResizeCursor = nullptr;
 GLFWcursor* App::textCursor = nullptr;
 GLFWcursor* App::handCursor = nullptr;
-int App::currentCursorType = 0;
-int App::expectedCursorType = 0;
+int App::currentCursorType = -1;
+int App::expectedCursorType = -1;
 
 bool App::Init() {
 	icu::UnicodeString vnum = icu::UnicodeString::fromUTF8(std::to_string(App::major_version)+"."+std::to_string(App::minor_version)+"."+std::to_string(App::patch_version));
@@ -151,6 +151,7 @@ bool App::Init() {
 		int new_h = TextRenderer::get_text_height()+text_padding*2;
 		w->t_y = w->t_y+w->t_h/2-(new_h/2);
 		w->t_h = new_h;
+		STRING_REQUEST_RECTANGLE->position(w->t_x, w->t_y, w->t_w, w->t_h);
 	});
 	
 	STRING_REQUEST_RECTANGLE = new MyRect(nullptr, [&](Widget* w){
@@ -658,7 +659,7 @@ void App::DoFullRenderWithoutInput() {
 		moveMouseToY = -1;
 	}
 	
-	expectedCursorType = 0; // must be reset every position call
+	expectedCursorType = -1; // must be reset every position call
 	std::lock_guard<std::mutex> lock(canMakeChanges); // this prevents separate threads (the lsp clients) from messing with shit while positioning/rendering
 	if (rootelement) {
 		rootelement->position(0, tb->t_h, WINDOW_WIDTH, WINDOW_HEIGHT-tb->t_h);
@@ -666,7 +667,7 @@ void App::DoFullRenderWithoutInput() {
 	}
 	
 	if (expectedCursorType != currentCursorType) {
-		if (expectedCursorType == 0 && regularCursor) {
+		if ((expectedCursorType == 0 || expectedCursorType == -1) && regularCursor) {
 			glfwSetCursor(window, regularCursor);
 		}else if (expectedCursorType == 1 && hResizeCursor) {
 			glfwSetCursor(window, hResizeCursor);
@@ -775,8 +776,8 @@ void App::ReplaceWith(Widget* existing, Widget* replacement) {
 }
 
 void App::Run() {
-	STRING_REQUEST_TEXTEDIT->background_color = theme.overlay_background_color;
 	STRING_REQUEST_RECTANGLE->background_color = theme.overlay_background_color;
+	STRING_REQUEST_TEXTEDIT->background_color = theme.overlay_background_color;
 	STRING_REQUEST_LABEL->background_color = theme.overlay_background_color;
 	
 	commandUnfocused(); // sets the command bar text to start with
@@ -908,8 +909,8 @@ void App::mouse_button_callback(GLFWwindow* window, int button, int action, int 
 			return;
 		}else if (action == GLFW_PRESS){
 			REQUESTING_STRING = false;
-			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 			RemoveWidgetFromParent(STRING_REQUEST_RECTANGLE);
+			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 			RemoveWidgetFromParent(STRING_REQUEST_LABEL);
 			setActiveLeafNode(nullptr);
 		}else{
@@ -1029,8 +1030,8 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 	if (REQUESTING_STRING) {
 		if (key == GLFW_KEY_ENTER && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
 			REQUESTING_STRING = false;
-			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 			RemoveWidgetFromParent(STRING_REQUEST_RECTANGLE);
+			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 			RemoveWidgetFromParent(STRING_REQUEST_LABEL);
 			setActiveLeafNode(nullptr);
 			if (ON_STRING_GIVEN) {
@@ -1039,8 +1040,8 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 			return;
 		}if (key == GLFW_KEY_ESCAPE && (action == GLFW_PRESS || action == GLFW_REPEAT) && (STRING_REQUEST_TEXTEDIT->mode == 'n' || !settings->getValue("use_vim", false))) {
 			REQUESTING_STRING = false;
-			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 			RemoveWidgetFromParent(STRING_REQUEST_RECTANGLE);
+			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 			RemoveWidgetFromParent(STRING_REQUEST_LABEL);
 			if (beforeCommandLeafNode && rootelement->widgetexists(beforeCommandLeafNode)){
 				setActiveLeafNode(beforeCommandLeafNode);
@@ -1706,8 +1707,8 @@ void App::fillCmdBox() {
 void App::setActiveLeafNode(Widget* w) {
 	if (REQUESTING_STRING && w != STRING_REQUEST_TEXTEDIT) {
 		REQUESTING_STRING = false;
-		RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 		RemoveWidgetFromParent(STRING_REQUEST_RECTANGLE);
+		RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 		RemoveWidgetFromParent(STRING_REQUEST_LABEL);
 	}
 	

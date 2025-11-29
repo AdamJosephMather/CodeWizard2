@@ -76,6 +76,12 @@ void Label::position(int x, int y, int w, int h) {
 		POSITIONER(this);
 	}
 	
+	const int mx = App::mouseX;
+	const int my = App::mouseY;
+	if (mx >= t_x && mx <= t_x+t_w && my >= t_y && my <= t_y+t_h) {
+		App::expectedCursorType = 3;
+	}
+	
 	if (old_width == t_w) { return; }
 	old_width = t_w;
 	

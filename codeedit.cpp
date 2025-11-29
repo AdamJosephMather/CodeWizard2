@@ -1648,16 +1648,29 @@ void CodeEdit::publishDiagnostics(std::string filename, std::vector<std::string>
 	std::vector<icu::UnicodeString> errorsAsUnicode;
 	errorlines.clear();
 	
+	double max_line = textedit->lines.size() + textedit->t_h / TextRenderer::get_text_height();
+	std::vector<double> red;
+	std::vector<double> orange;
+	std::vector<double> blue;
+	
 	for (int i = 0; i < messages.size(); i++) {
 		int sl = startL[i];
 		int sc = startC[i];
 		int el = endL[i];
 		int ec = endC[i];
-		int sev = severities[i]-1;
+		int sev = severities[i]-1; // so glad I included comments last time... yeah right
 		if (sev == 3) { sev = 2; }
 		
 		if (sc == ec && sl == el) {
 			ec += 1;
+		}
+		
+		if (sev == 0) {
+			red.push_back(sl/max_line);
+		}else if (sev == 1) {
+			orange.push_back(sl/max_line);
+		}else if (sev == 2) {
+			blue.push_back(sl/max_line);
 		}
 		
 		icu::UnicodeString mes = icu::UnicodeString::fromUTF8(messages[i]);
@@ -1678,6 +1691,8 @@ void CodeEdit::publishDiagnostics(std::string filename, std::vector<std::string>
 			textedit->lines[l].diagnostics.push_back({ mes, srt, end, sev });
 		}
 	}
+	
+	textedit->scrollbar_v->setErrors(red, orange, blue);
 	
 	// error box bottom right
 	

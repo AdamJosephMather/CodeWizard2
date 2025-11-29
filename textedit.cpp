@@ -1939,7 +1939,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 	
 	const int mx = App::mouseX;
 	const int my = App::mouseY;
-	if (App::expectedCursorType == 0 && mx >= t_x && mx <= t_x+t_w && my >= t_y && my <= t_y+t_h) { // only set cursor if expected to be arrow right now
+	if (App::expectedCursorType == -1 && mx >= t_x && mx <= t_x+t_w && my >= t_y && my <= t_y+t_h) { // only set cursor if expected to be arrow right now
 		App::expectedCursorType = 4; // ibar
 	}
 }

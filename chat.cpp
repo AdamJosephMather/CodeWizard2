@@ -7,7 +7,7 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Chat");
 	
 	querybox = new TextEdit(this, [](Widget*){});
-//	querybox->background_color = App::theme.extras_background_color;
+	querybox->border = true;
 }
 
 void Chat::request_close(close_callback_type callback) {
@@ -21,12 +21,10 @@ void Chat::position(int x, int y, int width, int height) {
 	t_y = y;
 	
 	int the_y = t_y+t_h;
-	
-	int bxsz = 4*TextRenderer::get_text_height()+App::text_padding*2;
+	int bxsz = 4*TextRenderer::get_text_height();
 	the_y -= bxsz;
-	the_y -= App::text_padding;
 	
-	querybox->position(t_x + App::text_padding, the_y, t_w - App::text_padding*2, bxsz);
+	querybox->position(t_x, the_y, t_w, bxsz);
 	
 	the_y -= App::text_padding;
 	the_y -= scrolled_to;
@@ -82,7 +80,7 @@ void Chat::render() {
 		});
 	}
 	
-	App::DrawRect(t_x, querybox->t_y-App::text_padding, t_w, t_h+t_y-querybox->t_y+App::text_padding, App::theme.extras_background_color);
+//	App::DrawRect(t_x, querybox->t_y-App::text_padding, t_w, t_h+t_y-querybox->t_y+App::text_padding, App::theme.extras_background_color);
 	App::runWithSKIZ(querybox->t_x, querybox->t_y, querybox->t_w, querybox->t_h, [&](){
 		querybox->render();
 	});

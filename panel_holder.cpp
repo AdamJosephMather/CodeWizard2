@@ -22,23 +22,26 @@ void PanelHolder::position(int x, int y, int width, int height) {
 	t_h = height;
 	
 	handle_short = TextRenderer::get_text_width(1)*0.4;
+	if (handle_short & 1) {
+		handle_short += 1;
+	}
 	
 	hastwo = (children.size() == 2);
 	
 	if (hastwo) {
 		if (is_horizontal) {
 			c1_x = x;
-			c1_w = width*ratio-width_h/2-handle_short/2;
-			c2_x = x+c1_w+handle_short+width_h;
-			c2_w = width-c1_w-handle_short/2-width_h/2;
+			c1_w = width*ratio-width_h;
+			c2_x = x + c1_w + width_h * 2;
+			c2_w = width - c1_w - width_h * 2;
 			
 			c1_y = c2_y = y;
 			c1_h = c2_h = height;
 		}else{
 			c1_y = y;
-			c1_h = height*ratio-height_h/2-handle_short/2;
-			c2_y = y+c1_h+handle_short+height_h;
-			c2_h = height-c1_h-handle_short/2-height_h/2;
+			c1_h = height * ratio - height_h;
+			c2_y = y + c1_h + height_h * 2;
+			c2_h = height - c1_h - height_h * 2;
 			
 			c1_x = c2_x = x;
 			c1_w = c2_w = width;
@@ -132,13 +135,13 @@ void PanelHolder::position(int x, int y, int width, int height) {
 			width_h = t_w - handle_short * 2;
 			height_h = handle_short;
 		}
-	}
-	
-	if (dragging_handle || hoveringHandle()) {
-		if (is_horizontal) {
-			App::expectedCursorType = 1;
-		}else{
-			App::expectedCursorType = 2;
+		
+		if (dragging_handle || hoveringHandle()) {
+			if (is_horizontal) {
+				App::expectedCursorType = 1;
+			}else{
+				App::expectedCursorType = 2;
+			}
 		}
 	}
 }
@@ -267,9 +270,9 @@ void PanelHolder::render() {
 	// draw the handles
 	if (hastwo) {
 		if (is_horizontal) {
-			App::DrawRect(xpos_h-handle_short/2, t_y, width_h+handle_short, t_h, App::theme.main_background_color);
+			App::DrawRect(c1_x+c1_w, t_y, width_h*2, t_h, App::theme.main_background_color);
 		}else{
-			App::DrawRect(t_x, ypos_h-handle_short/2, t_w, height_h+handle_short, App::theme.main_background_color);
+			App::DrawRect(t_x, c1_y+c1_h, t_w, height_h*2, App::theme.main_background_color);
 		}
 		
 		if (dragging_handle || hoveringHandle()) {

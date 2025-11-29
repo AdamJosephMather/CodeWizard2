@@ -705,7 +705,6 @@ void CodeEdit::save() {
 				return;
 			}
 		}else if (was_in_a_file) { // there's an error and we were in the file - file must have been deleted. Clever me.
-			// time to start to work here
 			// the file did exist, but no longer does
 			FILE_BROKEN_STATE = true;
 			return;

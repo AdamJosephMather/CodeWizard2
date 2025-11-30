@@ -525,6 +525,8 @@ LineResult Highlighter::highlightLine(icu::UnicodeString input_string, TextMateI
 	std::string line_string = to_ascii_replacing_non_ascii(input_string);
 	line_string += "\n";
 	
+	std::cout << "Highlighting line: " << line_string << "\n";
+	
 	auto out = analizeSection(line_string, currentInfo, true);
 	
 	auto tokens = out.first;

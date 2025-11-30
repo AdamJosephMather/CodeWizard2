@@ -26,10 +26,13 @@ Editor::Editor(Widget* parent) : Widget(parent) {
 		
 		auto it = editors.find(info.id);
 		if (it != editors.end()) {
-			it->second->request_close([&](Widget* w){ // wait for it to delete itself
-				App::RemoveWidgetFromParent(w);
-				delete it->second;
-				editors.erase(it->first);
+			Widget* w = it->second;
+			
+			App::RemoveWidgetFromParent(w);
+			editors.erase(info.id);
+			
+			w->request_close([&](Widget* w){ // wait for it to delete itself
+				delete w;
 			});
 		}
 	};

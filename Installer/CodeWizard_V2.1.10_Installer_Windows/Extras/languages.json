@@ -70,7 +70,7 @@
 		"textmatefile": "%INSTALL_DIR%\\highlightingfiles\\Zig.tmLanguage.json",
 		"filetypes": ["zig", "zon"],
 		"lsp_command": "%INSTALL_DIR%\\pypls.exe",
-		"build_command": "cd /d %FILE_LOCATION% && cargo run"
+		"build_command": "cd /d %FILE_LOCATION% && zig build run"
 	}
 ]
 }

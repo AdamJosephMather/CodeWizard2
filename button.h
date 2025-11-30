@@ -22,6 +22,7 @@ public:
 	
 	bool transparent;
 	bool window_button;
+	bool execute_on_down = true;
 	
 	int padding_button = 5;
 	bool border = false;

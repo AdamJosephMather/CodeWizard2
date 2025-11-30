@@ -862,18 +862,22 @@ void App::Run() {
 		}
 	}
 
-	bool maximized = glfwGetWindowAttrib(window, GLFW_MAXIMIZED);
+	bool maximized = glfwGetWindowAttrib(window, GLFW_MAXIMIZED) == GLFW_TRUE;
+	bool iconified = glfwGetWindowAttrib(window, GLFW_ICONIFIED) == GLFW_TRUE;
+	
 	settings->setValue("window_maximized", maximized);
-
-	if (!maximized) {
+	
+	if (!maximized && !iconified) {
 		int x, y, w, h;
 		glfwGetWindowPos(window, &x, &y);
 		glfwGetWindowSize(window, &w, &h);
-		settings->setValue("window_x", max(0, x));
-		settings->setValue("window_y", max(0, y));
-		settings->setValue("window_width", max(300, w));
-		settings->setValue("window_height", max(250, h));
+	
+		settings->setValue("window_x",      max(0, x));
+		settings->setValue("window_y",      max(0, y));
+		settings->setValue("window_width",  max(500, w));
+		settings->setValue("window_height", max(300, h));
 	}
+	
 
 	glfwDestroyWindow(window);
 	glfwTerminate();

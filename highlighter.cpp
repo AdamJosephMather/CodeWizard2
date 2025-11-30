@@ -10,9 +10,9 @@ std::vector<std::vector<std::string>> matches = {
 	{"type"},
 	{"string"},
 	{"comment"},
+	{"name.function", "function-call", "variable.function", "support.function"},
 	{"variable", "paramater", "argument"},
-	{"name.function", "function-call"},
-	{"scope", "keyword"},
+	{"scope", "keyword", "storage"},
 	{"punctuation"},
 	{"literal", "number", "bool", "constant"}
 };
@@ -21,8 +21,8 @@ std::vector<int> mapsTo = {
 	4,
 	1,
 	2,
-	3,
 	5,
+	3,
 	6,
 	7,
 	8,
@@ -331,15 +331,21 @@ bool Highlighter::needsDelimiter(const std::string &pat) {
 }
 
 std::pair<std::vector<Token>,TextMateInfo> Highlighter::analizeSection(const std::string& section, TextMateInfo currentInfo, bool is_start_of_line) {
+//	std::cout << "Analizing...\n";
+	
 	bool need_to_find_patterns = true;
 	int handledUpTo = 0;
 	std::vector<Token> tokens = {};
 	bool on_start_of_scope = true;
 	
 	while (true) {
+//		std::cout << "While...\n";
+		
 		ContextFrame currentContext = currentInfo.contextStack.back();
 		
 		if (need_to_find_patterns) {
+//			std::cout << "Finding patterns...\n";
+			
 			activePatterns.clear();
 			fetchAllPatterns(currentContext.patterns);
 			need_to_find_patterns = false;
@@ -525,9 +531,11 @@ LineResult Highlighter::highlightLine(icu::UnicodeString input_string, TextMateI
 	std::string line_string = to_ascii_replacing_non_ascii(input_string);
 	line_string += "\n";
 	
-	std::cout << "Highlighting line: " << line_string << "\n";
+//	std::cout << "Highlighting line: " << line_string << "\n";
 	
 	auto out = analizeSection(line_string, currentInfo, true);
+	
+//	std::cout << "Analized";
 	
 	auto tokens = out.first;
 	currentInfo = out.second;

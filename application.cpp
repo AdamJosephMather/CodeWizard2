@@ -38,7 +38,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 1;
-int App::patch_version = 10;
+int App::patch_version = 11;
 
 
 const bool App::OBSCENE_DEBUGGING = false;

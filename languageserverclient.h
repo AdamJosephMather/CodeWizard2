@@ -10,11 +10,14 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
+#include <variant>
 
 // Forward declarations for JSON library (assuming nlohmann/json or similar)
 #include "json.hpp"
 #include "widget.h"
 using json = nlohmann::json;
+
+using LspId = std::variant<std::nullptr_t, int, std::string>;
 
 // Process wrapper class
 class Process {

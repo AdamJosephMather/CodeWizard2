@@ -20,7 +20,24 @@ std::string langID;
 std::string missingNext;
 std::string currentExecution;
 std::string fileRootURI;
-std::map<int, std::string> requestsMap;
+struct LspIdCompare {
+	bool operator()(const LspId& a, const LspId& b) const {
+		if (a.index() != b.index()) {
+			return a.index() < b.index();
+		}
+		if (std::holds_alternative<std::nullptr_t>(a)) {
+			return false; // null == null
+		}
+		if (std::holds_alternative<int>(a)) {
+			return std::get<int>(a) < std::get<int>(b);
+		}
+		if (std::holds_alternative<std::string>(a)) {
+			return std::get<std::string>(a) < std::get<std::string>(b);
+		}
+		return false;
+	}
+};
+std::map<LspId, std::string, LspIdCompare> requestsMap;
 json diagnostics;
 bool quitting = false;
 int shutdownId = -999;
@@ -451,9 +468,9 @@ void LanguageServerClient::initialize(const std::string &rootUri)
 		{"method", "initialize"},
 		{"params", params}
 	};
-
+	
 	sendMessage(message);
-
+	
 	if (failedToStart) {
 		if (logCallback) {
 			logCallback("Failed to start LSP - Ensure it's accessible via the command given.");
@@ -464,7 +481,7 @@ void LanguageServerClient::initialize(const std::string &rootUri)
 	// Wait for initialization
 	std::unique_lock<std::mutex> lock(initializeMutex);
 	initializeCondition.wait(lock, [this] { return initializeComplete.load(); });
-
+	
 	if (failedToStart) {
 		if (logCallback) {
 			logCallback("Failed to start LSP - Ensure it's accessible via the command given.");
@@ -479,7 +496,7 @@ void LanguageServerClient::initialize(const std::string &rootUri)
 	};
 
 	sendMessage(initializedMessage);
-
+	
 	json params2 = {
 		{"settings", {
 			{"python", {
@@ -506,9 +523,9 @@ void LanguageServerClient::initialize(const std::string &rootUri)
 		{"method", "workspace/didChangeConfiguration"},
 		{"params", params2}
 	};
-
+	
 	sendMessage(workspaceChanged);
-
+	
 	isInitialized = true;
 }
 
@@ -648,12 +665,12 @@ int LanguageServerClient::requestCompletion(const std::string& uri, int line, in
 
 	json message = {
 		{"jsonrpc", "2.0"},
-		{"id", requestId++},
+		{"id", requestId},
 		{"method", "textDocument/completion"},
 		{"params", params}
 	};
 
-	requestsMap[requestId-1] = "textDocument/completion";
+	requestsMap[requestId++] = "textDocument/completion";
 	sendMessage(message);
 	return requestId-1;
 }
@@ -678,12 +695,12 @@ int LanguageServerClient::requestHover(const std::string& uri, int line, int cha
 
 	json message = {
 		{"jsonrpc", "2.0"},
-		{"id", requestId++},
+		{"id", requestId},
 		{"method", "textDocument/hover"},
 		{"params", params}
 	};
 
-	requestsMap[requestId-1] = "textDocument/hover";
+	requestsMap[requestId++] = "textDocument/hover";
 	sendMessage(message);
 	return requestId-1;
 }
@@ -713,12 +730,12 @@ int LanguageServerClient::requestActions(const std::string& uri, int line, int c
 
 	json message = {
 		{"jsonrpc", "2.0"},
-		{"id", requestId++},
+		{"id", requestId},
 		{"method", "textDocument/codeAction"},
 		{"params", params}
 	};
 
-	requestsMap[requestId-1] = "textDocument/codeAction";
+	requestsMap[requestId++] = "textDocument/codeAction";
 	sendMessage(message);
 	
 	return requestId-1;
@@ -745,12 +762,12 @@ int LanguageServerClient::requestRename(const std::string& uri, int line, int ch
 
 	json message = {
 		{"jsonrpc", "2.0"},
-		{"id", requestId++},
+		{"id", requestId},
 		{"method", "textDocument/rename"},
 		{"params", params}
 	};
 
-	requestsMap[requestId-1] = "textDocument/rename";
+	requestsMap[requestId++] = "textDocument/rename";
 	sendMessage(message);
 	return requestId-1;
 }
@@ -800,12 +817,12 @@ int LanguageServerClient::requestGotoDefinition(const std::string& uri, int line
 
 	json message = {
 		{"jsonrpc", "2.0"},
-		{"id", requestId++},
+		{"id", requestId},
 		{"method", "textDocument/definition"},
 		{"params", params}
 	};
 
-	requestsMap[requestId-1] = "textDocument/definition";
+	requestsMap[requestId++] = "textDocument/definition";
 	sendMessage(message);
 	return requestId-1;
 }
@@ -817,20 +834,36 @@ void LanguageServerClient::onServerReadyRead()
 		if (response.is_null() || response.empty()) {
 			continue;
 		}
-
+		
 		if (response.contains("method") && response["method"] == "window/logMessage") {
 			continue;
 		}
-
-		int id = response.contains("id") ? response["id"].get<int>() : -1;
-
-		if (id == shutdownId && (!response.contains("method") || response["method"].is_null())) {
+		
+		LspId id = std::nullptr_t{};
+		if (response.contains("id")) {
+			if (response["id"].is_number_integer()) {
+				id = response["id"].get<int>();
+			} else if (response["id"].is_string()) {
+				id = response["id"].get<std::string>();
+			}
+		}
+		
+		auto LspId_to_int = [](const LspId& id) -> int {
+			if (std::holds_alternative<int>(id)) {
+				return std::get<int>(id);
+			}
+			return -1; // Or some other default/error value
+		};
+		
+		int int_id = LspId_to_int(id);
+		
+		if (int_id == shutdownId && (!response.contains("method") || response["method"].is_null())) {
 			alreadyDoneShutdownLoop = true;
 			shutdownComplete = true;
 			shutdownCondition.notify_all();
 			continue;
 		}
-
+		
 		// Handle initialize response
 		if (!isInitialized && response.contains("result") && response["result"].contains("capabilities")) {
 			auto serverCapabilities = response["result"]["capabilities"];
@@ -863,7 +896,7 @@ void LanguageServerClient::onServerReadyRead()
 			continue;
 		}
 
-		if (!isInitialized && id == initializeRequestId && (!response.contains("method") || response["method"].is_null())) {
+		if (!isInitialized && int_id == initializeRequestId && (!response.contains("method") || response["method"].is_null())) {
 			initializeComplete = true;
 			initializeCondition.notify_all();
 			if (initializeResponseReceivedCallback) {
@@ -871,18 +904,18 @@ void LanguageServerClient::onServerReadyRead()
 			}
 			continue;
 		}
-
+		
 		if (response.contains("error")) {
 			if (logCallback) {
 				logCallback("Error in response: " + response.dump());
 			}
 			continue;
 		}
-
+		
 		if (response.contains("method") && response["method"] == "workspace/configuration") {
 			json configResponse = {
 				{"jsonrpc", "2.0"},
-				{"id", id},
+				{"id", int_id},
 				{"result", json::array({json::object()})}
 			};
 			sendMessage(configResponse);
@@ -973,12 +1006,12 @@ void LanguageServerClient::onServerReadyRead()
 				}
 				
 				if (hoverInformationReceivedCallback) {
-					hoverInformationReceivedCallback(contents, type, id);
+					hoverInformationReceivedCallback(contents, type, int_id);
 				}
 				
 				for (auto w : connected_edits) {
 					if (auto ce = dynamic_cast<CodeEdit*>(w)) {
-						ce->hoverRecieved(contents, type, id);
+						ce->hoverRecieved(contents, type, int_id);
 					}
 				}
 			}
@@ -987,7 +1020,7 @@ void LanguageServerClient::onServerReadyRead()
 			if (response.contains("result")) {
 				for (auto w : connected_edits) {
 					if (auto ce = dynamic_cast<CodeEdit*>(w)) {
-						ce->actionsReceived(id, response["result"]);
+						ce->actionsReceived(int_id, response["result"]);
 					}
 				}
 				
@@ -1015,7 +1048,7 @@ void LanguageServerClient::onServerReadyRead()
 				
 				for (auto w : connected_edits) {
 					if (auto ce = dynamic_cast<CodeEdit*>(w)) {
-						ce->gotoDef(id, line1, character1, line, character, locFile);
+						ce->gotoDef(int_id, line1, character1, line, character, locFile);
 					}
 				}
 			}
@@ -1023,7 +1056,7 @@ void LanguageServerClient::onServerReadyRead()
 		} else if (responseType == "textDocument/rename") {
 			for (auto w : connected_edits) {
 				if (auto ce = dynamic_cast<CodeEdit*>(w)){
-					ce->renameReceived(id, result);
+					ce->renameReceived(int_id, result);
 				}
 			}
 			if (renameReceivedCallback) {
@@ -1031,7 +1064,7 @@ void LanguageServerClient::onServerReadyRead()
 			}
 		} else if (responseType == "textDocument/completion") {
 			auto items = result.contains("items") ? result["items"] : json::array();
-
+			
 			std::vector<std::string> completions;
 			std::vector<std::string> sortTexts;
 
@@ -1071,22 +1104,22 @@ void LanguageServerClient::onServerReadyRead()
 				}
 
 				if (completionReceivedCallback) {
-					completionReceivedCallback(outLst, id);
+					completionReceivedCallback(outLst, int_id);
 				}
 				
 				for (auto w : connected_edits) {
 					if (auto ce = dynamic_cast<CodeEdit*>(w)) {
-						ce->completionRecieved(outLst, id);
+						ce->completionRecieved(outLst, int_id);
 					}
 				}
 			} else {
 				if (completionReceivedCallback) {
-					completionReceivedCallback(completions, id);
+					completionReceivedCallback(completions, int_id);
 				}
 				
 				for (auto w : connected_edits) {
 					if (auto ce = dynamic_cast<CodeEdit*>(w)) {
-						ce->completionRecieved(completions, id);
+						ce->completionRecieved(completions, int_id);
 					}
 				}
 			}

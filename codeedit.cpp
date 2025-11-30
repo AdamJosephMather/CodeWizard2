@@ -342,6 +342,8 @@ void CodeEdit::detectLanguage() {
 	
 	if (lsp != ""){
 		lsp_client = App::getLSP(lsp);
+		std::cout << "Got an LSP\n";
+		
 		if (lsp_client) {
 			bool foundit = false;
 			for (auto c : lsp_client->connected_edits) {
@@ -350,11 +352,18 @@ void CodeEdit::detectLanguage() {
 					break;
 				}
 			}
+			
+			std::cout << "Foundit? " << foundit << "\n";
+			
 			if (!foundit) {
+				std::cout << "Let's connect...\n";
 				lsp_client->connected_edits.push_back(this);
+				std::cout << "DOne!\n";
 			}
 		}
 	}
+	
+	std::cout << "Language stuff setup\n";
 	
 	if (textmatefile == "") {
 		return;
@@ -398,7 +407,7 @@ int CodeEdit::analyzeForFixit_on_lines(const std::vector<Line>& lines) {
 }
 
 void CodeEdit::openFile() {
-	madeChangeBetweenSaves = true;
+	madeChangeBetweenSaves = false;
 	was_in_a_file = true;
 	std::unique_lock<std::mutex> lock(App::canMakeChanges, std::try_to_lock);
 	std::unique_lock<std::mutex> lock2(saving_lock);
@@ -432,6 +441,7 @@ void CodeEdit::openFile() {
 		last_file_mod_time = std::filesystem::last_write_time(path);
 		
 		textedit->setFullText(text);
+		madeChangeBetweenSaves = false;
 		
 		int indt = analyzeForFixit_on_lines(textedit->lines);
 		if (indt != 0) {
@@ -671,6 +681,7 @@ void CodeEdit::overwrite_file() {
 	
 	std::error_code ec;
 	last_file_mod_time = std::filesystem::last_write_time(file->filepath, ec); // a hack to think we edited the file instead of whatever happened to it.
+	madeChangeBetweenSaves = true;
 	was_in_a_file = false;
 	save();
 }

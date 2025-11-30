@@ -48,9 +48,16 @@ bool Button::on_mouse_button_event(int button, int action, int mods) {
 		return false;
 	}
 	
-	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-		ONCLICK(this);
-		return true;
+	if (execute_on_down) {
+		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+			ONCLICK(this);
+			return true;
+		}
+	}else {
+		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
+			ONCLICK(this);
+			return true;
+		}
 	}
 	
 	return false;

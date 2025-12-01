@@ -63,8 +63,11 @@ void Scrollbar::position(int x, int y, int width, int height) {
 	int far_bottom = parent->t_y+parent->t_h;
 	
 	if (horizontal) {
-		int width = (double)parent->t_w * (end-start);
-		int start_x = parent->t_x + (double)parent->t_w*start;
+		double minsize = (double)TextRenderer::get_text_height()*3;
+		addToTheEnd = max(0, minsize-(end*t_w-start*t_w));
+		
+		int width = (double)parent->t_w * (end-start) + addToTheEnd;
+		int start_x = parent->t_x + (double)(parent->t_w-addToTheEnd)*start;
 		
 		r_x = start_x;
 		r_y = far_bottom-bar_width;
@@ -77,8 +80,11 @@ void Scrollbar::position(int x, int y, int width, int height) {
 		t_y = r_y;
 		t_h = r_h;
 	}else{
-		int height = (double)parent->t_h * (end-start);
-		int start_y = parent->t_y + (double)parent->t_h*start;
+		double minsize = (double)TextRenderer::get_text_height()*3;
+		addToTheEnd = max(0, minsize-(end-start)*t_h);
+		
+		int height = (double)parent->t_h * (end-start) + addToTheEnd;
+		int start_y = parent->t_y + (double)(parent->t_h-addToTheEnd)*start;
 		
 		r_x = far_right-bar_width;
 		r_y = start_y;
@@ -160,7 +166,7 @@ bool Scrollbar::on_mouse_move_event() {
 			newvalue = t_x+t_w-r_w;
 		}
 		
-		scrollTo((double)(newvalue-t_x)/(double)t_w);
+		scrollTo((double)(newvalue-t_x)/(double)(t_w-addToTheEnd));
 	}else{
 		double newvalue = my+offset;
 		
@@ -170,7 +176,7 @@ bool Scrollbar::on_mouse_move_event() {
 			newvalue = t_y+t_h-r_h;
 		}
 		
-		scrollTo((double)(newvalue-t_y)/(double)t_h);
+		scrollTo((double)(newvalue-t_y)/(double)(t_h-addToTheEnd));
 	}
 	
 	return true;

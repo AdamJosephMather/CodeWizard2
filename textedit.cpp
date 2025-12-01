@@ -47,17 +47,6 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 		out[0] = scrolled_to_vert/((double)lines.size()+screenlines-1);
 		out[1] = end_line/((double)lines.size()+screenlines-1);
 		
-		double minsize = (double)TextRenderer::get_text_height()*3 / ((double)t_h);
-		
-		if (out[1]-out[0] < minsize) { // it's small
-			out[1] = out[0] + minsize;
-			if (out[1] > 1) {
-				double diff = out[1]-1;
-				out[0] -= diff;
-				out[1] -= diff;
-			}
-		}
-		
 		return out;
 	};
 	scrollbar_v->scrollTo = [&](double newval){
@@ -79,17 +68,6 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 		
 		out[0] = scrolled_to_horz / ((double)max_scroll_horz+screenchars-1);
 		out[1] = end_char/((double)max_scroll_horz+screenchars-1);
-		
-		double minsize = (double)TextRenderer::get_text_height()*3 / ((double)t_w);
-		
-		if (out[1]-out[0] < minsize) { // it's small
-			out[1] = out[0] + minsize;
-			if (out[1] > 1) {
-				double diff = out[1]-1;
-				out[0] -= diff;
-				out[1] -= diff;
-			}
-		}
 		
 		return out;
 	};

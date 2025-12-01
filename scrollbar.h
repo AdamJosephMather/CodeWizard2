@@ -28,6 +28,7 @@ private:
 	double start = 0;
 	double end = 0;
 	bool holding = false;
+	double addToTheEnd = 0.0;
 	int offset = 0;
 	
 	int bar_width = 0;

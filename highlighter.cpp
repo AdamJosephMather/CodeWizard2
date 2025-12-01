@@ -82,6 +82,7 @@ bool Highlighter::loadGrammarFile(const std::string& path) {
 	
 	self = std::make_shared<Rule>();
 	self->type_of_rule = GROUP;
+	self->id = GLOBAL_RULE_ID++;
 	self->name = "self";
 	
 	for (auto p : patterns) {
@@ -104,13 +105,8 @@ bool Highlighter::loadGrammarFile(const std::string& path) {
 	return true;
 }
 
-bool Highlighter::alreadyFoundPattern(std::shared_ptr<Rule> pattern) {
-	for (std::shared_ptr<Rule> p : activePatterns) {
-		if (p == pattern) {
-			return true;
-		}
-	}
-	return false;
+inline bool Highlighter::alreadyFoundPattern(std::shared_ptr<Rule> pattern) {
+	return activePatternsSet.find(pattern->id) != activePatternsSet.end();
 }
 
 void Highlighter::fetchAllPatterns(const std::vector<std::shared_ptr<Rule>>& patterns) {
@@ -132,6 +128,7 @@ void Highlighter::fetchAllPatterns(const std::vector<std::shared_ptr<Rule>>& pat
 				}
 			}else{
 				activePatterns.push_back(p);
+				activePatternsSet.insert(p->id);
 			}
 		}
 	}
@@ -260,7 +257,7 @@ Match Highlighter::findEarliestPattern(const std::string& line, ContextFrame cur
 		
 		int r = onig_search(
 			to_find,
-			str, end,     // entire buffer
+			str, end,     // up to the start of the first found (or entire)
 			str+handledUpTo, end,     // search from str to end
 			region,
 			ONIG_OPTION_NONE
@@ -331,21 +328,16 @@ bool Highlighter::needsDelimiter(const std::string &pat) {
 }
 
 std::pair<std::vector<Token>,TextMateInfo> Highlighter::analizeSection(const std::string& section, TextMateInfo currentInfo, bool is_start_of_line) {
-//	std::cout << "Analizing...\n";
-	
 	bool need_to_find_patterns = true;
 	int handledUpTo = 0;
 	std::vector<Token> tokens = {};
 	bool on_start_of_scope = true;
 	
 	while (true) {
-//		std::cout << "While...\n";
-		
 		ContextFrame currentContext = currentInfo.contextStack.back();
 		
 		if (need_to_find_patterns) {
-//			std::cout << "Finding patterns...\n";
-			
+			activePatternsSet.clear();
 			activePatterns.clear();
 			fetchAllPatterns(currentContext.patterns);
 			need_to_find_patterns = false;
@@ -703,6 +695,7 @@ std::vector<RegexSegment> Highlighter::parseRegexSegments(const std::string &pat
 
 std::shared_ptr<Rule> Highlighter::compileRule(const nlohmann::json& r, std::string id) {
 	auto rule = std::make_shared<Rule>();
+	rule->id = GLOBAL_RULE_ID++;
 	
 	if (r.contains("patterns")
 		&& !r.contains("include")

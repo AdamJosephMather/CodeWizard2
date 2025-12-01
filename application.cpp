@@ -1267,7 +1267,7 @@ void App::resize_callback(GLFWwindow* window, int width, int height) {
 	}
 	
 	rerender = true;
-	forceWaitTime = true;
+	// forceWaitTime = true;
 }
 
 void App::setTheme(Theme t) {

@@ -89,8 +89,8 @@ void TerminalWidget::render() {
 	uint8_t bgg = bgcell.bg_green;
 	uint8_t bbg = bgcell.bg_blue;
 	
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
-	App::DrawRect(t_x+App::text_padding, t_y+App::text_padding, TextRenderer::get_text_width(prev_w_cells), prev_h_cells*TextRenderer::get_text_height(), bgr, bgg, bbg);
+	App::DrawRect(t_x, t_y, t_w, t_h, bgr, bgg, bbg);
+//	App::DrawRect(t_x+App::text_padding, t_y+App::text_padding, TextRenderer::get_text_width(prev_w_cells), prev_h_cells*TextRenderer::get_text_height(), bgr, bgg, bbg);
 	
 	UChar32 empty = U' ';
 	

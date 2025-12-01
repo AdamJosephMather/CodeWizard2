@@ -124,15 +124,15 @@ void PanelHolder::position(int x, int y, int width, int height) {
 	if (hastwo) {
 		if (is_horizontal) {
 			xpos_h = t_x + t_w*ratio - handle_short/2;
-			ypos_h = t_y + handle_short;
+			ypos_h = t_y + handle_short/2;
 			
 			width_h = handle_short;
-			height_h = t_h - handle_short * 2;
+			height_h = t_h - handle_short;
 		}else{
-			xpos_h = t_x + handle_short;
+			xpos_h = t_x + handle_short/2;
 			ypos_h = t_y + t_h*ratio - handle_short/2;
 			
-			width_h = t_w - handle_short * 2;
+			width_h = t_w - handle_short;
 			height_h = handle_short;
 		}
 		

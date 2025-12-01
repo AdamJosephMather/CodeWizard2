@@ -63,7 +63,6 @@ public:
 	static std::string vnumstr;
 	
 	static bool darkmode;
-	const static bool OBSCENE_DEBUGGING;
 	
 	static std::string empty;
 	static void setSynColor(Theme* t, std::string name, int id);

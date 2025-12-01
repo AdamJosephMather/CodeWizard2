@@ -38,10 +38,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 1;
-int App::patch_version = 11;
-
-
-const bool App::OBSCENE_DEBUGGING = false;
+int App::patch_version = 12;
 
 
 bool App::darkmode = true;
@@ -143,8 +140,6 @@ int App::currentCursorType = -1;
 int App::expectedCursorType = -1;
 
 bool App::Init() {
-	if (OBSCENE_DEBUGGING) { std::cout << "OD - Entered Init\n"; }
-	
 	icu::UnicodeString vnum = icu::UnicodeString::fromUTF8(std::to_string(App::major_version)+"."+std::to_string(App::minor_version)+"."+std::to_string(App::patch_version));
 	vnum.toUTF8String(vnumstr);
 	WINDOW_TITLE += vnumstr;
@@ -337,14 +332,10 @@ bool App::Init() {
 	t.detach();
 //	checkForUpdates();
 	
-	if (OBSCENE_DEBUGGING) { std::cout << "OD - Exit Init\n"; }
-	
 	return true;
 }
 
 void App::checkForUpdates() {
-	if (OBSCENE_DEBUGGING) { std::cout << "OD - Entered Check For Updates\n"; }
-	
 	std::vector<int> latest = UpdateChecker::getLatestVersion();
 	if (latest.size() != 3) {
 		return;
@@ -361,13 +352,9 @@ void App::checkForUpdates() {
 	}else{
 //		displayToast(icu::UnicodeString::fromUTF8("This is the latest release!"));
 	}
-	
-	if (OBSCENE_DEBUGGING) { std::cout << "OD - Exited Check For Updates\n"; }
 }
 
 LanguageServerClient* App::getLSP(std::string lsp_command) {
-	std::cout << "getLSP - " << lsp_command << "\n";
-	
 	if (lsp_client_map.find(lsp_command) != lsp_client_map.end()) {
 		return lsp_client_map[lsp_command];
 	}
@@ -376,7 +363,6 @@ LanguageServerClient* App::getLSP(std::string lsp_command) {
 	});
 	
 	std::string folder = settings->getValue("current_folder", getExecutableDir());
-	std::cout << "Loading lsp with folder: " << folder << std::endl;
 	lsp_client_map[lsp_command]->initialize(folder);
 	
 	return lsp_client_map[lsp_command];
@@ -654,8 +640,6 @@ void App::DrawRect(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b) 
 }
 
 void App::DoFullRenderWithoutInput() {
-	if (OBSCENE_DEBUGGING) { std::cout << "OD - Entered Full Render Without Input\n"; }
-	
 	double currentTime = glfwGetTime();
 	frameCount++;
 	
@@ -671,14 +655,12 @@ void App::DoFullRenderWithoutInput() {
 		moveMouseToY = -1;
 	}
 	
-	if (OBSCENE_DEBUGGING) { std::cout << "OD - Started Position\n"; }
 	expectedCursorType = -1; // must be reset every position call
 	std::lock_guard<std::mutex> lock(canMakeChanges); // this prevents separate threads (the lsp clients) from messing with shit while positioning/rendering
 	if (rootelement) {
 		rootelement->position(0, tb->t_h, WINDOW_WIDTH, WINDOW_HEIGHT-tb->t_h);
 		toastBox->position(0, tb->t_h, WINDOW_WIDTH, WINDOW_HEIGHT-tb->t_h);
 	}
-	if (OBSCENE_DEBUGGING) { std::cout << "OD - Finished Position Starting Cursor Set\n"; }
 	
 	if (expectedCursorType != currentCursorType) {
 		if ((expectedCursorType == 0 || expectedCursorType == -1) && regularCursor) {
@@ -695,8 +677,6 @@ void App::DoFullRenderWithoutInput() {
 		currentCursorType = expectedCursorType;
 	}
 	
-	if (OBSCENE_DEBUGGING) { std::cout << "OD - Finished Cursor Set\n"; }
-	
 	//render
 	
 	if (!rerender && time_till_regular == 0) {
@@ -711,7 +691,6 @@ void App::DoFullRenderWithoutInput() {
 			lastUpdate = currentTime;
 		}
 		
-		if (OBSCENE_DEBUGGING) { std::cout << "OD - Do Full Render Early Exit\n"; }
 		return;
 	}
 	
@@ -734,8 +713,6 @@ void App::DoFullRenderWithoutInput() {
 	
 	glScissor(SKIZ_X, SKIZ_Y, SKIZ_W, SKIZ_H);
 	
-	if (OBSCENE_DEBUGGING) { std::cout << "OD - Started Render\n"; }
-	
 	if (rootelement) {
 		rootelement->render();
 		runWithSKIZ(toastBox->t_x, toastBox->t_y, toastBox->t_w, toastBox->t_h, []() {
@@ -743,12 +720,8 @@ void App::DoFullRenderWithoutInput() {
 		});
 	}
 	
-	if (OBSCENE_DEBUGGING) { std::cout << "OD - Finished Render\n"; }
-	
 	glDisable(GL_SCISSOR_TEST);
 	glfwSwapBuffers(window);
-	
-	if (OBSCENE_DEBUGGING) { std::cout << "OD - Exited Full Render Without Input\n"; }
 }
 
 void App::MoveWidget(Widget* w, Widget* new_parent) {
@@ -815,9 +788,7 @@ void App::Run() {
 			keyboard_events.push_back({});
 		}
 		
-		if (OBSCENE_DEBUGGING) { std::cout << "OD - Polling Events\n"; }
 		glfwPollEvents();
-		if (OBSCENE_DEBUGGING) { std::cout << "OD - Finished Poll\n"; }
 		
 		if (replaying_macro) {
 			if (keyboard_events.size() == 0) {
@@ -1824,18 +1795,14 @@ void App::runWithSKIZ(int nx, int ny, int nw, int nh, VoidFunction withskiz) {
 void App::repeatEveryXSeconds(int intervalSeconds, std::function<void()> task) {
 	std::thread([intervalSeconds, task]() {
 		while (running) {
-			if (OBSCENE_DEBUGGING) { std::cout << "OD - Started Wait\n"; }
 			std::this_thread::sleep_for(std::chrono::seconds(intervalSeconds));
-			if (OBSCENE_DEBUGGING) { std::cout << "OD - Finished Wait\n"; }
 			if (running) task();
 		}
 	}).detach();
 }
 
 void App::save() {
-	if (OBSCENE_DEBUGGING) { std::cout << "OD - Started Save\n"; }
 	rootelement->save();
-	if (OBSCENE_DEBUGGING) { std::cout << "OD - Finished Save\n"; }
 }
 
 #include <unicode/ucsdet.h>

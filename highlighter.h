@@ -9,6 +9,7 @@
 #include <memory>
 #include <set>
 #include <regex>
+#include <unordered_set>
 
 #define ONIG_ESCAPE_UCHAR_COLLISION
 #include <oniguruma.h>
@@ -48,6 +49,7 @@ struct RegexSegment {
 struct Rule {
 	int type_of_rule = -1;
 	int64_t hash = 0;
+	int id = -1;
 
 	std::string name = "";
 	std::string include;
@@ -131,9 +133,11 @@ private:
 	int RANGE = 1;
 	int MATCH = 2;
 	int GROUP = 3;
+	int GLOBAL_RULE_ID = 0;
 	
 	std::unordered_map<std::string, std::shared_ptr<Rule>> repository;
 	std::vector<std::shared_ptr<Rule>> activePatterns = {};
+	std::unordered_set<int> activePatternsSet;
 	ContextFrame root;
 	std::shared_ptr<Rule> self;
 	

@@ -82,6 +82,8 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 		}
 	};
 	scrollbar_h->horizontal = true;
+	
+//	contextmenu = new ContextMenu(this); // for later
 }
 
 int TextEdit::getVisLen(const icu::UnicodeString& line) {

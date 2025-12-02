@@ -1,5 +1,6 @@
 #pragma once
 
+#include "contextmenu.h"
 #include "scrollbar.h"
 #include "widget.h"
 #include <GLFW/glfw3.h>
@@ -88,6 +89,8 @@ public:
 	Scrollbar* scrollbar_v = nullptr;
 	bool scrollbar_horizontal = false;
 	Scrollbar* scrollbar_h = nullptr;
+	
+	ContextMenu* contextmenu = nullptr;
 	
 	bool border = false;
 	

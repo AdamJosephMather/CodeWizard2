@@ -80,6 +80,7 @@ public:
 	using HighlightFunct = std::function<LineResult(icu::UnicodeString line, TextMateInfo info)>;
 	using HighlightBeginFunct = std::function<TextMateInfo()>;
 	using CompareHighlightInfo = std::function<bool(TextMateInfo*, TextMateInfo*)>;
+	using LineChange = std::function<void(EditType,int)>;
 	
 	TextEdit(Widget* parent, App::PosFunction fnct);
 	
@@ -184,6 +185,7 @@ public:
 	
 	
 	App::PosFunction ontextchange = nullptr;
+	LineChange onlinechange = nullptr;
 	bool largereditblock = false;
 	
 	int _mapFromVisualToReal(int line, int c);

@@ -226,6 +226,7 @@ bool App::Init() {
 	glDisable(GL_LIGHTING);
 	glDisable(GL_DEPTH_TEST);
 	
+	
 	// Set input callbacks
 	glfwSetCursorPosCallback(window, cursor_position_callback);
 	glfwSetMouseButtonCallback(window, mouse_button_callback);

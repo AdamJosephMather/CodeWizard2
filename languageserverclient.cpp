@@ -371,6 +371,11 @@ LanguageServerClient::LanguageServerClient(const std::string &serverPath, std::f
 	alreadyDoneShutdownLoop = false;
 	initializeRequestId = -999;
 	failedToStart = false;
+	
+	stopWriter = false;
+	writerThread = std::thread([this] {
+		writerLoop();
+	});
 
 	serverProcess.readyReadCallback = [this]() { onServerReadyRead(); };
 	serverProcess.errorCallback = [this](Process::ProcessError error) { onServerErrorOccurred(error); };
@@ -410,6 +415,14 @@ void LanguageServerClient::onServerFinished(int exitCode, Process::ExitStatus ex
 
 LanguageServerClient::~LanguageServerClient()
 {
+	{
+		std::lock_guard<std::mutex> lk(queueMutex);
+		stopWriter = true;
+	}
+	queueCond.notify_all();
+
+	if (writerThread.joinable()) writerThread.join();
+	
 	shutdown();
 }
 
@@ -601,6 +614,83 @@ void LanguageServerClient::updateDocument(const std::string &uri, const std::str
 
 	json contentChanges = json::array();
 	contentChanges.push_back({{"text", content}});
+
+	json params = {
+		{"textDocument", textDocument},
+		{"contentChanges", contentChanges}
+	};
+
+	json message = {
+		{"jsonrpc", "2.0"},
+		{"method", "textDocument/didChange"},
+		{"params", params}
+	};
+
+	sendMessage(message);
+}
+
+void LanguageServerClient::applyDocumentEdit(const std::string &uri, const LineEditType &type, const std::string &newtext, int index)
+{
+	std::string fileURI = fromLocalFile(uri);
+
+	json textDocument = {
+		{"uri", fileURI},
+		{"version", ++documentVersion} // Increment version for any change
+	};
+
+	json range;
+	std::string newText;
+
+	// NOTE: This implementation makes a critical assumption:
+	// For InsertLine and ChangeLine, the 'edit.newtext' contains ONLY the 
+	// line content, not the newline character. We add '\n' to ensure
+	// it's treated as a full line.
+	// For DeleteLine and ChangeLine, we replace the *entire line range*,
+	// from the start of line 'index' to the start of line 'index + 1'.
+
+	switch (type)
+	{
+		case LineEditType::InsertLine:
+			// Insert *before* the specified line index.
+			// The range is zero-length at the start of the line.
+			range = {
+				{"start", {{"line", index}, {"character", 0}}},
+				{"end",   {{"line", index}, {"character", 0}}}
+			};
+			newText = newtext + "\n";
+			break;
+
+		case LineEditType::DeleteLine:
+			// Delete the entire line, including its newline character.
+			// The range spans from the start of line 'index'
+			// to the start of line 'index + 1'.
+			range = {
+				{"start", {{"line", index}, {"character", 0}}},
+				{"end",   {{"line", index + 1}, {"character", 0}}}
+			};
+			newText = ""; // Per your spec, newtext is "" for delete
+			break;
+
+		case LineEditType::ChangeLine:
+			// Replace the entire line. This is functionally a delete
+			// of the line range, followed by an insert.
+			// The range spans from the start of line 'index'
+			// to the start of line 'index + 1'.
+			range = {
+				{"start", {{"line", index}, {"character", 0}}},
+				{"end",   {{"line", index + 1}, {"character", 0}}}
+			};
+			newText = newtext + "\n";
+			break;
+	}
+
+	// Create the incremental content change object
+	json contentChanges = json::array();
+	contentChanges.push_back({
+		{"range", range},
+		{"text", newText}
+		// Note: 'rangeLength' is deprecated in LSP and not needed.
+	});
 
 	json params = {
 		{"textDocument", textDocument},
@@ -887,6 +977,30 @@ void LanguageServerClient::onServerReadyRead()
 				}
 				logCallback(triggerCharsStr);
 			}
+			
+			
+			int syncKind = 1; // 1 = Full, 2 = Incremental
+			
+			if (serverCapabilities.contains("textDocumentSync")) 
+			{
+				const auto& syncCap = serverCapabilities["textDocumentSync"];
+		
+				if (syncCap.is_number_integer()) 
+				{
+					// Case 1: "textDocumentSync": 2
+					syncKind = syncCap.get<int>();
+				}
+				else if (syncCap.is_object() && syncCap.contains("change")) 
+				{
+					// Case 2: "textDocumentSync": { "change": 2, ... }
+					syncKind = syncCap["change"].get<int>();
+				}
+			}
+			
+			if (syncKind == 2) {
+				supportsIncrementalChanges = true;
+			}
+			
 
 			initializeComplete = true;
 			initializeCondition.notify_all();
@@ -1130,18 +1244,13 @@ void LanguageServerClient::onServerReadyRead()
 
 void LanguageServerClient::sendMessage(const json &message)
 {
-	std::thread writer([this, message]() {
-		std::lock_guard<std::mutex> lk(writeMutex);
-		
-		std::string data   = message.dump();
-		std::string header = "Content-Length: " + std::to_string(data.size()) + "\r\n\r\n";
-		serverProcess.write(header + data);
-	});
+	{
+		std::lock_guard<std::mutex> lk(queueMutex);
+		messageQueue.push(message);
+	}
+	queueCond.notify_one();
 
-	// Detach so we don’t have to join later
-	writer.detach();
-	
-	//				 "LanguageServer"
+	// Log to the UI
 	std::string from = "CodeWizard    ";
 	std::string tosend = message.dump();
 	App::rootelement->lspmessage(from, tosend);
@@ -1153,14 +1262,8 @@ void LanguageServerClient::changeFolder(const std::string& oldUri, const std::st
 	
 	json params = {
 		{"event", {
-			{"added", {{
-				{"uri", fromLocalFile(newUri)},
-				{"name", newName}
-			}}},
-			{"removed", {{
-				{"uri", fromLocalFile(oldUri)},
-				{"name", "previous-folder"}
-			}}}
+			{"added", {{{"uri", fromLocalFile(newUri)},{"name", newName}}}},
+			{"removed", {{{"uri", fromLocalFile(oldUri)},{"name", "previous-folder"}}}}
 		}}
 	};
 
@@ -1234,4 +1337,25 @@ json LanguageServerClient::readMessage()
 	}
 
 	return json();
+}
+
+void LanguageServerClient::writerLoop()
+{
+	while (!stopWriter)
+	{
+		json message;
+		{
+			std::unique_lock<std::mutex> lock(queueMutex);
+			queueCond.wait(lock, [this] { return !messageQueue.empty() || stopWriter; });
+			if (stopWriter && messageQueue.empty()) {
+				return;
+			}
+			message = messageQueue.front();
+			messageQueue.pop();
+		}
+
+		std::string data = message.dump();
+		std::string header = "Content-Length: " + std::to_string(data.size()) + "\r\n\r\n";
+		serverProcess.write(header + data);
+	}
 }

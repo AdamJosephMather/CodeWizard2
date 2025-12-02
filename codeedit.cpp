@@ -213,8 +213,37 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	textedit->highlighter = nullptr;
 	textedit->getblankhighlighting = nullptr;
 	textedit->highlighterNotEqual = nullptr;
-	textedit->ontextchange = [&](Widget* w){
-		onTextChanged(w);
+//	textedit->ontextchange = [&](Widget* w){
+//		onTextChanged(w);
+//	};
+	textedit->onlinechange = [&](EditType typ, int lineindex){
+		madeChangeBetweenSaves = true;
+		
+		if (hoverbox->parent == this) {
+			App::RemoveWidgetFromParent(hoverbox);
+			hoverCrsr = Cursor();
+		}
+		
+		if (!lsp_client || !file || file->filepath == "") {
+			return;
+		}
+		
+		if (!lsp_client->supportsIncrementalChanges) {
+			onTextChanged(textedit);
+			return;
+		}
+		
+		LineEditType t;
+		
+		if      (typ == EditType::InsertLine) t = LineEditType::InsertLine;
+		else if (typ == EditType::ChangeLine) t = LineEditType::ChangeLine;
+		else if (typ == EditType::DeleteLine) t = LineEditType::DeleteLine;
+		
+		Line l = textedit->lines[lineindex];
+		std::string text;
+		l.line_text.toUTF8String(text);
+		
+		lsp_client->applyDocumentEdit(file->filepath, t, text, lineindex);
 	};
 	
 	textedit->getIndentationLevelAfterLine = indentIdentifierAfterLine;
@@ -383,6 +412,7 @@ void CodeEdit::run_fixit() {
 	}
 	
 	textedit->setFullText(run_fixit_on_lines(lns));
+	onTextChanged(textedit);
 }
 
 int CodeEdit::analyzeForFixit_on_lines(const std::vector<Line>& lines) {
@@ -412,6 +442,7 @@ void CodeEdit::openFile() {
 	if (!fileExists(path)) {
 		file = nullptr;
 		textedit->setFullText(icu::UnicodeString::fromUTF8("File does not exist: "+path));
+		onTextChanged(textedit);
 		last_file_mod_time = {};
 		return;
 	}
@@ -419,6 +450,7 @@ void CodeEdit::openFile() {
 	if (isBinaryFile(path)){
 		file = nullptr;
 		textedit->setFullText(icu::UnicodeString::fromUTF8("File detected as binary file: "+path+"\nDID NOT OPEN"));
+		onTextChanged(textedit);
 		last_file_mod_time = {};
 		return;
 	}
@@ -430,6 +462,7 @@ void CodeEdit::openFile() {
 		last_file_mod_time = std::filesystem::last_write_time(path);
 		
 		textedit->setFullText(text);
+		onTextChanged(textedit);
 		madeChangeBetweenSaves = false;
 		
 		int indt = analyzeForFixit_on_lines(textedit->lines);
@@ -446,6 +479,7 @@ void CodeEdit::openFile() {
 	}else {
 		file = nullptr;
 		textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: "+path+"\n\n")+text);
+		onTextChanged(textedit);
 		last_file_mod_time = {};
 	}
 	
@@ -1779,6 +1813,11 @@ void CodeEdit::onTextChanged(Widget* w) {
 	auto te = dynamic_cast<TextEdit*>(w);
 	if (!te) {return;}
 	
+	if (hoverbox->parent == this) {
+		App::RemoveWidgetFromParent(hoverbox);
+		hoverCrsr = Cursor();
+	}
+	
 	if (!lsp_client || !file || file->filepath == "") {
 		return;
 	}
@@ -1787,11 +1826,6 @@ void CodeEdit::onTextChanged(Widget* w) {
 	te->getFullText().toUTF8String(text);
 	
 	lsp_client->updateDocument(file->filepath, text);
-	
-	if (hoverbox->parent == this) {
-		App::RemoveWidgetFromParent(hoverbox);
-		hoverCrsr = Cursor();
-	}
 }
 
 std::vector<FileEdit> CodeEdit::parseCodeAction(const json& action) {

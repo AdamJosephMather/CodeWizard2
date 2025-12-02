@@ -1,6 +1,7 @@
 #ifndef LANGUAGESERVERCLIENT_H
 #define LANGUAGESERVERCLIENT_H
 
+#include <queue>
 #include <string>
 #include <vector>
 #include <map>
@@ -18,6 +19,12 @@
 using json = nlohmann::json;
 
 using LspId = std::variant<std::nullptr_t, int, std::string>;
+
+enum class LineEditType {
+	InsertLine,
+	DeleteLine,
+	ChangeLine
+};
 
 // Process wrapper class
 class Process {
@@ -69,6 +76,7 @@ public:
 	void openDocument(const std::string &uri, const std::string &languageId, const std::string &content);
 	void closeDocument(const std::string &uri);
 	void updateDocument(const std::string &uri, const std::string &content);
+	void applyDocumentEdit(const std::string &uri, const LineEditType &type, const std::string &newtext, int index);
 	int requestCompletion(const std::string &uri, int line, int character);
 	int requestHover(const std::string &uri, int line, int character);
 	int requestGotoDefinition(const std::string &uri, int line, int character);
@@ -97,8 +105,11 @@ public:
 	std::function<void(const json&)> renameReceivedCallback;
 	
 	std::string fromLocalFile(const std::string& path);
+	
+	bool supportsIncrementalChanges = false;
 
 private:
+	void writerLoop();
 	void onServerReadyRead();
 	void onServerErrorOccurred(Process::ProcessError error);
 	void onServerFinished(int exitCode, Process::ExitStatus exitStatus);
@@ -110,6 +121,13 @@ private:
 	Process serverProcess;
 	int requestId;
 	int documentVersion;
+
+	// For writer thread
+	std::thread writerThread;
+	std::queue<json> messageQueue;
+	std::mutex queueMutex;
+	std::condition_variable queueCond;
+	std::atomic<bool> stopWriter{false};
 	
 	// Replace QEventLoop with condition variables
 	std::mutex initializeMutex;
@@ -121,7 +139,6 @@ private:
 	std::atomic<bool> shutdownComplete{false};
 	
 	std::function<void(const std::string&)> logCallback;
-	std::mutex writeMutex;
 };
 
 #endif // LANGUAGESERVERCLIENT_H

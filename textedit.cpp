@@ -259,14 +259,20 @@ void TextEdit::activateUndo() {
 			redoHistory.edits.push_back( { EditType::ChangeLine, lines[e.index], e.index } );
 
 			lines[e.index] = e.line;
+			
+			if (onlinechange) { onlinechange(EditType::ChangeLine, e.index); }
 		}else if (e.type == EditType::DeleteLine) { // we need to reinsert it
 			redoHistory.edits.push_back( { EditType::InsertLine, e.line, e.index } );
 
 			lines.insert(lines.begin()+e.index, e.line);
+			
+			if (onlinechange) { onlinechange(EditType::InsertLine, e.index); }
 		}else if (e.type == EditType::InsertLine) { // let's go ahead and delete that sucker
 			redoHistory.edits.push_back( { EditType::DeleteLine, lines[e.index], e.index } );
 
 			lines.erase(lines.begin()+e.index);
+			
+			if (onlinechange) { onlinechange(EditType::DeleteLine, e.index); }
 		}
 	}
 
@@ -303,14 +309,20 @@ void TextEdit::activateRedo() {
 			undoHistory.edits.push_back( { EditType::ChangeLine, lines[e.index], e.index } );
 
 			lines[e.index] = e.line;
+			
+			if (onlinechange) { onlinechange(EditType::ChangeLine, e.index); }
 		}else if (e.type == EditType::DeleteLine) { // we need to reinsert it
 			undoHistory.edits.push_back( { EditType::InsertLine, e.line, e.index } );
 
 			lines.insert(lines.begin()+e.index, e.line);
+			
+			if (onlinechange) { onlinechange(EditType::InsertLine, e.index); }
 		}else if (e.type == EditType::InsertLine) { // let's go ahead and delete that sucker
 			undoHistory.edits.push_back( { EditType::DeleteLine, lines[e.index], e.index } );
 
 			lines.erase(lines.begin()+e.index);
+			
+			if (onlinechange) { onlinechange(EditType::DeleteLine, e.index); }
 		}
 	}
 
@@ -939,14 +951,17 @@ void TextEdit::deleteTextAtCursor(Cursor c, int key, bool control) {
 
 	Edit e = { EditType::ChangeLine, lines[sl], sl };
 	historyThisUpdate.edits.push_back(e);
-
+	
 	lines[sl].line_text = start+end;
 	lines[sl].changed = true;
+	
+	if (onlinechange) { onlinechange(EditType::ChangeLine, sl); }
 
 	if (sl != el) {
 		for (int j = el; j >= sl+1; j--) {
 			Edit e = { EditType::DeleteLine, lines[j], j };
 			historyThisUpdate.edits.push_back(e);
+			if (onlinechange) { onlinechange(EditType::DeleteLine, j); }
 		}
 
 		lines.erase(lines.begin() + sl + 1, lines.begin() + el+1);
@@ -1327,11 +1342,15 @@ void TextEdit::insertTextAtCursor(Cursor c, icu::UnicodeString insert_text) {
 
 		lines[sl].line_text = start+insert_lines[0]+end;
 		lines[sl].changed = true;
+		
+		if (onlinechange) { onlinechange(EditType::ChangeLine, sl); }
 	}else{
 		Edit e = { EditType::ChangeLine, lines[sl], sl };
 		historyThisUpdate.edits.push_back(e);
 
 		lines[sl].line_text = start+insert_lines[0];
+		
+		if (onlinechange) { onlinechange(EditType::ChangeLine, sl); }
 
 		for (int i = 1; i < insert_lines.size(); i ++) {
 			auto new_line = Line();
@@ -1348,6 +1367,8 @@ void TextEdit::insertTextAtCursor(Cursor c, icu::UnicodeString insert_text) {
 
 			Edit e = { EditType::InsertLine, lines[sl+i], sl+i };
 			historyThisUpdate.edits.push_back(e);
+			
+			if (onlinechange) { onlinechange(EditType::InsertLine, sl+i); }
 		}
 
 		lines[sl].changed = true;

@@ -20,15 +20,15 @@ void Scrollbar::render() {
 	int errHeight = bar_width / 3;
 	
 	for (double r : red) {
-		int pos = t_y + (r * t_h);
+		int pos = t_y + (r * (t_h-addToTheEnd));
 		App::DrawRect(r_x, pos, r_w, errHeight, App::theme.error_color);
 	}
 	for (double r : orange) {
-		int pos = t_y + (r * t_h);
+		int pos = t_y + (r * (t_h-addToTheEnd));
 		App::DrawRect(r_x, pos, r_w, errHeight, App::theme.warning_color);
 	}
 	for (double r : blue) {
-		int pos = t_y + (r * t_h);
+		int pos = t_y + (r * (t_h-addToTheEnd));
 		App::DrawRect(r_x, pos, r_w, errHeight, App::theme.suggestion_color);
 	}
 }

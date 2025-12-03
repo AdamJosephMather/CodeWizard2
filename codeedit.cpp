@@ -179,14 +179,38 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		textedit->t_y = t_y;
 		textedit->t_w = t_w-line_numbers->t_w;
 		if (find_menu_open) {
-			textedit->t_h = findTextEdit->t_y-t_y-5;
+			textedit->t_h = findTextEdit->t_y - t_y - 5;
 		}else{
 			textedit->t_h = t_h;
 		}
 	});
 	textedit->scrollbar_vertical = true;
 	textedit->scrollbar_horizontal = true;
+	textedit->contextmenu->is_visible_3 = true;
 	
+	textedit->contextmenu->addSeparaterToMenu();
+	
+	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Goto Def (LSP)"),   [&](Widget* w){
+		if (lsp_client && file) {
+			goto_id = lsp_client->requestGotoDefinition(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
+		}
+		textedit->contextmenu->is_visible_2 = false;
+	});
+	
+	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Rename Symbol (LSP)"),   [&](Widget* w){
+		if (lsp_client && file) {
+			renamecursor = textedit->cursors[0];
+			if (renamebox->parent != this){
+				App::MoveWidget(renamebox, this);
+				App::setActiveLeafNode(renamebox);
+			}
+			renamebox->wasmode = 'n';
+			renamebox->mode = 'i';
+			renamebox->setFullText(icu::UnicodeString());
+		}
+		
+		textedit->contextmenu->is_visible_2 = false;
+	});
 	
 	showErrorsButton = new Button(nullptr, icu::UnicodeString("Show/Hide Errors"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = textedit->t_x+textedit->t_w-10-tw;
@@ -254,6 +278,10 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		while (true){
 			if (closing) {
 				return;
+			}
+			
+			if (textedit->contextmenu->is_visible_2 && hoverbox->parent == this) {
+				App::RemoveWidgetFromParent(hoverbox);
 			}
 			
 			if (timeuntil <= 0) {
@@ -1406,6 +1434,10 @@ bool CodeEdit::on_mouse_move_event() {
 			return hoverbox->on_mouse_move_event();
 		}
 		
+		if (textedit->contextmenu->is_visible_2) {
+			gottoit = false;
+		}
+		
 		if (gottoit) {
 			for (auto d : textedit->lines[crsr.head_line].diagnostics) {
 				if (d.sc-1 <= crsr.head_char && d.ec+1 >= crsr.head_char) { // introduce some leeway (or however it's spelt. Sound it out)
@@ -1787,7 +1819,7 @@ void CodeEdit::gotoDef(int id, int line1, int character1, int line, int characte
 }
 
 void CodeEdit::hoverRecieved(std::string content, std::string type, int id) {
-	if (id != hover_id) {
+	if (id != hover_id || textedit->contextmenu->is_visible_2) {
 		return;
 	}
 	

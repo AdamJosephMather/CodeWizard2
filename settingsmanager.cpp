@@ -61,7 +61,7 @@ bool SettingsManager::bringInSubset(std::string instr) {
 	
 	for (auto const& [key, val] : in.items()) {
 		settings["simple"][key] = val;
-    }
+	}
 	
 	return true;
 }

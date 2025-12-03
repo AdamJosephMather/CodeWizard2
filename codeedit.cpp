@@ -97,7 +97,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	});
 	hoverbox->background_color = App::theme.extras_background_color;
 	hoverbox->border = true;
-	
+	hoverbox->contextmenu->is_visible_3 = true;
 	
 	find_menu_open = false;
 	

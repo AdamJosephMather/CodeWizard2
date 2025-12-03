@@ -120,8 +120,13 @@ void Button::render() {
 		}
 	}
 	
-
-	int x = t_x+t_w/2-TextRenderer::get_text_width(BUTTON_LABEL.length())/2;
+	int x;
+	if (alignLeft) {
+		x = t_x+App::text_padding;
+	}else{
+		x = t_x+t_w/2-TextRenderer::get_text_width(BUTTON_LABEL.length())/2;
+	}
+	
 	int y = t_y+t_h/2-TextRenderer::get_text_height()/2;
 	TextRenderer::draw_text(x, y, BUTTON_LABEL, App::theme.main_text_color);
 	

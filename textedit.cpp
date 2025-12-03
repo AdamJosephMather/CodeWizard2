@@ -83,7 +83,35 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 	};
 	scrollbar_h->horizontal = true;
 	
-//	contextmenu = new ContextMenu(this); // for later
+	contextmenu = new ContextMenu(this); // for later
+	contextmenu->is_visible_2 = false;
+	
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Undo (Ctrl+Z)"), [&](Widget* w){
+		activateUndo();
+		contextmenu->is_visible_2 = false;
+	});
+	
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Redo (Ctrl+Shift+Z)"), [&](Widget* w){
+		activateRedo();
+		contextmenu->is_visible_2 = false;
+	});
+	
+	contextmenu->addSeparaterToMenu();
+	
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Cut (Ctrl+X)"),   [&](Widget* w){
+		cut();
+		contextmenu->is_visible_2 = false;
+	});
+	
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Copy (Ctrl+C)"),  [&](Widget* w){
+		copy();
+		contextmenu->is_visible_2 = false;
+	});
+	
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Paste (Ctrl+V)"), [&](Widget* w){
+		paste();
+		contextmenu->is_visible_2 = false;
+	});
 }
 
 int TextEdit::getVisLen(const icu::UnicodeString& line) {
@@ -123,6 +151,8 @@ void TextEdit::setFullText(icu::UnicodeString text) {
 	if (!largereditblock && ontextchange) {
 		ontextchange(this);
 	}
+	
+	contextmenu->is_visible_2 = false;
 }
 
 History TextEdit::createHistory() {
@@ -1126,46 +1156,13 @@ bool TextEdit::handleInsertKey(int key, int scancode, int action, int mods) {
 	}
 
 	if (key == GLFW_KEY_V && (is_control_held || mode == 'n')) {
-		if (coppiedText.size() == cursors.size()) {
-			for (int ci = 0; ci < cursors.size(); ci++) {
-				insertTextAtCursor(cursors[ci], coppiedText[ci]);
-			}
-		}else{
-			std::string clipboard_text = GetClipboardText();
-			applyInsertToAllCursors(run_fixit_on_text(icu::UnicodeString::fromUTF8(clipboard_text)));
-		}
+		paste();
 		donesomthing = true;
-		tryingToEnsureCursorPos = true;
 	}else if (key == GLFW_KEY_C && (is_control_held || mode == 'n')) {
-		if (cursors.size() > 1) {
-			coppiedText.clear();
-			for (auto ci = 0; ci < cursors.size(); ci++) {
-				coppiedText.push_back(getSelectedText(cursors[ci]));
-			}
-		}else{
-			auto icutext = getSelectedText(cursors[0]);
-			if (icutext.length() != 0) {
-				std::string text;
-				icutext.toUTF8String(text);
-				SetClipboardText(text);
-			}
-		}
+		copy();
 		donesomthing = true;
 	}else if (key == GLFW_KEY_X && (is_control_held || mode == 'n')) {
-		if (cursors.size() > 1) {
-			coppiedText.clear();
-			for (auto ci = 0; ci < cursors.size(); ci++) {
-				coppiedText.push_back(getSelectedText(cursors[ci]));
-			}
-		}else{
-			auto icutext = getSelectedText(cursors[0]);
-			if (icutext.length() != 0) {
-				std::string text;
-				icutext.toUTF8String(text);
-				SetClipboardText(text);
-			}
-		}
-		applyDeleteToAllCursors(GLFW_KEY_DELETE, false);
+		cut();
 		donesomthing = true;
 	}else if (key == GLFW_KEY_Z && !is_shift_held && (is_control_held || mode == 'n')) {
 		activateUndo();
@@ -1192,6 +1189,52 @@ bool TextEdit::handleInsertKey(int key, int scancode, int action, int mods) {
 	}
 
 	return false;
+}
+
+void TextEdit::cut() {
+	if (cursors.size() > 1) {
+		coppiedText.clear();
+		for (auto ci = 0; ci < cursors.size(); ci++) {
+			coppiedText.push_back(getSelectedText(cursors[ci]));
+		}
+	}else{
+		auto icutext = getSelectedText(cursors[0]);
+		if (icutext.length() != 0) {
+			std::string text;
+			icutext.toUTF8String(text);
+			SetClipboardText(text);
+		}
+	}
+	
+	applyDeleteToAllCursors(GLFW_KEY_DELETE, false);
+}
+
+void TextEdit::copy(){
+	if (cursors.size() > 1) {
+		coppiedText.clear();
+		for (auto ci = 0; ci < cursors.size(); ci++) {
+			coppiedText.push_back(getSelectedText(cursors[ci]));
+		}
+	}else{
+		auto icutext = getSelectedText(cursors[0]);
+		if (icutext.length() != 0) {
+			std::string text;
+			icutext.toUTF8String(text);
+			SetClipboardText(text);
+		}
+	}
+}
+
+void TextEdit::paste(){
+	if (coppiedText.size() == cursors.size()) {
+		for (int ci = 0; ci < cursors.size(); ci++) {
+			insertTextAtCursor(cursors[ci], coppiedText[ci]);
+		}
+	}else{
+		std::string clipboard_text = GetClipboardText();
+		applyInsertToAllCursors(run_fixit_on_text(icu::UnicodeString::fromUTF8(clipboard_text)));
+	}
+	tryingToEnsureCursorPos = true;
 }
 
 icu::UnicodeString TextEdit::getSelectedText(Cursor c) {
@@ -1582,6 +1625,8 @@ bool TextEdit::on_key_event(int key, int scancode, int action, int mods) {
 			return true;
 		}
 		
+		contextmenu->is_visible_2 = false;
+		
 		return handleUserKey(key, scancode, action, mods);
 	}
 	
@@ -1642,10 +1687,10 @@ void TextEdit::render() {
 		App::DrawRect(x, y, w, TextRenderer::get_text_height(), cs.color);
 
 		if (mode == 'n' && cs.rel_char < draw_text[cs.rel_line].length()) {
-			TextRenderer::draw_text(x, y, draw_text[cs.rel_line].char32At(cs.rel_char), {App::theme.darker_background_color});
+			TextRenderer::draw_text(x, y, draw_text[cs.rel_line].char32At(cs.rel_char), App::theme.darker_background_color);
 		}
 	}
-
+	
 	Widget::render();
 	
 	if (border) {
@@ -2036,11 +2081,23 @@ bool TextEdit::on_mouse_button_event(int button, int action, int mods) {
 	
 	if (scrollbar_vertical && scrollbar_v->on_mouse_button_event(button, action, mods)) { return true; };
 	if (scrollbar_horizontal && scrollbar_h->on_mouse_button_event(button, action, mods)) { return true; };
+	if (contextmenu->is_visible_2 && contextmenu->is_visible_3 && contextmenu->on_mouse_button_event(button, action, mods)) { return true; }
 	
 	if (App::activeLeafNode != this) {
 		return false;
 	}
-
+	
+	if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_RIGHT){
+		contextmenu->is_visible_2 = true;
+		contextmenu->x_loc = mx;
+		contextmenu->y_loc = my;
+		if (cursors[0].anchor_char != cursors[0].head_char || cursors[0].anchor_line != cursors[0].head_line) {
+			return true; // only skip the cursor changing position if there's no selection
+		}
+	}else if (action == GLFW_PRESS){
+		contextmenu->is_visible_2 = false;
+	}
+	
 	if (action == GLFW_PRESS) {
 		Cursor crsr = getCursorForMousePosition(mx, my);
 
@@ -2062,8 +2119,6 @@ bool TextEdit::on_mouse_button_event(int button, int action, int mods) {
 		cursors = { crsr };
 	}
 	return true;
-
-	return Widget::on_mouse_button_event(button, action, mods);
 }
 
 bool TextEdit::on_mouse_move_event() {

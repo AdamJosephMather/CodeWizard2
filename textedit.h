@@ -157,6 +157,10 @@ public:
 	bool tryingToEnsureCursorPos = false;
 	void ensureCursorVisible(Cursor c);
 	
+	void cut();
+	void copy();
+	void paste();
+	
 	void insertNewCursorDown();
 	void insertNewCursorUp();
 	void HandleOverlappingCursors();

@@ -1776,10 +1776,16 @@ void App::runWithSKIZ(int nx, int ny, int nw, int nh, VoidFunction withskiz) {
 	int was_s_w = App::SKIZ_W;
 	int was_s_h = App::SKIZ_H;
 	
-	App::SKIZ_X = fmax(SKIZ_X, nx); // this could be broken, if we don't draw from left to right. because it's not actually the interception of the boxes
-	App::SKIZ_Y = fmax(SKIZ_Y, ny);
-	App::SKIZ_W = fmin(SKIZ_W, nw);
-	App::SKIZ_H = fmin(SKIZ_H, nh);
+	// using the maximum of the two top-left corners and the minimum of the two bottom-right corners
+	
+	int skiz_x2 = fmin(App::SKIZ_W+App::SKIZ_X, nx+nw);
+	int skiz_y2 = fmin(App::SKIZ_H+App::SKIZ_Y, ny+nh);
+	
+	App::SKIZ_X = fmax(App::SKIZ_X, nx);
+	App::SKIZ_Y = fmax(App::SKIZ_Y, ny);
+	
+	App::SKIZ_W = max(skiz_x2 - App::SKIZ_X, 0);
+	App::SKIZ_H = max(skiz_y2 - App::SKIZ_Y, 0);
 	
 	glScissor(App::SKIZ_X, App::WINDOW_HEIGHT-(App::SKIZ_Y+App::SKIZ_H), App::SKIZ_W, App::SKIZ_H); // ensure no over drawwing between panels.
 	

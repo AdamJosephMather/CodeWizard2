@@ -27,6 +27,7 @@ public:
 	int padding_button = 5;
 	bool border = false;
 	bool rounded = false;
+	bool alignLeft = false;
 	Color* background_color;
 	icu::UnicodeString BUTTON_LABEL;
 	

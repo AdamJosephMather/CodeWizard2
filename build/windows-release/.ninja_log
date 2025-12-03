@@ -14,7 +14,7 @@
 471	1814	7860903782247494	CMakeFiles/CodeWizard.dir/resources.rc.res	9eb926a82f111704
 611	9868	7862661691370580	CMakeFiles/CodeWizard.dir/text_renderer.cpp.obj	5ec0eda8fe0cef87
 77	3455	7864216367292208	CMakeFiles/CodeWizard.dir/titlebar.cpp.obj	536564a890c19164
-136	5238	7864376794622132	CodeWizard.exe	bac104df90563637
+8049	12047	7864384592431708	CodeWizard.exe	bac104df90563637
 138	4232	7864051948245011	CMakeFiles/CodeWizard.dir/button.cpp.obj	62acd3d52d55f519
 10664	19331	7863541549486788	CMakeFiles/CodeWizard.dir/checkbox.cpp.obj	540bc44d02d575a9
 11827	21808	7863541561137436	CMakeFiles/CodeWizard.dir/listbox.cpp.obj	b8ffdd722bd40abe
@@ -35,8 +35,8 @@
 238	14949	7864262566889928	CMakeFiles/CodeWizard.dir/brokenstatemenu.cpp.obj	57955de6b7ff596
 149	5291	7864275365524430	CMakeFiles/CodeWizard.dir/textedit.cpp.obj	6e48e9ca6876e3d0
 12366	18980	7863541566523977	CMakeFiles/CodeWizard.dir/imageview.cpp.obj	b8a843e74e7bed5
-87	7887	7864376534797277	CMakeFiles/CodeWizard.dir/codeedit.cpp.obj	648e0f6af04658a8
-27751	62845	7862661962676893	CMakeFiles/CodeWizard.dir/settingsmanager.cpp.obj	d6d1e850dacb7337
+94	8047	7864384512890002	CMakeFiles/CodeWizard.dir/codeedit.cpp.obj	648e0f6af04658a8
+114	7384	7864384513092939	CMakeFiles/CodeWizard.dir/settingsmanager.cpp.obj	d6d1e850dacb7337
 117	7886	7862675603522044	CMakeFiles/CodeWizard.dir/highlighter.cpp.obj	761b0af72d1a6554
 6663	20314	7864262631440555	CMakeFiles/CodeWizard.dir/compare.cpp.obj	ed1229162ebed430
 14305	20564	7864262708366368	CMakeFiles/CodeWizard.dir/lspdebug.cpp.obj	a9a3fb797d2e8dc2
@@ -47,6 +47,4 @@
 13410	22043	7864262698621864	CMakeFiles/CodeWizard.dir/chat.cpp.obj	5c5a7e6d374ca548
 21829	29666	7863541661166390	CMakeFiles/CodeWizard.dir/terminalwidgettabbed.cpp.obj	21eaa965b7f87d67
 13262	18425	7864052079478566	CMakeFiles/CodeWizard.dir/helpmenu.cpp.obj	c0b50f0e960c8812
-88	3481	7864267785210006	CMakeFiles/CodeWizard.dir/contextmenu.cpp.obj	2b7676d74d5a001f
 73	3673	7864381447052770	CMakeFiles/CodeWizard.dir/contextmenu.cpp.obj	2b7676d74d5a001f
-3676	7752	7864381483075474	CodeWizard.exe	bac104df90563637

@@ -288,11 +288,11 @@ bool App::Init() {
 	LONG_PTR style = GetWindowLongPtr(window_handle, GWL_STYLE);
 
 	// Re-add the bits Windows needs for snapping + Win+Arrows:
-	style |= ( WS_CAPTION 
-			 | WS_THICKFRAME    // sizing border
+	style |= (WS_THICKFRAME    // sizing border
 			 | WS_MINIMIZEBOX 
 			 | WS_MAXIMIZEBOX 
 			 | WS_SYSMENU );    // optional, for system menu
+	style &= ~WS_CAPTION;
 
 	SetWindowLongPtr(window_handle, GWL_STYLE, style);
 
@@ -525,33 +525,32 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 			}
 			SetCursor(hCur);
 			return TRUE;
-		}
-		
-		case WM_NCCALCSIZE: {
-			if (!wParam) break;
-			
-			// Check if window is maximized
-			if (IsZoomed(hwnd)) {
+		} case WM_NCCALCSIZE: {
+			if (wParam == TRUE) {
+				// Tell Windows the entire window is the client area
+				// This removes the standard title bar and frame
 				NCCALCSIZE_PARAMS* params = (NCCALCSIZE_PARAMS*)lParam;
 				
-				// Get monitor info for the monitor containing this window
-				HMONITOR hMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-				MONITORINFO mi = { sizeof(MONITORINFO) };
-				GetMonitorInfo(hMonitor, &mi);
+				// Check if maximized
+				WINDOWPLACEMENT placement = { sizeof(WINDOWPLACEMENT) };
+				GetWindowPlacement(hwnd, &placement);
 				
-				// Adjust the window rectangle to fit within the work area
-				// This prevents the window from extending beyond screen boundaries
-				params->rgrc[0] = mi.rcWork;
+				if (placement.showCmd == SW_MAXIMIZE) {
+					// When maximized, we need to account for the invisible border
+					// that Windows adds. Adjust to prevent off-screen rendering.
+					HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+					MONITORINFO info = { sizeof(MONITORINFO) };
+					GetMonitorInfo(monitor, &info);
+					
+					// Shrink the rect to the monitor's work area
+					params->rgrc[0] = info.rcWork;
+				}
 				
+				// Return 0 to indicate we handled it, but preserve other flags
 				return 0;
 			}
-			
-			// For non-maximized windows, return 0 to remove default frame
-			return 0;
-		}
-			
-		case WM_GETMINMAXINFO:
-		{
+			break;
+		}case WM_GETMINMAXINFO: {
 			auto mmi = reinterpret_cast<LPMINMAXINFO>(lParam);
 		
 			// get the monitor the window is mostly on

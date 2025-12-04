@@ -526,30 +526,8 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 			SetCursor(hCur);
 			return TRUE;
 		} case WM_NCCALCSIZE: {
-			if (wParam == TRUE) {
-				// Tell Windows the entire window is the client area
-				// This removes the standard title bar and frame
-				NCCALCSIZE_PARAMS* params = (NCCALCSIZE_PARAMS*)lParam;
-				
-				// Check if maximized
-				WINDOWPLACEMENT placement = { sizeof(WINDOWPLACEMENT) };
-				GetWindowPlacement(hwnd, &placement);
-				
-				if (placement.showCmd == SW_MAXIMIZE) {
-					// When maximized, we need to account for the invisible border
-					// that Windows adds. Adjust to prevent off-screen rendering.
-					HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-					MONITORINFO info = { sizeof(MONITORINFO) };
-					GetMonitorInfo(monitor, &info);
-					
-					// Shrink the rect to the monitor's work area
-					params->rgrc[0] = info.rcWork;
-				}
-				
-				// Return 0 to indicate we handled it, but preserve other flags
-				return 0;
-			}
-			break;
+			if (!wParam) { break; }
+			return 0;
 		}case WM_GETMINMAXINFO: {
 			auto mmi = reinterpret_cast<LPMINMAXINFO>(lParam);
 		

@@ -123,6 +123,7 @@ From Within Insert Mode:
 From Within Normal Mode:
 	● All normal commands
 	● 'i' -------------- To re-enter insert mode and exit normal mode
+	● 'n' -------------- To re-enter insert mode and exit normal mode, but one character to the right
 	● 'h' -------------- Move left one char
 	● 'l' -------------- Move right one char
 	● 'j' -------------- Move down one line

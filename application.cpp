@@ -718,8 +718,12 @@ void App::DoFullRenderWithoutInput() {
 	
 	lastUpdate = currentTime;
 	
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	
 	glClearColor(bgcolor->r, bgcolor->g, bgcolor->b, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 	
 	glEnable(GL_SCISSOR_TEST);
 	
@@ -739,7 +743,6 @@ void App::DoFullRenderWithoutInput() {
 	
 	glDisable(GL_SCISSOR_TEST);
 	
-	
 	if (settings->getValue("use_transparency", false)) {
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_TRUE);
 		glDisable(GL_BLEND);
@@ -748,8 +751,6 @@ void App::DoFullRenderWithoutInput() {
 		glClear(GL_COLOR_BUFFER_BIT);
 		
 		glEnable(GL_BLEND);
-		
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	}
 	
 	glfwSwapBuffers(window);

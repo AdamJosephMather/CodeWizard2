@@ -1443,6 +1443,11 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 	bool is_shift_held = ((mods & GLFW_MOD_SHIFT) != 0);
 	bool is_control_held = ((mods & GLFW_MOD_CONTROL) != 0);
 	bool is_alt_held = ((mods & GLFW_MOD_ALT) != 0);
+	
+	if (mode == 'n' && key == GLFW_KEY_SEMICOLON) {
+		App::setActiveLeafNode(App::commandPalette);
+		return true;
+	}
 
 	if (key == GLFW_KEY_LEFT || key == GLFW_KEY_RIGHT || key == GLFW_KEY_UP || key == GLFW_KEY_DOWN || key == GLFW_KEY_HOME || key == GLFW_KEY_END) {
 		if (is_alt_held && key == GLFW_KEY_DOWN) {
@@ -1543,6 +1548,12 @@ bool TextEdit::handleUserKey(int key, int scancode, int action, int mods) {
 			vim_repeater = 0;
 			HandleOverlappingCursors();
 			return true;
+		}else if (key == GLFW_KEY_N) {
+			mode = 'i';
+			vim_repeater = 0;
+			applyMoveToAllCursors(GLFW_KEY_RIGHT, false, false);
+			HandleOverlappingCursors();
+			return true;
 		}
 
 		for (int indx = 0; indx < DIGITS_KEYS.size(); indx ++) {
@@ -1565,7 +1576,7 @@ bool TextEdit::handleUserKey(int key, int scancode, int action, int mods) {
 			return true;
 		}
 	}
-
+	
 	if (handleNavKey(key, scancode, action, mods)) {
 		HandleOverlappingCursors();
 		return true;

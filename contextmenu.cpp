@@ -14,7 +14,7 @@ void ContextMenu::render() {
 	App::DrawRoundedRect(t_x+App::border_width, t_y+App::border_width, t_w-App::border_width*2, t_h-App::border_width*2, 6.1, App::theme.extras_background_color);
 	Widget::render();
 	
-	int yc = t_y+App::text_padding;
+	int yc = t_y+App::text_padding+App::border_width;
 	
 	for (int bi = 0; bi < buttons.size(); bi++) {
 		Button* b = buttons[bi];
@@ -25,7 +25,7 @@ void ContextMenu::render() {
 			});
 			yc = b->t_h+b->t_y+App::text_padding;
 		}else{
-			App::DrawRect(t_x+App::text_padding, yc, maxwidth, App::border_width*2, App::theme.main_text_color);
+			App::DrawRect(t_x+App::text_padding+App::border_width, yc, maxwidth, App::border_width*2, App::theme.main_text_color);
 			yc += App::text_padding+App::border_width*2;
 		}
 	}
@@ -42,14 +42,14 @@ void ContextMenu::position(int x, int y, int width, int height) {
 	maxwidth = 0;
 	Widget::position(x, y, width, height);
 	
-	int bx = x+App::text_padding;
-	int by = y+App::text_padding;
+	int bx = x+App::text_padding+App::border_width;
+	int by = y+App::text_padding+App::border_width;
 	
 	for (int bi = 0; bi < buttons.size(); bi++) {
 		Button* b = buttons[bi];
 		
 		if (!b) {
-			by += App::text_padding;
+			by += App::border_width*2+App::text_padding;
 			continue;
 		}
 		
@@ -57,13 +57,13 @@ void ContextMenu::position(int x, int y, int width, int height) {
 		b->t_y = by;
 		b->t_w = maxwidth;
 		
-		by += b->t_h+App::text_padding+App::border_width*2;
+		by += b->t_h+App::text_padding;
 	}
 	
 	t_x = x;
 	t_y = y;
-	t_w = maxwidth+App::text_padding*2;
-	t_h = by-y;
+	t_w = maxwidth+App::text_padding*2+App::border_width*2;
+	t_h = (App::border_width+by)-y;
 	
 	const int mx = App::mouseX;
 	const int my = App::mouseY;

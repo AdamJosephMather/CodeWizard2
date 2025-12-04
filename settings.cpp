@@ -85,6 +85,11 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"font_size",
 			24.0f
 		),
+		makeBool(
+			"Transparency Effects",
+			"use_transparency",
+			false
+		),
 		makeString(
 			"Font Path",
 			"font_path",
@@ -488,6 +493,8 @@ bool Settings::validate_input(SettingsBool* el) {
 	if (el->key_name == "dark_mode") {
 		App::darkmode = el->value;
 		App::updateFromTintColor(&App::theme);
+	}else if (el->key_name == "use_transparency") {
+		App::updateTransparency(el->value);
 	}
 	
 	return true;

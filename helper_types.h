@@ -107,6 +107,8 @@ struct Theme {
 	Color* suggestion_color;
 	
 	Color* syntax_colors[9];
+	
+	Color* glass;
 };
 
 static std::vector<icu::UnicodeString> splitByChar(const icu::UnicodeString& input, UChar delimiter) {

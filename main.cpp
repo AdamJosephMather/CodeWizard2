@@ -26,7 +26,9 @@ int main(int argc, char* argv[]) {
 	
 	Theme theme;
 	
-	theme.tint_color = MakeColor(0.435294,0.670588,0.819608);
+	theme.glass = 
+	
+	theme.tint_color = MakeColor(0, 0, 0, 0.7);
 	
 	theme.main_background_color = MakeColor(0.0509803922, 0.0784313725, 0.0941176471);
 	theme.extras_background_color = MakeColor(0.0862745098, 0.1294117647, 0.1607843137);

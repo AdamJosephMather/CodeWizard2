@@ -38,8 +38,11 @@
 
 int App::major_version = 2;
 int App::minor_version = 1;
-int App::patch_version = 13;
+int App::patch_version = 14;
 
+
+
+HWND App::window_handle = nullptr;
 
 bool App::darkmode = true;
 std::string App::empty = "";
@@ -185,6 +188,8 @@ bool App::Init() {
 	glfwWindowHint(GLFW_SAMPLES, 4); // request 4 samples
 	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 	
+	glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+	
 	window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE.c_str(), nullptr, nullptr);
 
 	if (!window) {
@@ -271,16 +276,16 @@ bool App::Init() {
 	toastBox = new Toast(nullptr);
 	
 	// Now grab the HWND and force a resize border
-	HWND hwnd = glfwGetWin32Window(window);
+	window_handle = glfwGetWin32Window(window);
 
 	DWM_WINDOW_CORNER_PREFERENCE cornerPreference = DWMWCP_ROUND;
-	DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &cornerPreference, sizeof(cornerPreference));
+	DwmSetWindowAttribute(window_handle, DWMWA_WINDOW_CORNER_PREFERENCE, &cornerPreference, sizeof(cornerPreference));
 
 	// Chain your custom proc
-	originalWndProc = (WNDPROC)SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)CustomWndProc);
+	originalWndProc = (WNDPROC)SetWindowLongPtr(window_handle, GWLP_WNDPROC, (LONG_PTR)CustomWndProc);
 
 	// Grab the existing style
-	LONG_PTR style = GetWindowLongPtr(hwnd, GWL_STYLE);
+	LONG_PTR style = GetWindowLongPtr(window_handle, GWL_STYLE);
 
 	// Re-add the bits Windows needs for snapping + Win+Arrows:
 	style |= ( WS_CAPTION 
@@ -289,10 +294,10 @@ bool App::Init() {
 			 | WS_MAXIMIZEBOX 
 			 | WS_SYSMENU );    // optional, for system menu
 
-	SetWindowLongPtr(hwnd, GWL_STYLE, style);
+	SetWindowLongPtr(window_handle, GWL_STYLE, style);
 
 	// Force Windows to re-evaluate the non-client area:
-	SetWindowPos(hwnd, nullptr, 0,0,0,0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_FRAMECHANGED);
+	SetWindowPos(window_handle, nullptr, 0,0,0,0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_FRAMECHANGED);
 	
 	lastTime = glfwGetTime();
 	
@@ -333,7 +338,41 @@ bool App::Init() {
 	t.detach();
 //	checkForUpdates();
 	
+	updateTransparency(settings->getValue("use_transparency", false));
+	
 	return true;
+}
+
+void App::updateTransparency(bool transparent) {
+	// 1) Make sure window is NOT layered via glfwSetWindowOpacity.
+	//    Keep glfwSetWindowOpacity(window, 1.0f) and use your per-pixel alpha instead.
+
+	HMODULE hUser = GetModuleHandleW(L"user32.dll");
+	if (!hUser) return;
+
+	auto setWCA = reinterpret_cast<pfnSetWindowCompositionAttribute>(
+		GetProcAddress(hUser, "SetWindowCompositionAttribute")
+	);
+	if (!setWCA) return;
+
+	ACCENT_POLICY accent = {};
+	if (transparent) {
+		// Plain blur:
+		accent.accentState = ACCENT_ENABLE_BLURBEHIND;
+
+		// Or, for stronger Win10-style acrylic:
+		// accent.accentState = ACCENT_ENABLE_ACRYLICBLURBEHIND;
+		// accent.gradientColor = 0xCC000000; // AARRGGBB tint (here: semi-transparent black)
+	} else {
+		accent.accentState = ACCENT_DISABLED;
+	}
+
+	WINDOWCOMPOSITIONATTRIBDATA data = {};
+	data.Attribute = WCA_ACCENT_POLICY;
+	data.Data      = &accent;
+	data.SizeOfData= sizeof(accent);
+
+	setWCA(window_handle, &data);
 }
 
 void App::checkForUpdates() {
@@ -703,7 +742,7 @@ void App::DoFullRenderWithoutInput() {
 	lastUpdate = currentTime;
 	
 	glClearColor(bgcolor->r, bgcolor->g, bgcolor->b, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	glEnable(GL_SCISSOR_TEST);
 	
@@ -722,6 +761,20 @@ void App::DoFullRenderWithoutInput() {
 	}
 	
 	glDisable(GL_SCISSOR_TEST);
+	
+	
+	if (settings->getValue("use_transparency", false)) {
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_TRUE);
+		glDisable(GL_BLEND);
+		
+		glClearColor(0.0f, 0.0f, 0.0f, 0.65f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		
+		glEnable(GL_BLEND);
+		
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	}
+	
 	glfwSwapBuffers(window);
 }
 

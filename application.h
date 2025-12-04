@@ -30,6 +30,41 @@
 #include "widget.h"
 #include <mutex>
 
+#include <dwmapi.h>
+
+enum ACCENT_STATE {
+	ACCENT_DISABLED                  = 0,
+	ACCENT_ENABLE_GRADIENT           = 1,
+	ACCENT_ENABLE_TRANSPARENTGRADIENT= 2,
+	ACCENT_ENABLE_BLURBEHIND         = 3,
+	ACCENT_ENABLE_ACRYLICBLURBEHIND  = 4, // strong acrylic blur (Win10 RS4+)
+	ACCENT_ENABLE_HOSTBACKDROP       = 5, // Win11-ish
+	ACCENT_INVALID_STATE             = 6
+};
+
+struct ACCENT_POLICY {
+	ACCENT_STATE accentState;
+	DWORD        accentFlags;
+	DWORD        gradientColor; // ARGB
+	DWORD        animationId;
+};
+
+enum WINDOW_COMPOSITION_ATTRIBUTE {
+	WCA_UNDEFINED          = 0,
+	/* ... */
+	WCA_ACCENT_POLICY      = 19,
+	/* ... */
+};
+
+struct WINDOWCOMPOSITIONATTRIBDATA {
+	WINDOW_COMPOSITION_ATTRIBUTE Attribute;
+	PVOID   Data;
+	SIZE_T  SizeOfData;
+};
+
+using pfnSetWindowCompositionAttribute =
+	BOOL (WINAPI*)(HWND, WINDOWCOMPOSITIONATTRIBDATA*);
+
 struct StoredSearch {
 	std::string path;
 	int line;
@@ -55,6 +90,8 @@ public:
 	using PosFunction = std::function<void(Widget*)>;
 	using UpdateFInfoFunction = std::function<void(Widget*, FileInfo*)>;
 	using StringGivenFunc = std::function<void(icu::UnicodeString)>;
+	
+	static HWND window_handle;
 	
 	static int major_version;
 	static int minor_version;
@@ -211,6 +248,8 @@ public:
 	static void displayToast(icu::UnicodeString text);
 	
 	static void moveMouse(int x, int y);
+	
+	static void updateTransparency(bool transparent);
 	
 	static int moveMouseToX;
 	static int moveMouseToY;

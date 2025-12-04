@@ -718,12 +718,17 @@ void App::DoFullRenderWithoutInput() {
 	
 	lastUpdate = currentTime;
 	
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // we need to overwrite everything now (rgb and a)
 	
-	glClearColor(bgcolor->r, bgcolor->g, bgcolor->b, 1.0f);
+	if (settings->getValue("use_transparency", false)) {
+		glClearColor(bgcolor->r, bgcolor->g, bgcolor->b, 0.65f); // reduce opacity to .65
+	}else{
+		glClearColor(bgcolor->r, bgcolor->g, bgcolor->b, 1.0f);
+	}
+	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE); // don't let anything else touch alpha
 	
 	glEnable(GL_SCISSOR_TEST);
 	
@@ -742,16 +747,6 @@ void App::DoFullRenderWithoutInput() {
 	}
 	
 	glDisable(GL_SCISSOR_TEST);
-	
-	if (settings->getValue("use_transparency", false)) {
-		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_TRUE);
-		glDisable(GL_BLEND);
-		
-		glClearColor(0.0f, 0.0f, 0.0f, 0.65f);
-		glClear(GL_COLOR_BUFFER_BIT);
-		
-		glEnable(GL_BLEND);
-	}
 	
 	glfwSwapBuffers(window);
 }

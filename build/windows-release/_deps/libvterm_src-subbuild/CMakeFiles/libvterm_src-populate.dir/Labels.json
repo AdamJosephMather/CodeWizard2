@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/CMakeFiles/libvterm_src-populate"
+		},
+		{
+			"file" : "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/CMakeFiles/libvterm_src-populate.rule"
+		},
+		{
+			"file" : "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/CMakeFiles/libvterm_src-populate-complete.rule"
+		},
+		{
+			"file" : "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-build.rule"
+		},
+		{
+			"file" : "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-configure.rule"
+		},
+		{
+			"file" : "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-download.rule"
+		},
+		{
+			"file" : "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-install.rule"
+		},
+		{
+			"file" : "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-mkdir.rule"
+		},
+		{
+			"file" : "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-patch.rule"
+		},
+		{
+			"file" : "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-test.rule"
+		},
+		{
+			"file" : "C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"libvterm_src-populate"
+		],
+		"name" : "libvterm_src-populate"
+	}
+}

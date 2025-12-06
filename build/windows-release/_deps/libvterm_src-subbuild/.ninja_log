@@ -1,0 +1,21 @@
+# ninja log v6
+5	167	7867620552482097	libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-mkdir	32587075d1626aad
+5	167	7867620552482097	C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-mkdir	32587075d1626aad
+206	4311	7867620593961701	libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-download	ffa9396d89d8b2d6
+206	4311	7867620593961701	C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-download	ffa9396d89d8b2d6
+4349	7229	7867620594444780	libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-update	bfb89b39bc26dfba
+4349	7229	7867620594444780	C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-update	bfb89b39bc26dfba
+7229	7346	7867620624296237	libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-patch	ce42a08d6c75ebaa
+7229	7346	7867620624296237	C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-patch	ce42a08d6c75ebaa
+7346	7458	7867620625439859	libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-configure	9af37ecb4613d37c
+7346	7458	7867620625439859	C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-configure	9af37ecb4613d37c
+7459	7572	7867620626571667	libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-build	b61a51a5f3e4d979
+7459	7572	7867620626571667	C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-build	b61a51a5f3e4d979
+7572	7688	7867620627734243	libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-install	126a01f819d037c8
+7572	7688	7867620627734243	C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-install	126a01f819d037c8
+7688	7805	7867620628895269	libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-test	e8dd93810bf73b6d
+7688	7805	7867620628895269	C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-test	e8dd93810bf73b6d
+7805	7958	7867620630419093	CMakeFiles/libvterm_src-populate-complete	b74850078af910e9
+7805	7958	7867620630419093	libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-done	b74850078af910e9
+7805	7958	7867620630419093	C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/CMakeFiles/libvterm_src-populate-complete	b74850078af910e9
+7805	7958	7867620630419093	C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/src/libvterm_src-populate-stamp/libvterm_src-populate-done	b74850078af910e9

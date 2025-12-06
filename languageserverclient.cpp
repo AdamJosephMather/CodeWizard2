@@ -681,9 +681,10 @@ void LanguageServerClient::applyDocumentEdit(const std::string &uri, const LineE
 				{"end",   {{"line", index + 1}, {"character", 0}}}
 			};
 			newText = newtext + "\n";
+			
 			break;
 	}
-
+	
 	// Create the incremental content change object
 	json contentChanges = json::array();
 	contentChanges.push_back({
@@ -691,18 +692,18 @@ void LanguageServerClient::applyDocumentEdit(const std::string &uri, const LineE
 		{"text", newText}
 		// Note: 'rangeLength' is deprecated in LSP and not needed.
 	});
-
+	
 	json params = {
 		{"textDocument", textDocument},
 		{"contentChanges", contentChanges}
 	};
-
+	
 	json message = {
 		{"jsonrpc", "2.0"},
 		{"method", "textDocument/didChange"},
 		{"params", params}
 	};
-
+	
 	sendMessage(message);
 }
 

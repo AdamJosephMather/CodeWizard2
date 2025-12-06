@@ -1,0 +1,58 @@
+==20088==ERROR: AddressSanitizer: requested allocation size 0x61e1e1e1e1e1e1a7 (0x61e1e1e1e1e1f1a8 after adjustments for alignment, red zones etc.) exceeds maximum supported size of 0x10000000000 (thread T31)
+	#0 0x7ff79e103275 in operator new(unsigned __int64)D:\a\_work\1\s\src\vctools\asan\llvm\compiler-rt\lib\asan\asan_win_new_scalar_thunk.cpp:40
+	#1 0x7ff79de08278 in std::_Allocate<16, struct std::_Default_allocate_traits>(unsigned __int64) C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\xmemory:222
+	#2 0x7ff79df213ca in std::allocator<LineDiagnostic>::allocate C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\xmemory:955
+	#3 0x7ff79df213ca in std::_Allocate_at_least_helperC:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\xmemory:2186
+	#4 0x7ff79df213ca in std::vector<struct LineDiagnostic, class std::allocator<struct LineDiagnostic>>::_Emplace_reallocate<struct LineDiagnostic>(struct LineDiagnostic *const, struct LineDiagnostic &&) C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector:825
+	#5 0x7ff79df680c3 in std::vector<LineDiagnostic,std::allocator<LineDiagnostic> >::_Emplace_one_at_back C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector:779
+	#6 0x7ff79df680c3 in std::vector<LineDiagnostic,std::allocator<LineDiagnostic> >::push_back C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector:872
+	#7 0x7ff79df680c3 in CodeEdit::publishDiagnostics(class std::basic_string<char, struct std::char_traits<char>, class std::allocator<char>>, class std::vector<classstd::basic_string<char, struct std::char_traits<char>, class std::allocator<char>>, class std::allocator<class std::basic_string<char, struct std::char_traits<char>, class std::allocator<char>>>>, class std::vector<int, class std::allocator<int>>, class std::vector<int, class std::allocator<int>>, class std::vector<int, class std::allocator<int>>, class std::vector<int, class std::allocator<int>>, class std::vector<int, class std::allocator<int>>) C:\Users\adamj\Documents\C\CodeWizard\codeedit.cpp:1752
+	#8 0x7ff79e08526a in LanguageServerClient::onServerReadyRead(void) C:\Users\adamj\Documents\C\CodeWizard\languageserverclient.cpp:1083
+	#9 0x7ff79e06c1ea in LanguageServerClient::{ctor}::__l2::<lambda_668a79734579cbc883e52536726fc249>::operator() C:\Users\adamj\Documents\C\CodeWizard\languageserverclient.cpp:380
+	#10 0x7ff79e06c1ea in std::invoke C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\type_traits:1705
+	#11 0x7ff79e06c1ea in std::_Func_impl_no_alloc<<lambda_668a79734579cbc883e52536726fc249>,void>::_Do_call C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\functional:874
+	#12 0x7ff79e069e5e in std::_Func_class<void>::operator() C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\functional:920
+	#13 0x7ff79e069e5e in <lambda_d1e9389af67981eb5f1cb229cbad1631>::operator() C:\Users\adamj\Documents\C\CodeWizard\languageserverclient.cpp:185
+	#14 0x7ff79e0572ad in std::invoke C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\type_traits:1705
+	#15 0x7ff79e0572ad in std::thread::_Invoke<std::tuple<<lambda_d1e9389af67981eb5f1cb229cbad1631> >,0> C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\thread:60
+	#16 0x7ffd610d37af  (C:\WINDOWS\System32\ucrtbase.dll+0x1800037af)
+	#17 0x7ffcc0f648fe in __asan::AsanThread::ThreadStart(unsigned __int64) D:\a\_work\1\s\src\vctools\asan\llvm\compiler-rt\lib\asan\asan_thread.cpp:299
+	#18 0x7ffd62ace8d6  (C:\WINDOWS\System32\KERNEL32.DLL+0x18002e8d6)
+	#19 0x7ffd6400c53b  (C:\WINDOWS\SYSTEM32\ntdll.dll+0x18008c53b)
+
+==20088==HINT: if you don't care about these errors youmay set allocator_may_return_null=1
+SUMMARY: AddressSanitizer: allocation-size-too-big D:\a\_work\1\s\src\vctools\asan\llvm\compiler-rt\lib\asan\asan_win_new_scalar_thunk.cpp:40 in operator new(unsigned __int64)
+Thread T31 created by T0 here:
+	#0 0x7ffcc0f66607 in __asan_wrap_CreateThread D:\a\_work\1\s\src\vctools\asan\llvm\compiler-rt\lib\asan\asan_win.cpp:167
+	#1 0x7ffd61149967  (C:\WINDOWS\System32\ucrtbase.dll+0x180079967)
+	#2 0x7ff79e095a97 in std::thread::{ctor} C:\ProgramFiles\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\thread:93
+	#3 0x7ff79e095a97 in Process::start(class std::basic_string<char, struct std::char_traits<char>, class std::allocator<char>> const &, class std::vector<class std::basic_string<char, struct std::char_traits<char>, class std::allocator<char>>, class std::allocator<class std::basic_string<char, struct std::char_traits<char>, class std::allocator<char>>>> const &) C:\Users\adamj\Documents\C\CodeWizard\languageserverclient.cpp:176
+	#4 0x7ff79e066b2e in LanguageServerClient::LanguageServerClient(class std::basic_string<char, struct std::char_traits<char>, class std::allocator<char>> const &, class std::function<(class std::basic_string<char, structstd::char_traits<char>, class std::allocator<char>> const &)>) C:\Users\adamj\Documents\C\CodeWizard\languageserverclient.cpp:385
+	#5 0x7ff79dea2b3c in App::getLSP(class std::basic_string<char, struct std::char_traits<char>, class std::allocator<char>>) C:\Users\adamj\Documents\C\CodeWizard\application.cpp:401
+	#6 0x7ff79df5b14d in CodeEdit::detectLanguage(void)C:\Users\adamj\Documents\C\CodeWizard\codeedit.cpp:397
+	#7 0x7ff79df6e48c in CodeEdit::triggerSaveAs(void) C:\Users\adamj\Documents\C\CodeWizard\codeedit.cpp:712
+	#8 0x7ff79df60661 in CodeEdit::on_key_event(int, int, int, int) C:\Users\adamj\Documents\C\CodeWizard\codeedit.cpp:1235
+	#9 0x7ff79deb4c65 in Widget::on_key_event(int, int,int, int) C:\Users\adamj\Documents\C\CodeWizard\widget.cpp:35
+	#10 0x7ff79dee4c74 in Editor::on_key_event(int, int, int, int) C:\Users\adamj\Documents\C\CodeWizard\editor.cpp:308
+	#11 0x7ff79deb4c65 in Widget::on_key_event(int, int, int, int) C:\Users\adamj\Documents\C\CodeWizard\widget.cpp:35
+	#12 0x7ff79deb4c65 in Widget::on_key_event(int, int, int, int) C:\Users\adamj\Documents\C\CodeWizard\widget.cpp:35
+	#13 0x7ff79deb4c65 in Widget::on_key_event(int, int, int, int) C:\Users\adamj\Documents\C\CodeWizard\widget.cpp:35
+	#14 0x7ff79dea6cde in App::key_callback(struct GLFWwindow *, int, int, int, int) C:\Users\adamj\Documents\C\CodeWizard\application.cpp:1174
+	#15 0x7ffd4c253618 in windowProc C:\Users\adamj\vcpkg\buildtrees\glfw3\src\3.4-2448ff4533.clean\src\win32_window.c:799
+	#16 0x7ffd627f7845  (C:\WINDOWS\System32\USER32.dll+0x180017845)
+	#17 0x7ffd627f730b  (C:\WINDOWS\System32\USER32.dll+0x18001730b)
+	#18 0x7ffd1e3fbe12  (C:\WINDOWS\SYSTEM32\OPENGL32.dll+0x18000be12)
+	#19 0x7ffd627f7845  (C:\WINDOWS\System32\USER32.dll+0x180017845)
+	#20 0x7ffd627f730b  (C:\WINDOWS\System32\USER32.dll+0x18001730b)
+	#21 0x7ff79de840e3 in App::CustomWndProc(struct HWND__*, unsigned int, unsigned __int64, __int64) C:\Users\adamj\Documents\C\CodeWizard\application.cpp:575
+	#22 0x7ffd627f7845  (C:\WINDOWS\System32\USER32.dll+0x180017845)
+	#23 0x7ffd627f539c  (C:\WINDOWS\System32\USER32.dll+0x18001539c)
+	#24 0x7ffd4c250727 in _glfwPollEventsWin32 C:\Users\adamj\vcpkg\buildtrees\glfw3\src\3.4-2448ff4533.clean\src\win32_window.c:2125
+	#25 0x7ff79de872d4 in App::Run(void) C:\Users\adamj\Documents\C\CodeWizard\application.cpp:818
+	#26 0x7ff79de51fcd in main C:\Users\adamj\Documents\C\CodeWizard\main.cpp:236
+	#27 0x7ff79e10430f in invoke_main D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:78
+	#28 0x7ff79e10430f in __scrt_common_main_seh D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:288
+	#29 0x7ffd62ace8d6  (C:\WINDOWS\System32\KERNEL32.DLL+0x18002e8d6)
+	#30 0x7ffd6400c53b  (C:\WINDOWS\SYSTEM32\ntdll.dll+0x18008c53b)
+
+==20088==ABORTING

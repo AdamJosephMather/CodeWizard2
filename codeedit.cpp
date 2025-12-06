@@ -1587,7 +1587,12 @@ void CodeEdit::renameReceived(int id, json resp) {
 		c.head_char = s.endChar;
 		c.head_line = s.endLine;
 		
-		std::cerr << "Replacing [" << s.startLine << ":" << s.startChar << " → " << s.endLine   << ":" << s.endChar << "] with: " << s.newText << "\n";
+		if (c.head_line > textedit->lines.size()-1 || c.anchor_line > textedit->lines.size()-1) {
+			std::cerr << "Had to skip one outside of line bounds\n";
+			continue;
+		}
+		
+		std::cout << "Replacing [" << s.startLine << ":" << s.startChar << " → " << s.endLine   << ":" << s.endChar << "] with: " << s.newText << "\n";
 		
 		textedit->insertTextAtCursor(c, icu::UnicodeString::fromUTF8(s.newText));
 	}
@@ -1720,6 +1725,11 @@ void CodeEdit::publishDiagnostics(std::string filename, std::vector<std::string>
 		int el = endL[i];
 		int ec = endC[i];
 		int sev = severities[i]-1; // so glad I included comments last time... yeah right
+		
+		if (sl > textedit->lines.size()-1) { // this can happen, because we are always putting a \n on each line we send to the LSP. It is **always** wrong. And I don't care enough to fix it right.
+			continue;
+		}
+		
 		if (sev == 3) { sev = 2; }
 		
 		if (sc == ec && sl == el) {
@@ -1739,6 +1749,10 @@ void CodeEdit::publishDiagnostics(std::string filename, std::vector<std::string>
 		errorlines.push_back(sl);
 		
 		for (int l = sl; l < el+1; l++){
+			if (l > textedit->lines.size()-1) {
+				break; // again this can happen
+			}
+			
 			int srt = 0;
 			int end = textedit->lines[l].line_text.length()-1;
 			

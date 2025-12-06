@@ -1,3 +1,0 @@
-C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/CMakeFiles/libvterm_src-populate.dir
-C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/CMakeFiles/edit_cache.dir
-C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/CMakeFiles/rebuild_cache.dir

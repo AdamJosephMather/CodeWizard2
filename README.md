@@ -41,7 +41,7 @@ CodeWizard2 is only available on Windows. There is a modal option (which I quite
 
 1. Ctrl+Shift+P focus the command palette.
 2. Ctrl+Shift+O change project folder.
-3. Ctrl+O open folder.
+3. Ctrl+O open file.
 4. Ctrl+Shift+U run project search through command palette.
 5. Ctrl+> or Ctrl+< to jump brackets.
 6. F5 run programs

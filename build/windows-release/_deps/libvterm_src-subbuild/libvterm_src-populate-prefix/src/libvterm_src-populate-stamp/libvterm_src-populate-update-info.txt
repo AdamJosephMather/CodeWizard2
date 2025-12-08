@@ -2,6 +2,6 @@
 # The patch step will be re-executed if anything in this file changes.
 # No other meaning or use of this file is supported.
 
-command (connected)=C:/Program Files/CMake/bin/cmake.exe;-Dcan_fetch=YES;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/tmp/libvterm_src-populate-gitupdate.cmake
-command (disconnected)=C:/Program Files/CMake/bin/cmake.exe;-Dcan_fetch=NO;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/tmp/libvterm_src-populate-gitupdate.cmake
-work_dir=C:/Users/adamj/Documents/C/CodeWizard/build/windows-release/_deps/libvterm_src-src
+command (connected)=C:/Program Files/Python310/Lib/site-packages/cmake/data/bin/cmake.exe;-Dcan_fetch=YES;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/tmp/libvterm_src-populate-gitupdate.cmake
+command (disconnected)=C:/Program Files/Python310/Lib/site-packages/cmake/data/bin/cmake.exe;-Dcan_fetch=NO;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/libvterm_src-subbuild/libvterm_src-populate-prefix/tmp/libvterm_src-populate-gitupdate.cmake
+work_dir=D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/libvterm_src-src

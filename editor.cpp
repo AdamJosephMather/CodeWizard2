@@ -231,6 +231,14 @@ void Editor::fileOpenRequested(FileInfo* f, int lns, int chrs, int ln, int chr) 
 				App::commandUnfocused();
 				return;
 			}
+		}else if (auto iv = dynamic_cast<ImageView*>(editors[itm.id])) {
+			if (iv->file && areSameFile(iv->file->filepath, f->filepath)) {
+				tab_bar->selected_id = itm.id;
+				tabinfoclicked(itm);
+				moveto(lns, chrs, ln, chr);
+				App::commandUnfocused();
+				return;
+			}
 		}
 	}
 	
@@ -322,6 +330,10 @@ Widget* Editor::fileOpen(std::string fname) { // this is a widget function to fi
 	for (auto itm : tab_bar->tabs_list) {
 		if (auto te = dynamic_cast<CodeEdit*>(editors[itm.id])) {
 			if (te->file && areSameFile(te->file->filepath, fname)) {
+				return this;
+			}
+		}else if (auto iv = dynamic_cast<ImageView*>(editors[itm.id])) {
+			if (iv->file && areSameFile(iv->file->filepath, fname)) {
 				return this;
 			}
 		}

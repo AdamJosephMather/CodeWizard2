@@ -43,6 +43,8 @@
 #define GL_OPERAND2_RGB         0x8592
 #define GL_INTERPOLATE          0x8575
 #define GL_CONSTANT             0x8576
+#define GL_PRIMARY_COLOR        0x8577
+#define GL_PREVIOUS             0x8578
 #endif
 
 enum ACCENT_STATE {

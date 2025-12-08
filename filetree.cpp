@@ -51,48 +51,44 @@ GLuint FileTree::prepareTexture(std::string imagepath) {
 void FileTree::renderTexture(GLuint texID, int x, int y, int w, int h) {
 	if (texID == (GLuint)-1) { return; }
 
-	// --- PUSH STATE ---
-	// GL_TEXTURE_BIT: Saves glTexEnv settings (mode, color, combine args) and bindings.
-	// GL_ENABLE_BIT: Saves glEnable/glDisable states (Texture_2D, Blend).
-	// GL_CURRENT_BIT: Saves the current glColor.
-	// GL_COLOR_BUFFER_BIT: Saves glBlendFunc.
 	glPushAttrib(GL_TEXTURE_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT | GL_COLOR_BUFFER_BIT);
 
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, texID);
-	
-	// Set the Main Text Color (PopAttrib will restore the previous color later)
-	glColor4f(App::theme.main_text_color->r, App::theme.main_text_color->g, App::theme.main_text_color->b, App::theme.main_text_color->a);
-	
-	// --- STEP 1: DEFINE THE "BUFFER" BACKGROUND COLOR ---
+
+	// 1) Set the main text color as the PRIMARY_COLOR
+	glColor4f(App::theme.main_text_color->r,
+			  App::theme.main_text_color->g,
+			  App::theme.main_text_color->b,
+			  App::theme.main_text_color->a);
+
+	// 2) Background color (behind the icon)
 	float blendColor[] = { back_color->r, back_color->g, back_color->b, 1.0f };
-	
-	// Pass this color into the Texture Environment
 	glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, blendColor);
 
-	// --- STEP 2: CONFIGURE THE MATH (THE "COMBINER") ---
+	// 3) Configure combiner:
+	// result.rgb = PRIMARY_COLOR * tex.a + CONSTANT(back) * (1 - tex.a)
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
 	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_INTERPOLATE);
 
-	// Arg 0: Foreground
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
+	// Arg0: foreground = main text color (PRIMARY_COLOR)
+	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_PRIMARY_COLOR);
 	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
 
-	// Arg 1: Background (Constant)
+	// Arg1: background = constant back_color
 	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_CONSTANT);
 	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
 
-	// Arg 2: Mixer (Alpha)
+	// Arg2: mixer = texture alpha
 	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE2_RGB, GL_TEXTURE);
 	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA);
 
-	// --- STEP 3: RENDER ---
+	// We’re doing all the "alpha compositing" in RGB, so blending can stay off
 	glDisable(GL_BLEND);
 
-	// Ensure we are drawing "White" so we don't tint the result
-	// (Note: This overrides the main_text_color set above, which is correct for this combiner setup)
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	
+	// IMPORTANT: don’t overwrite the main_text_color with white anymore
+	// glColor4f(1.0f, 1.0f, 1.0f, 1.0f);  // <-- remove this
+
 	glBegin(GL_QUADS);
 		glTexCoord2f(0.0f, 1.0f); glVertex2f(x,   y+h);
 		glTexCoord2f(1.0f, 1.0f); glVertex2f(x+w, y+h);
@@ -100,9 +96,6 @@ void FileTree::renderTexture(GLuint texID, int x, int y, int w, int h) {
 		glTexCoord2f(0.0f, 0.0f); glVertex2f(x,   y);
 	glEnd();
 
-	// --- STEP 4: CLEANUP ---
-	// This restores everything (Texture environment, Blend func, Enabled caps, Color) 
-	// to exactly how it was before this function was called.
 	glPopAttrib();
 }
 

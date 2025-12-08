@@ -65,32 +65,61 @@ void ImageView::openFile() {
 void ImageView::render() {
 	if (!is_visible) return;
 
-	// background
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.main_background_color);
-
-	// call parent in case of clipping, etc.
 	Widget::render();
 
 	if (hasTexture) {
+		glPushAttrib(GL_TEXTURE_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT | GL_COLOR_BUFFER_BIT);
+		
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, texID);
 
-		// Compute scale to maintain aspect ratio and not exceed available space
+		// --- STEP 1: DEFINE THE "BUFFER" BACKGROUND COLOR ---
+		// This is the color you want to composite the image against.
+		// It simulates the "background" of the separate buffer you described.
+		Color* bg = App::theme.main_background_color;
+		float blendColor[] = { bg->r, bg->g, bg->b, 1.0f };
+		
+		// Pass this color into the Texture Environment
+		glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, blendColor);
+
+		// --- STEP 2: CONFIGURE THE MATH (THE "COMBINER") ---
+		// We switch from standard modulation to COMBINE mode
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+
+		// Set the operation to INTERPOLATE (mix)
+		// Formula: Arg0 * Arg2 + Arg1 * (1 - Arg2)
+		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_INTERPOLATE);
+
+		// Argument 0: The Texture Image (The foreground)
+		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
+		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
+
+		// Argument 1: The Constant Color (The background/matte)
+		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_CONSTANT);
+		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
+
+		// Argument 2: The Mixer (Use the Texture's Alpha channel)
+		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE2_RGB, GL_TEXTURE);
+		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA);
+
+		// --- STEP 3: RENDER ---
+		// IMPORTANT: DISABLE BLENDING.
+		// The texture unit has already done the mixing for us.
+		// We now want to overwrite the RGB on the screen with our calculated result.
+		glDisable(GL_BLEND); 
+
+		// Ensure we are drawing "White" so we don't tint the result
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+		// Calculate geometry
 		float scaleX = (float)t_w / (float)imgW;
 		float scaleY = (float)t_h / (float)imgH;
 		float scale = min(1.0f, min(scaleX, scaleY));
-
-		// Compute displayed width and height
 		float dispW = imgW * scale;
 		float dispH = imgH * scale;
-
-		// Center the image in the available space (optional)
 		float offsetX = t_x + (t_w - dispW) * 0.5f;
 		float offsetY = t_y + (t_h - dispH) * 0.5f;
-		
-		App::DrawRect(offsetX, offsetY, dispW, dispH, App::theme.white);
 
-		// Draw the textured quad
 		glBegin(GL_QUADS);
 			glTexCoord2f(0.0f, 1.0f); glVertex2f(offsetX,         offsetY + dispH);
 			glTexCoord2f(1.0f, 1.0f); glVertex2f(offsetX + dispW, offsetY + dispH);
@@ -98,7 +127,16 @@ void ImageView::render() {
 			glTexCoord2f(0.0f, 0.0f); glVertex2f(offsetX,         offsetY);
 		glEnd();
 
+		// --- STEP 4: CLEANUP / RESTORE DEFAULTS ---
+		// Very important to reset this, or other textures will look weird!
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glDisable(GL_TEXTURE_2D);
+		
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		
+		glPopAttrib();
 	}
 }

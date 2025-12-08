@@ -114,3 +114,11 @@ endif()
 configure_file(${CMAKE_SOURCE_DIR}/app.png
                ${CMAKE_BINARY_DIR}/app.png
                COPYONLY)
+
+configure_file(${CMAKE_SOURCE_DIR}/fileIcon.png
+               ${CMAKE_BINARY_DIR}/fileIcon.png
+               COPYONLY)
+
+configure_file(${CMAKE_SOURCE_DIR}/folderIcon.png
+               ${CMAKE_BINARY_DIR}/folderIcon.png
+               COPYONLY)

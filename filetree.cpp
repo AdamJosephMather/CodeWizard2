@@ -2,22 +2,131 @@
 #include "text_renderer.h"
 #include "application.h"
 
+#include <stb_image.h>
+
 FileTree::FileTree(Widget* parent) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("FileTree");
 	
 	openpaths = { App::settings->getValue("current_folder", getExecutableDir()) };
+	
+	folderIcon = prepareTexture(getExecutableDir()+"\\folderIcon.png");
+	fileIcon = prepareTexture(getExecutableDir()+"\\fileIcon.png");
+}
+
+GLuint FileTree::prepareTexture(std::string imagepath) {
+	int channels;
+	int imgW;
+	int imgH;
+	
+	unsigned char* data = stbi_load(
+		imagepath.c_str(),
+		&imgW, &imgH, &channels,
+		STBI_rgb_alpha
+	);
+	
+	if (!data) {
+		App::displayToast(icu::UnicodeString::fromUTF8("Failed to load image: "+imagepath));
+		return -1;
+	}
+	
+	GLuint texID;
+	// Generate GL texture
+	glGenTextures(1, &texID);
+	glBindTexture(GL_TEXTURE_2D, texID);
+	glTexImage2D(
+		GL_TEXTURE_2D, 0, GL_RGBA,
+		imgW, imgH, 0,
+		GL_RGBA, GL_UNSIGNED_BYTE, data
+	);
+	// Simple linear filtering
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	stbi_image_free(data);
+	
+	return texID;
+}
+
+void FileTree::renderTexture(GLuint texID, int x, int y, int w, int h) {
+	if (texID == (GLuint)-1) { return; }
+
+	// --- PUSH STATE ---
+	// GL_TEXTURE_BIT: Saves glTexEnv settings (mode, color, combine args) and bindings.
+	// GL_ENABLE_BIT: Saves glEnable/glDisable states (Texture_2D, Blend).
+	// GL_CURRENT_BIT: Saves the current glColor.
+	// GL_COLOR_BUFFER_BIT: Saves glBlendFunc.
+	glPushAttrib(GL_TEXTURE_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT | GL_COLOR_BUFFER_BIT);
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, texID);
+	
+	// Set the Main Text Color (PopAttrib will restore the previous color later)
+	glColor4f(App::theme.main_text_color->r, App::theme.main_text_color->g, App::theme.main_text_color->b, App::theme.main_text_color->a);
+	
+	// --- STEP 1: DEFINE THE "BUFFER" BACKGROUND COLOR ---
+	float blendColor[] = { back_color->r, back_color->g, back_color->b, 1.0f };
+	
+	// Pass this color into the Texture Environment
+	glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, blendColor);
+
+	// --- STEP 2: CONFIGURE THE MATH (THE "COMBINER") ---
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_INTERPOLATE);
+
+	// Arg 0: Foreground
+	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
+	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
+
+	// Arg 1: Background (Constant)
+	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_CONSTANT);
+	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
+
+	// Arg 2: Mixer (Alpha)
+	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE2_RGB, GL_TEXTURE);
+	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA);
+
+	// --- STEP 3: RENDER ---
+	glDisable(GL_BLEND);
+
+	// Ensure we are drawing "White" so we don't tint the result
+	// (Note: This overrides the main_text_color set above, which is correct for this combiner setup)
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	
+	glBegin(GL_QUADS);
+		glTexCoord2f(0.0f, 1.0f); glVertex2f(x,   y+h);
+		glTexCoord2f(1.0f, 1.0f); glVertex2f(x+w, y+h);
+		glTexCoord2f(1.0f, 0.0f); glVertex2f(x+w, y);
+		glTexCoord2f(0.0f, 0.0f); glVertex2f(x,   y);
+	glEnd();
+
+	// --- STEP 4: CLEANUP ---
+	// This restores everything (Texture environment, Blend func, Enabled caps, Color) 
+	// to exactly how it was before this function was called.
+	glPopAttrib();
 }
 
 void FileTree::render() {
 	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
 	
 	for (auto itm : toRender) {
-		if (itm.is_folder) {
-			App::DrawRect(itm.x+2, itm.y+2, itm.w-4, itm.h-4, App::theme.hover_background_color);
+		if (App::mouseX >= itm.x && App::mouseX <= itm.x+itm.w && App::mouseY > itm.y && App::mouseY <= itm.y+itm.h) {
+			App::DrawRect(itm.x, itm.y, itm.w, itm.h, App::theme.hover_background_color);
+			back_color = App::theme.hover_background_color;
+		}else{
+			back_color = App::theme.extras_background_color;
 		}
-		TextRenderer::draw_text(itm.x+App::text_padding, itm.y+App::text_padding, itm.name, App::theme.main_text_color);
 		
-		App::DrawBorder(itm.x+2, itm.y+2, itm.w-4, itm.h-4, App::theme.border);
+		if (itm.is_folder) {
+			renderTexture(folderIcon, itm.x+(float)App::text_padding/2, itm.y+(float)App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height());
+		}else {
+			renderTexture(fileIcon, itm.x+(float)App::text_padding/2, itm.y+(float)App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height());
+		}
+		
+		TextRenderer::draw_text(itm.x+TextRenderer::get_text_height()+(float)App::text_padding, itm.y+(float)App::text_padding/2, itm.name, App::theme.main_text_color);
+		
+		
+//		App::DrawBorder(itm.x, itm.y, itm.w, itm.h, App::theme.border);
 	}
 	
 	Widget::render();
@@ -95,11 +204,8 @@ double FileTree::createVisuals(double pos, double depth, TreeStructure* el) {
 	int y = pos*elHeighto+t_y;
 	
 	icu::UnicodeString str = el->name;
-	if (el->is_folder) {
-		UChar32 bs = U'\\';
-		str.append(bs);
-	}
-	int w = TextRenderer::get_text_width(str.length())+App::text_padding*2;
+	
+	int w = TextRenderer::get_text_width(str.length())+App::text_padding*1.5+TextRenderer::get_text_height();
 	
 	toRender.push_back( { x, y, w, elHeighto, str, el, el->is_folder } );
 	
@@ -134,7 +240,7 @@ void FileTree::position(int x, int y, int w, int h) {
 		fillOutTree(root);
 	}
 	
-	elHeighto = TextRenderer::get_text_height()+App::text_padding*2;
+	elHeighto = TextRenderer::get_text_height()+App::text_padding;
 	toRender.clear();
 	
 	max_scroll_horz = 0.0;

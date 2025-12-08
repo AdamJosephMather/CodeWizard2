@@ -1,5 +1,6 @@
 #pragma once
 
+#include "helper_types.h"
 #include "widget.h"
 #include <GLFW/glfw3.h>
 
@@ -38,7 +39,12 @@ public:
 	double max_scroll_vert = 0;
 	double max_scroll_horz = 0;
 	
+	Color* back_color;
+	
 	int elHeighto = 0;
+	
+	GLuint folderIcon;
+	GLuint fileIcon;
 	
 	
 //	bool on_key_event(int key, int scancode, int action, int mods);
@@ -56,4 +62,6 @@ public:
 	double createVisuals(double pos, double depth, TreeStructure* el);
 	void request_close(Widget::close_callback_type cllbck);
 private:
+	GLuint prepareTexture(std::string imagepath);
+	void renderTexture(GLuint texID, int x, int y, int w, int h);
 };

@@ -32,6 +32,19 @@
 
 #include <dwmapi.h>
 
+#ifndef GL_COMBINE
+#define GL_COMBINE              0x8570
+#define GL_COMBINE_RGB          0x8571
+#define GL_SOURCE0_RGB          0x8580
+#define GL_SOURCE1_RGB          0x8581
+#define GL_SOURCE2_RGB          0x8582
+#define GL_OPERAND0_RGB         0x8590
+#define GL_OPERAND1_RGB         0x8591
+#define GL_OPERAND2_RGB         0x8592
+#define GL_INTERPOLATE          0x8575
+#define GL_CONSTANT             0x8576
+#endif
+
 enum ACCENT_STATE {
 	ACCENT_DISABLED                  = 0,
 	ACCENT_ENABLE_GRADIENT           = 1,

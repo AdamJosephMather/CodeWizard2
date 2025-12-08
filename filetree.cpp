@@ -285,17 +285,17 @@ bool FileTree::on_mouse_button_event(int button, int action, int mods){
 				}else{
 					openpaths.push_back(vs.ts->path);
 				}
+				
+				deleteTree(root);
+				root = new TreeStructure();
+				root->path = App::settings->getValue("current_folder", getExecutableDir());
+				root->name = icu::UnicodeString::fromUTF8(std::filesystem::path(root->path).filename().string());
+				fillOutTree(root);
 			}else{
 				// let's open the file now
 				std::filesystem::path p(vs.ts->path);
 				App::openFromCMD(vs.ts->path, p.filename().string());
 			}
-			
-			deleteTree(root);
-			root = new TreeStructure();
-			root->path = App::settings->getValue("current_folder", getExecutableDir());
-			root->name = icu::UnicodeString::fromUTF8(std::filesystem::path(root->path).filename().string());
-			fillOutTree(root);
 			break;
 		}
 	}

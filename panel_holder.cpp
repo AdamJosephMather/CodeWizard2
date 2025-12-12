@@ -175,10 +175,17 @@ bool PanelHolder::on_mouse_button_event(int button, int action, int mods) {
 	
 	if (has_one_to_rem && button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
 		if (first_hovered) {
+			bool gonnadeletethis = false;
+			
 			children[0]->request_close([&](Widget* to_remove){
-				Widget::close_callback(to_remove);
+				for (int i = 0; i < children.size(); i++) {
+					if (children[i] == to_remove) {
+						children.erase(children.begin()+i);
+						break;
+					}
+				}
 				
-				if (auto sub = dynamic_cast<PanelHolder*>(children[0])){
+				if (auto sub = dynamic_cast<PanelHolder*>(children[0])) {
 					int our_indx = App::GetWidgetIndexInParent(this);
 					
 					App::MoveWidget(sub, parent);
@@ -188,14 +195,27 @@ bool PanelHolder::on_mouse_button_event(int button, int action, int mods) {
 						std::swap(sub->parent->children[0], sub->parent->children[1]);
 					}
 					
-					delete this;
+					gonnadeletethis = true;
 				}
+				
+				delete to_remove;
 			});
+			
+			if (gonnadeletethis) {
+				delete this;
+			}
 		}else {
+			bool gonnadeletethis = false;
+			
 			children[1]->request_close([&](Widget* to_remove){
-				Widget::close_callback(to_remove);
+				for (int i = 0; i < children.size(); i++) {
+					if (children[i] == to_remove) {
+						children.erase(children.begin()+i);
+						break;
+					}
+				}
 				
-				if (auto sub = dynamic_cast<PanelHolder*>(children[0])){
+				if (auto sub = dynamic_cast<PanelHolder*>(children[0])) {
 					int our_indx = App::GetWidgetIndexInParent(this);
 					
 					App::MoveWidget(sub, parent);
@@ -205,9 +225,15 @@ bool PanelHolder::on_mouse_button_event(int button, int action, int mods) {
 						std::swap(sub->parent->children[0], sub->parent->children[1]);
 					}
 					
-					delete this;
+					gonnadeletethis = true;
 				}
+				
+				delete to_remove;
 			});
+			
+			if (gonnadeletethis) {
+				delete this;
+			}
 		}
 		
 		App::nada_panel();

@@ -109,8 +109,8 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-dj2t9p"
-      binary: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-dj2t9p"
+      source: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-65z98y"
+      binary: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-65z98y"
     cmakeVariables:
       CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS /W3"
       CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
@@ -123,11 +123,11 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-dj2t9p'
+        Change Dir: 'D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-65z98y'
         
-        Run Build Command(s): C:/PROGRA~1/mingw64/bin/ninja.exe -v cmTC_166f4
-        [1/2] C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_166f4.dir\\CMakeCCompilerABI.c.obj /FdCMakeFiles\\cmTC_166f4.dir\\ /FS -c "C:\\Program Files\\Python310\\Lib\\site-packages\\cmake\\data\\share\\cmake-3.30\\Modules\\CMakeCCompilerABI.c"
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Python310\\Lib\\site-packages\\cmake\\data\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_166f4.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_166f4.dir\\CMakeCCompilerABI.c.obj  /out:cmTC_166f4.exe /implib:cmTC_166f4.lib /pdb:cmTC_166f4.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        Run Build Command(s): C:/PROGRA~1/mingw64/bin/ninja.exe -v cmTC_acab0
+        [1/2] C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_acab0.dir\\CMakeCCompilerABI.c.obj /FdCMakeFiles\\cmTC_acab0.dir\\ /FS -c "C:\\Program Files\\Python310\\Lib\\site-packages\\cmake\\data\\share\\cmake-3.30\\Modules\\CMakeCCompilerABI.c"
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Python310\\Lib\\site-packages\\cmake\\data\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_acab0.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_acab0.dir\\CMakeCCompilerABI.c.obj  /out:cmTC_acab0.exe /implib:cmTC_acab0.lib /pdb:cmTC_acab0.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
         
       exitCode: 0
   -
@@ -167,8 +167,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-g14u70"
-      binary: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-g14u70"
+      source: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-wepu2k"
+      binary: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-wepu2k"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
@@ -182,11 +182,11 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-g14u70'
+        Change Dir: 'D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-wepu2k'
         
-        Run Build Command(s): C:/PROGRA~1/mingw64/bin/ninja.exe -v cmTC_68e64
-        [1/2] C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP   /DWIN32 /D_WINDOWS /W3 /GR /EHsc  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_68e64.dir\\CMakeCXXCompilerABI.cpp.obj /FdCMakeFiles\\cmTC_68e64.dir\\ /FS -c "C:\\Program Files\\Python310\\Lib\\site-packages\\cmake\\data\\share\\cmake-3.30\\Modules\\CMakeCXXCompilerABI.cpp"
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Python310\\Lib\\site-packages\\cmake\\data\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_68e64.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_68e64.dir\\CMakeCXXCompilerABI.cpp.obj  /out:cmTC_68e64.exe /implib:cmTC_68e64.lib /pdb:cmTC_68e64.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        Run Build Command(s): C:/PROGRA~1/mingw64/bin/ninja.exe -v cmTC_8fa56
+        [1/2] C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP   /DWIN32 /D_WINDOWS /W3 /GR /EHsc  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_8fa56.dir\\CMakeCXXCompilerABI.cpp.obj /FdCMakeFiles\\cmTC_8fa56.dir\\ /FS -c "C:\\Program Files\\Python310\\Lib\\site-packages\\cmake\\data\\share\\cmake-3.30\\Modules\\CMakeCXXCompilerABI.cpp"
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Python310\\Lib\\site-packages\\cmake\\data\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_8fa56.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_8fa56.dir\\CMakeCXXCompilerABI.cpp.obj  /out:cmTC_8fa56.exe /implib:cmTC_8fa56.lib /pdb:cmTC_8fa56.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
         
       exitCode: 0
   -
@@ -228,17 +228,17 @@ events:
       - "C:/Program Files/Python310/Lib/site-packages/cmake/data/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake:76 (find_package)"
       - "D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/share/glfw3/glfw3Config.cmake:2 (find_dependency)"
       - "D:/Users/adamj/Documents/C/vcpkg/scripts/buildsystems/vcpkg.cmake:893 (_find_package)"
-      - "CMakeLists.txt:71 (find_package)"
+      - "CMakeLists.txt:69 (find_package)"
     checks:
       - "Performing Test CMAKE_HAVE_LIBC_PTHREAD"
     directories:
-      source: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-qs5gak"
-      binary: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-qs5gak"
+      source: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-yhj7v4"
+      binary: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-yhj7v4"
     cmakeVariables:
       CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS /W3"
       CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
       CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
-      CMAKE_MSVC_RUNTIME_LIBRARY: "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+      CMAKE_MSVC_RUNTIME_LIBRARY: "MultiThreaded$<$<CONFIG:Debug>:Debug>"
       VCPKG_INSTALLED_DIR: "D:/Users/adamj/Documents/C/vcpkg/installed"
       VCPKG_PREFER_SYSTEM_LIBS: "OFF"
       VCPKG_TARGET_TRIPLET: "x64-windows"
@@ -247,13 +247,13 @@ events:
       variable: "CMAKE_HAVE_LIBC_PTHREAD"
       cached: true
       stdout: |
-        Change Dir: 'D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-qs5gak'
+        Change Dir: 'D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-yhj7v4'
         
-        Run Build Command(s): C:/PROGRA~1/mingw64/bin/ninja.exe -v cmTC_5ef4d
-        [1/2] C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo -DCMAKE_HAVE_LIBC_PTHREAD  /DWIN32 /D_WINDOWS /W3  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_5ef4d.dir\\src.c.obj /FdCMakeFiles\\cmTC_5ef4d.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\build\\windows-release\\CMakeFiles\\CMakeScratch\\TryCompile-qs5gak\\src.c
-        FAILED: CMakeFiles/cmTC_5ef4d.dir/src.c.obj 
-        C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo -DCMAKE_HAVE_LIBC_PTHREAD  /DWIN32 /D_WINDOWS /W3  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_5ef4d.dir\\src.c.obj /FdCMakeFiles\\cmTC_5ef4d.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\build\\windows-release\\CMakeFiles\\CMakeScratch\\TryCompile-qs5gak\\src.c
-        D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\build\\windows-release\\CMakeFiles\\CMakeScratch\\TryCompile-qs5gak\\src.c(1): fatal error C1083: Cannot open include file: 'pthread.h': No such file or directory
+        Run Build Command(s): C:/PROGRA~1/mingw64/bin/ninja.exe -v cmTC_3be97
+        [1/2] C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo -DCMAKE_HAVE_LIBC_PTHREAD  /DWIN32 /D_WINDOWS /W3  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_3be97.dir\\src.c.obj /FdCMakeFiles\\cmTC_3be97.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\build\\windows-release\\CMakeFiles\\CMakeScratch\\TryCompile-yhj7v4\\src.c
+        FAILED: CMakeFiles/cmTC_3be97.dir/src.c.obj 
+        C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo -DCMAKE_HAVE_LIBC_PTHREAD  /DWIN32 /D_WINDOWS /W3  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_3be97.dir\\src.c.obj /FdCMakeFiles\\cmTC_3be97.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\build\\windows-release\\CMakeFiles\\CMakeScratch\\TryCompile-yhj7v4\\src.c
+        D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\build\\windows-release\\CMakeFiles\\CMakeScratch\\TryCompile-yhj7v4\\src.c(1): fatal error C1083: Cannot open include file: 'pthread.h': No such file or directory
         ninja: build stopped: subcommand failed.
         
       exitCode: 1
@@ -267,17 +267,17 @@ events:
       - "C:/Program Files/Python310/Lib/site-packages/cmake/data/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake:76 (find_package)"
       - "D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/share/glfw3/glfw3Config.cmake:2 (find_dependency)"
       - "D:/Users/adamj/Documents/C/vcpkg/scripts/buildsystems/vcpkg.cmake:893 (_find_package)"
-      - "CMakeLists.txt:71 (find_package)"
+      - "CMakeLists.txt:69 (find_package)"
     checks:
       - "Looking for pthread_create in pthreads"
     directories:
-      source: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-a12ee8"
-      binary: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-a12ee8"
+      source: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-q75zdo"
+      binary: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-q75zdo"
     cmakeVariables:
       CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS /W3"
       CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
       CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
-      CMAKE_MSVC_RUNTIME_LIBRARY: "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+      CMAKE_MSVC_RUNTIME_LIBRARY: "MultiThreaded$<$<CONFIG:Debug>:Debug>"
       VCPKG_INSTALLED_DIR: "D:/Users/adamj/Documents/C/vcpkg/installed"
       VCPKG_PREFER_SYSTEM_LIBS: "OFF"
       VCPKG_TARGET_TRIPLET: "x64-windows"
@@ -286,14 +286,14 @@ events:
       variable: "CMAKE_HAVE_PTHREADS_CREATE"
       cached: true
       stdout: |
-        Change Dir: 'D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-a12ee8'
+        Change Dir: 'D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-q75zdo'
         
-        Run Build Command(s): C:/PROGRA~1/mingw64/bin/ninja.exe -v cmTC_dba22
-        [1/2] C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3 -DCHECK_FUNCTION_EXISTS=pthread_create /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_dba22.dir\\CheckFunctionExists.c.obj /FdCMakeFiles\\cmTC_dba22.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\build\\windows-release\\CMakeFiles\\CMakeScratch\\TryCompile-a12ee8\\CheckFunctionExists.c
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Python310\\Lib\\site-packages\\cmake\\data\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_dba22.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_dba22.dir\\CheckFunctionExists.c.obj  /out:cmTC_dba22.exe /implib:cmTC_dba22.lib /pdb:cmTC_dba22.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  pthreads.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
-        FAILED: cmTC_dba22.exe 
-        C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Python310\\Lib\\site-packages\\cmake\\data\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_dba22.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_dba22.dir\\CheckFunctionExists.c.obj  /out:cmTC_dba22.exe /implib:cmTC_dba22.lib /pdb:cmTC_dba22.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  pthreads.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
-        LINK Pass 1: command "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_dba22.dir\\CheckFunctionExists.c.obj /out:cmTC_dba22.exe /implib:cmTC_dba22.lib /pdb:cmTC_dba22.pdb /version:0.0 /machine:x64 /debug /INCREMENTAL /subsystem:console pthreads.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTFILE:CMakeFiles\\cmTC_dba22.dir/intermediate.manifest CMakeFiles\\cmTC_dba22.dir/manifest.res" failed (exit code 1104) with the following output:
+        Run Build Command(s): C:/PROGRA~1/mingw64/bin/ninja.exe -v cmTC_8f008
+        [1/2] C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3 -DCHECK_FUNCTION_EXISTS=pthread_create /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_8f008.dir\\CheckFunctionExists.c.obj /FdCMakeFiles\\cmTC_8f008.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\build\\windows-release\\CMakeFiles\\CMakeScratch\\TryCompile-q75zdo\\CheckFunctionExists.c
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Python310\\Lib\\site-packages\\cmake\\data\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_8f008.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_8f008.dir\\CheckFunctionExists.c.obj  /out:cmTC_8f008.exe /implib:cmTC_8f008.lib /pdb:cmTC_8f008.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  pthreads.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        FAILED: cmTC_8f008.exe 
+        C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Python310\\Lib\\site-packages\\cmake\\data\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_8f008.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_8f008.dir\\CheckFunctionExists.c.obj  /out:cmTC_8f008.exe /implib:cmTC_8f008.lib /pdb:cmTC_8f008.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  pthreads.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        LINK Pass 1: command "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_8f008.dir\\CheckFunctionExists.c.obj /out:cmTC_8f008.exe /implib:cmTC_8f008.lib /pdb:cmTC_8f008.pdb /version:0.0 /machine:x64 /debug /INCREMENTAL /subsystem:console pthreads.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTFILE:CMakeFiles\\cmTC_8f008.dir/intermediate.manifest CMakeFiles\\cmTC_8f008.dir/manifest.res" failed (exit code 1104) with the following output:
         LINK : fatal error LNK1104: cannot open file 'pthreads.lib'\x0d
         ninja: build stopped: subcommand failed.
         
@@ -308,17 +308,17 @@ events:
       - "C:/Program Files/Python310/Lib/site-packages/cmake/data/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake:76 (find_package)"
       - "D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/share/glfw3/glfw3Config.cmake:2 (find_dependency)"
       - "D:/Users/adamj/Documents/C/vcpkg/scripts/buildsystems/vcpkg.cmake:893 (_find_package)"
-      - "CMakeLists.txt:71 (find_package)"
+      - "CMakeLists.txt:69 (find_package)"
     checks:
       - "Looking for pthread_create in pthread"
     directories:
-      source: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-8ck0fo"
-      binary: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-8ck0fo"
+      source: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-3qfrfr"
+      binary: "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-3qfrfr"
     cmakeVariables:
       CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS /W3"
       CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
       CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
-      CMAKE_MSVC_RUNTIME_LIBRARY: "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+      CMAKE_MSVC_RUNTIME_LIBRARY: "MultiThreaded$<$<CONFIG:Debug>:Debug>"
       VCPKG_INSTALLED_DIR: "D:/Users/adamj/Documents/C/vcpkg/installed"
       VCPKG_PREFER_SYSTEM_LIBS: "OFF"
       VCPKG_TARGET_TRIPLET: "x64-windows"
@@ -327,14 +327,14 @@ events:
       variable: "CMAKE_HAVE_PTHREAD_CREATE"
       cached: true
       stdout: |
-        Change Dir: 'D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-8ck0fo'
+        Change Dir: 'D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/CMakeScratch/TryCompile-3qfrfr'
         
-        Run Build Command(s): C:/PROGRA~1/mingw64/bin/ninja.exe -v cmTC_ce8b9
-        [1/2] C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3 -DCHECK_FUNCTION_EXISTS=pthread_create /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_ce8b9.dir\\CheckFunctionExists.c.obj /FdCMakeFiles\\cmTC_ce8b9.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\build\\windows-release\\CMakeFiles\\CMakeScratch\\TryCompile-8ck0fo\\CheckFunctionExists.c
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Python310\\Lib\\site-packages\\cmake\\data\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_ce8b9.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_ce8b9.dir\\CheckFunctionExists.c.obj  /out:cmTC_ce8b9.exe /implib:cmTC_ce8b9.lib /pdb:cmTC_ce8b9.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  pthread.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
-        FAILED: cmTC_ce8b9.exe 
-        C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Python310\\Lib\\site-packages\\cmake\\data\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_ce8b9.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_ce8b9.dir\\CheckFunctionExists.c.obj  /out:cmTC_ce8b9.exe /implib:cmTC_ce8b9.lib /pdb:cmTC_ce8b9.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  pthread.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
-        LINK Pass 1: command "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_ce8b9.dir\\CheckFunctionExists.c.obj /out:cmTC_ce8b9.exe /implib:cmTC_ce8b9.lib /pdb:cmTC_ce8b9.pdb /version:0.0 /machine:x64 /debug /INCREMENTAL /subsystem:console pthread.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTFILE:CMakeFiles\\cmTC_ce8b9.dir/intermediate.manifest CMakeFiles\\cmTC_ce8b9.dir/manifest.res" failed (exit code 1104) with the following output:
+        Run Build Command(s): C:/PROGRA~1/mingw64/bin/ninja.exe -v cmTC_2dc09
+        [1/2] C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3 -DCHECK_FUNCTION_EXISTS=pthread_create /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_2dc09.dir\\CheckFunctionExists.c.obj /FdCMakeFiles\\cmTC_2dc09.dir\\ /FS -c D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\build\\windows-release\\CMakeFiles\\CMakeScratch\\TryCompile-3qfrfr\\CheckFunctionExists.c
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Python310\\Lib\\site-packages\\cmake\\data\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_2dc09.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_2dc09.dir\\CheckFunctionExists.c.obj  /out:cmTC_2dc09.exe /implib:cmTC_2dc09.lib /pdb:cmTC_2dc09.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  pthread.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        FAILED: cmTC_2dc09.exe 
+        C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Python310\\Lib\\site-packages\\cmake\\data\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_2dc09.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_2dc09.dir\\CheckFunctionExists.c.obj  /out:cmTC_2dc09.exe /implib:cmTC_2dc09.lib /pdb:cmTC_2dc09.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  pthread.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        LINK Pass 1: command "C:\\PROGRA~1\\MICROS~4\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1434~1.319\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_2dc09.dir\\CheckFunctionExists.c.obj /out:cmTC_2dc09.exe /implib:cmTC_2dc09.lib /pdb:cmTC_2dc09.pdb /version:0.0 /machine:x64 /debug /INCREMENTAL /subsystem:console pthread.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTFILE:CMakeFiles\\cmTC_2dc09.dir/intermediate.manifest CMakeFiles\\cmTC_2dc09.dir/manifest.res" failed (exit code 1104) with the following output:
         LINK : fatal error LNK1104: cannot open file 'pthread.lib'\x0d
         ninja: build stopped: subcommand failed.
         

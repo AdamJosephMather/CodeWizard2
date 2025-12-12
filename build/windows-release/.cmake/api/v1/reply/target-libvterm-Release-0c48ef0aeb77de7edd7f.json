@@ -52,12 +52,6 @@
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 9,
-				"parent" : 0
-			},
-			{
-				"command" : 2,
-				"file" : 1,
 				"line" : 30,
 				"parent" : 0
 			},
@@ -91,56 +85,44 @@
 				},
 				{
 					"backtrace" : 3,
-					"fragment" : "/fsanitize=address"
-				},
-				{
-					"backtrace" : 3,
-					"fragment" : "/Zi"
-				},
-				{
-					"backtrace" : 3,
-					"fragment" : "/MT"
-				},
-				{
-					"backtrace" : 4,
 					"fragment" : "/wd4244"
 				},
 				{
-					"backtrace" : 4,
+					"backtrace" : 3,
 					"fragment" : "/wd4305"
 				},
 				{
-					"backtrace" : 4,
+					"backtrace" : 3,
 					"fragment" : "/wd4267"
 				}
 			],
 			"defines" : 
 			[
 				{
-					"backtrace" : 5,
+					"backtrace" : 4,
 					"define" : "NTDDI_VERSION=0x0A000008"
 				},
 				{
-					"backtrace" : 5,
+					"backtrace" : 4,
 					"define" : "UNICODE"
 				},
 				{
-					"backtrace" : 5,
+					"backtrace" : 4,
 					"define" : "_UNICODE"
 				},
 				{
-					"backtrace" : 5,
+					"backtrace" : 4,
 					"define" : "_WIN32_WINNT=0x0A00"
 				}
 			],
 			"includes" : 
 			[
 				{
-					"backtrace" : 6,
+					"backtrace" : 5,
 					"path" : "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/libvterm_src-src/include"
 				},
 				{
-					"backtrace" : 6,
+					"backtrace" : 5,
 					"path" : "D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/libvterm_src-src/src"
 				}
 			],
@@ -149,7 +131,7 @@
 			{
 				"backtraces" : 
 				[
-					7
+					6
 				],
 				"standard" : "99"
 			},

@@ -41,14 +41,14 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "CodeWizard::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-CodeWizard-Release-64552d7998360d028be1.json",
+					"jsonFile" : "target-CodeWizard-Release-cb108311d65d888432a7.json",
 					"name" : "CodeWizard",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "libvterm::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-libvterm-Release-c0b029e88010640c78d3.json",
+					"jsonFile" : "target-libvterm-Release-0c48ef0aeb77de7edd7f.json",
 					"name" : "libvterm",
 					"projectIndex" : 0
 				}

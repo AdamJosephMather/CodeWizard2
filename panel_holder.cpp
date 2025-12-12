@@ -64,7 +64,7 @@ void PanelHolder::position(int x, int y, int width, int height) {
 	first_hovered = mx > c1_x && mx < c1_x+c1_w && my > c1_y && my < c1_y+c1_h;
 	second_hovered = mx > c2_x && mx < c2_x+c2_w && my > c2_y && my < c2_y+c2_h;
 	
-	updating_pos = false;
+	bool updating_pos = false;
 	
 	if (hovered){
 		if (!hastwo && App::curr_adding_panel) {
@@ -112,6 +112,7 @@ void PanelHolder::position(int x, int y, int width, int height) {
 					w_nb = c1_w;
 					h_nb = c1_h;
 					has_one_to_rem = true;
+					updating_pos = true;
 				}
 			}else if (second_hovered) {
 				if (children[1]->children.size() == 1) {
@@ -120,10 +121,9 @@ void PanelHolder::position(int x, int y, int width, int height) {
 					w_nb = c2_w;
 					h_nb = c2_h;
 					has_one_to_rem = true;
+					updating_pos = true;
 				}
 			}
-			
-			updating_pos = true;
 		}
 	}
 	
@@ -152,18 +152,33 @@ void PanelHolder::position(int x, int y, int width, int height) {
 	}
 	
 	if (updating_pos) {
-		// time to move the current positioning closer to the new locations over frames 
-		x_nb_current = (x_nb_current*2+x_nb)/3;
-		y_nb_current = (y_nb_current*2+y_nb)/3;
-		w_nb_current = (w_nb_current*2+w_nb)/3;
-		h_nb_current = (h_nb_current*2+h_nb)/3;
+		// time to move the current positioning closer to the new locations over frames
+		App::x_nb_current = (App::x_nb_current*2+x_nb)/3;
+		App::y_nb_current = (App::y_nb_current*2+y_nb)/3;
+		App::w_nb_current = (App::w_nb_current*2+w_nb)/3;
+		App::h_nb_current = (App::h_nb_current*2+h_nb)/3;
 		
-		if (x_nb_current == x_nb && y_nb_current == y_nb && w_nb_current == w_nb && h_nb_current == h_nb){
-			updating_pos = false;
+		if (std::abs(App::x_nb_current - x_nb) < 5) {
+			App::x_nb_current = x_nb;
+		}
+		
+		if (std::abs(App::y_nb_current - y_nb) < 5) {
+			App::y_nb_current = y_nb;
+		}
+		
+		if (std::abs(App::w_nb_current - w_nb) < 5) {
+			App::w_nb_current = w_nb;
+		}
+		
+		if (std::abs(App::h_nb_current - h_nb) < 5) {
+			App::h_nb_current = h_nb;
 		}
 		
 		App::time_till_regular = 2;
 	}
+	
+	App::rendering_add_rect = App::rendering_add_rect || has_one_to_add;
+	App::rendering_rem_rect = App::rendering_rem_rect || has_one_to_rem;
 }
 
 void PanelHolder::addWidget(bool horz, bool frst, Widget* new_wid) {
@@ -307,12 +322,6 @@ bool PanelHolder::on_mouse_move_event() {
 void PanelHolder::render() {
 	Widget::render();
 
-	if (has_one_to_add) {
-		App::DrawRect(x_nb_current, y_nb_current, w_nb_current, h_nb_current, MakeColor(0.2f, 1.0f, 0.2f, 0.25f));
-	}if (has_one_to_rem) {
-		App::DrawRect(x_nb_current, y_nb_current, w_nb_current, h_nb_current, MakeColor(1.0f, 0.2f, 0.2f, 0.25f));
-	}
-	
 	// draw the handles
 	if (hastwo) {
 		if (is_horizontal) {

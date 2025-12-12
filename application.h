@@ -114,6 +114,14 @@ public:
 	static icu::UnicodeString vnum;
 	static std::string vnumstr;
 	
+	static int x_nb_current; // for cleaner animations across panel holders.
+	static int y_nb_current;
+	static int w_nb_current;
+	static int h_nb_current;
+	
+	static bool rendering_add_rect;
+	static bool rendering_rem_rect;
+	
 	static bool darkmode;
 	
 	static std::string empty;

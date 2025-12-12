@@ -142,6 +142,14 @@ GLFWcursor* App::handCursor = nullptr;
 int App::currentCursorType = -1;
 int App::expectedCursorType = -1;
 
+int App::x_nb_current = 0; // for cleaner animations across panel holders.
+int App::y_nb_current = 0;
+int App::w_nb_current = 0;
+int App::h_nb_current = 0;
+
+bool App::rendering_add_rect = false;
+bool App::rendering_rem_rect = false;
+
 bool App::Init() {
 	icu::UnicodeString vnum = icu::UnicodeString::fromUTF8(std::to_string(App::major_version)+"."+std::to_string(App::minor_version)+"."+std::to_string(App::patch_version));
 	vnum.toUTF8String(vnumstr);
@@ -672,6 +680,9 @@ void App::DoFullRenderWithoutInput() {
 		moveMouseToY = -1;
 	}
 	
+	rendering_add_rect = false;
+	rendering_rem_rect = false;
+	
 	expectedCursorType = -1; // must be reset every position call
 	std::lock_guard<std::mutex> lock(canMakeChanges); // this prevents separate threads (the lsp clients) from messing with shit while positioning/rendering
 	if (rootelement) {
@@ -744,6 +755,12 @@ void App::DoFullRenderWithoutInput() {
 		runWithSKIZ(toastBox->t_x, toastBox->t_y, toastBox->t_w, toastBox->t_h, []() {
 			toastBox->render();
 		});
+		
+		if (rendering_add_rect) {
+			DrawRect(x_nb_current, y_nb_current, w_nb_current, h_nb_current, theme.add_panel);
+		}else if (rendering_rem_rect) {
+			DrawRect(x_nb_current, y_nb_current, w_nb_current, h_nb_current, theme.remove_panel);
+		}
 	}
 	
 	glDisable(GL_SCISSOR_TEST);

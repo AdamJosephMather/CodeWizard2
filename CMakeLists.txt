@@ -3,25 +3,22 @@ project(CodeWizard)
 
 # debug...
 
-# if (MSVC)
-# 	message(STATUS "Building with MSVC AddressSanitizer enabled")
-# 
-# 	# MUST use dynamic debug CRT for ASan
-# 	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebugDLL")
-# 
-# 	# Compile flags
-# 	add_compile_options(
-# 		/fsanitize=address   # Enable ASan
-# 		/Zi                  # Full PDB debug info
-# 	)
-# 
-# 	# Link flags
-# 	add_link_options(
-# 		/fsanitize=address   # ASan runtime
-# 		/INCREMENTAL:NO      # Required
-# 		/DEBUG:FULL          # Required to resolve addresses to line numbers
-# 	)
-# endif()
+if(MSVC)
+		message(STATUS "Building with MSVC AddressSanitizer enabled")
+		set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")  # Remove DLL
+		add_compile_options(
+			/fsanitize=address
+			/Zi
+			/MT$<$<CONFIG:Debug>:d>  # Static runtime
+		)
+		add_link_options(
+			/fsanitize=address
+			/INCREMENTAL:NO
+			/DEBUG:FULL
+			/WHOLEARCHIVE:clang_rt.asan-x86_64.lib  # Static ASan lib
+		)
+endif()
+
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -105,11 +102,11 @@ target_link_libraries(${PROJECT_NAME}
 	dwmapi
 )
 
-if (MSVC)
-	set_target_properties(${PROJECT_NAME} PROPERTIES
-		WIN32_EXECUTABLE TRUE
-	)
-endif()
+# if (MSVC)
+# 	set_target_properties(${PROJECT_NAME} PROPERTIES
+# 		WIN32_EXECUTABLE TRUE
+# 	)
+# endif()
 
 configure_file(${CMAKE_SOURCE_DIR}/app.png
                ${CMAKE_BINARY_DIR}/app.png

@@ -64,6 +64,8 @@ void PanelHolder::position(int x, int y, int width, int height) {
 	first_hovered = mx > c1_x && mx < c1_x+c1_w && my > c1_y && my < c1_y+c1_h;
 	second_hovered = mx > c2_x && mx < c2_x+c2_w && my > c2_y && my < c2_y+c2_h;
 	
+	updating_pos = false;
+	
 	if (hovered){
 		if (!hastwo && App::curr_adding_panel) {
 			has_one_to_add = true;
@@ -98,6 +100,8 @@ void PanelHolder::position(int x, int y, int width, int height) {
 				y_nb = t_y+t_h/2;
 				h_nb = t_h/2;
 			}
+			
+			updating_pos = true;
 		}
 		
 		if (hastwo && App::curr_removing_panel) {
@@ -118,6 +122,8 @@ void PanelHolder::position(int x, int y, int width, int height) {
 					has_one_to_rem = true;
 				}
 			}
+			
+			updating_pos = true;
 		}
 	}
 	
@@ -143,6 +149,20 @@ void PanelHolder::position(int x, int y, int width, int height) {
 				App::expectedCursorType = 2;
 			}
 		}
+	}
+	
+	if (updating_pos) {
+		// time to move the current positioning closer to the new locations over frames 
+		x_nb_current = (x_nb_current*2+x_nb)/3;
+		y_nb_current = (y_nb_current*2+y_nb)/3;
+		w_nb_current = (w_nb_current*2+w_nb)/3;
+		h_nb_current = (h_nb_current*2+h_nb)/3;
+		
+		if (x_nb_current == x_nb && y_nb_current == y_nb && w_nb_current == w_nb && h_nb_current == h_nb){
+			updating_pos = false;
+		}
+		
+		App::time_till_regular = 2;
 	}
 }
 
@@ -288,9 +308,9 @@ void PanelHolder::render() {
 	Widget::render();
 
 	if (has_one_to_add) {
-		App::DrawRect(x_nb, y_nb, w_nb, h_nb, MakeColor(0.2f, 1.0f, 0.2f, 0.25f));
+		App::DrawRect(x_nb_current, y_nb_current, w_nb_current, h_nb_current, MakeColor(0.2f, 1.0f, 0.2f, 0.25f));
 	}if (has_one_to_rem) {
-		App::DrawRect(x_nb, y_nb, w_nb, h_nb, MakeColor(1.0f, 0.2f, 0.2f, 0.25f));
+		App::DrawRect(x_nb_current, y_nb_current, w_nb_current, h_nb_current, MakeColor(1.0f, 0.2f, 0.2f, 0.25f));
 	}
 	
 	// draw the handles

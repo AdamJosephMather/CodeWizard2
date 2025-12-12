@@ -26,7 +26,8 @@ int main(int argc, char* argv[]) {
 	
 	Theme theme;
 	
-	theme.glass = 
+	theme.add_panel = MakeColor(0.2f, 1.0f, 0.2f, 0.25f);
+	theme.remove_panel = MakeColor(1.0f, 0.2f, 0.2f, 0.25f);
 	
 	theme.tint_color = MakeColor(0, 0, 0, 0.7);
 	

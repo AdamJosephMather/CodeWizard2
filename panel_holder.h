@@ -28,7 +28,6 @@ private:
 	float ratio = 1.0f;
 	bool hastwo = false;
 	bool is_horizontal = false;
-	bool updating_pos = true;
 //	bool add = false;
 //	bool rem = false;
 //	bool nad = false;
@@ -37,11 +36,6 @@ private:
 	bool has_one_to_rem = false;
 	bool adding_first_pos = false;
 	bool hovered = false;
-	
-	int x_nb_current = 0;
-	int y_nb_current = 0;
-	int w_nb_current = 0;
-	int h_nb_current = 0;
 	
 	int x_nb = 0;
 	int y_nb = 0;

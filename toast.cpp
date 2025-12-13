@@ -29,7 +29,7 @@ void Toast::render() {
 	const int radius = 10;
 	
 	if (time != -1) {
-		App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, App::theme.hover_background_color);
+		App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, App::theme.darker_background_color, true);
 		TextRenderer::draw_text(t_x+radius, t_y+t_h/2-TextRenderer::get_text_height()/2, text, App::theme.main_text_color);
 	}
 	

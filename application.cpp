@@ -584,57 +584,61 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 
 auto drawCorner = [](float cx, float cy, float startAngle, float endAngle, int segments, double radius) {
 	glBegin(GL_TRIANGLE_FAN);
-	  glVertex2f(cx, cy);
-	  for (int i = 0; i <= segments; ++i) {
-		  float t = (float)i / (float)segments;
-		  float theta = startAngle + t * (endAngle - startAngle);
-		  glVertex2f(cx + std::cos(theta) * radius, cy + std::sin(theta) * radius);
-	  }
+	glVertex2f(cx, cy);
+	for (int i = 0; i <= segments; ++i) {
+		float t = (float)i / (float)segments;
+		float theta = startAngle + t * (endAngle - startAngle);
+		glVertex2f(cx + std::cos(theta) * radius, cy + std::sin(theta) * radius);
+	}
 	glEnd();
 };
 
-void App::DrawRoundedRect(float x, float y, float w, float h, float radius, Color* color, int segments) {
-	if (radius <= 0.0f) {
-		// Fallback to plain rectangle
-		DrawRect((int)x, (int)y, (int)w, (int)h, color);
-		return;
-	}
-
-	glColor4f(color->r, color->g, color->b, color->a);
+auto drawCornerEdge = [](float cx, float cy, float startAngle, float endAngle, int segments, double radius, int edgewidth) {
+	double smallerradius = radius-edgewidth;
 	
-	// 1) Draw the center and side/quadrant straight regions as quads
+	glBegin(GL_QUAD_STRIP);
+	for (int i = 0; i <= segments; ++i) {
+		float t = (float)i / (float)segments;
+		float theta = startAngle + t * (endAngle - startAngle);
+		glVertex2f(cx + std::cos(theta) * radius, cy + std::sin(theta) * radius);
+		glVertex2f(cx + std::cos(theta) * smallerradius, cy + std::sin(theta) * smallerradius);
+	}
+	glEnd();
+};
+
+void App::DrawRoundedRect(float x, float y, float w, float h, float radius, Color* color, bool border, int segments) {
+	glColor4f(color->r, color->g, color->b, color->a);
+	// Fill Logic (Original implementation)
+	// Draw the center and side/quadrant straight regions as quads
 	glBegin(GL_QUADS);
-	  // Center
-	  glVertex2f(x + radius,     y);
-	  glVertex2f(x + w - radius, y);
-	  glVertex2f(x + w - radius, y + h);
-	  glVertex2f(x + radius,     y + h);
+		// Center
+		glVertex2f(x + radius,      y);
+		glVertex2f(x + w - radius,  y);
+		glVertex2f(x + w - radius,  y + h);
+		glVertex2f(x + radius,      y + h);
 
-	  // Left strip
-	  glVertex2f(x,               y + radius);
-	  glVertex2f(x + radius,      y + radius);
-	  glVertex2f(x + radius,      y + h - radius);
-	  glVertex2f(x,               y + h - radius);
+		// Left strip
+		glVertex2f(x,          y + radius);
+		glVertex2f(x + radius, y + radius);
+		glVertex2f(x + radius, y + h - radius);
+		glVertex2f(x,          y + h - radius);
 
-	  // Right strip
-	  glVertex2f(x + w - radius,  y + radius);
-	  glVertex2f(x + w,           y + radius);
-	  glVertex2f(x + w,           y + h - radius);
-	  glVertex2f(x + w - radius,  y + h - radius);
+		// Right strip
+		glVertex2f(x + w - radius, y + radius);
+		glVertex2f(x + w,          y + radius);
+		glVertex2f(x + w,          y + h - radius);
+		glVertex2f(x + w - radius, y + h - radius);
 	glEnd();
 
-	// 2) Draw the four quartercircles
-	// bottomleft corner: from 180 to 270
-	drawCorner(x + radius, y + radius, M_PI, 1.5f * M_PI, segments, radius);
-
-	// bottomright corner: from 270 to 360 (or 90 to 0)
-	drawCorner(x + w - radius, y + radius, 1.5f * M_PI, 2.0f * M_PI, segments, radius);
-
-	// topright corner: from   0 to  90
-	drawCorner(x + w - radius, y + h - radius, 0.0f, 0.5f * M_PI, segments, radius);
-
-	// top left corner: from  90 to 180
-	drawCorner(x + radius,     y + h - radius, 0.5f * M_PI, M_PI, segments, radius);
+	// Draw the four quartercircles
+	drawCorner(x + radius, y + radius, M_PI, 1.5f * M_PI, segments, radius); // BL
+	drawCorner(x + w - radius, y + radius, 1.5f * M_PI, 2.0f * M_PI, segments, radius); // BR
+	drawCorner(x + w - radius, y + h - radius, 0.0f, 0.5f * M_PI, segments, radius); // TR
+	drawCorner(x + radius,      y + h - radius, 0.5f * M_PI, M_PI, segments, radius); // TL
+	
+	if (border) {
+		DrawRoundBorder(x, y, w, h, theme.border, segments, radius);
+	}
 }
 
 void App::DrawRect(int x, int y, int w, int h, Color* color) {
@@ -645,6 +649,20 @@ void App::DrawRect(int x, int y, int w, int h, Color* color) {
 		glVertex2f(x+w, y+h); // bottom-right
 		glVertex2f(x, y+h); // bottom-left
 	glEnd();
+}
+
+void App::DrawRoundBorder(int x, int y, int w, int h, Color* color, int segments, double radius) {
+	glColor4f(color->r, color->g, color->b, color->a);
+	
+	drawCornerEdge(x + radius, y + radius, M_PI, 1.5f * M_PI, segments, radius, border_width); // BL
+	drawCornerEdge(x + w - radius, y + radius, 1.5f * M_PI, 2.0f * M_PI, segments, radius, border_width); // BR
+	drawCornerEdge(x + w - radius, y + h - radius, 0.0f, 0.5f * M_PI, segments, radius, border_width); // TR
+	drawCornerEdge(x + radius,      y + h - radius, 0.5f * M_PI, M_PI, segments, radius, border_width); // TL
+	
+	DrawRect(x+radius, y, w-radius*2, border_width, theme.border);
+	DrawRect(x+radius, y+h-border_width, w-radius*2, border_width, theme.border);
+	DrawRect(x, y+radius, border_width, h-radius*2, theme.border);
+	DrawRect(x+w-border_width, y+radius, border_width, h-radius*2, theme.border);
 }
 
 void App::DrawBorder(int x, int y, int w, int h, Color* color) {
@@ -1513,6 +1531,8 @@ void App::executeCommandPaletteAction() {
 					}
 				}
 			}
+		}else if(filepath == ":Test Toast Box"){
+			displayToast(icu::UnicodeString::fromUTF8("Example Toast Message."));
 		}
 		
 		return;
@@ -1635,7 +1655,7 @@ void App::indexFiles() {
 	}
 	
 	static const std::vector<std::string> commands = {
-		"Git Push","Git Pull","Git Force Pull","Help","Save Theme Settings To File","Load Theme Settings From File"
+		"Git Push","Git Pull","Git Force Pull","Help","Save Theme Settings To File","Load Theme Settings From File","Test Toast Box"
 	};
 
 	for (auto const& cmd : commands) {

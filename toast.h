@@ -24,6 +24,9 @@ public:
 	icu::UnicodeString text;
 	double time = -1;
 	
+	float displayOffset = 0;
+	float closingOpacity = 0;
+	
 	void displayMessage(icu::UnicodeString text);
 
 private:

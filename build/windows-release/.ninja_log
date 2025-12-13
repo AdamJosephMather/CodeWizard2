@@ -20,7 +20,7 @@
 31	5876	7873587777023384	CMakeFiles/CodeWizard.dir/main.cpp.obj	afb81a8efd5d0e6f
 90	5421	7873587777606547	CMakeFiles/CodeWizard.dir/tabs.cpp.obj	5c8243397b137476
 6902	8481	7873564872398681	CMakeFiles/CodeWizard.dir/tinyfiledialogs.c.obj	7a4290d327340e25
-87	7310	7873605544656281	CMakeFiles/CodeWizard.dir/application.cpp.obj	2865ac26a42430f5
+29	3156	7873696282521283	CMakeFiles/CodeWizard.dir/application.cpp.obj	2865ac26a42430f5
 84	3790	7873587777546714	CMakeFiles/CodeWizard.dir/filetree.cpp.obj	3383db2b0ec997a4
 3827	9400	7873587814976829	CMakeFiles/CodeWizard.dir/linenumbers.cpp.obj	e6abe1eeafacd935
 3490	10042	7873587812243066	CMakeFiles/CodeWizard.dir/settings.cpp.obj	331a02a143881a23
@@ -31,7 +31,7 @@
 5891	10971	7873587835611846	CMakeFiles/CodeWizard.dir/listbox.cpp.obj	1a1a937fddc964d6
 8054	11821	7873587857241773	CMakeFiles/CodeWizard.dir/imageview.cpp.obj	7a4d8465424ef261
 8097	15240	7873587857677051	CMakeFiles/CodeWizard.dir/compare.cpp.obj	a322b95d7bbd5d55
-28	1324	7873600233560259	CMakeFiles/CodeWizard.dir/toast.cpp.obj	54847da4af9be465
+35	1431	7873696282571345	CMakeFiles/CodeWizard.dir/toast.cpp.obj	54847da4af9be465
 8491	18014	7873564888683375	CMakeFiles/CodeWizard.dir/settingsmanager.cpp.obj	3e97cb3821632bc6
 6446	18269	7873564868320196	CMakeFiles/CodeWizard.dir/highlighter.cpp.obj	51c89b391ee96ef9
 9401	18185	7873587870716632	CMakeFiles/CodeWizard.dir/curler.cpp.obj	aaf4b1c6b6141621
@@ -47,4 +47,5 @@
 15687	18880	7873587933581479	CMakeFiles/CodeWizard.dir/scrollbar.cpp.obj	37be784e0d4f4ef5
 16400	18967	7873587940709445	CMakeFiles/CodeWizard.dir/contextmenu.cpp.obj	e06f7bbab752a190
 20246	24596	7873565005828742	CMakeFiles/CodeWizard.dir/updatechecker.cpp.obj	cd45e7e48db2a42f
-7313	9438	7873605616898732	CodeWizard.exe	589a2fb3ae81722f
+1414	2324	7873695317203872	CodeWizard.exe	589a2fb3ae81722f
+29	885	7873696395248022	CodeWizard.exe	589a2fb3ae81722f

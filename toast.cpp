@@ -47,7 +47,7 @@ void Toast::render() {
 	}else if (displayOffset >= 0) {
 		App::time_till_regular = 2;
 		
-		displayOffset += ((float)t_w-displayOffset)*.9;
+		displayOffset += ((float)t_w-displayOffset)*.1;
 		
 		int x_disp = t_x+displayOffset;
 		int w_disp = t_w-displayOffset;
@@ -55,7 +55,7 @@ void Toast::render() {
 		App::DrawRoundedRect(x_disp, t_y, w_disp, t_h, radius, App::theme.darker_background_color, true);
 		TextRenderer::draw_text(x_disp+radius, t_y+t_h/2-TextRenderer::get_text_height()/2, text, App::theme.main_text_color);
 		
-		if (displayOffset >= t_w-1) {
+		if (displayOffset >= t_w-radius*2) {
 			displayOffset = -1;
 		}
 	}

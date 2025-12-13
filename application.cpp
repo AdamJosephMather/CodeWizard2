@@ -38,7 +38,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 1;
-int App::patch_version = 17;
+int App::patch_version = 18;
 
 
 
@@ -659,10 +659,10 @@ void App::DrawRoundBorder(int x, int y, int w, int h, Color* color, int segments
 	drawCornerEdge(x + w - radius, y + h - radius, 0.0f, 0.5f * M_PI, segments, radius, border_width); // TR
 	drawCornerEdge(x + radius,      y + h - radius, 0.5f * M_PI, M_PI, segments, radius, border_width); // TL
 	
-	DrawRect(x+radius, y, w-radius*2, border_width, theme.border);
-	DrawRect(x+radius, y+h-border_width, w-radius*2, border_width, theme.border);
-	DrawRect(x, y+radius, border_width, h-radius*2, theme.border);
-	DrawRect(x+w-border_width, y+radius, border_width, h-radius*2, theme.border);
+	DrawRect(x+radius, y, w-radius*2, border_width, color);
+	DrawRect(x+radius, y+h-border_width, w-radius*2, border_width, color);
+	DrawRect(x, y+radius, border_width, h-radius*2, color);
+	DrawRect(x+w-border_width, y+radius, border_width, h-radius*2, color);
 }
 
 void App::DrawBorder(int x, int y, int w, int h, Color* color) {

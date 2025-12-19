@@ -11,6 +11,7 @@
 #include <vector>
 #include <deque>
 #include <cstring>
+#include <functional>
 
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0A00
@@ -51,9 +52,11 @@ struct OurLine {
 
 class Terminal {
 public:
-	Terminal(int cols, int rows);
+	using SCROLLDOWN = std::function<void(int)>;
+	
+	Terminal(int cols, int rows, SCROLLDOWN sd);
 	~Terminal();
-
+	
 	bool start(const std::wstring& shell = L"powershell.exe");
 	void stop();
 
@@ -155,11 +158,13 @@ private:
 
 	CursorInfo m_cursorInfo;
 	std::deque<OurLine> m_scrollback;
-	size_t m_sb_max = 2000;
+	size_t m_sb_max = 10000;
 	int m_view_off = 0;
 	std::atomic<bool> m_altScreen{ false };
 	std::atomic<bool> m_mouseReporting{ false };
 
 	Terminal(const Terminal&) = delete;
 	Terminal& operator=(const Terminal&) = delete;
+	
+	SCROLLDOWN scrollDown = nullptr;
 };

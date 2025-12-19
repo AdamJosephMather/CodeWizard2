@@ -19,6 +19,7 @@ public:
 	using close_callback_type = std::function<void(Widget*)>;
 	
 	bool is_visible = true;
+	bool clickthrough = false;
 	
 	Widget* parent;
 	std::vector<Widget*> children;

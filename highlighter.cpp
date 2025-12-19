@@ -547,7 +547,7 @@ LineResult Highlighter::highlightLine(icu::UnicodeString input_string, TextMateI
 			continue;
 		}
 		
-		std::cout << "Token: " << token.name << " text: " << line_string.substr(token.start, token.length) << std::endl;
+//		std::cout << "Token: " << token.name << " text: " << line_string.substr(token.start, token.length) << std::endl;
 		
 		int newcolor = chooseColorByScopes(token.name, variable_color);
 		if (newcolor == -1) {

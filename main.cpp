@@ -15,7 +15,9 @@
 #include "listbox.h"
 #include "textedit.h"
 #include "codeedit.h"
+#include "scrollnotify.h"
 #include "panel_holder.h"
+#include "text_renderer.h"
 
 #include <Windows.h>
 
@@ -197,10 +199,27 @@ int main(int argc, char* argv[]) {
 	filesButton->rounded = true;
 	filesButton->background_color = App::theme.main_background_color;
 	
+	
+	ScrollNotify* displayMessage = new ScrollNotify(App::tb, [&](ScrollNotify* sn, int x, int y, int w, int h){
+		sn->t_w = TextRenderer::get_text_width(20);
+		
+		int x1 = remove_button->t_x+remove_button->t_w+20;
+		int x2 = commandPalette->t_x-20;
+		int allwidth = x2-x1;
+		
+		sn->t_w = std::min(sn->t_w, allwidth);
+		sn->t_x = x1 + (allwidth - sn->t_w)/2;
+		
+		sn->t_y = commandPalette->t_y;
+		sn->t_h = commandPalette->t_h;
+	});
+	
+	
 	App::commandPalette = commandPalette;
 	App::commandBox = commandBox;
 	App::filesButton = filesButton;
 	App::filesList = filesList;
+	App::scrollNotifyBox = displayMessage;
 	
 	add_button->window_button = true;
 	remove_button->window_button = true;

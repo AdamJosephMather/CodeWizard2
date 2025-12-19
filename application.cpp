@@ -4,6 +4,7 @@
 #include <unicode/unistr.h>
 #include <unicode/ustream.h>
 #include <iostream>
+#include "scrollnotify.h"
 #include "codeedit.h"
 #include "editor.h"
 #include "helper_types.h"
@@ -79,6 +80,7 @@ Widget* App::filesButton = nullptr;
 Widget* App::filesList = nullptr;
 Widget* App::commandBox = nullptr;
 Widget* App::toastBox = nullptr;
+Widget* App::scrollNotifyBox = nullptr;
 
 std::vector<std::vector<std::string>> App::files_in_box = {};
 
@@ -1164,8 +1166,14 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		commandUnfocused();
 		return;
 	}else if (action == GLFW_PRESS && key == GLFW_KEY_S && control && !shift) {
+		if (auto sn = dynamic_cast<ScrollNotify*>(scrollNotifyBox)) {
+			sn->displayMessage(icu::UnicodeString::fromUTF8("Saving..."));
+		}
 		save();
 	}else if (action == GLFW_PRESS && key == GLFW_KEY_F5) {
+		if (auto sn = dynamic_cast<ScrollNotify*>(scrollNotifyBox)) {
+			sn->displayMessage(icu::UnicodeString::fromUTF8("Saving..."));
+		}
 		save();
 		std::string build_command = settings->getProjectBuild();
 		if (build_command != "") {

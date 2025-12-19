@@ -53,6 +53,10 @@ bool TitleBar::is_out_of_child(int x) {
 	}
 	
 	for (auto c : children) {
+		if (c->clickthrough) {
+			continue;
+		}
+		
 		if (x > c->t_x && x < c->t_x+c->t_w) {
 			return false;
 		}

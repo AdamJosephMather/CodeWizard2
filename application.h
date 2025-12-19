@@ -143,6 +143,7 @@ public:
 	static Widget* filesList;
 	static Widget* commandBox;
 	static Widget* toastBox;
+	static Widget* scrollNotifyBox;
 	
 	static std::vector<std::vector<std::string>> files_in_box;
 	

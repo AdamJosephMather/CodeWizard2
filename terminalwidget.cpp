@@ -11,13 +11,12 @@ void TerminalWidget::run() {
 	int width_cells = std::max((t_w-App::text_padding*2) / TextRenderer::get_text_width(1), 1);
 	int height_cells = std::max((t_h-App::text_padding*2) / TextRenderer::get_text_height(), 1);
 	
-	const std::wstring shell = L"cmd.exe";
 	term = new Terminal(width_cells, height_cells, [&](int num) {
 		sel_doc_r0 -= num;
 		sel_doc_r1 -= num;
 	});
 	
-	if (term->start(shell)) {
+	if (term->start()) {
 //		term->enableMouseTracking(true);
 	}else {
 		std::cerr << "Failed to create terminal..." << std::endl;

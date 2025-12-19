@@ -28,7 +28,7 @@ inline void closeHandleIfValid(HANDLE& h) {
 }
 
 inline std::wstring defaultShell() {
-	return L"cmd.exe";
+	return widen(App::settings->getValue("terminal_cmd", (std::string)"cmd.exe"));
 }
 
 } // namespace

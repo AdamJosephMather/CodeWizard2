@@ -57,7 +57,7 @@ public:
 	Terminal(int cols, int rows, SCROLLDOWN sd);
 	~Terminal();
 	
-	bool start(const std::wstring& shell = L"powershell.exe");
+	bool start(const std::wstring& shell = L"");
 	void stop();
 
 	bool writeInput(const void* data, size_t bytes);

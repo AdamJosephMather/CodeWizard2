@@ -67,7 +67,7 @@ void TerminalWidgetTabbed::render() {
 void TerminalWidgetTabbed::createNew() {
 	auto ti = TabInfo();
 	
-	ti.title = icu::UnicodeString::fromUTF8("cmd.exe");
+	ti.title = icu::UnicodeString::fromUTF8(App::settings->getValue("terminal_cmd", (std::string)"cmd.exe"));
 	ti.id = tabid;
 	tab_bar->addTab(ti);
 	tabid ++;

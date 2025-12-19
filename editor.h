@@ -26,6 +26,8 @@ public:
 	void createNew(FileInfo* fn);
 	void closeFile(int file_id);
 	
+	void executeAction(WidgetActionType typ) override;
+	
 	bool is_image(std::string path);
 	
 	void tabinfoclicked(TabInfo info);

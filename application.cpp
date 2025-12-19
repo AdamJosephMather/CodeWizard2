@@ -34,11 +34,13 @@
 #include "label.h"
 #include "updatechecker.h"
 
+#include <unicode/ustring.h>
+
 
 
 int App::major_version = 2;
 int App::minor_version = 1;
-int App::patch_version = 18;
+int App::patch_version = 19;
 
 
 
@@ -402,10 +404,11 @@ void App::checkForUpdates() {
 	}
 }
 
-LanguageServerClient* App::getLSP(std::string lsp_command) {
+LanguageServerClient* App::readyLSP(std::string lsp_command) {
 	if (lsp_client_map.find(lsp_command) != lsp_client_map.end()) {
 		return lsp_client_map[lsp_command];
 	}
+	
 	lsp_client_map[lsp_command] = new LanguageServerClient(lsp_command, [](const std::string& msg) {
 		std::cout << "LOG_LSP: " << msg << std::endl;
 	});
@@ -414,6 +417,19 @@ LanguageServerClient* App::getLSP(std::string lsp_command) {
 	lsp_client_map[lsp_command]->initialize(folder);
 	
 	return lsp_client_map[lsp_command];
+}
+
+void App::restartLSPs() {
+	for (auto itm : lsp_client_map) {
+		if (!itm.second) { continue; }
+		
+		itm.second->shutdown();
+		delete itm.second;
+	}
+	
+	lsp_client_map = {};
+	
+	rootelement->executeAction(WidgetActionType::RESTART_LSP);
 }
 
 void App::adding_panel() {
@@ -730,7 +746,7 @@ void App::DoFullRenderWithoutInput() {
 			int time = 10;
 			
 			if (currentTime-lastUpdate > 5) { 
-				time = 70; // go to 'sleep' if we haven't updated anything in the last x seconds this is roughly 15 fps
+				time = 140; // go to 'sleep' if we haven't updated anything in the last x seconds this is roughly 7 fps
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(time));
 		}else {
@@ -1529,6 +1545,12 @@ void App::executeCommandPaletteAction() {
 			}
 		}else if(filepath == ":Test Toast Box"){
 			displayToast(icu::UnicodeString::fromUTF8("Example Toast Message."));
+		}else if (filepath == ":Restart Language Servers (LSPs)") {
+			restartLSPs();
+		}else if (filepath == ":Open `languages.json` file") {
+			std::string path = settings->getLocalAppDataPath() + "\\CodeWizard\\languages.json";
+			openFromCMD(path, "languages.json");
+			displayToast(icu::UnicodeString::fromUTF8("Remember to reopen CodeWizard after making changes."));
 		}
 		
 		return;
@@ -1651,7 +1673,7 @@ void App::indexFiles() {
 	}
 	
 	static const std::vector<std::string> commands = {
-		"Git Push","Git Pull","Git Force Pull","Help","Save Theme Settings To File","Load Theme Settings From File","Test Toast Box"
+		"Git Push","Git Pull","Git Force Pull","Help","Save Theme Settings To File","Load Theme Settings From File","Restart Language Servers (LSPs)","Open `languages.json` file","Test Toast Box"
 	};
 
 	for (auto const& cmd : commands) {
@@ -1870,14 +1892,6 @@ void App::repeatEveryXSeconds(int intervalSeconds, std::function<void()> task) {
 void App::save() {
 	rootelement->save();
 }
-
-#include <unicode/ucsdet.h>
-#include <unicode/ucnv.h>
-#include <unicode/ustring.h>
-#include <unicode/unistr.h>
-#include <fstream>
-#include <vector>
-#include <iostream>
 
 icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, bool& worked) {
 	worked = false;

@@ -544,17 +544,33 @@ void LanguageServerClient::initialize(const std::string &rootUri)
 
 void LanguageServerClient::shutdown()
 {
+	std::cout << "1\n";
+	
 	if (failedToStart) {
 		return;
 	}
-
+	
+	std::cout << "2\n";
+	
+	std::cout << serverProcess.bytesAvailable() << "\n";
+	
 	serverProcess.close();
+	
+	std::cout << "3\n";
+	
 	serverProcess.terminate();
+	
+	std::cout << "4\n";
 
 	if (!serverProcess.waitForFinished(500)) {
+		std::cout << "5\n";
 		serverProcess.kill();
+		std::cout << "6\n";
 		serverProcess.waitForFinished();
+		std::cout << "7\n";
 	}
+	
+	std::cout << "8\n";
 }
 
 void LanguageServerClient::openDocument(const std::string &uri, const std::string &languageId, const std::string &content)

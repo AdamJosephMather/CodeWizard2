@@ -42,6 +42,14 @@ Editor::Editor(Widget* parent) : Widget(parent) {
 	createNew(nullptr);
 }
 
+void Editor::executeAction(WidgetActionType typ) {
+	for (auto it : editors) { // must send this to all of them even if they're not in our children list.
+		it.second->executeAction(typ);
+	}
+	
+	tab_bar->executeAction(typ);
+}
+
 void Editor::tabinfoclicked(TabInfo info) {
 	for (auto it : editors) {
 		if (it.first == info.id && it.second->parent != this){

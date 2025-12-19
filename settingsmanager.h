@@ -36,7 +36,8 @@ public:
 	
 	std::string getSubSet(std::vector<std::string> items);
 	bool bringInSubset(std::string);
+	
+	std::string getLocalAppDataPath();
 private:
 	nlohmann::json internalSettings;
-	std::string getLocalAppDataPath();
 };

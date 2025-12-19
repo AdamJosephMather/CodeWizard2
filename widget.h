@@ -6,6 +6,10 @@
 #include <vector>
 #include "unicode/unistr.h"
 
+enum WidgetActionType {
+	RESTART_LSP
+};
+
 class Widget {
 public:
 	Widget() : parent(nullptr) {}
@@ -56,4 +60,6 @@ public:
 	
 	virtual std::vector<std::vector<std::string>> getOpenFiles();
 	virtual int openUnnamedFile(int count);
+	
+	virtual void executeAction(WidgetActionType typ);
 };

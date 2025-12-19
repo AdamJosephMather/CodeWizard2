@@ -163,7 +163,8 @@ public:
 	static int currentCursorType;
 	static int expectedCursorType;
 	
-	static LanguageServerClient* getLSP(std::string lsp_command);
+	static LanguageServerClient* readyLSP(std::string lsp_command);
+	static void restartLSPs();
 	
 	static FileIndexResult INDEXED_FILES;
 	static std::vector<StoredSearch> storedsearches;

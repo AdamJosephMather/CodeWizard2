@@ -81,6 +81,8 @@ public:
 	bool on_mouse_move_event();
 	bool on_scroll_event(double xchange, double ychange);
 	
+	void executeAction(WidgetActionType typ);
+	
 	bool hoveringHoverbox(int mx, int my, int padding = 0);
 	int last_mouse_x = -1;
 	int last_mouse_y = -1;
@@ -88,7 +90,6 @@ public:
 	FileInfo* file = nullptr;
 	std::string language = "";
 	std::string lsp = "";
-	LanguageServerClient* lsp_client = nullptr;
 	void detectLanguage();
 	
 	TextEdit* hoverbox = nullptr;

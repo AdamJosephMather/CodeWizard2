@@ -239,3 +239,9 @@ int Widget::openUnnamedFile(int count) {
 	}
 	return count;
 }
+
+void Widget::executeAction(WidgetActionType typ) {
+	for (auto c : children) {
+		c->executeAction(typ);
+	}
+}

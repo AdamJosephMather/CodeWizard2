@@ -16,10 +16,10 @@ std::set<UChar32> whitespace_before_comment = {U'\t', U' '};
 
 CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::UpdateFInfoFunction fupdater) : Widget(parent) {
 	before_self_close = [&](Widget* w) {
-		if (lsp_client) {
-			for (int i = static_cast<int>(lsp_client->connected_edits.size())-1; i >= 0; i--) {
-				if (lsp_client->connected_edits[i] == this) { 
-					lsp_client->connected_edits.erase(lsp_client->connected_edits.begin()+i);
+		if (App::lsp_client_map[lsp]) {
+			for (int i = static_cast<int>(App::lsp_client_map[lsp]->connected_edits.size())-1; i >= 0; i--) {
+				if (App::lsp_client_map[lsp]->connected_edits[i] == this) { 
+					App::lsp_client_map[lsp]->connected_edits.erase(App::lsp_client_map[lsp]->connected_edits.begin()+i);
 				}
 			}
 		}
@@ -191,14 +191,14 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	textedit->contextmenu->addSeparaterToMenu();
 	
 	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Goto Def (LSP)"),   [&](Widget* w){
-		if (lsp_client && file) {
-			goto_id = lsp_client->requestGotoDefinition(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
+		if (App::lsp_client_map[lsp] && file) {
+			goto_id = App::lsp_client_map[lsp]->requestGotoDefinition(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
 		}
 		textedit->contextmenu->is_visible_2 = false;
 	});
 	
 	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Rename Symbol (LSP)"),   [&](Widget* w){
-		if (lsp_client && file) {
+		if (App::lsp_client_map[lsp] && file) {
 			renamecursor = textedit->cursors[0];
 			if (renamebox->parent != this){
 				App::MoveWidget(renamebox, this);
@@ -248,11 +248,11 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 			hoverCrsr = Cursor();
 		}
 		
-		if (!lsp_client || !file || file->filepath == "") {
+		if (!App::lsp_client_map[lsp] || !file || file->filepath == "") {
 			return;
 		}
 		
-		if (!lsp_client->supportsIncrementalChanges) {
+		if (!App::lsp_client_map[lsp]->supportsIncrementalChanges) {
 			onTextChanged(textedit);
 			return;
 		}
@@ -267,7 +267,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		std::string text;
 		l.line_text.toUTF8String(text);
 		
-		lsp_client->applyDocumentEdit(file->filepath, t, text, lineindex);
+		App::lsp_client_map[lsp]->applyDocumentEdit(file->filepath, t, text, lineindex);
 	};
 	
 	textedit->getIndentationLevelAfterLine = indentIdentifierAfterLine;
@@ -289,7 +289,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 			}else{
 				timeuntil -= 20;
 				if (timeuntil <= 0) {
-					if (!lsp_client) { continue; }
+					if (!App::lsp_client_map[lsp]) { continue; }
 					
 					int mx = App::mouseX;
 					int my = App::mouseY;
@@ -303,7 +303,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 					hoverCrsr.head_line = crsr.head_line;
 					
 					should_move_mouse_hover = false;
-					hover_id = lsp_client->requestHover(file->filepath, crsr.head_line, crsr.head_char);
+					hover_id = App::lsp_client_map[lsp]->requestHover(file->filepath, crsr.head_line, crsr.head_char);
 				}
 				std::this_thread::sleep_for(std::chrono::milliseconds(20));
 			}
@@ -331,15 +331,13 @@ void CodeEdit::gotoerror(int s) {
 }
 
 void CodeEdit::detectLanguage() {
-	if (lsp_client) {
-		for (int i = static_cast<int>(lsp_client->connected_edits.size())-1; i >= 0; i--) {
-			if (lsp_client->connected_edits[i] == this) { 
-				lsp_client->connected_edits.erase(lsp_client->connected_edits.begin()+i);
+	if (App::lsp_client_map[lsp]) {
+		for (int i = static_cast<int>(App::lsp_client_map[lsp]->connected_edits.size())-1; i >= 0; i--) {
+			if (App::lsp_client_map[lsp]->connected_edits[i] == this) { 
+				App::lsp_client_map[lsp]->connected_edits.erase(App::lsp_client_map[lsp]->connected_edits.begin()+i);
 			}
 		}
 	}
-	
-	lsp_client = nullptr; // don't delete it, we still want it now
 	
 	textedit->highlighter = nullptr;
 	textedit->getblankhighlighting = nullptr;
@@ -394,11 +392,11 @@ void CodeEdit::detectLanguage() {
 	}
 	
 	if (lsp != ""){
-		lsp_client = App::getLSP(lsp);
+		App::readyLSP(lsp);
 		
-		if (lsp_client) {
+		if (App::lsp_client_map[lsp]) {
 			bool foundit = false;
-			for (auto c : lsp_client->connected_edits) {
+			for (auto c : App::lsp_client_map[lsp]->connected_edits) {
 				if (c == this) {
 					foundit = true;
 					break;
@@ -406,7 +404,7 @@ void CodeEdit::detectLanguage() {
 			}
 			
 			if (!foundit) {
-				lsp_client->connected_edits.push_back(this);
+				App::lsp_client_map[lsp]->connected_edits.push_back(this);
 			}
 		}
 	}
@@ -431,6 +429,36 @@ void CodeEdit::detectLanguage() {
 	textedit->highlighterNotEqual = [&](TextMateInfo* one, TextMateInfo* two){
 		return one->contextStack.back().hash != two->contextStack.back().hash;
 	};
+}
+
+void CodeEdit::executeAction(WidgetActionType typ) {
+	if (typ == WidgetActionType::RESTART_LSP) {
+		if (lsp != ""){
+			App::readyLSP(lsp);
+			
+			if (App::lsp_client_map[lsp]) {
+				bool foundit = false;
+				for (auto c : App::lsp_client_map[lsp]->connected_edits) {
+					if (c == this) {
+						foundit = true;
+						break;
+					}
+				}
+				
+				if (!foundit) {
+					App::lsp_client_map[lsp]->connected_edits.push_back(this);
+				}
+				
+				if (file) {
+					std::string str;
+					textedit->getFullText().toUTF8String(str);
+					App::lsp_client_map[lsp]->openDocument(file->filepath, App::languagemap[language].name, str);
+				}
+			}
+		}
+	}
+	
+	Widget::executeAction(typ);
 }
 
 void CodeEdit::run_fixit() {
@@ -499,10 +527,10 @@ void CodeEdit::openFile() {
 			App::MoveWidget(fixit_request_menu, this);
 		}
 		
-		if (lsp_client) {
+		if (App::lsp_client_map[lsp]) {
 			std::string str;
 			text.toUTF8String(str);
-			lsp_client->openDocument(file->filepath, App::languagemap[language].name, str);
+			App::lsp_client_map[lsp]->openDocument(file->filepath, App::languagemap[language].name, str);
 		}
 	}else {
 		file = nullptr;
@@ -716,10 +744,10 @@ void CodeEdit::triggerSaveAs() {
 		madeChangeBetweenSaves = true;
 		save();
 		
-		if (lsp_client){
+		if (App::lsp_client_map[lsp]){
 			std::string str;
 			textedit->getFullText().toUTF8String(str);
-			lsp_client->openDocument(file->filepath, App::languagemap[language].name, str);
+			App::lsp_client_map[lsp]->openDocument(file->filepath, App::languagemap[language].name, str);
 		}
 	}
 	
@@ -796,8 +824,8 @@ void CodeEdit::save() {
 		was_in_a_file = true;
 		
 		
-		if (lsp_client) {
-			lsp_client->documentSaved(file->filepath, str);
+		if (App::lsp_client_map[lsp]) {
+			App::lsp_client_map[lsp]->documentSaved(file->filepath, str);
 		}
 	}
 	
@@ -1027,11 +1055,11 @@ bool CodeEdit::on_char_event(unsigned int keycode) {
 	
 	if (Widget::on_char_event(keycode)) {
 		if (textedit == App::activeLeafNode && textedit->wasmode == 'i' && textedit->cursors.size() == 1) {
-			if (lsp_client && file) {
+			if (App::lsp_client_map[lsp] && file) {
 				char utf8[5] = {};
 				int len = std::snprintf(utf8, sizeof(utf8), "%c", keycode);
 				if (len > 0) { // there is something printable
-					completion_id = lsp_client->requestCompletion(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
+					completion_id = App::lsp_client_map[lsp]->requestCompletion(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
 				}
 			}
 		}
@@ -1132,10 +1160,10 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 				return true;
 			}else if (key == GLFW_KEY_ENTER){
 				App::RemoveWidgetFromParent(renamebox);
-				if (lsp_client) {
+				if (App::lsp_client_map[lsp]) {
 					std::string rename;
 					renamebox->getFullText().toUTF8String(rename);
-					rename_id = lsp_client->requestRename(file->filepath, renamecursor.head_line, renamecursor.head_char, rename);
+					rename_id = App::lsp_client_map[lsp]->requestRename(file->filepath, renamecursor.head_line, renamecursor.head_char, rename);
 				}
 				App::setActiveLeafNode(textedit);
 				return true;
@@ -1152,13 +1180,13 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 		
 		if (App::activeLeafNode == textedit) {
 			if (key == GLFW_KEY_ENTER && alt_held && is_press) {
-				if (lsp_client) {
+				if (App::lsp_client_map[lsp]) {
 					auto slelscec = textedit->_getCursSelec(textedit->cursors[0]);
-					code_actions_id = lsp_client->requestActions(file->filepath, slelscec.first.first, slelscec.second.first, slelscec.first.second, slelscec.second.second);
+					code_actions_id = App::lsp_client_map[lsp]->requestActions(file->filepath, slelscec.first.first, slelscec.second.first, slelscec.first.second, slelscec.second.second);
 				}
 				return true;
 			}else if (key == GLFW_KEY_R && (control_held || textedit->mode == 'n') && is_press) {
-				if (lsp_client) {
+				if (App::lsp_client_map[lsp]) {
 					renamecursor = textedit->cursors[0];
 					if (renamebox->parent != this){
 						App::MoveWidget(renamebox, this);
@@ -1188,14 +1216,14 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 			}
 			
 			if (file && key == GLFW_KEY_G && (control_held || (textedit->mode == 'n' && textedit->vim_repeater == 0)) && is_press) {
-				if (lsp_client) {
-					goto_id = lsp_client->requestGotoDefinition(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
+				if (App::lsp_client_map[lsp]) {
+					goto_id = App::lsp_client_map[lsp]->requestGotoDefinition(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
 				}
 			}if (file && key == GLFW_KEY_P && (control_held || textedit->mode == 'n') && is_press) {
-				if (lsp_client){
+				if (App::lsp_client_map[lsp]){
 					hoverCrsr = textedit->cursors[0];
 					should_move_mouse_hover = true;
-					hover_id = lsp_client->requestHover(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
+					hover_id = App::lsp_client_map[lsp]->requestHover(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
 				}
 			}if (key == GLFW_KEY_3 && alt_held && is_press && language != "" && App::languagemap[language].line_comment != "") {
 				setComments();
@@ -1703,7 +1731,7 @@ void CodeEdit::activateCompletion() {
 void CodeEdit::publishDiagnostics(std::string filename, std::vector<std::string> messages, std::vector<int> startC, std::vector<int> startL, std::vector<int> endC, std::vector<int> endL, std::vector<int> severities) {
 	std::lock_guard<std::mutex> lock(App::canMakeChanges);
 	
-	if (!lsp_client || !file || !URISEqual(filename, lsp_client->fromLocalFile(file->filepath))) {
+	if (!App::lsp_client_map[lsp] || !file || !URISEqual(filename, App::lsp_client_map[lsp]->fromLocalFile(file->filepath))) {
 		return;
 	}
 	
@@ -1864,14 +1892,14 @@ void CodeEdit::onTextChanged(Widget* w) {
 		hoverCrsr = Cursor();
 	}
 	
-	if (!lsp_client || !file || file->filepath == "") {
+	if (!App::lsp_client_map[lsp] || !file || file->filepath == "") {
 		return;
 	}
 	
 	std::string text;
 	te->getFullText().toUTF8String(text);
 	
-	lsp_client->updateDocument(file->filepath, text);
+	App::lsp_client_map[lsp]->updateDocument(file->filepath, text);
 }
 
 std::vector<FileEdit> CodeEdit::parseCodeAction(const json& action) {
@@ -1996,7 +2024,7 @@ void CodeEdit::applyEditToLines(std::vector<std::string>& lines, const EditDoc& 
 
 void CodeEdit::applyOtherFileEdits(const std::vector<FileEdit>& edits, const std::string& currentFilePath) {
 	for (auto& fe : edits) {
-		if (URISEqual(fe.uri, lsp_client->fromLocalFile(currentFilePath)))
+		if (URISEqual(fe.uri, App::lsp_client_map[lsp]->fromLocalFile(currentFilePath)))
 			continue;
 		
 		std::filesystem::path p = std::filesystem::path(fileUriToPath(fe.uri));
@@ -2032,7 +2060,7 @@ std::vector<EditSection> CodeEdit::gatherCurrentFileSections(const std::vector<F
 	for (auto& fe : edits) {
 		// convert URI to path
 		
-		if (!URISEqual(fe.uri, lsp_client->fromLocalFile(currentFilePath)))
+		if (!URISEqual(fe.uri, App::lsp_client_map[lsp]->fromLocalFile(currentFilePath)))
 			continue;
 
 		for (auto& te : fe.edits) {

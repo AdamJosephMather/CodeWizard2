@@ -12,7 +12,10 @@ void TerminalWidget::run() {
 	int height_cells = std::max((t_h-App::text_padding*2) / TextRenderer::get_text_height(), 1);
 	
 	const std::wstring shell = L"cmd.exe";
-	term = new Terminal(width_cells, height_cells);
+	term = new Terminal(width_cells, height_cells, [&](int num) {
+		sel_doc_r0 -= num;
+		sel_doc_r1 -= num;
+	});
 	
 	if (term->start(shell)) {
 //		term->enableMouseTracking(true);

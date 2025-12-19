@@ -37,7 +37,8 @@ inline std::wstring defaultShell() {
 // Construction / Destruction
 // ============================================================================
 
-Terminal::Terminal(int cols, int rows) : m_cols(cols), m_rows(rows) {
+Terminal::Terminal(int cols, int rows, SCROLLDOWN sd) : m_cols(cols), m_rows(rows) {
+	scrollDown = sd;
 	ZeroMemory(&m_pi, sizeof(m_pi));
 }
 
@@ -619,6 +620,7 @@ void Terminal::savePushLine(int cols, const VTermScreenCell* cells) {
 	m_scrollback.push_back(l);
 	if (m_scrollback.size() > m_sb_max) {
 		m_scrollback.pop_front();
+		scrollDown(1);
 	}
 	if (m_view_off > 0) {
 		m_view_off++;

@@ -993,7 +993,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 	rerender = true;
 	
 	if (recording_macro) {
-		if (key == GLFW_KEY_F12 && action == GLFW_PRESS) {
+		if ((key == GLFW_KEY_F12 || key == GLFW_KEY_F11) && action == GLFW_PRESS) {
 			recording_macro = false;
 			displayToast(icu::UnicodeString::fromUTF8("Macro Recording Over ("+std::to_string(keyboard_events.size())+")"));
 			return;
@@ -1022,11 +1022,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 	}
 	
 	if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
-		if (replaying_macro) {
-			displayToast(icu::UnicodeString::fromUTF8("Stopped Macro Replay"));
-			glfwSwapInterval(1); // Enable vsync
-			replaying_macro = false;
-		}else{
+		if (!replaying_macro) {
 			if (keyboard_events.size() == 0) {
 				displayToast(icu::UnicodeString::fromUTF8("No Recorded Keystrokes"));
 				return;

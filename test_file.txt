@@ -6,7 +6,7 @@ Todo:
 //	0.3 Find buttons
 //	1   Vim actions (s key, as well as < >)
 //	1.5 Comment/indent control flow
-	  2.  Settings
+//	2.  Settings
 //	3.  Language detection
-	  4.  Command palette
-	  5.  Everything else on that paper.
+//	4.  Command palette
+//	5.  Everything else on that paper.

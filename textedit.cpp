@@ -1710,10 +1710,14 @@ void TextEdit::render() {
 }
 
 Color* TextEdit::getColorFromTokens(int indx, std::vector<ColoredTokens> tokens, bool* aragne) {
+	Color* retcol = App::theme.main_text_color;
+	
 	for (int i = tokens.size()-1; i >= 0; i--) {
 		auto t = tokens[i];
 		if (t.start <= indx && indx < t.end) {
-			if (t.color < 0) {
+			if (t.color == 3) {
+				retcol = App::theme.syntax_colors[3];
+			}else if (t.color < 0) {
 				// it's a difference token
 				if (t.color == -1) {
 					return App::theme.add_diff;
@@ -1722,7 +1726,6 @@ Color* TextEdit::getColorFromTokens(int indx, std::vector<ColoredTokens> tokens,
 				}else {
 					return App::theme.equal_diff;
 				}
-
 			}else{
 				if (t.color == 1 || t.color == 2) {
 					*aragne = true;
@@ -1732,7 +1735,7 @@ Color* TextEdit::getColorFromTokens(int indx, std::vector<ColoredTokens> tokens,
 			}
 		}
 	}
-	return App::theme.main_text_color;
+	return retcol;
 }
 
 void TextEdit::position(int x, int y, int w, int h) {

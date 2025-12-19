@@ -23,7 +23,7 @@
 132	6529	7878777917773696	CMakeFiles/CodeWizard.dir/tabs.cpp.obj	5c8243397b137476
 5298	12847	7878777969438906	CMakeFiles/CodeWizard.dir/linenumbers.cpp.obj	e6abe1eeafacd935
 3798	10341	7878777954436359	CMakeFiles/CodeWizard.dir/settings.cpp.obj	331a02a143881a23
-46	4757	7878779500856408	CMakeFiles/CodeWizard.dir/application.cpp.obj	2865ac26a42430f5
+36	3848	7878780157869086	CMakeFiles/CodeWizard.dir/application.cpp.obj	2865ac26a42430f5
 6145	11602	7878777977907203	CMakeFiles/CodeWizard.dir/brokenstatemenu.cpp.obj	f74450ccaaf576c5
 6132	16084	7878777977782073	CMakeFiles/CodeWizard.dir/textedit.cpp.obj	c914b122fcccba0a
 6251	13098	7878777978972445	CMakeFiles/CodeWizard.dir/checkbox.cpp.obj	50099f7213ca2781
@@ -47,7 +47,8 @@
 20233	23985	7878778118932596	CMakeFiles/CodeWizard.dir/scrollbar.cpp.obj	37be784e0d4f4ef5
 20266	24030	7878778119118086	CMakeFiles/CodeWizard.dir/contextmenu.cpp.obj	e06f7bbab752a190
 27981	32383	7878756674869839	CMakeFiles/CodeWizard.dir/updatechecker.cpp.obj	cd45e7e48db2a42f
-4759	5905	7878779547980782	CodeWizard.exe	465abd93fb23ee3
-56	2015	7878779500956466	CMakeFiles/CodeWizard.dir/scrollnotify.cpp.obj	f75509726d7f192a
-36	3848	7878780157869086	CMakeFiles/CodeWizard.dir/application.cpp.obj	2865ac26a42430f5
 3851	5146	7878780196023921	CodeWizard.exe	465abd93fb23ee3
+56	2015	7878779500956466	CMakeFiles/CodeWizard.dir/scrollnotify.cpp.obj	f75509726d7f192a
+22	4295	7878856953093110	CMakeFiles/CodeWizard.dir/textedit.cpp.obj	c914b122fcccba0a
+36	6508	7878856953230848	CMakeFiles/CodeWizard.dir/highlighter.cpp.obj	51c89b391ee96ef9
+6511	8176	7878857017971670	CodeWizard.exe	465abd93fb23ee3

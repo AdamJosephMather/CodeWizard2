@@ -10,9 +10,9 @@ std::vector<std::vector<std::string>> matches = {
 	{"type"},
 	{"string"},
 	{"comment"},
-	{"name.function", "function-call", "variable.function", "support.function"},
+	{"name.function", "function-call.generic", "function-call.generic", "function.builtin", "variable.function", "support.function"},
 	{"variable", "paramater", "argument"},
-	{"scope", "keyword", "storage"},
+	{"scope", "keyword", "storage", "attribute.rust"},
 	{"punctuation"},
 	{"literal", "number", "bool", "constant"}
 };

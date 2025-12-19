@@ -168,6 +168,11 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"invert_scroll_h",
 			false
 		),
+		makeString(
+			"Default Terminal",
+			"terminal_cmd",
+			"cmd.exe"
+		),
 		makeInt(
 			"Max Files To Index",
 			"max_index_files",

@@ -15,6 +15,9 @@
 ########################
 
 //Path to a program.
+CARGO_EXECUTABLE:FILEPATH=C:/Users/adamj/.cargo/bin/cargo.exe
+
+//Path to a program.
 CMAKE_AR:FILEPATH=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.34.31933/bin/Hostx64/x64/lib.exe
 
 //Choose the type of build, options are: None Debug Release RelWithDebInfo
@@ -84,8 +87,56 @@ CMAKE_EXPORT_COMPILE_COMMANDS:UNINITIALIZED=ON
 //Value Computed by CMake.
 CMAKE_FIND_PACKAGE_REDIRECTS_DIR:STATIC=D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/CMakeFiles/pkgRedirects
 
+//User executables (bin)
+CMAKE_INSTALL_BINDIR:PATH=bin
+
+//Read-only architecture-independent data (DATAROOTDIR)
+CMAKE_INSTALL_DATADIR:PATH=
+
+//Read-only architecture-independent data root (share)
+CMAKE_INSTALL_DATAROOTDIR:PATH=share
+
+//Documentation root (DATAROOTDIR/doc/PROJECT_NAME)
+CMAKE_INSTALL_DOCDIR:PATH=
+
+//C header files (include)
+CMAKE_INSTALL_INCLUDEDIR:PATH=include
+
+//Info documentation (DATAROOTDIR/info)
+CMAKE_INSTALL_INFODIR:PATH=
+
+//Object code libraries (lib)
+CMAKE_INSTALL_LIBDIR:PATH=lib
+
+//Program executables (libexec)
+CMAKE_INSTALL_LIBEXECDIR:PATH=libexec
+
+//Locale-dependent data (DATAROOTDIR/locale)
+CMAKE_INSTALL_LOCALEDIR:PATH=
+
+//Modifiable single-machine data (var)
+CMAKE_INSTALL_LOCALSTATEDIR:PATH=var
+
+//Man documentation (DATAROOTDIR/man)
+CMAKE_INSTALL_MANDIR:PATH=
+
+//C header files for non-gcc (/usr/include)
+CMAKE_INSTALL_OLDINCLUDEDIR:PATH=/usr/include
+
 //Install path prefix, prepended onto install directories.
 CMAKE_INSTALL_PREFIX:PATH=C:/Program Files (x86)/CodeWizard
+
+//Run-time variable data (LOCALSTATEDIR/run)
+CMAKE_INSTALL_RUNSTATEDIR:PATH=
+
+//System admin executables (sbin)
+CMAKE_INSTALL_SBINDIR:PATH=sbin
+
+//Modifiable architecture-independent data (com)
+CMAKE_INSTALL_SHAREDSTATEDIR:PATH=com
+
+//Read-only single-machine data (etc)
+CMAKE_INSTALL_SYSCONFDIR:PATH=etc
 
 //Path to a program.
 CMAKE_LINKER:FILEPATH=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.34.31933/bin/Hostx64/x64/link.exe
@@ -124,6 +175,21 @@ CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
 CMAKE_PROJECT_NAME:STATIC=CodeWizard
+
+//Value Computed by CMake
+CMAKE_PROJECT_VERSION:STATIC=0.2.0
+
+//Value Computed by CMake
+CMAKE_PROJECT_VERSION_MAJOR:STATIC=0
+
+//Value Computed by CMake
+CMAKE_PROJECT_VERSION_MINOR:STATIC=2
+
+//Value Computed by CMake
+CMAKE_PROJECT_VERSION_PATCH:STATIC=0
+
+//Value Computed by CMake
+CMAKE_PROJECT_VERSION_TWEAK:STATIC=
 
 //RC compiler
 CMAKE_RC_COMPILER:FILEPATH=C:/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64/rc.exe
@@ -190,7 +256,7 @@ CMAKE_STATIC_LINKER_FLAGS_RELEASE:STRING=
 // during RELWITHDEBINFO builds.
 CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO:STRING=
 
-//The CMake toolchain file
+//No help, variable specified on the command line.
 CMAKE_TOOLCHAIN_FILE:FILEPATH=D:/Users/adamj/Documents/C/vcpkg/scripts/buildsystems/vcpkg.cmake
 
 //If this value is on, makefiles will be generated without the
@@ -202,6 +268,9 @@ CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 //The directory containing a CMake configuration file for CURL.
 CURL_DIR:PATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/share/curl
 
+//The directory containing a CMake configuration file for Caffe2.
+Caffe2_DIR:PATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/share/caffe2
+
 //Value Computed by CMake
 CodeWizard_BINARY_DIR:STATIC=D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release
 
@@ -210,6 +279,15 @@ CodeWizard_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
 CodeWizard_SOURCE_DIR:STATIC=D:/Users/adamj/Documents/C/CodeWizard2
+
+//Dot tool for use with Doxygen
+DOXYGEN_DOT_EXECUTABLE:FILEPATH=DOXYGEN_DOT_EXECUTABLE-NOTFOUND
+
+//Doxygen documentation generation tool (https://www.doxygen.nl)
+DOXYGEN_EXECUTABLE:FILEPATH=C:/Program Files/mingw64/bin/doxygen.exe
+
+//The directory containing a CMake configuration file for Eigen3.
+Eigen3_DIR:PATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/share/eigen3
 
 //Directory under which to collect all populated content
 FETCHCONTENT_BASE_DIR:PATH=D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps
@@ -225,11 +303,18 @@ FETCHCONTENT_QUIET:BOOL=ON
 // for libvterm_src
 FETCHCONTENT_SOURCE_DIR_LIBVTERM_SRC:PATH=
 
+//When not empty, overrides where to find pre-populated content
+// for tokenizers_cpp
+FETCHCONTENT_SOURCE_DIR_TOKENIZERS_CPP:PATH=
+
 //Enables UPDATE_DISCONNECTED behavior for all content population
 FETCHCONTENT_UPDATES_DISCONNECTED:BOOL=OFF
 
 //Enables UPDATE_DISCONNECTED behavior just for population of libvterm_src
 FETCHCONTENT_UPDATES_DISCONNECTED_LIBVTERM_SRC:BOOL=OFF
+
+//Enables UPDATE_DISCONNECTED behavior just for population of tokenizers_cpp
+FETCHCONTENT_UPDATES_DISCONNECTED_TOKENIZERS_CPP:BOOL=OFF
 
 //The directory containing a CMake configuration file for Freetype.
 Freetype_DIR:PATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/share/freetype
@@ -312,8 +397,110 @@ ICU_UC_LIBRARY_DEBUG:FILEPATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-win
 //ICU uc library (release)
 ICU_UC_LIBRARY_RELEASE:FILEPATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/lib/icuuc.lib
 
+//The directory containing a CMake configuration file for MKL.
+MKL_DIR:PATH=MKL_DIR-NOTFOUND
+
+//Enable SentencePiece tokenizer
+MLC_ENABLE_SENTENCEPIECE_TOKENIZER:BOOL=ON
+
+//32bit compile
+MSGPACK_32BIT:BOOL=OFF
+
+//Build Doxygen documentation
+MSGPACK_BUILD_DOCS:BOOL=ON
+
+//Build msgpack examples
+MSGPACK_BUILD_EXAMPLES:BOOL=OFF
+
+//Build tests
+MSGPACK_BUILD_TESTS:BOOL=OFF
+
+//Char sign to use (signed or unsigned)
+MSGPACK_CHAR_SIGN:BOOL=OFF
+
+//Using c++11 compiler
+MSGPACK_CXX11:BOOL=OFF
+
+//Using c++14 compiler
+MSGPACK_CXX14:BOOL=OFF
+
+//Using c++17 compiler
+MSGPACK_CXX17:BOOL=OFF
+
+//Using c++20 compiler
+MSGPACK_CXX20:BOOL=OFF
+
+//Enable regression testing
+MSGPACK_FUZZ_REGRESSION:BOOL=OFF
+
+//Generate coverage report
+MSGPACK_GEN_COVERAGE:BOOL=OFF
+
+//Use Boost libraried
+MSGPACK_USE_BOOST:BOOL=OFF
+
+//Statically link with boost libraries
+MSGPACK_USE_STATIC_BOOST:BOOL=OFF
+
+//Enable the adaptor for std::variant
+MSGPACK_USE_STD_VARIANT_ADAPTOR:BOOL=OFF
+
+//Use Boost X3 parse
+MSGPACK_USE_X3_PARSE:BOOL=OFF
+
 //Path to a library.
 ONIG_LIB:FILEPATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/lib/onig.lib
+
+//The directory containing a CMake configuration file for Protobuf.
+Protobuf_DIR:PATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/share/protobuf
+
+//Path to a program.
+Protobuf_PROTOC_EXECUTABLE:FILEPATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/tools/protobuf/protoc.exe
+
+//Builds test binaries.
+SPM_BUILD_TEST:BOOL=OFF
+
+//Runs gcov to test coverage.
+SPM_COVERAGE:BOOL=OFF
+
+//Override system processor
+SPM_CROSS_SYSTEM_PROCESSOR,:BOOL=OFF
+
+//Use /MT flag in MSVC build
+SPM_ENABLE_MSVC_MT_BUILD,:BOOL=OFF
+
+//Enables NFKC compile
+SPM_ENABLE_NFKC_COMPILE:BOOL=OFF
+
+//Builds shared libaries in addition to static libraries.
+SPM_ENABLE_SHARED:BOOL=OFF
+
+//Enable TCMalloc if available.
+SPM_ENABLE_TCMALLOC:BOOL=OFF
+
+//Makes a tensorflow compatible shared file.
+SPM_ENABLE_TENSORFLOW_SHARED:BOOL=OFF
+
+//Disable thread_local operator
+SPM_NO_THREADLOCAL:BOOL=OFF
+
+//Link static library of TCMALLOC.
+SPM_TCMALLOC_STATIC:BOOL=OFF
+
+//Use built-in protobuf
+SPM_USE_BUILTIN_PROTOBUF:BOOL=ON
+
+//Use external abseil
+SPM_USE_EXTERNAL_ABSL:BOOL=OFF
+
+//MSVC runtime library setting (One of MT or MD)
+TOKENIZERS_CPP_MSVC_RUNTIME_LIBRARY:STRING=
+
+//Path to a library.
+TORCH_LIBRARY:FILEPATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/lib/torch.lib
+
+//The directory containing a CMake configuration file for Torch.
+Torch_DIR:PATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/share/torch
 
 //Automatically copy dependencies into the output directory for
 // executables.
@@ -376,14 +563,67 @@ Z_VCPKG_PWSH_PATH:FILEPATH=Z_VCPKG_PWSH_PATH-NOTFOUND
 // triplet
 _VCPKG_INSTALLED_DIR:PATH=D:/Users/adamj/Documents/C/vcpkg/installed
 
+//The directory containing a CMake configuration file for absl.
+absl_DIR:PATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/share/absl
+
+//Path to a library.
+c10_LIBRARY:FILEPATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/lib/c10.lib
+
+//The directory containing a CMake configuration file for gflags.
+gflags_DIR:PATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/share/gflags
+
 //The directory containing a CMake configuration file for glfw3.
 glfw3_DIR:PATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/share/glfw3
+
+//The directory containing a CMake configuration file for glog.
+glog_DIR:PATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/share/glog
+
+//Value Computed by CMake
+msgpack-cxx_BINARY_DIR:STATIC=D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/tokenizers_cpp-build/msgpack
+
+//Value Computed by CMake
+msgpack-cxx_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+msgpack-cxx_SOURCE_DIR:STATIC=D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/tokenizers_cpp-src/msgpack
+
+//CMake built-in FindProtobuf.cmake module compatible
+protobuf_MODULE_COMPATIBLE:BOOL=OFF
+
+//Enable for verbose output
+protobuf_VERBOSE:BOOL=OFF
+
+//Value Computed by CMake
+sentencepiece_BINARY_DIR:STATIC=D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/tokenizers_cpp-build/sentencepiece
+
+//Value Computed by CMake
+sentencepiece_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+sentencepiece_SOURCE_DIR:STATIC=D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/tokenizers_cpp-src/sentencepiece
+
+//Value Computed by CMake
+tokenizers_cpp_BINARY_DIR:STATIC=D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/tokenizers_cpp-build
+
+//Value Computed by CMake
+tokenizers_cpp_IS_TOP_LEVEL:STATIC=OFF
+
+//Dependencies for the target
+tokenizers_cpp_LIB_DEPENDS:STATIC=general;sentencepiece-static;
+
+//Value Computed by CMake
+tokenizers_cpp_SOURCE_DIR:STATIC=D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/tokenizers_cpp-src
+
+//The directory containing a CMake configuration file for utf8_range.
+utf8_range_DIR:PATH=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/share/utf8_range
 
 
 ########################
 # INTERNAL cache entries
 ########################
 
+//ADVANCED property for variable: CARGO_EXECUTABLE
+CARGO_EXECUTABLE-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_AR
 CMAKE_AR-ADVANCED:INTERNAL=1
 //This is the directory where this CMakeCache.txt was created
@@ -461,6 +701,38 @@ CMAKE_HAVE_PTHREAD_CREATE:INTERNAL=
 //Source directory with the top level CMakeLists.txt file for this
 // project
 CMAKE_HOME_DIRECTORY:INTERNAL=D:/Users/adamj/Documents/C/CodeWizard2
+//ADVANCED property for variable: CMAKE_INSTALL_BINDIR
+CMAKE_INSTALL_BINDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_DATADIR
+CMAKE_INSTALL_DATADIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_DATAROOTDIR
+CMAKE_INSTALL_DATAROOTDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_DOCDIR
+CMAKE_INSTALL_DOCDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_INCLUDEDIR
+CMAKE_INSTALL_INCLUDEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_INFODIR
+CMAKE_INSTALL_INFODIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_LIBDIR
+CMAKE_INSTALL_LIBDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_LIBEXECDIR
+CMAKE_INSTALL_LIBEXECDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_LOCALEDIR
+CMAKE_INSTALL_LOCALEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_LOCALSTATEDIR
+CMAKE_INSTALL_LOCALSTATEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_MANDIR
+CMAKE_INSTALL_MANDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_OLDINCLUDEDIR
+CMAKE_INSTALL_OLDINCLUDEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_RUNSTATEDIR
+CMAKE_INSTALL_RUNSTATEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_SBINDIR
+CMAKE_INSTALL_SBINDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_SHAREDSTATEDIR
+CMAKE_INSTALL_SHAREDSTATEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_SYSCONFDIR
+CMAKE_INSTALL_SYSCONFDIR-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_LINKER
 CMAKE_LINKER-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_MAKE_PROGRAM
@@ -478,7 +750,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_MT
 CMAKE_MT-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=1
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=6
 //Platform information initialized
 CMAKE_PLATFORM_INFO_INITIALIZED:INTERNAL=1
 //noop for ranlib
@@ -534,10 +806,18 @@ CURL_LIBRARY_DEBUG:INTERNAL=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windo
 CURL_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
 //vcpkg
 CURL_LIBRARY_RELEASE:INTERNAL=D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/lib/libcurl.lib
+//ADVANCED property for variable: DOXYGEN_DOT_EXECUTABLE
+DOXYGEN_DOT_EXECUTABLE-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: DOXYGEN_EXECUTABLE
+DOXYGEN_EXECUTABLE-ADVANCED:INTERNAL=1
+//Details about finding Doxygen
+FIND_PACKAGE_MESSAGE_DETAILS_Doxygen:INTERNAL=[C:/Program Files/mingw64/bin/doxygen.exe][cfound components: doxygen missing components: dot][v1.9.5()]
 //Details about finding ICU
 FIND_PACKAGE_MESSAGE_DETAILS_ICU:INTERNAL=[D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/include][optimized;D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/lib/icuuc.lib;debug;D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/debug/lib/icuucd.lib;optimized;D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/lib/icuin.lib;debug;D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/debug/lib/icuind.lib;optimized;D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/lib/icudt.lib;debug;D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/debug/lib/icudtd.lib][cfound components: uc i18n data ][v74.2()]
 //Details about finding Threads
 FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
+//Details about finding Torch
+FIND_PACKAGE_MESSAGE_DETAILS_Torch:INTERNAL=[D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/lib/torch.lib][D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/include;D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/include/torch/csrc/api/include][v()]
 //Details about finding ZLIB
 FIND_PACKAGE_MESSAGE_DETAILS_ZLIB:INTERNAL=[optimized;D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/lib/zlib.lib;debug;D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/debug/lib/zlibd.lib][D:/Users/adamj/Documents/C/vcpkg/installed/x64-windows/include][c ][v1.3.1(1)]
 //ADVANCED property for variable: FREETYPE_LIBRARY_DEBUG
@@ -620,4 +900,10 @@ Z_VCPKG_CHECK_MANIFEST_MODE:INTERNAL=OFF
 Z_VCPKG_POWERSHELL_PATH:INTERNAL=C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe
 //Vcpkg root directory
 Z_VCPKG_ROOT_DIR:INTERNAL=D:/Users/adamj/Documents/C/vcpkg
+//CMAKE_INSTALL_PREFIX during last run
+_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=C:/Program Files (x86)/CodeWizard
+//ADVANCED property for variable: protobuf_MODULE_COMPATIBLE
+protobuf_MODULE_COMPATIBLE-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: protobuf_VERBOSE
+protobuf_VERBOSE-ADVANCED:INTERNAL=1
 

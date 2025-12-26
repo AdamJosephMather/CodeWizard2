@@ -39,6 +39,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(libvterm_src)
 
+FetchContent_Declare(
+	tokenizers_cpp
+	GIT_REPOSITORY https://github.com/mlc-ai/tokenizers-cpp.git
+	# Do NOT use v0.1.1 here (it predates the fix).
+	# Pin to a newer commit on main:
+	GIT_TAG        55d53aa
+)
+FetchContent_MakeAvailable(tokenizers_cpp)
+
 set(LIBVTERM_DIR ${libvterm_src_SOURCE_DIR})
 add_library(libvterm STATIC
 	${LIBVTERM_DIR}/src/encoding.c
@@ -62,7 +71,7 @@ target_include_directories(libvterm PUBLIC
 add_definitions(-D_WIN32_WINNT=0x0A00 -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE)
 
 
-add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_renderer.cpp application.cpp widget.cpp button.cpp titlebar.cpp panel_holder.cpp widgetchooser.cpp editor.cpp filetree.cpp tabs.cpp settings.cpp codeedit.cpp linenumbers.cpp textedit.cpp highlighter.cpp tinyfiledialogs.c brokenstatemenu.cpp checkbox.cpp settingsmanager.cpp languageserverclient.cpp listbox.cpp imageview.cpp compare.cpp curler.cpp toast.cpp chat.cpp label.cpp myrect.cpp lspdebug.cpp terminal.cpp terminalwidget.cpp terminalwidgettabbed.cpp helpmenu.cpp scrollbar.cpp updatechecker.cpp contextmenu.cpp scrollnotify.cpp )
+add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_renderer.cpp application.cpp widget.cpp button.cpp titlebar.cpp panel_holder.cpp widgetchooser.cpp editor.cpp filetree.cpp tabs.cpp settings.cpp codeedit.cpp linenumbers.cpp textedit.cpp highlighter.cpp tinyfiledialogs.c brokenstatemenu.cpp checkbox.cpp settingsmanager.cpp languageserverclient.cpp listbox.cpp imageview.cpp compare.cpp curler.cpp toast.cpp chat.cpp label.cpp myrect.cpp lspdebug.cpp terminal.cpp terminalwidget.cpp terminalwidgettabbed.cpp helpmenu.cpp scrollbar.cpp updatechecker.cpp contextmenu.cpp scrollnotify.cpp modelxrunner.cpp )
 
 
 # Use vcpkg-provided GLFW and ICU
@@ -70,6 +79,7 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(ICU   REQUIRED COMPONENTS uc i18n data)  # must list each component :contentReference[oaicite:0]{index=0}
 find_package(Freetype REQUIRED)
 find_package(CURL CONFIG REQUIRED)
+find_package(Torch REQUIRED)
 
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE
@@ -83,18 +93,22 @@ target_link_libraries(${PROJECT_NAME}
 	libvterm
 )
 
-find_library(ONIG_LIB
-	NAMES onigstatic onig
-	HINTS ${VCPKG_INSTALLED_DIR}/installed/${VCPKG_TARGET_TRIPLET}/lib
-)
-if (NOT ONIG_LIB)
-	message(FATAL_ERROR
-	"Could not find Oniguruma library (onigstatic.lib or onig.lib) in vcpkg tree")
-endif()
+# find_library(ONIG_LIB
+# 	NAMES onigstatic onig
+# 	HINTS ${VCPKG_INSTALLED_DIR}/installed/${VCPKG_TARGET_TRIPLET}/lib
+# )
+# if (NOT ONIG_LIB)
+# 	message(FATAL_ERROR
+# 	"Could not find Oniguruma library (onigstatic.lib or onig.lib) in vcpkg tree")
+# endif()
 
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE
-	${ONIG_LIB}
+	
+# 	${ONIG_LIB}
+	
+	${TORCH_LIBRARIES}
+	tokenizers_cpp
 	
 	ole32
 	shell32
@@ -103,10 +117,14 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 if (MSVC)
-	set_target_properties(${PROJECT_NAME} PROPERTIES
-		WIN32_EXECUTABLE TRUE
-	)
+	target_compile_options(${PROJECT_NAME} PRIVATE /bigobj)
 endif()
+
+# if (MSVC)
+# 	set_target_properties(${PROJECT_NAME} PROPERTIES
+# 		WIN32_EXECUTABLE TRUE
+# 	)
+# endif()
 
 configure_file(${CMAKE_SOURCE_DIR}/app.png
                ${CMAKE_BINARY_DIR}/app.png

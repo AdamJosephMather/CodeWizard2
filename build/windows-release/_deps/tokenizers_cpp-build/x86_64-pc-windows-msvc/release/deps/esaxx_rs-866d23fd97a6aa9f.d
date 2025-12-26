@@ -1,0 +1,10 @@
+D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/tokenizers_cpp-build\x86_64-pc-windows-msvc\release\deps\libesaxx_rs-866d23fd97a6aa9f.rmeta: C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\esaxx-rs-0.1.10\src\lib.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\esaxx-rs-0.1.10\src\esa.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\esaxx-rs-0.1.10\src\sais.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\esaxx-rs-0.1.10\src\types.rs
+
+D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/tokenizers_cpp-build\x86_64-pc-windows-msvc\release\deps\libesaxx_rs-866d23fd97a6aa9f.rlib: C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\esaxx-rs-0.1.10\src\lib.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\esaxx-rs-0.1.10\src\esa.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\esaxx-rs-0.1.10\src\sais.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\esaxx-rs-0.1.10\src\types.rs
+
+D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/tokenizers_cpp-build\x86_64-pc-windows-msvc\release\deps\esaxx_rs-866d23fd97a6aa9f.d: C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\esaxx-rs-0.1.10\src\lib.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\esaxx-rs-0.1.10\src\esa.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\esaxx-rs-0.1.10\src\sais.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\esaxx-rs-0.1.10\src\types.rs
+
+C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\esaxx-rs-0.1.10\src\lib.rs:
+C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\esaxx-rs-0.1.10\src\esa.rs:
+C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\esaxx-rs-0.1.10\src\sais.rs:
+C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\esaxx-rs-0.1.10\src\types.rs:

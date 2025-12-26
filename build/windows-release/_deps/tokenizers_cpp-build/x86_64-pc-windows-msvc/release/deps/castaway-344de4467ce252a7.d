@@ -1,0 +1,10 @@
+D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/tokenizers_cpp-build\x86_64-pc-windows-msvc\release\deps\libcastaway-344de4467ce252a7.rmeta: C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\castaway-0.2.4\src\lib.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\castaway-0.2.4\src\internal.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\castaway-0.2.4\src\lifetime_free.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\castaway-0.2.4\src\utils.rs
+
+D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/tokenizers_cpp-build\x86_64-pc-windows-msvc\release\deps\libcastaway-344de4467ce252a7.rlib: C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\castaway-0.2.4\src\lib.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\castaway-0.2.4\src\internal.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\castaway-0.2.4\src\lifetime_free.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\castaway-0.2.4\src\utils.rs
+
+D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/tokenizers_cpp-build\x86_64-pc-windows-msvc\release\deps\castaway-344de4467ce252a7.d: C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\castaway-0.2.4\src\lib.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\castaway-0.2.4\src\internal.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\castaway-0.2.4\src\lifetime_free.rs C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\castaway-0.2.4\src\utils.rs
+
+C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\castaway-0.2.4\src\lib.rs:
+C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\castaway-0.2.4\src\internal.rs:
+C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\castaway-0.2.4\src\lifetime_free.rs:
+C:\Users\adamj\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\castaway-0.2.4\src\utils.rs:

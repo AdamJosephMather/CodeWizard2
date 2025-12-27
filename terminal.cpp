@@ -12,7 +12,6 @@
 #define _WIN32_WINNT 0x0A00
 #endif
 
-#define NOMINMAX
 #include <windows.h>
 #include <processthreadsapi.h>
 #include <consoleapi2.h>

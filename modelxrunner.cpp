@@ -1,123 +1,188 @@
 #include "modelxrunner.h"
-
 #include <fstream>
 #include <iostream>
-#include <stdexcept>
+#include <ATen/Parallel.h>
+#include "application.h"
+
+std::mutex ModelXRunner::genMutex;
+
+bool ModelXRunner::loaded = false;
+bool ModelXRunner::loading = false;
+bool ModelXRunner::load_success = false;
 
 static std::string load_file_text(const std::string& path) {
 	std::ifstream f(path, std::ios::binary);
-	if (!f) throw std::runtime_error("Failed to open file: " + path);
-	std::string s((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-	return s;
+	if (!f) return "";
+	
+	return std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
 }
 
-bool ModelXRunner::load(const std::string& model_path, const std::string& tokenizer_path) {
+bool ModelXRunner::load() {
+	if (loading || loaded) { return false; }
+	
+	std::cout << "LCM\n";
+	App::displayText(icu::UnicodeString::fromUTF8("Loading Chauffeur"));
+	
+	loading = true;
+	
+	std::string model_path = App::settings->getValue("chauffeur_model_path", std::string());
+	std::string tokenizer_path = App::settings->getValue("chauffeur_tokenizer_path", std::string());
+	
+	at::set_num_threads(std::thread::hardware_concurrency());
+	at::set_num_interop_threads(1);
+	
 	try {
-		// --- Load TorchScript model ---
+		// Load TorchScript model
 		s_model = torch::jit::load(model_path, torch::kCPU);
 		s_model.eval();
 
-		// --- Load tokenizer.json into tokenizers-cpp ---
+		// Load tokenizer
 		auto blob = load_file_text(tokenizer_path);
-		s_tokenizer = tokenizers::Tokenizer::FromBlobJSON(blob); // HF tokenizer from JSON :contentReference[oaicite:5]{index=5}
-
-		// EOS id if present
-		s_eos_id = s_tokenizer->TokenToId(kEosTokenString); // -1 if unknown :contentReference[oaicite:6]{index=6}
-
-		s_loaded = true;
-		std::cerr << "Loaded model: " << model_path << "\n";
-		std::cerr << "Loaded tokenizer: " << tokenizer_path << "\n";
-		std::cerr << "EOS token '" << kEosTokenString << "' id = " << s_eos_id << "\n";
+		
+		if (blob == "") {
+			load_success = false;
+			loaded = true;
+			loading = false;
+			App::displayToast(icu::UnicodeString::fromUTF8("Failed to read Chauffeur tokenizer"));
+			
+			return false;
+		}
+		
+		s_tokenizer = tokenizers::Tokenizer::FromBlobJSON(blob);
+		
+		if (!s_tokenizer) {
+			load_success = false;
+			loaded = true;
+			loading = false;
+			App::displayToast(icu::UnicodeString::fromUTF8("Failed to load Chauffeur tokenizer"));
+			
+			return false;
+		}
+		
+		s_eos_id = s_tokenizer->TokenToId(kEosTokenString);
+		
+		load_success = true;
+		loaded = true;
+		loading = false;
+		
+		std::cout << "CL";
+		App::displayText(icu::UnicodeString::fromUTF8("Chauffeur Loaded!"));
+		
 		return true;
 	} catch (const std::exception& e) {
-		std::cerr << "ModelXRunner::load failed: " << e.what() << "\n";
-		s_loaded = false;
-		s_tokenizer.reset();
+		App::displayToast(icu::UnicodeString::fromUTF8("Failed to load Chauffeur model"));
+		
+		load_success = false;
+		loaded = true;
+		loading = false;
+		
 		return false;
 	}
 }
 
 int64_t ModelXRunner::greedy_next_token(const torch::Tensor& logits_1vocab) {
-	// logits_1vocab: [vocab]
-	// argmax on CPU
-	auto max_idx = std::get<1>(logits_1vocab.max(/*dim=*/0, /*keepdim=*/false));
-	return max_idx.item<int64_t>();
+	return logits_1vocab.argmax(0).item<int64_t>();
 }
 
 std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
-	if (!s_loaded || !s_tokenizer) {
-		throw std::runtime_error("ModelXRunner not loaded. Call load(modelpath, tokenizerpath) first.");
+	App::chauffeur_call_id += 1;
+	int call_id = App::chauffeur_call_id;
+	
+	if (loading) {
+		return "";
 	}
+	
+	if (!loaded) {
+		load();
+	}
+	
+	if (!load_success) {
+		return "";
+	}
+	
+	std::cout << "GWC\n";
+	App::displayText(icu::UnicodeString::fromUTF8("Generating With Chauffeur"));
+	
 	if (max_tokens <= 0) return "";
-
+	
+	std::lock_guard<std::mutex> lock(genMutex);
+	
+	if (App::chauffeur_call_id > call_id) { return ""; }
+	
 	torch::NoGradGuard no_grad;
-
-	// Encode prompt
-	std::vector<int32_t> prompt_ids_i32 = s_tokenizer->Encode(input); // :contentReference[oaicite:7]{index=7}
+	
+	// Encode
+	std::vector<int32_t> prompt_ids_i32 = s_tokenizer->Encode(input);
 	if (prompt_ids_i32.empty()) return "";
+	
+	std::cout << "Token count: " << prompt_ids_i32.size() << "\n";
 
 	if ((int)prompt_ids_i32.size() > kMaxPromptTokens) {
 		prompt_ids_i32.resize(kMaxPromptTokens);
 	}
-
-	// Keep full token history for decode
+	
 	std::vector<int32_t> all_ids = prompt_ids_i32;
-
-	// Build prompt tensor [1, T] int64
-	std::vector<int64_t> prompt_ids_i64;
-	prompt_ids_i64.reserve(all_ids.size());
-	for (auto id : all_ids) prompt_ids_i64.push_back((int64_t)id);
-
+	std::vector<int64_t> prompt_ids_i64(all_ids.begin(), all_ids.end());
+	
+	// Create input tensor [1, T]
 	auto tokens = torch::from_blob(
 			prompt_ids_i64.data(),
-			{(int64_t)1, (int64_t)prompt_ids_i64.size()},
-			torch::TensorOptions().dtype(torch::kInt64)
-	).clone(); // clone so it owns memory
+			{1, (int64_t)prompt_ids_i64.size()},
+			torch::kInt64
+	).clone();
 
-	// Forward(tokens, states=None)
-	std::vector<torch::jit::IValue> iv;
-	iv.push_back(tokens);
-	iv.push_back(torch::jit::IValue()); // None
-
-	auto out = s_model.forward(iv).toTuple();
-	torch::Tensor logits = out->elements()[0].toTensor();          // [1, T, vocab]
-	auto newstates = out->elements()[1].toTensorVector();          // list[Tensor]
-
-	// Next token from last position
-	torch::Tensor last_logits = logits.index({0, (int64_t)logits.size(1) - 1}); // [vocab]
+	// --- Initial Forward Pass ---
+	// Python signature: forward(inpt_tkns, states: Optional[List[Tensor]])
+	std::vector<torch::jit::IValue> inputs;
+	inputs.push_back(tokens);
+	inputs.push_back(c10::nullopt); // Passing None for initial states
+	
+	if (App::chauffeur_call_id > call_id) { return ""; }
+	
+	auto output_tuple = s_model.forward(inputs).toTuple();
+	
+	if (App::chauffeur_call_id > call_id) { return ""; }
+	
+	torch::Tensor logits = output_tuple->elements()[0].toTensor();
+	
+	// The model returns List[Tensor] for states
+	torch::jit::IValue states_list = output_tuple->elements()[1];
+	
+	// Get next token from the very last position of the prompt
+	torch::Tensor last_logits = logits.index({0, -1}); 
 	int64_t next_id = greedy_next_token(last_logits);
+	
+	// --- Autoregressive Loop ---
+	auto tok_input = torch::empty({1, 1}, torch::kInt64);
 
-	// Autoregressive loop: feed one token at a time, reuse states
 	for (int step = 0; step < max_tokens; ++step) {
+		if (App::chauffeur_call_id > call_id) { return ""; }
+		
+		if (s_eos_id >= 0 && next_id == (int64_t)s_eos_id) break;
+		
 		all_ids.push_back((int32_t)next_id);
+		tok_input[0][0] = next_id;
 
-		if (s_eos_id >= 0 && next_id == (int64_t)s_eos_id) {
-			break;
-		}
-
-		// token tensor [1,1]
-		auto tok1 = torch::tensor({next_id}, torch::TensorOptions().dtype(torch::kInt64)).reshape({1, 1});
-
-		std::vector<torch::jit::IValue> iv2;
-		iv2.push_back(tok1);
-		iv2.push_back(newstates); // pass states list back in
-
-		auto out2 = s_model.forward(iv2).toTuple();
-		torch::Tensor logits2 = out2->elements()[0].toTensor();      // [1,1,vocab]
-		newstates = out2->elements()[1].toTensorVector();
-
-		torch::Tensor last_logits2 = logits2.index({0, 0}); // [vocab]
-		next_id = greedy_next_token(last_logits2);
+		std::vector<torch::jit::IValue> step_inputs;
+		step_inputs.push_back(tok_input);
+		step_inputs.push_back(states_list); // Pass the list back in
+		
+		auto step_out = s_model.forward(step_inputs).toTuple();
+		
+		// Update logits and states
+		torch::Tensor step_logits = step_out->elements()[0].toTensor();
+		states_list = step_out->elements()[1]; 
+		
+		next_id = greedy_next_token(step_logits.index({0, 0}));
 	}
-
-	// Decode result
+	
+	if (App::chauffeur_call_id > call_id) { return ""; }
+	
+	// Decode
 	if (kReturnOnlyNewText) {
-		// decode only generated portion (may not perfectly align with tokenizer boundaries)
-		std::vector<int32_t> gen_ids;
-		gen_ids.reserve(all_ids.size() - prompt_ids_i32.size());
-		for (size_t i = prompt_ids_i32.size(); i < all_ids.size(); ++i) gen_ids.push_back(all_ids[i]);
-		return s_tokenizer->Decode(gen_ids); // :contentReference[oaicite:8]{index=8}
+		std::vector<int32_t> gen_ids(all_ids.begin() + prompt_ids_i32.size(), all_ids.end());
+		return s_tokenizer->Decode(gen_ids);
 	} else {
-		return s_tokenizer->Decode(all_ids); // :contentReference[oaicite:9]{index=9}
+		return s_tokenizer->Decode(all_ids);
 	}
 }

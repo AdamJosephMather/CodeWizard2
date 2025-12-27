@@ -64,7 +64,7 @@ void Scrollbar::position(int x, int y, int width, int height) {
 	
 	if (horizontal) {
 		double minsize = (double)TextRenderer::get_text_height()*3;
-		addToTheEnd = max(0, minsize-(end*t_w-start*t_w));
+		addToTheEnd = std::max((double)0, minsize-(end*t_w-start*t_w));
 		
 		int width = (double)parent->t_w * (end-start) + addToTheEnd;
 		int start_x = parent->t_x + (double)(parent->t_w-addToTheEnd)*start;
@@ -81,7 +81,7 @@ void Scrollbar::position(int x, int y, int width, int height) {
 		t_h = r_h;
 	}else{
 		double minsize = (double)TextRenderer::get_text_height()*3;
-		addToTheEnd = max(0, minsize-(end-start)*t_h);
+		addToTheEnd = std::max((double)0, minsize-(end-start)*t_h);
 		
 		int height = (double)parent->t_h * (end-start) + addToTheEnd;
 		int start_y = parent->t_y + (double)(parent->t_h-addToTheEnd)*start;

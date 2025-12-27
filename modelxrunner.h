@@ -1,4 +1,5 @@
 #pragma once
+
 #include <torch/script.h>
 
 #include <memory>
@@ -11,10 +12,17 @@
 class ModelXRunner {
 public:
 	// We only need one model instance, so use static storage.
-	static bool load(const std::string& model_path, const std::string& tokenizer_path);
+	static bool load();
 	static std::string generate(const std::string& input, int max_tokens);
 
 private:
+	// Mutex
+	static bool loaded;
+	static bool loading;
+	static bool load_success;
+	
+	static std::mutex genMutex;
+	
 	// --- Configuration knobs (edit these) ---
 	static constexpr const char* kEosTokenString = "<|end|>"; // change if your tokenizer uses a different EOS token
 	static constexpr bool kReturnOnlyNewText = true;          // if false, returns prompt + completion
@@ -22,8 +30,7 @@ private:
 
 	// --- Loaded assets ---
 	static inline torch::jit::script::Module s_model;
-	static inline bool s_loaded = false;
-
+	
 	static inline std::unique_ptr<tokenizers::Tokenizer> s_tokenizer;
 	static inline int32_t s_eos_id = -1;
 

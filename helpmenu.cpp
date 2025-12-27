@@ -252,7 +252,7 @@ bool HelpMenu::on_scroll_event(double xchange, double ychange) {
 	
 	scrolled_to[tb->selected_id] += ychange*6.0*(double)TextRenderer::get_text_height();
 	
-	int maxScroll = max(0, label->t_h-((t_h+t_y)-(tb->t_h+tb->t_y)));
+	int maxScroll = std::max(0, label->t_h-((t_h+t_y)-(tb->t_h+tb->t_y)));
 	
 	if (scrolled_to[tb->selected_id] < 0) {
 		scrolled_to[tb->selected_id] = 0;

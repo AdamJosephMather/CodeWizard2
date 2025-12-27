@@ -1,5 +1,3 @@
-#define NOMINMAX
-
 #include <GL/glew.h>
 #include <curl/curl.h>
 

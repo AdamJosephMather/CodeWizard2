@@ -212,6 +212,36 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"AI Provider Supports Non-Chat Completions",
 			"use_non_chat_completions",
 			true
+		),
+		makeBool(
+			"Use Chauffeur",
+			"use_chauffeur",
+			false
+		),
+		makeString(
+			"Chauffeur T6 Model Path (Restart CW)",
+			"chauffeur_model_path",
+			""
+		),
+		makeString(
+			"Chauffeur Tokenizer Path (Restart CW)",
+			"chauffeur_tokenizer_path",
+			""
+		),
+		makeInt(
+			"Chauffeur Prefix Lines",
+			"chauffeur_prefix_lines",
+			30
+		),
+		makeInt(
+			"Chauffeur Suffix Lines",
+			"chauffeur_suffix_lines",
+			15
+		),
+		makeInt(
+			"Chauffeur Max Continue",
+			"chauffeur_max_continue",
+			10
 		)
 	};
 	
@@ -484,7 +514,7 @@ bool Settings::validate_input(SettingsFloat* el) {
 }
 
 bool Settings::validate_input(SettingsInt* el) {
-	if (el->key_name == "max_index_files") {
+	if (el->key_name == "max_index_files" || el->key_name == "chauffeur_prefix_lines" || el->key_name == "chauffeur_suffix_lines" || el->key_name == "lm_studio_max_tokens" || el->key_name == "lm_studio_context_lines") {
 		if (el->value < 1) {
 			el->value = el->default_value;
 			return false;

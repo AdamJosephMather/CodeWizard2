@@ -76,7 +76,7 @@ void ContextMenu::position(int x, int y, int width, int height) {
 
 void ContextMenu::addToMenu(icu::UnicodeString name, Button::OnClick onclick) {
 	Button* b = new Button(this, name, [&](Widget *btn, int x, int y, int av_width, int av_height, int w, int h){
-		maxwidth = max(maxwidth, w);
+		maxwidth = std::max(maxwidth, w);
 	}, onclick);
 	b->border = true;
 	b->rounded = true;

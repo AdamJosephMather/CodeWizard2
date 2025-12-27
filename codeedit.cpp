@@ -11,6 +11,7 @@
 #include <unicode/stringoptions.h>
 #include "editor.h"
 #include "curler.h"
+#include "modelxrunner.h"
 
 std::set<UChar32> whitespace_before_comment = {U'\t', U' '};
 
@@ -130,7 +131,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	});
 	
 	replaceTextEdit = new TextEdit(nullptr, [&](Widget* t){
-		int h = TextRenderer::get_text_height()*min(replaceTextEdit->lines.size(), 3)+10;
+		int h = TextRenderer::get_text_height()*std::min((int)replaceTextEdit->lines.size(), 3)+10;
 		
 		replaceTextEdit->t_x = t_x+5;
 		replaceTextEdit->t_w = (nextReplButton->t_x - replaceTextEdit->t_x)-5;
@@ -144,7 +145,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	});
 	
 	findTextEdit = new TextEdit(nullptr, [&](Widget* t){
-		int h = TextRenderer::get_text_height()*min(findTextEdit->lines.size(), 3)+10;
+		int h = TextRenderer::get_text_height()*std::min((int)findTextEdit->lines.size(), 3)+10;
 		
 		findTextEdit->t_x = t_x+5;
 		findTextEdit->t_h = h;
@@ -304,6 +305,62 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 					
 					should_move_mouse_hover = false;
 					hover_id = App::lsp_client_map[lsp]->requestHover(file->filepath, crsr.head_line, crsr.head_char);
+				}
+				std::this_thread::sleep_for(std::chrono::milliseconds(20));
+			}
+		}
+	});
+	
+	chauffeurthread = std::thread([&]() {
+		while (true){
+			if (closing) {
+				return;
+			}
+			
+			if (timeuntilchauffeur <= 0) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			}else{
+				timeuntilchauffeur -= 20;
+				if (timeuntilchauffeur <= 0) {
+					
+					Cursor prefix_c = textedit->cursors[0];
+					Cursor suffix_c = textedit->cursors[0];
+					
+					prefix_c.anchor_line -= App::settings->getValue("chauffeur_prefix_lines", 30);
+					prefix_c.anchor_char = 0;
+					suffix_c.anchor_line += App::settings->getValue("chauffeur_suffix_lines", 15);
+					
+					prefix_c.anchor_line = std::max(0, prefix_c.anchor_line);
+					suffix_c.anchor_line = std::min((int)textedit->lines.size()-1, suffix_c.anchor_line);
+					
+					suffix_c.anchor_char = textedit->lines[suffix_c.anchor_line].line_text.length();
+					
+					std::string prefix_s;
+					std::string suffix_s;
+					
+					icu::UnicodeString prefix = textedit->getSelectedText(prefix_c);
+					icu::UnicodeString suffix = textedit->getSelectedText(suffix_c);
+					
+					prefix.toUTF8String(prefix_s);
+					suffix.toUTF8String(suffix_s);
+					
+					std::cout << "Prefix:\n```" << prefix_s << "```\nsuffix:\n```" << suffix_s << "```\n";
+					
+					std::string insertion = ModelXRunner::generate(prefix_s, App::settings->getValue("chauffeur_max_continue", 10));
+					
+					std::cout << "Resulting insertion:\n\n```" << insertion << "```";
+					
+					if (insertion == "") {
+						continue;
+					}
+					
+					std::vector<icu::UnicodeString> compld = {icu::UnicodeString::fromUTF8(insertion)};
+					
+					completionbox->is_visible_layered = true;
+					completionbox->setElements(compld);
+					are_code_actions = false;
+					completionbox->toshow = compld.size();
+					App::time_till_regular = 2;
 				}
 				std::this_thread::sleep_for(std::chrono::milliseconds(20));
 			}
@@ -573,7 +630,7 @@ int CodeEdit::indentIdentifierAfterLine(icu::UnicodeString line, icu::UnicodeStr
 		}
 	}
 	
-	indent_levels += max(0, openers);
+	indent_levels += std::max(0, openers);
 	
 	if (lastChar == U':') {
 		indent_levels ++;
@@ -1055,11 +1112,15 @@ bool CodeEdit::on_char_event(unsigned int keycode) {
 	
 	if (Widget::on_char_event(keycode)) {
 		if (textedit == App::activeLeafNode && textedit->wasmode == 'i' && textedit->cursors.size() == 1) {
-			if (App::lsp_client_map[lsp] && file) {
-				char utf8[5] = {};
-				int len = std::snprintf(utf8, sizeof(utf8), "%c", keycode);
-				if (len > 0) { // there is something printable
+			char utf8[5] = {};
+			int len = std::snprintf(utf8, sizeof(utf8), "%c", keycode);
+			if (len > 0) { // there is something printable
+				if (App::lsp_client_map[lsp] && file) { // lsp completion, much faster
 					completion_id = App::lsp_client_map[lsp]->requestCompletion(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
+				}
+				
+				if (App::settings->getValue("use_chauffeur", false)) {
+					timeuntilchauffeur = 1500;
 				}
 			}
 		}
@@ -1128,7 +1189,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 				start.anchor_char = cur.head_char;
 				start.anchor_line = cur.head_line;
 				start.head_char = 0;
-				start.head_line = max(0, cur.head_line-contextsize);
+				start.head_line = std::max(0, cur.head_line-contextsize);
 				auto t1 = textedit->getSelectedText(start);
 				
 				std::string befr;
@@ -1137,7 +1198,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 				Cursor end = Cursor();
 				end.anchor_char = cur.head_char;
 				end.anchor_line = cur.head_line;
-				end.head_line = min(textedit->lines.size()-1, cur.head_line+contextsize);
+				end.head_line = std::min((int)textedit->lines.size()-1, cur.head_line+contextsize);
 				end.head_char = textedit->lines[end.head_line].line_text.length();
 				auto t2 = textedit->getSelectedText(end);
 				
@@ -1429,6 +1490,9 @@ bool CodeEdit::on_mouse_button_event(int button, int action, int mods) {
 		if (hoveringHoverbox(mx, my)) {
 			return hoverbox->on_mouse_button_event(button, action, mods);
 		}
+		if (hoveringCompletionBox(mx, my)) {
+			return completionbox->on_mouse_button_event(button, action, mods);
+		}
 		
 		if (showErrorsButton->on_mouse_button_event(button, action, mods)) {return true;} // this doesn't get first dibs because it's after the textedit in the children list
 		if (errorMenu->is_visible_layered && errorMenu->on_mouse_button_event(button, action, mods)) {return true;} // this doesn't get first dibs because it's after the textedit in the children list
@@ -1440,6 +1504,15 @@ bool CodeEdit::on_mouse_button_event(int button, int action, int mods) {
 bool CodeEdit::hoveringHoverbox(int mx, int my, int padding) {
 	if (hoverbox->parent == this) {
 		if (mx >= hoverbox->t_x-padding && mx <= hoverbox->t_x+hoverbox->t_w+padding && my <= hoverbox->t_y+hoverbox->t_h+padding && my >= hoverbox->t_y-padding) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool CodeEdit::hoveringCompletionBox(int mx, int my, int padding) {
+	if (completionbox->parent == this) {
+		if (mx >= completionbox->t_x-padding && mx <= completionbox->t_x+completionbox->t_w+padding && my <= completionbox->t_y+completionbox->t_h+padding && my >= completionbox->t_y-padding) {
 			return true;
 		}
 	}
@@ -2103,6 +2176,9 @@ void CodeEdit::request_close(close_callback_type callback) {
 	closing = true;
 	if (hoverthread.joinable()) {
 		hoverthread.join();
+	}
+	if (chauffeurthread.joinable()) {
+		chauffeurthread.join();
 	}
 	closing = false;
 	

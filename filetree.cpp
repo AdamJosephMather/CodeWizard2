@@ -215,7 +215,7 @@ double FileTree::createVisuals(double pos, double depth, TreeStructure* el) {
 	}
 	
 	max_scroll_vert = pos-1+scrolled_to_vert;
-	max_scroll_horz = max(max_scroll_horz, x+w+scrolled_to_horz);
+	max_scroll_horz = std::max(max_scroll_horz, x+w+scrolled_to_horz);
 	
 	return pos;
 }

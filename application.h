@@ -16,7 +16,6 @@
 #endif
 
 #define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
 #define _WIN32_WINNT 0x0A00
 
 #include <GLFW/glfw3.h>
@@ -178,6 +177,8 @@ public:
 	static int text_padding;
 	static int border_width;
 	
+	static int chauffeur_call_id;
+	
 	static Widget* rootelement;
 	static int WINDOW_WIDTH;
 	static int WINDOW_HEIGHT;
@@ -272,6 +273,7 @@ public:
 	static void updateFromTintColor(Theme* t);
 	static void setTintedColor(Color* tint_c, Color* c, float b);
 	static void displayToast(icu::UnicodeString text);
+	static void displayText(icu::UnicodeString text);
 	
 	static void moveMouse(int x, int y);
 	

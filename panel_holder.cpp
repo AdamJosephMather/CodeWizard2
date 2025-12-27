@@ -331,7 +331,7 @@ void PanelHolder::render() {
 		}
 		
 		if (dragging_handle || hoveringHandle()) {
-			int rad = min(width_h, height_h)/2;
+			int rad = std::min(width_h, height_h)/2;
 			App::DrawRoundedRect(xpos_h, ypos_h, width_h, height_h, rad, App::theme.main_text_color);
 		}
 	}

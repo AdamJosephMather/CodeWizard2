@@ -114,7 +114,7 @@ void ImageView::render() {
 		// Calculate geometry
 		float scaleX = (float)t_w / (float)imgW;
 		float scaleY = (float)t_h / (float)imgH;
-		float scale = min(1.0f, min(scaleX, scaleY));
+		float scale = std::min(1.0f, std::min(scaleX, scaleY));
 		float dispW = imgW * scale;
 		float dispH = imgH * scale;
 		float offsetX = t_x + (t_w - dispW) * 0.5f;

@@ -1,1 +1,0 @@
-D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release/_deps/tokenizers_cpp-build\x86_64-pc-windows-msvc\release\tokenizers_c.lib: D:\Users\adamj\Documents\C\CodeWizard2\build\windows-release\_deps\tokenizers_cpp-src\rust\src\lib.rs

@@ -49,6 +49,7 @@ public:
 	App::UpdateFInfoFunction FUPDATER = nullptr;
 	
 	int timeuntil = -1;
+	int timeuntilchauffeur = -1;
 	
 	TextEdit* textedit;
 	LineNumbers* line_numbers;
@@ -56,6 +57,7 @@ public:
 	Highlighter* highlighter = nullptr;
 	
 	std::thread hoverthread;
+	std::thread chauffeurthread;
 	
 	static int indentIdentifierAfterLine(icu::UnicodeString line, icu::UnicodeString nextline);
 	
@@ -65,6 +67,7 @@ public:
 	bool should_move_mouse_hover = false;
 	int code_actions_id = -1;
 	int rename_id = -1;
+	
 	TextEdit* renamebox = nullptr;
 	Cursor renamecursor = Cursor();
 	std::vector<std::string> completions = {};
@@ -84,6 +87,8 @@ public:
 	void executeAction(WidgetActionType typ);
 	
 	bool hoveringHoverbox(int mx, int my, int padding = 0);
+	bool hoveringCompletionBox(int mx, int my, int padding = 0);
+	
 	int last_mouse_x = -1;
 	int last_mouse_y = -1;
 	

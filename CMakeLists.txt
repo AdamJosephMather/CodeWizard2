@@ -67,6 +67,7 @@ target_include_directories(libvterm PUBLIC
 	${LIBVTERM_DIR}/src           # headers live here too (vterm_internal.h, utf8.h, rect.h)
 )
 
+add_definitions(-DNOMINMAX)
 # Windows needs these for ConPTY APIs
 add_definitions(-D_WIN32_WINNT=0x0A00 -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE)
 

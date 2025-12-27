@@ -10,6 +10,7 @@
 #include "helper_types.h"
 #include <vector>
 #include "panel_holder.h"
+#include "modelxrunner.h"
 #include "terminalwidget.h"
 #include "text_renderer.h"
 #include <cmath>
@@ -64,6 +65,8 @@ int App::rep_count = 0;
 int App::current_step = 0;
 std::vector<std::vector<KeyboardEvent>> App::keyboard_events = {{}};
 
+int App::chauffeur_call_id = 0;
+
 bool App::REQUESTING_STRING = false;
 App::StringGivenFunc App::ON_STRING_GIVEN = nullptr;
 TextEdit* STRING_REQUEST_TEXTEDIT = nullptr;
@@ -92,7 +95,7 @@ std::string App::WINDOW_TITLE = "CodeWizard2 V";
 
 int App::mouseX = 0;
 int App::mouseY = 0;
-double M_PI = 3.14159265358979323846;
+//double _PI = 3.14159265358979323846;
 
 bool (*App::on_key_event)(int key, int scancode, int action, int mods) = nullptr;
 bool (*App::on_char_event)(unsigned int codepoint) = nullptr;
@@ -351,6 +354,31 @@ bool App::Init() {
 //	checkForUpdates();
 	
 	updateTransparency(settings->getValue("use_transparency", false));
+	
+	
+	
+	
+	
+	if (settings->getValue("use_chauffeur", false)) {
+		std::thread starter([&](){
+			ModelXRunner::load();
+		});
+		starter.detach();
+	}
+	
+//	auto start = std::chrono::steady_clock::now();
+//	
+//	std::cout << "Loaded.\n\n";
+	
+//	std::cout << ModelXRunner::generate("<|start|>\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())<|start|>\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())<|start|>\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())<|start|>\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())<|start|>\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())<|start|>\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())<|start|>\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())", 20) << "\n\n";
+//	std::cout << ModelXRunner::generate("<|start|>\nfilename = 'input.txt'\n\nwith open(", 20) << "\n\n";
+//	std::cout << ModelXRunner::generate("<|start|>\ntext = 'Hello World!'\n\nprint(", 20) << "\n\n";
+//	std::cout << ModelXRunner::generate("<|start|>\nif __name__", 20) << "\n\n";
+	
+//	auto end = std::chrono::steady_clock::now();
+//	std::chrono::duration<double> elapsed_seconds = end - start;
+//	
+//	std::cout << "\n\nTime: " << elapsed_seconds.count() << "\n";
 	
 	return true;
 }
@@ -923,10 +951,10 @@ void App::Run() {
 		glfwGetWindowPos(window, &x, &y);
 		glfwGetWindowSize(window, &w, &h);
 	
-		settings->setValue("window_x",      max(0, x));
-		settings->setValue("window_y",      max(0, y));
-		settings->setValue("window_width",  max(500, w));
-		settings->setValue("window_height", max(300, h));
+		settings->setValue("window_x",      std::max(0, x));
+		settings->setValue("window_y",      std::max(0, y));
+		settings->setValue("window_width",  std::max(500, w));
+		settings->setValue("window_height", std::max(300, h));
 	}
 	
 
@@ -1166,14 +1194,10 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		commandUnfocused();
 		return;
 	}else if (action == GLFW_PRESS && key == GLFW_KEY_S && control && !shift) {
-		if (auto sn = dynamic_cast<ScrollNotify*>(scrollNotifyBox)) {
-			sn->displayMessage(icu::UnicodeString::fromUTF8("Saving..."));
-		}
+		displayText(icu::UnicodeString::fromUTF8("Saving..."));
 		save();
 	}else if (action == GLFW_PRESS && key == GLFW_KEY_F5) {
-		if (auto sn = dynamic_cast<ScrollNotify*>(scrollNotifyBox)) {
-			sn->displayMessage(icu::UnicodeString::fromUTF8("Saving..."));
-		}
+		displayText(icu::UnicodeString::fromUTF8("Saving..."));
 		save();
 		std::string build_command = settings->getProjectBuild();
 		if (build_command != "") {
@@ -1385,7 +1409,7 @@ void App::openFilesList() {
 		}
 		
 		lb->setElements(items);
-		lb->toshow = min(12, items.size());
+		lb->toshow = std::min(12, (int)items.size());
 	}
 }
 
@@ -1873,8 +1897,8 @@ void App::runWithSKIZ(int nx, int ny, int nw, int nh, VoidFunction withskiz) {
 	App::SKIZ_X = fmax(App::SKIZ_X, nx);
 	App::SKIZ_Y = fmax(App::SKIZ_Y, ny);
 	
-	App::SKIZ_W = max(skiz_x2 - App::SKIZ_X, 0);
-	App::SKIZ_H = max(skiz_y2 - App::SKIZ_Y, 0);
+	App::SKIZ_W = std::max(skiz_x2 - App::SKIZ_X, 0);
+	App::SKIZ_H = std::max(skiz_y2 - App::SKIZ_Y, 0);
 	
 	glScissor(App::SKIZ_X, App::WINDOW_HEIGHT-(App::SKIZ_Y+App::SKIZ_H), App::SKIZ_W, App::SKIZ_H); // ensure no over drawwing between panels.
 	
@@ -2246,4 +2270,12 @@ void App::displayToast(icu::UnicodeString text) {
 	if (auto toaster = dynamic_cast<Toast*>(toastBox)) {
 		toaster->displayMessage(text);
 	}
+	time_till_regular = 2;
+}
+
+void App::displayText(icu::UnicodeString text) {
+	if (auto sn = dynamic_cast<ScrollNotify*>(scrollNotifyBox)) {
+		sn->displayMessage(text);
+	}
+	time_till_regular = 2;
 }

@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 	theme.add_panel = MakeColor(0.2f, 1.0f, 0.2f, 0.25f);
 	theme.remove_panel = MakeColor(1.0f, 0.2f, 0.2f, 0.25f);
 	
-	theme.tint_color = MakeColor(0, 0, 0, 0.7);
+	theme.tint_color = MakeColor(1, 1, 1, 0.7);
 	
 	theme.main_background_color = MakeColor(0.0509803922, 0.0784313725, 0.0941176471);
 	theme.extras_background_color = MakeColor(0.0862745098, 0.1294117647, 0.1607843137);

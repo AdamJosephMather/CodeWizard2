@@ -124,7 +124,7 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 	std::vector<int32_t> prompt_ids_i32 = s_tokenizer->Encode(input);
 	if (prompt_ids_i32.empty()) return "";
 	
-	std::cout << "Token count: " << prompt_ids_i32.size() << "\n";
+//	std::cout << "Token count: " << prompt_ids_i32.size() << "\n";
 	
 	if ((int)prompt_ids_i32.size() > kMaxPromptTokens) {
 		prompt_ids_i32.resize(kMaxPromptTokens);
@@ -149,14 +149,13 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 	if (App::chauffeur_call_id > call_id) { return ""; }
 	
 	
-	auto start_time = std::chrono::high_resolution_clock::now();
+//	auto start_time = std::chrono::high_resolution_clock::now();
 	
 	auto output_tuple = s_model.forward(inputs).toTuple();
 	
-	auto end_time = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double, std::milli> duration = end_time - start_time; 
-	std::cout << "Forward Pass: " << duration.count() << " ms" << std::endl;
-	
+//	auto end_time = std::chrono::high_resolution_clock::now();
+//	std::chrono::duration<double, std::milli> duration = end_time - start_time; 
+//	std::cout << "Forward Pass: " << duration.count() << " ms" << std::endl;
 	
 	if (App::chauffeur_call_id > call_id) { return ""; }
 	
@@ -171,7 +170,7 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 	// --- Autoregressive Loop ---
 	auto tok_input = torch::empty({1, 1}, torch::kInt64);
 	
-	start_time = std::chrono::high_resolution_clock::now();
+//	start_time = std::chrono::high_resolution_clock::now();
 	
 	for (int step = 0; step < max_tokens; ++step) {
 		if (App::chauffeur_call_id > call_id) { return ""; }
@@ -194,10 +193,10 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 		next_id = greedy_next_token(step_logits.select(0, 0));
 	}
 	
-	end_time = std::chrono::high_resolution_clock::now();
-	duration = end_time - start_time; 
-	std::cout << "Generated Tokens: " << all_ids.size()-prompt_ids_i32.size() << "\n";
-	std::cout << "Token Gen: " << duration.count() << " ms" << std::endl;
+//	end_time = std::chrono::high_resolution_clock::now();
+//	duration = end_time - start_time; 
+//	std::cout << "Generated Tokens: " << all_ids.size()-prompt_ids_i32.size() << "\n";
+//	std::cout << "Token Gen: " << duration.count() << " ms" << std::endl;
 	
 	if (App::chauffeur_call_id > call_id) { return ""; }
 	

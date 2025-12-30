@@ -138,3 +138,19 @@ configure_file(${CMAKE_SOURCE_DIR}/fileIcon.png
 configure_file(${CMAKE_SOURCE_DIR}/folderIcon.png
                ${CMAKE_BINARY_DIR}/folderIcon.png
                COPYONLY)
+
+if(MSVC AND WIN32)
+	set(VC_REDIST_EXE "${CMAKE_SOURCE_DIR}/build_needs/vc_redist.x64.exe")
+
+	if(NOT EXISTS "${VC_REDIST_EXE}")
+		message(FATAL_ERROR "vc_redist not found at: ${VC_REDIST_EXE}")
+	endif()
+
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+						"${VC_REDIST_EXE}"
+						"$<TARGET_FILE_DIR:${PROJECT_NAME}>/vc_redist.x64.exe"
+		COMMENT "Copying VC++ Redistributable to output folder"
+		VERBATIM
+	)
+endif()

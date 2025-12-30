@@ -326,9 +326,9 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 					Cursor prefix_c = textedit->cursors[0];
 					Cursor suffix_c = textedit->cursors[0];
 					
-					prefix_c.anchor_line -= App::settings->getValue("chauffeur_prefix_lines", 30);
+					prefix_c.anchor_line -= App::settings->getValue("chauffeur_prefix_lines", 10);
 					prefix_c.anchor_char = 0;
-					suffix_c.anchor_line += App::settings->getValue("chauffeur_suffix_lines", 15);
+					suffix_c.anchor_line += App::settings->getValue("chauffeur_suffix_lines", 7);
 					
 					prefix_c.anchor_line = std::max(0, prefix_c.anchor_line);
 					suffix_c.anchor_line = std::min((int)textedit->lines.size()-1, suffix_c.anchor_line);
@@ -344,11 +344,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 					prefix.toUTF8String(prefix_s);
 					suffix.toUTF8String(suffix_s);
 					
-					std::cout << "Prefix:\n```" << prefix_s << "```\nsuffix:\n```" << suffix_s << "```\n";
-					
-					std::string insertion = ModelXRunner::generate(prefix_s, App::settings->getValue("chauffeur_max_continue", 10));
-					
-					std::cout << "Resulting insertion:\n\n```" << insertion << "```";
+					std::string insertion = ModelXRunner::generate(prefix_s, App::settings->getValue("chauffeur_max_continue", 6));
 					
 					if (insertion == "") {
 						continue;
@@ -359,6 +355,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 					completionbox->is_visible_layered = true;
 					completionbox->setElements(compld);
 					are_code_actions = false;
+					is_chauffeur = true;
 					completionbox->toshow = compld.size();
 					App::time_till_regular = 2;
 				}
@@ -1120,7 +1117,7 @@ bool CodeEdit::on_char_event(unsigned int keycode) {
 				}
 				
 				if (App::settings->getValue("use_chauffeur", false)) {
-					timeuntilchauffeur = 1500;
+					timeuntilchauffeur = 800;
 				}
 			}
 		}
@@ -1661,6 +1658,8 @@ void CodeEdit::completionRecieved(std::vector<std::string> completions, int rec_
 	completionbox->is_visible_layered = true;
 	completionbox->setElements(compld);
 	are_code_actions = false;
+	is_chauffeur = false;
+	
 	if (compld.size() >= 7) {
 		completionbox->toshow = 7;
 	}else if (compld.size() > 0){
@@ -1753,6 +1752,9 @@ void CodeEdit::activateCompletion() {
 		
 		textedit->cursors = {c};
 		
+		return;
+	}else if (is_chauffeur) {
+		textedit->applyInsertToAllCursors(selected);
 		return;
 	}
 	

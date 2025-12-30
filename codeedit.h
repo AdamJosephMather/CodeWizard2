@@ -74,6 +74,7 @@ public:
 	std::vector<int> errorlines = {};
 	ListBox* completionbox;
 	bool are_code_actions = false;
+	bool is_chauffeur = false;
 	std::vector<json> code_actions = {};
 	ListBox* errorMenu;
 	std::filesystem::file_time_type last_file_mod_time = {};

@@ -219,7 +219,7 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			false
 		),
 		makeString(
-			"Chauffeur T6 Model Path (Restart CW)",
+			"Chauffeur Model Path (Restart CW)",
 			"chauffeur_model_path",
 			""
 		),
@@ -231,17 +231,17 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 		makeInt(
 			"Chauffeur Prefix Lines",
 			"chauffeur_prefix_lines",
-			30
+			10
 		),
 		makeInt(
 			"Chauffeur Suffix Lines",
 			"chauffeur_suffix_lines",
-			15
+			7
 		),
 		makeInt(
 			"Chauffeur Max Continue",
 			"chauffeur_max_continue",
-			10
+			6
 		)
 	};
 	

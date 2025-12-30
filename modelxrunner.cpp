@@ -3,6 +3,8 @@
 #include <iostream>
 #include <ATen/Parallel.h>
 #include "application.h"
+#include <chrono>
+#include <torch/torch.h>   // add this (gives NoGradGuard)
 
 std::mutex ModelXRunner::genMutex;
 
@@ -27,11 +29,19 @@ bool ModelXRunner::load() {
 	std::string model_path = App::settings->getValue("chauffeur_model_path", std::string());
 	std::string tokenizer_path = App::settings->getValue("chauffeur_tokenizer_path", std::string());
 	
-	at::set_num_threads(std::thread::hardware_concurrency());
-	at::set_num_interop_threads(1);
+	at::set_num_threads(4);
+//	at::set_num_threads(std::thread::hardware_concurrency());
+	at::set_num_interop_threads(4);
+	
+	std::cout << "threads " << at::get_num_threads() << " interop " << at::get_num_interop_threads() << "\n";
+	std::cout << "mkldnn enabled " << at::globalContext().userEnabledMkldnn() << "\n";
+	std::cout << torch::show_config() << "\n";
+	
 	
 	try {
 		// Load TorchScript model
+//		torch::jit::load_library("modelx_ops.dll");
+		
 		s_model = torch::jit::load(model_path, torch::kCPU);
 		s_model.eval();
 
@@ -64,11 +74,12 @@ bool ModelXRunner::load() {
 		loaded = true;
 		loading = false;
 		
-		std::cout << "CL";
 		App::displayText(icu::UnicodeString::fromUTF8("Chauffeur Loaded!"));
 		
 		return true;
 	} catch (const std::exception& e) {
+		std::cout << "Failed to load: " << e.what() << "\n";
+		
 		App::displayToast(icu::UnicodeString::fromUTF8("Failed to load Chauffeur model"));
 		
 		load_success = false;
@@ -107,7 +118,7 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 	
 	if (App::chauffeur_call_id > call_id) { return ""; }
 	
-	torch::NoGradGuard no_grad;
+	torch::NoGradGuard guard;
 	
 	// Encode
 	std::vector<int32_t> prompt_ids_i32 = s_tokenizer->Encode(input);
@@ -138,7 +149,14 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 	if (App::chauffeur_call_id > call_id) { return ""; }
 	
 	
+	auto start_time = std::chrono::high_resolution_clock::now();
+	
 	auto output_tuple = s_model.forward(inputs).toTuple();
+	
+	auto end_time = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> duration = end_time - start_time; 
+	std::cout << "Forward Pass: " << duration.count() << " ms" << std::endl;
+	
 	
 	if (App::chauffeur_call_id > call_id) { return ""; }
 	
@@ -147,13 +165,14 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 	// The model returns List[Tensor] for states
 	torch::jit::IValue states_list = output_tuple->elements()[1];
 	
-	// Get next token from the very last position of the prompt
-	torch::Tensor last_logits = logits.index({0, -1}); 
+	torch::Tensor last_logits = logits.select(0, 0);
 	int64_t next_id = greedy_next_token(last_logits);
 	
 	// --- Autoregressive Loop ---
 	auto tok_input = torch::empty({1, 1}, torch::kInt64);
-
+	
+	start_time = std::chrono::high_resolution_clock::now();
+	
 	for (int step = 0; step < max_tokens; ++step) {
 		if (App::chauffeur_call_id > call_id) { return ""; }
 		
@@ -172,8 +191,13 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 		torch::Tensor step_logits = step_out->elements()[0].toTensor();
 		states_list = step_out->elements()[1]; 
 		
-		next_id = greedy_next_token(step_logits.index({0, 0}));
+		next_id = greedy_next_token(step_logits.select(0, 0));
 	}
+	
+	end_time = std::chrono::high_resolution_clock::now();
+	duration = end_time - start_time; 
+	std::cout << "Generated Tokens: " << all_ids.size()-prompt_ids_i32.size() << "\n";
+	std::cout << "Token Gen: " << duration.count() << " ms" << std::endl;
 	
 	if (App::chauffeur_call_id > call_id) { return ""; }
 	

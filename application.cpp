@@ -158,6 +158,8 @@ bool App::rendering_add_rect = false;
 bool App::rendering_rem_rect = false;
 
 bool App::Init() {
+	std::cout << "Init...\n";
+	
 	icu::UnicodeString vnum = icu::UnicodeString::fromUTF8(std::to_string(App::major_version)+"."+std::to_string(App::minor_version)+"."+std::to_string(App::patch_version));
 	vnum.toUTF8String(vnumstr);
 	WINDOW_TITLE += vnumstr;

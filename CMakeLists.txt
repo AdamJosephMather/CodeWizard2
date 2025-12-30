@@ -75,6 +75,9 @@ add_definitions(-D_WIN32_WINNT=0x0A00 -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UN
 add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_renderer.cpp application.cpp widget.cpp button.cpp titlebar.cpp panel_holder.cpp widgetchooser.cpp editor.cpp filetree.cpp tabs.cpp settings.cpp codeedit.cpp linenumbers.cpp textedit.cpp highlighter.cpp tinyfiledialogs.c brokenstatemenu.cpp checkbox.cpp settingsmanager.cpp languageserverclient.cpp listbox.cpp imageview.cpp compare.cpp curler.cpp toast.cpp chat.cpp label.cpp myrect.cpp lspdebug.cpp terminal.cpp terminalwidget.cpp terminalwidgettabbed.cpp helpmenu.cpp scrollbar.cpp updatechecker.cpp contextmenu.cpp scrollnotify.cpp modelxrunner.cpp )
 
 
+set(Torch_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libtorch/share/cmake/Torch" CACHE PATH "" FORCE)
+
+
 # Use vcpkg-provided GLFW and ICU
 find_package(glfw3 CONFIG REQUIRED)
 find_package(ICU   REQUIRED COMPONENTS uc i18n data)  # must list each component :contentReference[oaicite:0]{index=0}
@@ -94,19 +97,8 @@ target_link_libraries(${PROJECT_NAME}
 	libvterm
 )
 
-# find_library(ONIG_LIB
-# 	NAMES onigstatic onig
-# 	HINTS ${VCPKG_INSTALLED_DIR}/installed/${VCPKG_TARGET_TRIPLET}/lib
-# )
-# if (NOT ONIG_LIB)
-# 	message(FATAL_ERROR
-# 	"Could not find Oniguruma library (onigstatic.lib or onig.lib) in vcpkg tree")
-# endif()
-
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE
-	
-# 	${ONIG_LIB}
 	
 	${TORCH_LIBRARIES}
 	tokenizers_cpp
@@ -139,6 +131,17 @@ configure_file(${CMAKE_SOURCE_DIR}/folderIcon.png
                ${CMAKE_BINARY_DIR}/folderIcon.png
                COPYONLY)
 
+if (WIN32)
+	# Copy libtorch runtime DLLs next to the executable
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+						"${CMAKE_CURRENT_SOURCE_DIR}/libtorch/lib"
+						"$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+		COMMENT "Copying libtorch DLLs to output folder"
+		VERBATIM
+	)
+endif()
+
 if(MSVC AND WIN32)
 	set(VC_REDIST_EXE "${CMAKE_SOURCE_DIR}/build_needs/vc_redist.x64.exe")
 
@@ -154,3 +157,6 @@ if(MSVC AND WIN32)
 		VERBATIM
 	)
 endif()
+
+message(STATUS "Torch_DIR=${Torch_DIR}")
+message(STATUS "TORCH_LIBRARIES=${TORCH_LIBRARIES}")

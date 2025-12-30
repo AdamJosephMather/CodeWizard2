@@ -20,7 +20,6 @@ static std::string load_file_text(const std::string& path) {
 bool ModelXRunner::load() {
 	if (loading || loaded) { return false; }
 	
-	std::cout << "LCM\n";
 	App::displayText(icu::UnicodeString::fromUTF8("Loading Chauffeur"));
 	
 	loading = true;
@@ -100,7 +99,6 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 		return "";
 	}
 	
-	std::cout << "GWC\n";
 	App::displayText(icu::UnicodeString::fromUTF8("Generating With Chauffeur"));
 	
 	if (max_tokens <= 0) return "";
@@ -116,7 +114,7 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 	if (prompt_ids_i32.empty()) return "";
 	
 	std::cout << "Token count: " << prompt_ids_i32.size() << "\n";
-
+	
 	if ((int)prompt_ids_i32.size() > kMaxPromptTokens) {
 		prompt_ids_i32.resize(kMaxPromptTokens);
 	}
@@ -130,7 +128,7 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 			{1, (int64_t)prompt_ids_i64.size()},
 			torch::kInt64
 	).clone();
-
+	
 	// --- Initial Forward Pass ---
 	// Python signature: forward(inpt_tkns, states: Optional[List[Tensor]])
 	std::vector<torch::jit::IValue> inputs;
@@ -138,6 +136,7 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 	inputs.push_back(c10::nullopt); // Passing None for initial states
 	
 	if (App::chauffeur_call_id > call_id) { return ""; }
+	
 	
 	auto output_tuple = s_model.forward(inputs).toTuple();
 	

@@ -33,7 +33,7 @@ void Toast::render() {
 			App::time_till_regular = 2;
 		}
 		
-		displayOffset *= .9;
+		displayOffset *= (1.0 - 0.1 * App::settings->getValue("anim_speed", 1.0f));
 		
 		if (displayOffset <= 1) {
 			displayOffset = 0;
@@ -47,7 +47,7 @@ void Toast::render() {
 	}else if (displayOffset >= 0) {
 		App::time_till_regular = 2;
 		
-		displayOffset += ((float)t_w-displayOffset)*.1;
+		displayOffset += ((float)t_w-displayOffset)*.1*App::settings->getValue("anim_speed", 1.0f);
 		
 		int x_disp = t_x+displayOffset;
 		int w_disp = t_w-displayOffset;

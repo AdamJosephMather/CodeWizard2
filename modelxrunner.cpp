@@ -4,7 +4,7 @@
 #include <ATen/Parallel.h>
 #include "application.h"
 #include <chrono>
-#include <torch/torch.h>   // add this (gives NoGradGuard)
+#include <torch/torch.h>
 
 std::mutex ModelXRunner::genMutex;
 

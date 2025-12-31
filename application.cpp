@@ -735,9 +735,17 @@ void App::DoFullRenderWithoutInput() {
 	frameCount++;
 	
 	if (currentTime - lastTime >= 5.0) {
-		std::cout << "FPS: " << (double)frameCount/(currentTime-lastTime) << std::endl;
+		float fps = (double)frameCount/(currentTime-lastTime);
+		
+		std::string fps_str = std::to_string(fps);
+		
+		std::cout << "FPS: " << fps_str << std::endl;
 		frameCount = 0;
 		lastTime = currentTime;
+		
+		if (settings->getValue("show_fps", false)) {
+			displayText(icu::UnicodeString::fromUTF8("FPS: " + fps_str));
+		}
 	}
 	
 	if (moveMouseToX != -1 && moveMouseToY != -1) {

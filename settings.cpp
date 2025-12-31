@@ -173,6 +173,16 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"terminal_cmd",
 			"cmd.exe"
 		),
+		makeBool(
+			"Show FPS",
+			"show_fps",
+			false
+		),
+		makeFloat(
+			"Animation Speed",
+			"anim_speed",
+			1.0f
+		),
 		makeInt(
 			"Max Files To Index",
 			"max_index_files",

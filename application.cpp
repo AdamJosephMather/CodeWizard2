@@ -41,8 +41,8 @@
 
 
 int App::major_version = 2;
-int App::minor_version = 1;
-int App::patch_version = 20;
+int App::minor_version = 2;
+int App::patch_version = 0;
 
 
 
@@ -147,6 +147,7 @@ GLFWcursor* App::hResizeCursor = nullptr;
 GLFWcursor* App::vResizeCursor = nullptr;
 GLFWcursor* App::textCursor = nullptr;
 GLFWcursor* App::handCursor = nullptr;
+
 int App::currentCursorType = -1;
 int App::expectedCursorType = -1;
 
@@ -857,9 +858,9 @@ void App::DoFullRenderWithoutInput() {
 		});
 		
 		if (rendering_add_rect) {
-			DrawRect(x_nb_current, y_nb_current, w_nb_current, h_nb_current, theme.add_panel);
+			DrawRoundedRect(x_nb_current, y_nb_current, w_nb_current, h_nb_current, App::text_padding, theme.add_panel);
 		}else if (rendering_rem_rect) {
-			DrawRect(x_nb_current, y_nb_current, w_nb_current, h_nb_current, theme.remove_panel);
+			DrawRoundedRect(x_nb_current, y_nb_current, w_nb_current, h_nb_current, App::text_padding, theme.remove_panel);
 		}
 	}
 	
@@ -1216,16 +1217,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		);
 		
 		if (fpr) {
-			std::string fp = fpr;
-			
-			std::string oldfolder = settings->getValue("current_folder", getExecutableDir());
-			for (auto lsp : lsp_client_map){
-				if (lsp.second) {
-					lsp.second->changeFolder(oldfolder, fp);
-				}
-			}
-			
-			settings->setValue("current_folder", fp);
+			setFolder(fpr);
 		}
 		commandUnfocused();
 		return;
@@ -1287,6 +1279,17 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 	}
 	
 	if (rootelement) { rootelement->on_key_event(key, scancode, action, mods); }
+}
+
+void App::setFolder(std::string fpr) {
+	std::string oldfolder = settings->getValue("current_folder", getExecutableDir());
+	for (auto lsp : lsp_client_map){
+		if (lsp.second) {
+			lsp.second->changeFolder(oldfolder, fpr);
+		}
+	}
+	
+	settings->setValue("current_folder", fpr);
 }
 
 void App::character_callback(GLFWwindow* window, unsigned int codepoint) {

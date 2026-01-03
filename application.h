@@ -133,6 +133,7 @@ public:
 	static std::vector<std::vector<KeyboardEvent>> keyboard_events;
 	
 	static void checkForUpdates();
+	static void setFolder(std::string fpr);
 	
 	static bool REQUESTING_STRING;
 	static StringGivenFunc ON_STRING_GIVEN;

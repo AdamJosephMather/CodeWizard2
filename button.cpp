@@ -87,10 +87,19 @@ void Button::render() {
 	
 	if (window_button) {
 		if (hovered) {
-			App::DrawRect(t_x, t_y, t_w, t_h, App::theme.hover_background_color);
-		}
-		if (border){
-			App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+			if (rounded) {
+				App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.hover_background_color);
+				
+				if (border){
+					App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+				}
+			}else{
+				App::DrawRect(t_x, t_y, t_w, t_h, App::theme.hover_background_color);
+				
+				if (border){
+					App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+				}
+			}
 		}
 	}else{
 		Color* fillcolor = background_color;

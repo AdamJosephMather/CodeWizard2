@@ -241,6 +241,8 @@ int main(int argc, char* argv[]) {
 			std::filesystem::path p(candidate);
 	
 			if (std::filesystem::exists(p) && std::filesystem::is_regular_file(p)) {
+				App::setFolder(p.parent_path().string());
+				
 				FileInfo* f = new FileInfo;
 				
 				f->filepath = p.string();

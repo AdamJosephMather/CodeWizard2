@@ -1518,7 +1518,13 @@ void App::executeCommandPaletteAction() {
 			launchCommandNonBlocking("cd /d "+folder+" && git pull");
 		}else if (filepath == ":Git Force Pull") {
 			std::string folder = settings->getValue("current_folder", getExecutableDir());
-			launchCommandNonBlocking("cd /d "+folder+" && git reset --hard && git pull");
+			launchCommandNonBlocking(
+				"pushd \"" + folder + "\" && "
+				"git merge --abort 2>nul & git rebase --abort 2>nul & git cherry-pick --abort 2>nul & "
+				"git fetch --prune origin && "
+				"git reset --hard @{u} && "
+				"popd"
+			);
 		}else if (filepath == ":Help") {
 			MoveWidget(helpMenu, rootelement);
 		}else if (filepath == ":Save Theme Settings To File") {

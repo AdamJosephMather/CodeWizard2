@@ -97,109 +97,107 @@ int64_t ModelXRunner::greedy_next_token(const torch::Tensor& logits_1vocab) {
 std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 	App::chauffeur_call_id += 1;
 	int call_id = App::chauffeur_call_id;
-	
-	if (loading) {
-		return "";
-	}
-	
-	if (!loaded) {
-		load();
-	}
-	
-	if (!load_success) {
-		return "";
-	}
-	
+
+	if (loading) return "";
+	if (!loaded) load();
+	if (!load_success) return "";
+
 	App::displayText(icu::UnicodeString::fromUTF8("Generating With Chauffeur"));
-	
 	if (max_tokens <= 0) return "";
-	
+
 	std::lock_guard<std::mutex> lock(genMutex);
-	
-	if (App::chauffeur_call_id > call_id) { return ""; }
-	
+	if (App::chauffeur_call_id > call_id) return "";
+
 	torch::NoGradGuard guard;
-	
+
 	// Encode
 	std::vector<int32_t> prompt_ids_i32 = s_tokenizer->Encode(input);
 	if (prompt_ids_i32.empty()) return "";
-	
-//	std::cout << "Token count: " << prompt_ids_i32.size() << "\n";
-	
+
 	if ((int)prompt_ids_i32.size() > kMaxPromptTokens) {
 		prompt_ids_i32.resize(kMaxPromptTokens);
 	}
-	
+
 	std::vector<int32_t> all_ids = prompt_ids_i32;
 	std::vector<int64_t> prompt_ids_i64(all_ids.begin(), all_ids.end());
-	
-	// Create input tensor [1, T]
-	auto tokens = torch::from_blob(
-			prompt_ids_i64.data(),
-			{1, (int64_t)prompt_ids_i64.size()},
-			torch::kInt64
+
+	// tokens: [1, T]
+	torch::Tensor tokens = torch::from_blob(
+		prompt_ids_i64.data(),
+		{1, (int64_t)prompt_ids_i64.size()},
+		torch::kInt64
 	).clone();
-	
-	// --- Initial Forward Pass ---
-	// Python signature: forward(inpt_tkns, states: Optional[List[Tensor]])
-	std::vector<torch::jit::IValue> inputs;
-	inputs.push_back(tokens);
-	inputs.push_back(c10::nullopt); // Passing None for initial states
-	
-	if (App::chauffeur_call_id > call_id) { return ""; }
-	
-	
-//	auto start_time = std::chrono::high_resolution_clock::now();
-	
-	auto output_tuple = s_model.forward(inputs).toTuple();
-	
-//	auto end_time = std::chrono::high_resolution_clock::now();
-//	std::chrono::duration<double, std::milli> duration = end_time - start_time; 
-//	std::cout << "Forward Pass: " << duration.count() << " ms" << std::endl;
-	
-	if (App::chauffeur_call_id > call_id) { return ""; }
-	
-	torch::Tensor logits = output_tuple->elements()[0].toTensor();
-	
-	// The model returns List[Tensor] for states
-	torch::jit::IValue states_list = output_tuple->elements()[1];
-	
-	torch::Tensor last_logits = logits.select(0, 0);
-	int64_t next_id = greedy_next_token(last_logits);
-	
-	// --- Autoregressive Loop ---
-	auto tok_input = torch::empty({1, 1}, torch::kInt64);
-	
-//	start_time = std::chrono::high_resolution_clock::now();
-	
+
+	const int64_t T = tokens.size(1);
+	if (T <= 0) return "";
+
+	// Model outputs:
+	//   logits: (B, V)  (last-token only)
+	//   states: List[Tensor]
+	//   token_cache: Tensor (B, C, K-1)
+	torch::jit::IValue states_list = torch::jit::IValue(); // None
+	torch::jit::IValue token_cache = torch::jit::IValue(); // None
+
+	// Prefill: run prompt excluding last token to build (states, cache)
+	if (T > 1) {
+		torch::Tensor prefill = tokens.narrow(1, 0, T - 1); // [1, T-1]
+
+		std::vector<torch::jit::IValue> pre_inputs;
+		pre_inputs.push_back(prefill);
+		pre_inputs.push_back(torch::jit::IValue()); // None states
+		pre_inputs.push_back(torch::jit::IValue()); // None token_cache
+
+		if (App::chauffeur_call_id > call_id) return "";
+
+		auto pre_out = s_model.forward(pre_inputs).toTuple();
+		// logits unused for prefill (it corresponds to last token of prefill)
+		states_list = pre_out->elements()[1];
+		token_cache = pre_out->elements()[2];
+	}
+
+	// Now feed the last prompt token to get the first next-token logits
+	torch::Tensor tok_input = tokens.narrow(1, T - 1, 1).clone(); // [1,1]
+
+	std::vector<torch::jit::IValue> first_inputs;
+	first_inputs.push_back(tok_input);
+	first_inputs.push_back(states_list);  // may be None if T==1
+	first_inputs.push_back(token_cache);  // may be None if T==1
+
+	if (App::chauffeur_call_id > call_id) return "";
+
+	auto first_out = s_model.forward(first_inputs).toTuple();
+
+	torch::Tensor logits = first_out->elements()[0].toTensor(); // (1, V)
+	states_list = first_out->elements()[1];
+	token_cache = first_out->elements()[2];
+
+	int64_t next_id = greedy_next_token(logits.select(0, 0)); // (V)
+
+	// Autoregressive loop
 	for (int step = 0; step < max_tokens; ++step) {
-		if (App::chauffeur_call_id > call_id) { return ""; }
-		
+		if (App::chauffeur_call_id > call_id) return "";
+
 		if (s_eos_id >= 0 && next_id == (int64_t)s_eos_id) break;
-		
+
 		all_ids.push_back((int32_t)next_id);
-		tok_input[0][0] = next_id;
+		tok_input[0][0] = next_id; // keep [1,1] token tensor
 
 		std::vector<torch::jit::IValue> step_inputs;
 		step_inputs.push_back(tok_input);
-		step_inputs.push_back(states_list); // Pass the list back in
-		
+		step_inputs.push_back(states_list);
+		step_inputs.push_back(token_cache);
+
 		auto step_out = s_model.forward(step_inputs).toTuple();
-		
-		// Update logits and states
-		torch::Tensor step_logits = step_out->elements()[0].toTensor();
-		states_list = step_out->elements()[1]; 
-		
+
+		torch::Tensor step_logits = step_out->elements()[0].toTensor(); // (1, V)
+		states_list = step_out->elements()[1];
+		token_cache = step_out->elements()[2];
+
 		next_id = greedy_next_token(step_logits.select(0, 0));
 	}
-	
-//	end_time = std::chrono::high_resolution_clock::now();
-//	duration = end_time - start_time; 
-//	std::cout << "Generated Tokens: " << all_ids.size()-prompt_ids_i32.size() << "\n";
-//	std::cout << "Token Gen: " << duration.count() << " ms" << std::endl;
-	
-	if (App::chauffeur_call_id > call_id) { return ""; }
-	
+
+	if (App::chauffeur_call_id > call_id) return "";
+
 	// Decode
 	if (kReturnOnlyNewText) {
 		std::vector<int32_t> gen_ids(all_ids.begin() + prompt_ids_i32.size(), all_ids.end());

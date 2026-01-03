@@ -21,8 +21,18 @@ void MyRect::render() {
 		return;
 	}
 	
-	App::DrawRect(t_x, t_y, t_w, t_h, background_color);
+	if (rounded) {
+		App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, background_color);
+	}else{
+		App::DrawRect(t_x, t_y, t_w, t_h, background_color);
+	}
+	
+	
 	if (border) {
-		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+		if (rounded) {
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+		}else{
+			App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+		}
 	}
 }

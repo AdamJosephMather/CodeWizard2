@@ -124,12 +124,14 @@ int main(int argc, char* argv[]) {
 	});
 	commandPalette->background_color = App::theme.extras_background_color;
 	commandPalette->border = true;
+	commandPalette->rounded = true;
 	
 	ListBox* commandBox = new ListBox(nullptr, [&](Widget* w){
 		w->t_x = commandPalette->t_x; 
 		w->t_w = commandPalette->t_w;
 		w->t_y = commandPalette->t_y+5+commandPalette->t_h;
 	});
+	commandBox->rounded = true;
 	commandBox->is_visible_layered = true;
 	commandBox->toshow = 12;
 	commandBox->ONCLICK = [&](Widget* w, int sel_id) {
@@ -149,6 +151,7 @@ int main(int argc, char* argv[]) {
 		w->t_y = App::filesButton->t_y + App::filesButton->t_h + App::text_padding;
 		w->t_w = std::min(App::WINDOW_WIDTH-w->t_x, App::WINDOW_WIDTH/5);
 	});
+	filesList->rounded = true;
 	filesList->is_visible_layered = true;
 	filesList->ONCLICK = [&](Widget* w, int sel_id) {
 		App::closeFilesList();

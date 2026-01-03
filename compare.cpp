@@ -75,6 +75,8 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 	
 	f1Button->border = true;
 	f2Button->border = true;
+	f1Button->rounded = true;
+	f2Button->rounded = true;
 	
 	textedit = new TextEdit(this, [&](Widget* t){
 		textedit->t_x = t_x+line_numbers->t_w;
@@ -204,6 +206,13 @@ void Compare::render() {
 	App::runWithSKIZ(textedit->t_x, textedit->t_y, textedit->t_w, textedit->t_h, [&](){
 		textedit->render();
 	});
+	
+	if (rounded) {
+		App::DrawInverseRoundedRect(t_x, textedit->t_y, t_w, textedit->t_h, App::text_padding, App::theme.main_background_color);
+		App::DrawRoundBorder(t_x, textedit->t_y, t_w, textedit->t_h, App::theme.border, 5, App::text_padding);
+	}else{
+		App::DrawBorder(t_x, textedit->t_y, t_w, textedit->t_h, App::theme.border);
+	}
 }
 
 void Compare::position(int x, int y, int w, int h) {

@@ -30,6 +30,8 @@ public:
 	
 	void reload();
 	void setOnlyTo(FileInfo* f);
+	
+	bool rounded = true;
 private:
 	FileInfo* f1 = nullptr;
 	FileInfo* f2 = nullptr;

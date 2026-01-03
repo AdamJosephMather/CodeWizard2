@@ -84,6 +84,14 @@ void Chat::render() {
 	App::runWithSKIZ(querybox->t_x, querybox->t_y, querybox->t_w, querybox->t_h, [&](){
 		querybox->render();
 	});
+	
+	
+	if (rounded) {
+		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
+		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+	}else{
+		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+	}
 }
 
 bool Chat::on_scroll_event(double xchange, double ychange) {

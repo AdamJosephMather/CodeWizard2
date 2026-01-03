@@ -11,6 +11,7 @@ public:
 	void position(int x, int y, int width, int height);
 	
 	bool border = true;
+	bool rounded = true;
 	
 	Color* background_color = nullptr;
 	App::PosFunction POSITIONER;

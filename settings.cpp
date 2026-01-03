@@ -324,6 +324,8 @@ void Settings::handleChildren() {
 			
 			max_scroll = fmax(0, (t->t_y+t->t_h+scrolled_to)-(t_h-tab_bar->t_h)-(t->t_h)*2);
 		});
+		e->rounded = true;
+		e->border = true;
 		
 		setWithValue(e, el);
 		
@@ -370,6 +372,13 @@ void Settings::render() {
 			});
 		}
 	});
+	
+	if (rounded) {
+		App::DrawInverseRoundedRect(t_x, t_y+tab_bar->t_h, t_w, t_h-tab_bar->t_h, App::text_padding, App::theme.main_background_color);
+		App::DrawRoundBorder(t_x, t_y+tab_bar->t_h, t_w, t_h-tab_bar->t_h, App::theme.border, 5, App::text_padding);
+	}else{
+		App::DrawBorder(t_x, t_y+tab_bar->t_h, t_w, t_h-tab_bar->t_h, App::theme.border);
+	}
 }
 
 void Settings::handleChange(TextEdit* te, SettingsElement* se) {

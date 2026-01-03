@@ -3,6 +3,7 @@
 #include "helper_types.h"
 #include "widget.h"
 #include <GLFW/glfw3.h>
+#include <mutex>
 
 struct TreeStructure {
 	icu::UnicodeString name;
@@ -29,6 +30,8 @@ class FileTree : public Widget {
 public:
 	FileTree(Widget* parent);
 	
+	std::mutex tree_mutex;
+	
 	TreeStructure* root = nullptr;
 	std::vector<Visual> toRender = {};
 	
@@ -38,6 +41,8 @@ public:
 	double scrolled_to_horz = 0;
 	double max_scroll_vert = 0;
 	double max_scroll_horz = 0;
+	
+	bool rounded = true;
 	
 	Color* back_color;
 	

@@ -65,9 +65,13 @@ void CheckBox::render() {
 	}
 	
 	int p = 4;
-	int radius = 5;
+	int radius = App::text_padding;
 	
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
+	if (rounded) {
+		App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, App::theme.darker_background_color);
+	}else{
+		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
+	}
 	
 	if (is_checked) {
 		App::DrawRoundedRect(t_x+p, t_y+p, t_w-2*p, t_h-2*p, radius, App::theme.main_text_color);
@@ -76,6 +80,10 @@ void CheckBox::render() {
 	Widget::render();
 	
 	if (border) {
-		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+		if (rounded) {
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, radius);
+		}else{
+			App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+		}
 	}
 }

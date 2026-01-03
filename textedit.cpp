@@ -1645,7 +1645,11 @@ bool TextEdit::on_key_event(int key, int scancode, int action, int mods) {
 }
 
 void TextEdit::render() {
-	App::DrawRect(t_x, t_y, t_w, t_h, background_color);
+	if (rounded) {
+		App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, background_color);
+	}else {
+		App::DrawRect(t_x, t_y, t_w, t_h, background_color);
+	}
 
 	int curx = start_x+t_x+App::text_padding;
 	int cury = start_y+t_y+App::text_padding;
@@ -1705,7 +1709,11 @@ void TextEdit::render() {
 	Widget::render();
 	
 	if (border) {
-		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+		if (rounded) {
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+		}else{
+			App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+		}
 	}
 }
 

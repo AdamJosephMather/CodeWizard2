@@ -16,6 +16,8 @@ public:
 	
 	void position(int x, int y, int w, int h);
 	void render();
+	
+	bool rounded = true;
 private:
 	Button *b1;
 	Button *b2;

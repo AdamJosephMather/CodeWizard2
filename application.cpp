@@ -96,6 +96,7 @@ std::string App::WINDOW_TITLE = "CodeWizard2 V";
 int App::mouseX = 0;
 int App::mouseY = 0;
 //double _PI = 3.14159265358979323846;
+double SQRT_2;
 
 bool (*App::on_key_event)(int key, int scancode, int action, int mods) = nullptr;
 bool (*App::on_char_event)(unsigned int codepoint) = nullptr;
@@ -159,6 +160,8 @@ bool App::rendering_rem_rect = false;
 
 bool App::Init() {
 	std::cout << "Init...\n";
+	
+	SQRT_2 = std::sqrt(2.0);
 	
 	icu::UnicodeString vnum = icu::UnicodeString::fromUTF8(std::to_string(App::major_version)+"."+std::to_string(App::minor_version)+"."+std::to_string(App::patch_version));
 	vnum.toUTF8String(vnumstr);
@@ -641,6 +644,21 @@ auto drawCorner = [](float cx, float cy, float startAngle, float endAngle, int s
 	glEnd();
 };
 
+auto drawInverseCorner = [](float cx, float cy, float startAngle, float endAngle, int segments, double radius) {
+	double biggerrad = radius*SQRT_2;
+	float center = (startAngle+endAngle)/2;
+	
+	glBegin(GL_TRIANGLE_FAN);
+	glVertex2f(cx+std::cos(center)*biggerrad, cy+std::sin(center)*biggerrad);
+	
+	for (int i = 0; i <= segments; ++i) {
+		float t = (float)i / (float)segments;
+		float theta = startAngle + t * (endAngle - startAngle);
+		glVertex2f(cx + std::cos(theta) * radius, cy + std::sin(theta) * radius);
+	}
+	glEnd();
+};
+
 auto drawCornerEdge = [](float cx, float cy, float startAngle, float endAngle, int segments, double radius, int edgewidth) {
 	double smallerradius = radius-edgewidth;
 	
@@ -687,6 +705,14 @@ void App::DrawRoundedRect(float x, float y, float w, float h, float radius, Colo
 	if (border) {
 		DrawRoundBorder(x, y, w, h, theme.border, segments, radius);
 	}
+}
+
+void App::DrawInverseRoundedRect(float x, float y, float w, float h, float radius, Color* color, int segments) {
+	glColor4f(color->r, color->g, color->b, color->a);
+	drawInverseCorner(x + radius, y + radius, M_PI, 1.5f * M_PI, segments, radius); // BL
+	drawInverseCorner(x + w - radius, y + radius, 1.5f * M_PI, 2.0f * M_PI, segments, radius); // BR
+	drawInverseCorner(x + w - radius, y + h - radius, 0.0f, 0.5f * M_PI, segments, radius); // TR
+	drawInverseCorner(x + radius,      y + h - radius, 0.5f * M_PI, M_PI, segments, radius); // TL
 }
 
 void App::DrawRect(int x, int y, int w, int h, Color* color) {

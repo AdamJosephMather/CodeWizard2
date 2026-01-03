@@ -28,7 +28,11 @@ void ListBox::render() {
 	
 	elementalPositions.clear();
 	
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
+	if (rounded) {
+		App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.extras_background_color);
+	}else{
+		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
+	}
 	
 	int th = TextRenderer::get_text_height()+10;
 	
@@ -37,7 +41,11 @@ void ListBox::render() {
 	
 	for (int indx = scrolled_to; indx < fmin(elements.size(), scrolled_to+toshow); indx++) {
 		if (selected_id == indx) {
-			App::DrawRect(t_x, y, t_w, th, App::theme.hover_background_color);
+			if (rounded) {
+				App::DrawRoundedRect(t_x, y, t_w, th, App::text_padding, App::theme.hover_background_color);
+			}else{
+				App::DrawRect(t_x, y, t_w, th, App::theme.hover_background_color);
+			}
 		}
 		
 		elementalPositions.push_back({t_x, y, t_w, th, indx});
@@ -46,7 +54,11 @@ void ListBox::render() {
 		y += th;
 	}
 	
-	App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+	if (!rounded) {
+		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+	}else{
+		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+	}
 }
 
 void ListBox::setElements(std::vector<icu::UnicodeString> el) {

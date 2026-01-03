@@ -381,8 +381,8 @@ nlohmann::json PanelHolder::saveConfiguration() {
 			thisitm["children"][i] = "Settings";
 		}else if (auto pe = dynamic_cast<WidgetChooser*>(c)){
 			thisitm["children"][i] = "WidgetChooser";
-		}else if (auto pe = dynamic_cast<WidgetChooser*>(c)){
-			thisitm["children"][i] = "WidgetChooser";
+		}else if (auto pe = dynamic_cast<Chat*>(c)){
+			thisitm["children"][i] = "Chat";
 		}else if (auto pe = dynamic_cast<Compare*>(c)){
 			thisitm["children"][i] = "Compare";
 		}else if (auto pe = dynamic_cast<LspDebug*>(c)){

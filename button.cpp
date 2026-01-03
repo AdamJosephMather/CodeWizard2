@@ -2,8 +2,6 @@
 #include "application.h"
 #include "text_renderer.h"
 
-int radius = 6;
-
 Button::Button(Widget *parent, icu::UnicodeString text, Positioner positioner, OnClick onclick) : Widget(parent) {
 	BUTTON_LABEL = text;
 	POSITIONER = positioner;
@@ -101,7 +99,10 @@ void Button::render() {
 		}
 		
 		if (rounded) {
-			App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, fillcolor, border);
+			App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, fillcolor, border);
+			if (border) {
+				App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+			}
 		}else{
 			App::DrawRect(t_x, t_y, t_w, t_h, fillcolor);
 			if (border) {

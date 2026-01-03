@@ -93,6 +93,7 @@ public:
 	ContextMenu* contextmenu = nullptr;
 	
 	bool border = false;
+	bool rounded = false;
 	
 	HighlightFunct highlighter = nullptr;
 	bool alreadyHighlighted = false;

@@ -68,6 +68,8 @@ public:
 	int code_actions_id = -1;
 	int rename_id = -1;
 	
+	bool rounded = true;
+	
 	TextEdit* renamebox = nullptr;
 	Cursor renamecursor = Cursor();
 	std::vector<std::string> completions = {};

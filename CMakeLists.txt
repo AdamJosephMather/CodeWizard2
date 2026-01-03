@@ -113,12 +113,6 @@ if (MSVC)
 	target_compile_options(${PROJECT_NAME} PRIVATE /bigobj)
 endif()
 
-if (MSVC)
-	set_target_properties(${PROJECT_NAME} PROPERTIES
-		WIN32_EXECUTABLE TRUE
-	)
-endif()
-
 configure_file(${CMAKE_SOURCE_DIR}/app.png
                ${CMAKE_BINARY_DIR}/app.png
                COPYONLY)
@@ -160,3 +154,15 @@ endif()
 
 message(STATUS "Torch_DIR=${Torch_DIR}")
 message(STATUS "TORCH_LIBRARIES=${TORCH_LIBRARIES}")
+
+
+
+
+
+
+
+if (MSVC)
+	set_target_properties(${PROJECT_NAME} PROPERTIES
+		WIN32_EXECUTABLE TRUE
+	)
+endif()

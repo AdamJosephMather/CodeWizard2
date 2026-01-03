@@ -102,27 +102,34 @@ void FileTree::renderTexture(GLuint texID, int x, int y, int w, int h) {
 void FileTree::render() {
 	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
 	
+	std::lock_guard<std::mutex> lock(tree_mutex);
+	
 	for (auto itm : toRender) {
 		if (App::mouseX >= itm.x && App::mouseX <= itm.x+itm.w && App::mouseY > itm.y && App::mouseY <= itm.y+itm.h) {
-			App::DrawRect(itm.x, itm.y, itm.w, itm.h, App::theme.hover_background_color);
+			App::DrawRoundedRect(itm.x, itm.y, itm.w, itm.h, App::text_padding, App::theme.hover_background_color);
+			App::DrawRoundBorder(itm.x, itm.y, itm.w, itm.h, App::theme.border, 5, App::text_padding);
 			back_color = App::theme.hover_background_color;
 		}else{
 			back_color = App::theme.extras_background_color;
 		}
 		
 		if (itm.is_folder) {
-			renderTexture(folderIcon, itm.x+(float)App::text_padding/2, itm.y+(float)App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height());
+			renderTexture(folderIcon, itm.x+App::text_padding, itm.y+App::text_padding, TextRenderer::get_text_height(), TextRenderer::get_text_height());
 		}else {
-			renderTexture(fileIcon, itm.x+(float)App::text_padding/2, itm.y+(float)App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height());
+			renderTexture(fileIcon, itm.x+App::text_padding, itm.y+App::text_padding, TextRenderer::get_text_height(), TextRenderer::get_text_height());
 		}
 		
-		TextRenderer::draw_text(itm.x+TextRenderer::get_text_height()+(float)App::text_padding, itm.y+(float)App::text_padding/2, itm.name, App::theme.main_text_color);
-		
-		
-//		App::DrawBorder(itm.x, itm.y, itm.w, itm.h, App::theme.border);
+		TextRenderer::draw_text(itm.x+TextRenderer::get_text_height()+App::text_padding*2, itm.y+App::text_padding, itm.name, App::theme.main_text_color);
 	}
 	
 	Widget::render();
+	
+	if (rounded) {
+		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
+		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+	}else{
+		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+	}
 }
 
 void FileTree::deleteTree(TreeStructure* node) {
@@ -198,7 +205,7 @@ double FileTree::createVisuals(double pos, double depth, TreeStructure* el) {
 	
 	icu::UnicodeString str = el->name;
 	
-	int w = TextRenderer::get_text_width(str.length())+App::text_padding*1.5+TextRenderer::get_text_height();
+	int w = TextRenderer::get_text_width(str.length())+App::text_padding*3+TextRenderer::get_text_height();
 	
 	toRender.push_back( { x, y, w, elHeighto, str, el, el->is_folder } );
 	
@@ -226,6 +233,8 @@ void FileTree::position(int x, int y, int w, int h) {
 	t_w = w;
 	t_h = h;
 	
+	std::lock_guard<std::mutex> lock(tree_mutex);
+	
 	if (!root) {
 		root = new TreeStructure();
 		root->path = App::settings->getValue("current_folder", getExecutableDir());
@@ -233,7 +242,7 @@ void FileTree::position(int x, int y, int w, int h) {
 		fillOutTree(root);
 	}
 	
-	elHeighto = TextRenderer::get_text_height()+App::text_padding;
+	elHeighto = TextRenderer::get_text_height()+App::text_padding*2;
 	toRender.clear();
 	
 	max_scroll_horz = 0.0;
@@ -266,6 +275,8 @@ bool FileTree::on_mouse_button_event(int button, int action, int mods){
 		return false;
 	}
 	
+	std::lock_guard<std::mutex> lock(tree_mutex);
+	
 	for (auto vs : toRender) {
 		if (vs.x <= mx && vs.y <= my && vs.x+vs.w >= mx && vs.y+vs.h >= my) {
 			if (!vs.ts) {
@@ -296,13 +307,23 @@ bool FileTree::on_mouse_button_event(int button, int action, int mods){
 	return true;
 }
 
-void FileTree::save() { // we'll update the actuall tree structure every x seconds, (onsave) or when the user clicks something
-	deleteTree(root);
-	root = new TreeStructure();
-	root->path = App::settings->getValue("current_folder", getExecutableDir());
-	root->name = icu::UnicodeString::fromUTF8(std::filesystem::path(root->path).filename().string());
+void FileTree::save() {
+	TreeStructure* newRoot = new TreeStructure();
+	newRoot->path = App::settings->getValue("current_folder", getExecutableDir());
+	newRoot->name = icu::UnicodeString::fromUTF8(std::filesystem::path(newRoot->path).filename().string());
 	
-	fillOutTree(root);
+	fillOutTree(newRoot);
+
+	{
+		std::lock_guard<std::mutex> lock(tree_mutex);
+		
+		TreeStructure* oldRoot = root;
+		root = newRoot;
+		
+		toRender.clear(); 
+		
+		deleteTree(oldRoot); 
+	}
 }
 
 bool FileTree::on_scroll_event(double xchange, double ychange){

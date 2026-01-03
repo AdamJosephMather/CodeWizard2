@@ -15,6 +15,8 @@ class Chat : public Widget {
 public:
 	Chat(Widget* parent);
 	
+	bool rounded = true;
+	
 	void render();
 	void position(int x, int y, int width, int height);
 	

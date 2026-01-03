@@ -40,6 +40,8 @@ public:
 	std::string selection_text() const;
 	void clear_selection();
 	
+	bool rounded = true;
+	
 	void run();
 private:
 	void cell_from_cursor(int& row, int& col);

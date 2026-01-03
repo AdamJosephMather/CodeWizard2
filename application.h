@@ -213,6 +213,7 @@ public:
 	static void DrawRect(int x, int y, int w, int h, Color* color);
 	static void DrawRect(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b);
 	static void DrawRoundedRect(float x, float y, float w, float h, float radius, Color* color, bool border = false, int segments = 5);
+	static void DrawInverseRoundedRect(float x, float y, float w, float h, float radius, Color* color, int segments = 5);
 	static void DrawBorder(int x, int y, int w, int h, Color* color);
 	static void DrawRoundBorder(int x, int y, int w, int h, Color* color, int segments, double radius);
 	

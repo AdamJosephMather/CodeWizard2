@@ -31,6 +31,8 @@ public:
 	using ATCC = std::function<void()>;
 	using ANT = std::function<void()>;
 	
+	bool rounded = true;
+	
 	std::vector<TabInfo> tabs_list;
 	double scrolled_to = 0;
 	int selected_id = 0;

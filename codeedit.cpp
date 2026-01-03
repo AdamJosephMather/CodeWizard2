@@ -84,6 +84,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		w->t_w = textedit->t_w/3;
 	});
 	completionbox->is_visible_layered = false;
+	completionbox->rounded = true;
 	
 	hoverbox = new TextEdit(nullptr, [&](Widget* w){
 		int col = textedit->_mapFromRealToVisual(hoverCrsr.head_line, hoverCrsr.head_char);
@@ -108,6 +109,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	}, [&](Button* b){
 		replaceAll(findTextEdit->getFullText(), replaceTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
+	allButton->rounded = true;
 	
 	nextReplButton = new Button(nullptr, icu::UnicodeString::fromUTF8("-→"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = allButton->t_x-5-tw;
@@ -115,6 +117,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	}, [&](Button* b){
 		activateReplace(true, findTextEdit->getFullText(), replaceTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
+	nextReplButton->rounded = true;
 	
 	nextButton = new Button(nullptr, icu::UnicodeString::fromUTF8("-→"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = t_x+t_w-5-tw;
@@ -122,6 +125,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	}, [&](Button* b){
 		activateFind(true, findTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
+	nextButton->rounded = true;
 	
 	prevButton = new Button(nullptr, icu::UnicodeString::fromUTF8("←-"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = nextButton->t_x-5-tw;
@@ -129,6 +133,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	}, [&](Button* b){
 		activateFind(false, findTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
+	prevButton->rounded = true;
 	
 	replaceTextEdit = new TextEdit(nullptr, [&](Widget* t){
 		int h = TextRenderer::get_text_height()*std::min((int)replaceTextEdit->lines.size(), 3)+10;
@@ -143,6 +148,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		nextReplButton->t_h = h;
 		nextReplButton->t_y = replaceTextEdit->t_y;
 	});
+	replaceTextEdit->rounded = true;
 	
 	findTextEdit = new TextEdit(nullptr, [&](Widget* t){
 		int h = TextRenderer::get_text_height()*std::min((int)findTextEdit->lines.size(), 3)+10;
@@ -157,6 +163,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		prevButton->t_h = h;
 		prevButton->t_y = findTextEdit->t_y;
 	});
+	findTextEdit->rounded = true;
 	
 	caseSensitivity = new CheckBox(nullptr, [&](CheckBox* c, int,int,int,int){
 		c->t_h = findTextEdit->t_h;
@@ -164,6 +171,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		c->t_x = findTextEdit->t_w + findTextEdit->t_x + 5;
 		c->t_y = findTextEdit->t_y;
 	}, nullptr);
+	caseSensitivity->rounded = true;
 	
 	allButton->border = true;
 	nextReplButton->border = true;
@@ -228,6 +236,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		w->t_x = textedit->t_x+textedit->t_w-w->t_w-10;
 		w->t_y = showErrorsButton->t_y-w->t_h-10;
 	});
+	errorMenu->rounded = true;
 	errorMenu->is_visible_layered = false;
 	errorMenu->toshow = 13;
 	errorMenu->ONCLICK = [&](Widget* w, int sel){
@@ -637,8 +646,6 @@ int CodeEdit::indentIdentifierAfterLine(icu::UnicodeString line, icu::UnicodeStr
 }
 
 void CodeEdit::render() {
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
-	
 	if (FILE_BROKEN_STATE) {
 		// we don't need to run with skiz because this is already skizzed in that size
 		broken_state_menu->render();
@@ -647,6 +654,8 @@ void CodeEdit::render() {
 		fixit_request_menu->render();
 	}else{
 		if (find_menu_open) {
+			App::DrawRect(t_x, textedit->t_y + textedit->t_h, t_w, t_h-textedit->t_h, App::theme.extras_background_color);
+			
 			App::runWithSKIZ(allButton->t_x, allButton->t_y, allButton->t_w, allButton->t_h, [&](){
 				allButton->render();
 			});
@@ -705,6 +714,14 @@ void CodeEdit::render() {
 				});
 			}
 		});
+	}
+	
+	
+	if (rounded) {
+		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
+		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+	}else{
+		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
 	}
 }
 
@@ -1479,16 +1496,17 @@ bool CodeEdit::on_mouse_button_event(int button, int action, int mods) {
 	}else if (REQUESTING_FIXIT) {
 		return fixit_request_menu->on_mouse_button_event(button, action, mods);
 	}else{
-		completionbox->is_visible_layered = false;
-		
 		int mx = App::mouseX;
 		int my = App::mouseY;
 		
 		if (hoveringHoverbox(mx, my)) {
+			completionbox->is_visible_layered = false;
 			return hoverbox->on_mouse_button_event(button, action, mods);
 		}
 		if (hoveringCompletionBox(mx, my)) {
 			return completionbox->on_mouse_button_event(button, action, mods);
+		}else{
+			completionbox->is_visible_layered = false;
 		}
 		
 		if (showErrorsButton->on_mouse_button_event(button, action, mods)) {return true;} // this doesn't get first dibs because it's after the textedit in the children list
@@ -1755,6 +1773,7 @@ void CodeEdit::activateCompletion() {
 		return;
 	}else if (is_chauffeur) {
 		textedit->applyInsertToAllCursors(selected);
+		timeuntilchauffeur = 1; // triggers a new chauffeur run
 		return;
 	}
 	

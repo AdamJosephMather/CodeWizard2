@@ -84,6 +84,7 @@ void Tabs::render() {
 	int text_height = (t_h-TextRenderer::get_text_height())/2;
 	int end_len = TextRenderer::get_text_width(2);
 	int tsx = end_len*0.25;
+	int tabheight = t_h-1;
 	
 	for (int indx = 0; indx < tabs_list.size(); indx ++) {
 		auto info = tabs_list[indx];
@@ -103,23 +104,41 @@ void Tabs::render() {
 				lc.end_end = lc.end;
 			}
 			
+			int addextra = (int)has_close_button * end_len;
+			
+			Color* c;
 			if (selected_id == info.id || (hovering.indx == indx && hovering.body)) {
-				App::DrawRect(lc.start, t_y, tab_width, t_h, App::theme.hover_background_color);
+				c = App::theme.hover_background_color;
 			}else{
-				App::DrawRect(lc.start, t_y, tab_width, t_h, App::theme.extras_background_color);
+				c = App::theme.extras_background_color;
+			}
+			
+			if (rounded) {
+				App::DrawRoundedRect(lc.start, t_y, tab_width+addextra, tabheight, App::text_padding, c);
+			}else{
+				App::DrawRect(lc.start, t_y, tab_width, tabheight, c);
 			}
 			
 			if (has_close_button){
 				if (hovering.indx == indx && !hovering.body) {
-					App::DrawRect(lc.end, t_y, end_len, t_h, App::theme.hover_background_color);
+					c = App::theme.hover_background_color;
 				}else{
-					App::DrawRect(lc.end, t_y, end_len, t_h, App::theme.extras_background_color);
+					c = App::theme.extras_background_color;
+				}
+				
+				if (rounded) {
+					App::DrawRoundedRect(lc.end, t_y, end_len, tabheight, App::text_padding, c);
+				}else{
+					App::DrawRect(lc.end, t_y, end_len, tabheight, c);
 				}
 				
 				TextRenderer::draw_text(lc.end+tsx, t_y+text_height, "X", App::theme.main_text_color);
-				App::DrawBorder(lc.start, t_y, tab_width+end_len, t_h, App::theme.border);
+			}
+			
+			if (rounded) {
+				App::DrawRoundBorder(lc.start, t_y, tab_width+addextra, tabheight, App::theme.border, 5, App::text_padding);
 			}else{
-				App::DrawBorder(lc.start, t_y, tab_width, t_h, App::theme.border);
+				App::DrawBorder(lc.start, t_y, tab_width+addextra, tabheight, App::theme.border);
 			}
 			
 			TextRenderer::draw_text(lc.start+5, t_y+text_height, info.title, App::theme.main_text_color);
@@ -143,14 +162,23 @@ void Tabs::render() {
 	
 	if (can_add_new) {
 		if (add_loc < t_w+t_x){
+			Color* c;
 			if (hvrngtab) {
-				App::DrawRect(add_loc, t_y, end_len, t_h, App::theme.hover_background_color);
+				c = App::theme.hover_background_color;
 			}else{
-				App::DrawRect(add_loc, t_y, end_len, t_h, App::theme.extras_background_color);
+				c = App::theme.extras_background_color;
+			}
+			
+			if (rounded) {
+				App::DrawRoundedRect(add_loc, t_y, end_len, tabheight, App::text_padding, c);
+				App::DrawRoundBorder(add_loc, t_y, end_len, tabheight, App::theme.border, 5, App::text_padding);
+			}else {
+				App::DrawRect(add_loc, t_y, end_len, tabheight, c);
+				App::DrawBorder(add_loc, t_y, end_len, tabheight, App::theme.border);
 			}
 			
 			TextRenderer::draw_text(add_loc+tsx, t_y+text_height, "+", App::theme.main_text_color);
-			App::DrawBorder(add_loc, t_y, end_len, t_h, App::theme.border);
+			
 		}
 		
 		screen_add_x = add_loc;
@@ -291,7 +319,7 @@ void Tabs::position(int x, int y, int w, int h) {
 		t_h = 0;
 	}else {
 		t_w = w;
-		t_h = TextRenderer::get_text_height()*1.5;
+		t_h = TextRenderer::get_text_height()*1.5+1;
 	}
 	
 	t_x = x;

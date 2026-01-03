@@ -165,7 +165,7 @@ void Editor::createNew(FileInfo* fn) {
 }
 
 void Editor::render() {
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
+//	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
 	
 	auto e = editors[tab_bar->selected_id];
 	

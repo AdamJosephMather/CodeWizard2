@@ -41,6 +41,8 @@ public:
 	Settings(Widget* parent);
 	Tabs* tab_bar;
 	
+	bool rounded = true;
+	
 	int scrolled_to = 0;
 	int max_scroll = 0;
 	std::unordered_map<int, std::vector<SettingsElement*>> settings_menus;

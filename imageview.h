@@ -9,6 +9,8 @@ public:
 	void position(int x, int y, int width, int height) override;
 	void render() override;
 	void openFile();
+	
+	bool rounded = true;
 
 	// the file to load (set by caller before openFile())
 	FileInfo* file = nullptr;

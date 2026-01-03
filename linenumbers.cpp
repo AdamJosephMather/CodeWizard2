@@ -76,7 +76,18 @@ void LineNumbers::render() {
 		}
 	}
 	
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
+	if (rounded) {
+		App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.extras_background_color);
+		if (border) {
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+		}
+	}else{
+		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
+		if (border) {
+			App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+		}
+	}
+	
 	
 	int curx = t_x+App::text_padding;
 	int cury = start_y+t_y+App::text_padding;

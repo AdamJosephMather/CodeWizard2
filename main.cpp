@@ -108,6 +108,7 @@ int main(int argc, char* argv[]) {
 	}, [&](Button* button) {
 		App::adding_panel();
 	});
+	add_button->rounded = true;
 	
 	Button* remove_button = new Button(App::tb, icu::UnicodeString::fromUTF8("-"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = add_button->t_w+3;
@@ -115,6 +116,7 @@ int main(int argc, char* argv[]) {
 	}, [&](Button* button) {
 		App::removing_panel();
 	});
+	remove_button->rounded = true;
 	
 	TextEdit* commandPalette = new TextEdit(App::tb, [&](Widget* w){
 		w->t_x = w->t_w/2 - w->t_w/6;

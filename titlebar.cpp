@@ -14,6 +14,7 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	ext_b->transparent = true;
 	ext_b->window_button = true;
 	ext_b->execute_on_down = false;
+	ext_b->rounded = true;
 	
 	Button* win_b = new Button(this, icu::UnicodeString::fromUTF8("□"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_w-tw*2;
@@ -24,6 +25,7 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	win_b->transparent = true;
 	win_b->window_button = true;
 	win_b->execute_on_down = false;
+	win_b->rounded = true;
 	
 	Button* min_b = new Button(this, icu::UnicodeString::fromUTF8("-"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_w-tw*3;
@@ -34,6 +36,7 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	min_b->transparent = true;
 	min_b->window_button = true;
 	min_b->execute_on_down = false;
+	min_b->rounded = true;
 	
 	hovered = false;
 	

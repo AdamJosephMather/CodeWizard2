@@ -252,6 +252,11 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"Chauffeur Max Continue",
 			"chauffeur_max_continue",
 			6
+		),
+		makeInt(
+			"Chauffeur Wait Time (ms)",
+			"chauffeur_time",
+			1000
 		)
 	};
 	

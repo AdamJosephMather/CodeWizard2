@@ -1134,7 +1134,7 @@ bool CodeEdit::on_char_event(unsigned int keycode) {
 				}
 				
 				if (App::settings->getValue("use_chauffeur", false)) {
-					timeuntilchauffeur = 800;
+					timeuntilchauffeur = App::settings->getValue("chauffeur_time", 1000);
 				}
 			}
 		}
@@ -1185,6 +1185,10 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 	Cursor svdCrsr = textedit->cursors[0];
 	
 	if (parent == App::activeEditor) {
+		if (action == GLFW_PRESS && timeuntilchauffeur != App::settings->getValue("chauffeur_time", 1000)) {
+			timeuntilchauffeur = 0;
+		}
+		
 		if (key == GLFW_KEY_F5 && is_press && language != "" && file) {
 			// at this point we've already tried project build commands
 			auto l = App::languagemap[language];

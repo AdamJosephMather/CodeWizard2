@@ -76,8 +76,7 @@ static int lookup_packedchar_index(int cp)
 
 void TextRenderer::set_font_size(float sz) { font_size = sz; }
 
-bool TextRenderer::init_font(const char* fontPath)
-{
+bool TextRenderer::init_font(const char* fontPath) {
 	std::ifstream fontFile(fontPath, std::ios::binary | std::ios::ate);
 	if (!fontFile) {
 		std::cerr << "Failed to load font\n";
@@ -279,7 +278,10 @@ void TextRenderer::draw_text(float x, float y,
 		int idx = lookup_packedchar_index(cp);
 		if (idx >= 0 && glyphIdx < static_cast<int>(colors.size())) {
 			AlignedQuad q;
-			GetPackedQuad(cdata, TEX_W, TEX_H, idx, &cursorX, &cursorY, &q, true);
+			
+			float cx_temp = cursorX;
+			
+			GetPackedQuad(cdata, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
 
 			const Color* col = colors[glyphIdx];
 			glColor4f(col->r, col->g, col->b, 1.0f);
@@ -290,8 +292,9 @@ void TextRenderer::draw_text(float x, float y,
 			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
 		} else if (idx < 0) {
 			std::cout << "Missing glyph U+" << std::hex << cp << std::dec << "\n";
-			cursorX += TEXT_WIDTH;
 		}
+		
+		cursorX += TEXT_WIDTH; // enforces monospacing
 
 		i = unicodeStr.moveIndex32(i, 1);
 		++glyphIdx;
@@ -331,7 +334,10 @@ void TextRenderer::draw_text(float x, float y,
 		int idx = lookup_packedchar_index(cp);
 		if (idx >= 0) {
 			AlignedQuad q;
-			GetPackedQuad(cdata, TEX_W, TEX_H, idx, &cursorX, &cursorY, &q, true);
+			
+			float cx_temp = cursorX;
+			
+			GetPackedQuad(cdata, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
 
 			glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, q.y0);
 			glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, q.y0);
@@ -339,8 +345,9 @@ void TextRenderer::draw_text(float x, float y,
 			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
 		} else if (idx < 0) {
 			std::cout << "Missing glyph U+" << std::hex << cp << std::dec << "\n";
-			cursorX += TEXT_WIDTH;
 		}
+		
+		cursorX += TEXT_WIDTH; // enforces monospaced
 
 		i = unicodeStr.moveIndex32(i, 1);
 	}
@@ -381,7 +388,10 @@ void TextRenderer::draw_text(float x, float y,
 		int idx = lookup_packedchar_index(cp);
 		if (idx >= 0) {
 			AlignedQuad q;
-			GetPackedQuad(cdata, TEX_W, TEX_H, idx, &cursorX, &cursorY, &q, true);
+			
+			float cx_temp = cursorX;
+			
+			GetPackedQuad(cdata, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
 
 			glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, q.y0);
 			glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, q.y0);
@@ -389,8 +399,9 @@ void TextRenderer::draw_text(float x, float y,
 			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
 		} else if (idx < 0) {
 			std::cout << "Missing glyph U+" << std::hex << cp << std::dec << "\n";
-			cursorX += TEXT_WIDTH;
 		}
+		
+		cursorX += TEXT_WIDTH;
 
 		i = unicodeStr.moveIndex32(i, 1);
 	}

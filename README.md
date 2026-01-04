@@ -14,12 +14,10 @@ A rewrite of CodeWizard. CodeWizard2 is *probably not* a useful project to anybo
 
 ## Screenshot(s)
 
-With transparency
-<img width="2256" height="1432" alt="image" src="https://github.com/user-attachments/assets/cd6998c2-cf84-44cc-8898-06054b0a0a1a" />
-Without transparency
-<img width="2256" height="1432" alt="image" src="https://github.com/user-attachments/assets/d4a06326-08f5-40ef-bbe7-05050708fa9b" />
-I'm not showing off. You are. (This is the amazing widget system I designed)
-<img width="2256" height="1432" alt="image" src="https://github.com/user-attachments/assets/8d2af0d9-8c84-48d0-8d9e-9743b7348102" />
+<img width="2256" height="1432" alt="image" src="https://github.com/user-attachments/assets/b85e5d30-b86b-41e6-99cf-8cf50edf1828" />
+<img width="2256" height="1432" alt="image" src="https://github.com/user-attachments/assets/32000715-f6c2-4342-bde7-104236f3d9da" />
+<img width="2256" height="1432" alt="image" src="https://github.com/user-attachments/assets/63df446e-5361-40cf-94f7-4e239e03c65e" />
+
 
 
 ## Widgets

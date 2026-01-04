@@ -36,5 +36,10 @@ private:
 
 	// Helpers
 	static std::vector<uint8_t> load_file_bytes(const std::string& path);
-	static int64_t greedy_next_token(const torch::Tensor& logits_1vocab);
+//	static int64_t greedy_next_token(const torch::Tensor& logits_1vocab, std::string must_start_with = "");
+	static int64_t next_token_temperature(
+		const torch::Tensor& logits_1vocab,
+		float temperature,
+		const std::string& must_start_with = ""
+	);
 };

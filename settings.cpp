@@ -257,6 +257,11 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"Chauffeur Wait Time (ms)",
 			"chauffeur_time",
 			1000
+		),
+		makeFloat(
+			"Chauffeur Temperature (0-1)",
+			"chauffeur_temp",
+			0.6f
 		)
 	};
 	

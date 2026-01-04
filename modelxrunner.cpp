@@ -92,8 +92,70 @@ bool ModelXRunner::load() {
 	}
 }
 
-int64_t ModelXRunner::greedy_next_token(const torch::Tensor& logits_1vocab) {
-	return logits_1vocab.argmax(0).item<int64_t>();
+//int64_t ModelXRunner::greedy_next_token(const torch::Tensor& logits_1vocab, std::string must_start_with) {
+//	return logits_1vocab.argmax(0).item<int64_t>();
+//}
+
+int64_t ModelXRunner::next_token_temperature(
+	const torch::Tensor& logits_1vocab,
+	float temperature,
+	const std::string& must_start_with
+) {
+	TORCH_CHECK(logits_1vocab.dim() == 1, "logits_1vocab must be a 1D tensor [vocab]");
+	
+	// Work on CPU float32 for simplicity + easy prefix filtering
+	torch::Tensor logits = logits_1vocab.to(torch::kCPU, torch::kFloat32).contiguous();
+	const int64_t vocab_size = logits.size(0);
+	
+	// Build allowed token id list if we have a prefix constraint
+	std::vector<int64_t> allowed_ids;
+	if (!must_start_with.empty()) {
+		allowed_ids.reserve(1024);
+		
+		for (int64_t id = 0; id < vocab_size; ++id) {
+			// Raw vocab token string (e.g. "Ġdef")
+			std::string tok = s_tokenizer->IdToToken(static_cast<int32_t>(id));
+			if (tok.rfind(must_start_with, 0) == 0) { // starts_with
+				allowed_ids.push_back(id);
+			}
+		}
+
+		// If nothing matches the constraint, fall back to greedy over full vocab
+		if (allowed_ids.empty()) {
+			return logits.argmax(0).item<int64_t>();
+		}
+	}
+
+	// Candidate logits + candidate ids tensor
+	torch::Tensor candidate_ids;
+	torch::Tensor candidate_logits;
+
+	if (allowed_ids.empty()) {
+		candidate_ids = torch::arange(vocab_size, torch::TensorOptions().dtype(torch::kInt64));
+		candidate_logits = logits;
+	} else {
+		candidate_ids = torch::from_blob(
+			allowed_ids.data(),
+			{static_cast<int64_t>(allowed_ids.size())},
+			torch::TensorOptions().dtype(torch::kInt64)
+		).clone(); // clone because from_blob points at vector memory
+		candidate_logits = logits.index_select(0, candidate_ids);
+	}
+
+	// Greedy mode (temperature <= 0 or non-finite)
+	if (!(temperature > 0.0f) || !std::isfinite(temperature)) {
+		int64_t best_idx = candidate_logits.argmax(0).item<int64_t>();
+		return candidate_ids[best_idx].item<int64_t>();
+	}
+
+	// Temperature scaling + numerically stable softmax
+	candidate_logits = candidate_logits / temperature;
+	candidate_logits = candidate_logits - std::get<0>(candidate_logits.max(0)); // subtract max
+	torch::Tensor probs = torch::softmax(candidate_logits, 0);
+
+	// Sample 1 token
+	int64_t sampled_idx = torch::multinomial(probs, /*num_samples=*/1).item<int64_t>();
+	return candidate_ids[sampled_idx].item<int64_t>();
 }
 
 std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
@@ -119,10 +181,19 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 	if ((int)prompt_ids_i32.size() > kMaxPromptTokens) {
 		prompt_ids_i32.resize(kMaxPromptTokens);
 	}
-
+	
+	std::string must_start_with = "";
+	std::string must_start_with_text = "";
+	if ((int)prompt_ids_i32.size() > 1) {
+		int32_t last_id = prompt_ids_i32.back();
+		must_start_with = s_tokenizer->IdToToken(last_id);
+		must_start_with_text = s_tokenizer->Decode({ last_id });
+		prompt_ids_i32.pop_back();
+	}
+	
 	std::vector<int32_t> all_ids = prompt_ids_i32;
 	std::vector<int64_t> prompt_ids_i64(all_ids.begin(), all_ids.end());
-
+	
 	// tokens: [1, T]
 	torch::Tensor tokens = torch::from_blob(
 		prompt_ids_i64.data(),
@@ -164,17 +235,17 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 	first_inputs.push_back(tok_input);
 	first_inputs.push_back(states_list);  // may be None if T==1
 	first_inputs.push_back(token_cache);  // may be None if T==1
-
+	
 	if (App::chauffeur_call_id > call_id) return "";
-
+	
 	auto first_out = s_model->forward(first_inputs).toTuple();
-
+	
 	torch::Tensor logits = first_out->elements()[0].toTensor(); // (1, V)
 	states_list = first_out->elements()[1];
 	token_cache = first_out->elements()[2];
-
-	int64_t next_id = greedy_next_token(logits.select(0, 0)); // (V)
-
+	
+	int64_t next_id = next_token_temperature(logits.select(0, 0), App::settings->getValue("chauffeur_temp", 0.6f), must_start_with); // (V)
+	
 	// Autoregressive loop
 	for (int step = 0; step < max_tokens; ++step) {
 		if (App::chauffeur_call_id > call_id) return "";
@@ -195,15 +266,29 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 		states_list = step_out->elements()[1];
 		token_cache = step_out->elements()[2];
 
-		next_id = greedy_next_token(step_logits.select(0, 0));
+		next_id = next_token_temperature(step_logits.select(0, 0), App::settings->getValue("chauffeur_temp", 0.6f));
 	}
 
 	if (App::chauffeur_call_id > call_id) return "";
-
-	// Decode
+	
+	// Decode Ġ
 	if (kReturnOnlyNewText) {
 		std::vector<int32_t> gen_ids(all_ids.begin() + prompt_ids_i32.size(), all_ids.end());
-		return s_tokenizer->Decode(gen_ids);
+		std::string text_out = s_tokenizer->Decode(gen_ids);
+		
+		if (!must_start_with_text.empty()) {
+			std::cout << "Muststartwith: '" << must_start_with_text << "'\n";
+			std::cout << "Text: '" << text_out << "'\n";
+			
+			if (text_out.rfind(must_start_with_text, 0) == 0) {
+				std::cout << "er-Razed.\n";
+				text_out.erase(0, must_start_with_text.size());
+			}
+			
+			std::cout << "Text_final: '" << text_out << "'\n";
+		}
+		
+		return text_out;
 	} else {
 		return s_tokenizer->Decode(all_ids);
 	}

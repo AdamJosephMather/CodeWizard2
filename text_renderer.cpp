@@ -291,7 +291,7 @@ void TextRenderer::draw_text(float x, float y,
 			glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, q.y1);
 			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
 		} else if (idx < 0) {
-			std::cout << "Missing glyph U+" << std::hex << cp << std::dec << "\n";
+//			std::cout << "Missing glyph U+" << std::hex << cp << std::dec << "\n";
 		}
 		
 		cursorX += TEXT_WIDTH; // enforces monospacing
@@ -344,7 +344,7 @@ void TextRenderer::draw_text(float x, float y,
 			glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, q.y1);
 			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
 		} else if (idx < 0) {
-			std::cout << "Missing glyph U+" << std::hex << cp << std::dec << "\n";
+//			std::cout << "Missing glyph U+" << std::hex << cp << std::dec << "\n";
 		}
 		
 		cursorX += TEXT_WIDTH; // enforces monospaced
@@ -398,7 +398,7 @@ void TextRenderer::draw_text(float x, float y,
 			glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, q.y1);
 			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
 		} else if (idx < 0) {
-			std::cout << "Missing glyph U+" << std::hex << cp << std::dec << "\n";
+//			std::cout << "Missing glyph U+" << std::hex << cp << std::dec << "\n";
 		}
 		
 		cursorX += TEXT_WIDTH;

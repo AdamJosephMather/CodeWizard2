@@ -357,11 +357,8 @@ bool App::Init() {
 	
 	std::thread t(checkForUpdates);
 	t.detach();
-//	checkForUpdates();
 	
 	updateTransparency(settings->getValue("use_transparency", false));
-	
-	
 	
 	
 	
@@ -372,27 +369,13 @@ bool App::Init() {
 		starter.detach();
 	}
 	
-//	auto start = std::chrono::steady_clock::now();
-//	
-//	std::cout << "Loaded.\n\n";
-	
-//	std::cout << ModelXRunner::generate("<|start|>\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())<|start|>\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())<|start|>\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())<|start|>\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())<|start|>\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())<|start|>\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())<|start|>\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())\n\nfilename = 'input.txt'\n\nwith open(filename, 'r') as f:\n    print(f.read())", 20) << "\n\n";
-//	std::cout << ModelXRunner::generate("<|start|>\nfilename = 'input.txt'\n\nwith open(", 20) << "\n\n";
-//	std::cout << ModelXRunner::generate("<|start|>\ntext = 'Hello World!'\n\nprint(", 20) << "\n\n";
-//	std::cout << ModelXRunner::generate("<|start|>\nif __name__", 20) << "\n\n";
-	
-//	auto end = std::chrono::steady_clock::now();
-//	std::chrono::duration<double> elapsed_seconds = end - start;
-//	
-//	std::cout << "\n\nTime: " << elapsed_seconds.count() << "\n";
-	
 	return true;
 }
 
 void App::updateTransparency(bool transparent) {
 	// 1) Make sure window is NOT layered via glfwSetWindowOpacity.
 	//    Keep glfwSetWindowOpacity(window, 1.0f) and use your per-pixel alpha instead.
-
+	
 	HMODULE hUser = GetModuleHandleW(L"user32.dll");
 	if (!hUser) return;
 
@@ -2056,9 +2039,9 @@ icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, boo
 				conversionSucceeded = true;
 			}
 		}
-	
+		
 		ucsdet_close(detector);
-	
+		
 		// Fallback encodings
 		if (!conversionSucceeded) {
 			const char* fallbackEncodings[] = {

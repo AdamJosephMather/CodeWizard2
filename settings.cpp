@@ -262,6 +262,11 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"Chauffeur Temperature (0-1)",
 			"chauffeur_temp",
 			0.6f
+		),
+		makeBool(
+			"Chauffeur Use FIM (recommended)",
+			"use_fim",
+			true
 		)
 	};
 	

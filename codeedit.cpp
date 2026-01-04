@@ -354,7 +354,13 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 					prefix.toUTF8String(prefix_s);
 					suffix.toUTF8String(suffix_s);
 					
-					std::string insertion = ModelXRunner::generate(prefix_s, App::settings->getValue("chauffeur_max_continue", 6));
+					std::string insertion;
+					
+					if (App::settings->getValue("use_fim", true)) {
+						insertion = ModelXRunner::generate_fim(prefix_s, suffix_s, App::settings->getValue("chauffeur_max_continue", 6));
+					}else{
+						insertion = ModelXRunner::generate(prefix_s, App::settings->getValue("chauffeur_max_continue", 6));
+					}
 					
 					if (insertion == "") {
 						continue;

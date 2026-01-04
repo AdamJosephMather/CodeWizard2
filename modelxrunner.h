@@ -14,6 +14,7 @@ public:
 	// We only need one model instance, so use static storage.
 	static bool load();
 	static std::string generate(const std::string& input, int max_tokens);
+	static std::string generate_fim(const std::string& prefix, const std::string& suffix, int max_tokens);
 
 private:
 	// Mutex
@@ -27,6 +28,14 @@ private:
 	static constexpr const char* kEosTokenString = "<|end|>"; // change if your tokenizer uses a different EOS token
 	static constexpr bool kReturnOnlyNewText = true;          // if false, returns prompt + completion
 	static constexpr int  kMaxPromptTokens = 4096;            // safety cap
+	static constexpr int  kMaxPrefixTokens = 4096;            // safety cap
+	static constexpr int  kMaxSuffixTokens = 4096;            // safety cap
+	
+	static int32_t suffixTokenId;
+	static int32_t prefixTokenId;
+	static int32_t middleTokenId;
+	
+	
 	
 	// --- Loaded assets ---
 	static std::unique_ptr<torch::jit::Module> s_model;

@@ -18,6 +18,26 @@
 #include "text_renderer.h"
 
 #include <Windows.h>
+#include <delayimp.h>
+
+
+//static FARPROC WINAPI DelayHook(unsigned dliNotify, PDelayLoadInfo info) {
+//	if (dliNotify == dliNotePreLoadLibrary && info && info->szDll) {
+//		char buf[512];
+//		std::snprintf(buf, sizeof(buf), "DelayLoad: about to load DLL: %s\n", info->szDll);
+//		OutputDebugStringA(buf);
+//	}
+//	if (dliNotify == dliNotePreGetProcAddress && info && info->szDll) {
+//		char buf[512];
+//		const char* proc = (info->dlp.fImportByName && info->dlp.szProcName) ? info->dlp.szProcName : "(by ordinal)";
+//		std::snprintf(buf, sizeof(buf), "DelayLoad: resolving %s!%s\n", info->szDll, proc);
+//		OutputDebugStringA(buf);
+//	}
+//	return nullptr;
+//}
+//
+//// Tell the delay-load helper to call our hook:
+//extern "C" PfnDliHook __pfnDliNotifyHook2 = DelayHook;
 
 int main(int argc, char* argv[]) {
 	curl_global_init(CURL_GLOBAL_DEFAULT);

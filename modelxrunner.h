@@ -27,9 +27,9 @@ private:
 	static constexpr const char* kEosTokenString = "<|end|>"; // change if your tokenizer uses a different EOS token
 	static constexpr bool kReturnOnlyNewText = true;          // if false, returns prompt + completion
 	static constexpr int  kMaxPromptTokens = 4096;            // safety cap
-
+	
 	// --- Loaded assets ---
-	static inline torch::jit::script::Module s_model;
+	static std::unique_ptr<torch::jit::Module> s_model;
 	
 	static inline std::unique_ptr<tokenizers::Tokenizer> s_tokenizer;
 	static inline int32_t s_eos_id = -1;

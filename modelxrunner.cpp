@@ -12,6 +12,8 @@ bool ModelXRunner::loaded = false;
 bool ModelXRunner::loading = false;
 bool ModelXRunner::load_success = false;
 
+std::unique_ptr<torch::jit::Module> ModelXRunner::s_model = nullptr;
+
 static std::string load_file_text(const std::string& path) {
 	std::ifstream f(path, std::ios::binary);
 	if (!f) return "";
@@ -42,8 +44,8 @@ bool ModelXRunner::load() {
 		// Load TorchScript model
 //		torch::jit::load_library("modelx_ops.dll");
 		
-		s_model = torch::jit::load(model_path, torch::kCPU);
-		s_model.eval();
+		s_model = std::make_unique<torch::jit::Module>(torch::jit::load(model_path, torch::kCPU));
+		s_model->eval();
 
 		// Load tokenizer
 		auto blob = load_file_text(tokenizer_path);
@@ -149,7 +151,7 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 
 		if (App::chauffeur_call_id > call_id) return "";
 
-		auto pre_out = s_model.forward(pre_inputs).toTuple();
+		auto pre_out = s_model->forward(pre_inputs).toTuple();
 		// logits unused for prefill (it corresponds to last token of prefill)
 		states_list = pre_out->elements()[1];
 		token_cache = pre_out->elements()[2];
@@ -165,7 +167,7 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 
 	if (App::chauffeur_call_id > call_id) return "";
 
-	auto first_out = s_model.forward(first_inputs).toTuple();
+	auto first_out = s_model->forward(first_inputs).toTuple();
 
 	torch::Tensor logits = first_out->elements()[0].toTensor(); // (1, V)
 	states_list = first_out->elements()[1];
@@ -187,7 +189,7 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 		step_inputs.push_back(states_list);
 		step_inputs.push_back(token_cache);
 
-		auto step_out = s_model.forward(step_inputs).toTuple();
+		auto step_out = s_model->forward(step_inputs).toTuple();
 
 		torch::Tensor step_logits = step_out->elements()[0].toTensor(); // (1, V)
 		states_list = step_out->elements()[1];

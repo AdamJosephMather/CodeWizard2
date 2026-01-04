@@ -3,21 +3,21 @@ project(CodeWizard)
 
 # debug...
 
-# if(MSVC)
-# 		message(STATUS "Building with MSVC AddressSanitizer enabled")
-# 		set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")  # Remove DLL
-# 		add_compile_options(
-# 			/fsanitize=address
-# 			/Zi
-# 			/MT$<$<CONFIG:Debug>:d>  # Static runtime
-# 		)
-# 		add_link_options(
-# 			/fsanitize=address
-# 			/INCREMENTAL:NO
-# 			/DEBUG:FULL
-# 			/WHOLEARCHIVE:clang_rt.asan-x86_64.lib  # Static ASan lib
-# 		)
-# endif()
+if(MSVC)
+		message(STATUS "Building with MSVC AddressSanitizer enabled")
+		set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")  # Remove DLL
+		add_compile_options(
+			/fsanitize=address
+			/Zi
+			/MT$<$<CONFIG:Debug>:d>  # Static runtime
+		)
+		add_link_options(
+			/fsanitize=address
+			/INCREMENTAL:NO
+			/DEBUG:FULL
+			/WHOLEARCHIVE:clang_rt.asan-x86_64.lib  # Static ASan lib
+		)
+endif()
 
 
 set(CMAKE_CXX_STANDARD 17)
@@ -154,6 +154,14 @@ endif()
 
 message(STATUS "Torch_DIR=${Torch_DIR}")
 message(STATUS "TORCH_LIBRARIES=${TORCH_LIBRARIES}")
+
+
+if(MSVC AND WIN32)
+	target_link_libraries(${PROJECT_NAME} PRIVATE delayimp)
+	target_link_options(${PROJECT_NAME} PRIVATE
+		"/DELAYLOAD:torch_cpu.dll"
+	)
+endif()
 
 
 

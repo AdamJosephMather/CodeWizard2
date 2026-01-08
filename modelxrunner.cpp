@@ -3,7 +3,7 @@
 #include <iostream>
 #include <ATen/Parallel.h>
 #include "application.h"
-#include <chrono>
+//#include <chrono>
 #include <torch/torch.h>
 
 std::mutex ModelXRunner::genMutex;
@@ -15,6 +15,8 @@ bool ModelXRunner::load_success = false;
 int32_t ModelXRunner::suffixTokenId = 0;
 int32_t ModelXRunner::prefixTokenId = 0;
 int32_t ModelXRunner::middleTokenId = 0;
+int32_t ModelXRunner::prefixSmallTokenId = 0;
+int32_t ModelXRunner::suffixSmallTokenId = 0;
 	
 	
 
@@ -78,15 +80,18 @@ bool ModelXRunner::load() {
 		
 		s_eos_id = s_tokenizer->TokenToId(kEosTokenString);
 		
-		
 		suffixTokenId = s_tokenizer->TokenToId("<|suffix|>");
 		prefixTokenId = s_tokenizer->TokenToId("<|prefix|>");
 		middleTokenId = s_tokenizer->TokenToId("<|middle|>");
+		prefixSmallTokenId = s_tokenizer->TokenToId("<|prefix_small|>");
+		suffixSmallTokenId = s_tokenizer->TokenToId("<|suffix_small|>");
 		
-		if (suffixTokenId == -1 || prefixTokenId == -1 || middleTokenId == -1) {
+		if (suffixTokenId == -1 || prefixTokenId == -1 || middleTokenId == -1 || prefixSmallTokenId == -1 || suffixSmallTokenId == -1) {
 			suffixTokenId = 0;
 			prefixTokenId = 0;
 			middleTokenId = 0;
+			prefixSmallTokenId = 0;
+			suffixSmallTokenId = 0;
 		}
 		
 		load_success = true;
@@ -329,15 +334,11 @@ std::string ModelXRunner::generate_fim(const std::string& prefix, const std::str
 		prefix_ids_i32.resize(kMaxPrefixTokens);
 	}
 	
-	
-	
 	std::vector<int32_t> suffix_ids_i32 = s_tokenizer->Encode(suffix);
 	
 	if ((int)suffix_ids_i32.size() > kMaxSuffixTokens) {
 		suffix_ids_i32.resize(kMaxSuffixTokens);
 	}
-	
-	
 	
 	std::string must_start_with = "";
 	std::string must_start_with_text = "";
@@ -348,13 +349,30 @@ std::string ModelXRunner::generate_fim(const std::string& prefix, const std::str
 		prefix_ids_i32.pop_back();
 	}
 	
+	// Determine how many items to take (max 5)
+	size_t count = std::min<size_t>(suffix_ids_i32.size(), 5);
+	// Create a new vector using the range constructor
+	std::vector<int32_t> suffix_small_ids_i32(suffix_ids_i32.begin(), suffix_ids_i32.begin() + count);
+	
+	// Determine the starting point (no more than 5 from the end)
+	auto start_it = prefix_ids_i32.size() <= 5 ? 
+	                prefix_ids_i32.begin() : 
+	                prefix_ids_i32.end() - 5;
+	
+	// Create a new vector from that point to the end
+	std::vector<int32_t> prefix_small_ids_i32(start_it, prefix_ids_i32.end());
+	
 	
 	
 	std::vector<int32_t> all_ids = {};
-	all_ids.push_back(suffixTokenId);
-	all_ids.insert(all_ids.end(), suffix_ids_i32.begin(), suffix_ids_i32.end());
 	all_ids.push_back(prefixTokenId);
 	all_ids.insert(all_ids.end(), prefix_ids_i32.begin(), prefix_ids_i32.end());
+	all_ids.push_back(suffixTokenId);
+	all_ids.insert(all_ids.end(), suffix_ids_i32.begin(), suffix_ids_i32.end());
+	all_ids.push_back(prefixSmallTokenId);
+	all_ids.insert(all_ids.end(), prefix_small_ids_i32.begin(), prefix_small_ids_i32.end());
+	all_ids.push_back(suffixSmallTokenId);
+	all_ids.insert(all_ids.end(), suffix_small_ids_i32.begin(), suffix_small_ids_i32.end());
 	all_ids.push_back(middleTokenId);
 	
 	size_t start_size = all_ids.size();

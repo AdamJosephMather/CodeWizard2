@@ -34,6 +34,8 @@ private:
 	static int32_t suffixTokenId;
 	static int32_t prefixTokenId;
 	static int32_t middleTokenId;
+	static int32_t prefixSmallTokenId;
+	static int32_t suffixSmallTokenId;
 	
 	
 	

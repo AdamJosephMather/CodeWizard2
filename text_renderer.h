@@ -25,4 +25,6 @@ public:
 	// Helpers
 	static int get_text_width(int text_len);
 	static int get_text_height();
+	
+	static std::function<void()> after_font_change;
 };

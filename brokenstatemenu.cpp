@@ -9,7 +9,7 @@ BrokenStateMenu::BrokenStateMenu(Widget* parent, std::string firsttext, std::str
 	firstbutton = new Button(this, icu::UnicodeString::fromUTF8(firsttext), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
 		btn->t_x = t_x+t_w/2-w/2;
-		btn->t_y = t_y+50;
+		btn->t_y = t_y+TextRenderer::get_text_height()+App::text_padding*2;
 	},  [&](Button* btn){
 		// onclick
 		if (first_callback) {
@@ -22,7 +22,7 @@ BrokenStateMenu::BrokenStateMenu(Widget* parent, std::string firsttext, std::str
 	secondbutton = new Button(this, icu::UnicodeString::fromUTF8(secondtext), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
 		btn->t_x = t_x+t_w/2-w/2;
-		btn->t_y = firstbutton->t_y+firstbutton->t_h+20;
+		btn->t_y = firstbutton->t_y+firstbutton->t_h+App::text_padding;
 	},  [&](Button* btn){
 		// onclick
 		if (second_callback) {
@@ -40,7 +40,7 @@ void BrokenStateMenu::render() {
 	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.hover_background_color);
 	
 	auto txt = icu::UnicodeString::fromUTF8(Q);
-	TextRenderer::draw_text(t_x+t_w/2-TextRenderer::get_text_width(txt.length())/2, t_y+10, txt, App::theme.main_text_color);
+	TextRenderer::draw_text(t_x+t_w/2-TextRenderer::get_text_width(txt.length())/2, t_y+App::text_padding, txt, App::theme.main_text_color);
 	
 	Widget::render();
 }

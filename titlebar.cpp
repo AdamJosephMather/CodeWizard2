@@ -44,7 +44,7 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 }
 
 void TitleBar::position(int x, int y, int width, int height) {
-	t_w = width;
+	t_w = width+App::text_padding*2; // we position root element inset slightly. Because it looks f****** amazing.
 	t_h = children[0]->t_h+1;
 	
 	Widget::position(0, 0, t_w, t_h);

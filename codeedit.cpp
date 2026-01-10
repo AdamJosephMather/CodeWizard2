@@ -105,44 +105,44 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	find_menu_open = false;
 	
 	allButton = new Button(nullptr, icu::UnicodeString("All"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
-		b->t_x = t_x+t_w-5-tw;
-		b->t_y = t_y+t_h-replaceTextEdit->t_h-5;
+		b->t_x = t_x+t_w-App::text_padding-tw;
+		b->t_y = t_y+t_h-replaceTextEdit->t_h-App::text_padding;
 	}, [&](Button* b){
 		replaceAll(findTextEdit->getFullText(), replaceTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
 	allButton->rounded = true;
 	
 	nextReplButton = new Button(nullptr, icu::UnicodeString::fromUTF8("-→"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
-		b->t_x = allButton->t_x-5-tw;
-		b->t_y = t_y+t_h-replaceTextEdit->t_h-5;
+		b->t_x = allButton->t_x-App::text_padding-tw;
+		b->t_y = t_y+t_h-replaceTextEdit->t_h-App::text_padding;
 	}, [&](Button* b){
 		activateReplace(true, findTextEdit->getFullText(), replaceTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
 	nextReplButton->rounded = true;
 	
 	nextButton = new Button(nullptr, icu::UnicodeString::fromUTF8("-→"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
-		b->t_x = t_x+t_w-5-tw;
-		b->t_y = t_y+t_h-replaceTextEdit->t_h-findTextEdit->t_h-10;		
+		b->t_x = t_x+t_w-App::text_padding-tw;
+		b->t_y = t_y+t_h-replaceTextEdit->t_h-findTextEdit->t_h-App::text_padding*2;
 	}, [&](Button* b){
 		activateFind(true, findTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
 	nextButton->rounded = true;
 	
 	prevButton = new Button(nullptr, icu::UnicodeString::fromUTF8("←-"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
-		b->t_x = nextButton->t_x-5-tw;
-		b->t_y = t_y+t_h-replaceTextEdit->t_h-findTextEdit->t_h-10;
+		b->t_x = nextButton->t_x-App::text_padding-tw;
+		b->t_y = t_y+t_h-replaceTextEdit->t_h-findTextEdit->t_h-App::text_padding*2;
 	}, [&](Button* b){
 		activateFind(false, findTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
 	prevButton->rounded = true;
 	
 	replaceTextEdit = new TextEdit(nullptr, [&](Widget* t){
-		int h = TextRenderer::get_text_height()*std::min((int)replaceTextEdit->lines.size(), 3)+10;
+		int h = TextRenderer::get_text_height()*std::min((int)replaceTextEdit->lines.size(), 3)+App::text_padding*2;
 		
-		replaceTextEdit->t_x = t_x+5;
-		replaceTextEdit->t_w = (nextReplButton->t_x - replaceTextEdit->t_x)-5;
+		replaceTextEdit->t_x = t_x+App::text_padding;
+		replaceTextEdit->t_w = (nextReplButton->t_x - replaceTextEdit->t_x)-App::text_padding;
 		replaceTextEdit->t_h = h;
-		replaceTextEdit->t_y = t_y+t_h-h-5;
+		replaceTextEdit->t_y = t_y+t_h-h-App::text_padding;
 		
 		allButton->t_h = h;
 		allButton->t_y = replaceTextEdit->t_y;
@@ -152,12 +152,12 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	replaceTextEdit->rounded = true;
 	
 	findTextEdit = new TextEdit(nullptr, [&](Widget* t){
-		int h = TextRenderer::get_text_height()*std::min((int)findTextEdit->lines.size(), 3)+10;
+		int h = TextRenderer::get_text_height()*std::min((int)findTextEdit->lines.size(), 3)+App::text_padding*2;
 		
-		findTextEdit->t_x = t_x+5;
+		findTextEdit->t_x = t_x+App::text_padding;
 		findTextEdit->t_h = h;
-		findTextEdit->t_w = (prevButton->t_x - findTextEdit->t_x)-10-findTextEdit->t_h; // the space of the bar, and the width of the checkbox, and the padding for each
-		findTextEdit->t_y = t_y+t_h-replaceTextEdit->t_h-h-10;
+		findTextEdit->t_w = (prevButton->t_x - findTextEdit->t_x)-App::text_padding*2-findTextEdit->t_h; // the space of the bar, and the width of the checkbox, and the padding for each
+		findTextEdit->t_y = t_y+t_h-replaceTextEdit->t_h-h-App::text_padding*2;
 		
 		nextButton->t_h = h;
 		nextButton->t_y = findTextEdit->t_y;
@@ -169,7 +169,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	caseSensitivity = new CheckBox(nullptr, [&](CheckBox* c, int,int,int,int){
 		c->t_h = findTextEdit->t_h;
 		c->t_w = c->t_h;
-		c->t_x = findTextEdit->t_w + findTextEdit->t_x + 5;
+		c->t_x = findTextEdit->t_w + findTextEdit->t_x + App::text_padding;
 		c->t_y = findTextEdit->t_y;
 	}, nullptr);
 	caseSensitivity->rounded = true;
@@ -189,7 +189,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		textedit->t_y = t_y;
 		textedit->t_w = t_w-line_numbers->t_w;
 		if (find_menu_open) {
-			textedit->t_h = findTextEdit->t_y - t_y - 5;
+			textedit->t_h = findTextEdit->t_y - t_y - App::text_padding;
 		}else{
 			textedit->t_h = t_h;
 		}
@@ -223,8 +223,8 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	});
 	
 	showErrorsButton = new Button(nullptr, icu::UnicodeString("Show/Hide Errors"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
-		b->t_x = textedit->t_x+textedit->t_w-10-tw;
-		b->t_y = textedit->t_y+textedit->t_h-10-th;
+		b->t_x = textedit->t_x+textedit->t_w-App::text_padding*2-tw;
+		b->t_y = textedit->t_y+textedit->t_h-App::text_padding*2-th;
 	}, [&](Button* b){
 		showhideerrors();
 	});
@@ -234,8 +234,8 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	errorMenu = new ListBox(this, [&](Widget* w){
 		w->t_w = textedit->t_w/3; // height is set by the listbox
 		
-		w->t_x = textedit->t_x+textedit->t_w-w->t_w-10;
-		w->t_y = showErrorsButton->t_y-w->t_h-10;
+		w->t_x = textedit->t_x+textedit->t_w-w->t_w-App::text_padding*2;
+		w->t_y = showErrorsButton->t_y-w->t_h-App::text_padding*2;
 	});
 	errorMenu->rounded = true;
 	errorMenu->is_visible_layered = false;
@@ -248,9 +248,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	textedit->highlighter = nullptr;
 	textedit->getblankhighlighting = nullptr;
 	textedit->highlighterNotEqual = nullptr;
-//	textedit->ontextchange = [&](Widget* w){
-//		onTextChanged(w);
-//	};
+
 	textedit->onlinechange = [&](EditType typ, int lineindex){
 		madeChangeBetweenSaves = true;
 		
@@ -1193,7 +1191,12 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 	
 	if (parent == App::activeEditor) {
 		if (action == GLFW_PRESS && timeuntilchauffeur != App::settings->getValue("chauffeur_time", 1000)) {
-			timeuntilchauffeur = App::settings->getValue("chauffeur_time", 1000);
+			if (key == GLFW_KEY_ESCAPE) {
+				timeuntilchauffeur = 0;
+			}else{
+				timeuntilchauffeur = App::settings->getValue("chauffeur_time", 1000);
+			}
+			
 		}
 		
 		if (key == GLFW_KEY_F5 && is_press && language != "" && file) {

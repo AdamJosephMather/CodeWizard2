@@ -7,6 +7,8 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+std::function<void()> TextRenderer::after_font_change = nullptr;
+
 struct PackedChar {
 	unsigned short x0, y0, x1, y1; // bounding box in atlas
 	float xoff, yoff, xadvance;    // layout metrics (PX)
@@ -244,7 +246,11 @@ bool TextRenderer::init_font(const char* fontPath) {
 	int descent_px = static_cast<int>(m.descender >> 6);
 	int line_gap_px = static_cast<int>((m.height - (m.ascender - m.descender)) >> 6);
 	TEXT_HEIGHT = ascent_px - descent_px + line_gap_px;
-
+	
+	if (after_font_change) {
+		after_font_change();
+	}
+	
 	return true;
 }
 

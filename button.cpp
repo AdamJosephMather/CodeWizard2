@@ -20,10 +20,10 @@ Button::Button(Widget *parent, icu::UnicodeString text, Positioner positioner, O
 void Button::position(int x, int y, int width, int height) {
 	if (window_button) {
 		t_w = TextRenderer::get_text_height() * 2.5;
-		t_h = TextRenderer::get_text_height() + 10;
+		t_h = TextRenderer::get_text_height() + App::text_padding*2;
 	}else{
-		t_w = TextRenderer::get_text_width(BUTTON_LABEL.length()) + padding_button*2;
-		t_h = TextRenderer::get_text_height() + padding_button*2;
+		t_w = TextRenderer::get_text_width(BUTTON_LABEL.length()) + App::text_padding*2;
+		t_h = TextRenderer::get_text_height() + App::text_padding*2;
 	}
 	
 	if (hovered) {

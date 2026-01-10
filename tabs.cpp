@@ -88,7 +88,7 @@ void Tabs::render() {
 	
 	for (int indx = 0; indx < tabs_list.size(); indx ++) {
 		auto info = tabs_list[indx];
-		int tab_width = TextRenderer::get_text_width(info.title.length()) + 10;
+		int tab_width = TextRenderer::get_text_width(info.title.length()) + App::text_padding*2;
 		int newx = curx + tab_width;
 		
 		auto lc = tagloc();
@@ -141,12 +141,12 @@ void Tabs::render() {
 				App::DrawBorder(lc.start, t_y, tab_width+addextra, tabheight, App::theme.border);
 			}
 			
-			TextRenderer::draw_text(lc.start+5, t_y+text_height, info.title, App::theme.main_text_color);
+			TextRenderer::draw_text(lc.start+App::text_padding, t_y+text_height, info.title, App::theme.main_text_color);
 		}
 		
 		tab_screen_loc.push_back(lc);
 		
-		curx = newx+5;
+		curx = newx+App::text_padding;
 		
 		if (has_close_button) {
 			curx += end_len;
@@ -184,7 +184,7 @@ void Tabs::render() {
 		screen_add_x = add_loc;
 		screen_add_y = add_loc+end_len; // WHAT THE FUCK. SCREEN ADD Y?? THAT'S AN X COORD DUMBASS
 		
-		curx += end_len+5;
+		curx += end_len+App::text_padding;
 	}
 	
 	int full_width = curx;

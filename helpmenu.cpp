@@ -188,6 +188,7 @@ void HelpMenu::setToIndex(int index) {
 }
 
 void HelpMenu::render() {
+	App::DrawRect(t_x, t_y+closebutton->t_h-App::text_padding, t_w, App::text_padding, App::theme.main_background_color); // this fixes the corners on the bottom to be flat. In a kinda dumb way, but it will work. Probably
 	App::DrawRoundedRect(t_x, t_y, t_w, closebutton->t_h, App::text_padding, App::theme.main_background_color);
 	App::DrawRoundedRect(t_x, t_y+closebutton->t_h, t_w, t_h-closebutton->t_h, App::text_padding, App::theme.darker_background_color);
 	

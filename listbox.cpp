@@ -10,7 +10,7 @@ ListBox::ListBox(Widget* parent, App::PosFunction pf) : Widget(parent) {
 void ListBox::fillElementalPositions() {	
 	elementalPositions.clear();
 	
-	int th = TextRenderer::get_text_height()+10;
+	int th = TextRenderer::get_text_height()+App::text_padding*2;
 	
 	int maxlen = floor(t_w/TextRenderer::get_text_width(1));
 	int y = t_y;
@@ -34,7 +34,7 @@ void ListBox::render() {
 		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
 	}
 	
-	int th = TextRenderer::get_text_height()+10;
+	int th = TextRenderer::get_text_height()+App::text_padding*2;
 	
 	int maxlen = floor(t_w/TextRenderer::get_text_width(1));
 	int y = t_y;
@@ -50,7 +50,7 @@ void ListBox::render() {
 		
 		elementalPositions.push_back({t_x, y, t_w, th, indx});
 		
-		TextRenderer::draw_text(t_x+5, y+5, elements[indx].tempSubStringBetween(0, maxlen), App::theme.main_text_color);
+		TextRenderer::draw_text(t_x+App::text_padding, y+App::text_padding, elements[indx].tempSubStringBetween(0, maxlen), App::theme.main_text_color);
 		y += th;
 	}
 	
@@ -102,7 +102,7 @@ void ListBox::position(int x, int y, int w, int h) {
 	t_x = x;
 	t_y = y;
 	t_w = w;
-	t_h = (TextRenderer::get_text_height()+10)*toshow;
+	t_h = (TextRenderer::get_text_height()+App::text_padding*2)*toshow;
 	
 	pFunc(this);
 	

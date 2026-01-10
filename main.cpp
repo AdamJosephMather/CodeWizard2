@@ -151,7 +151,7 @@ int main(int argc, char* argv[]) {
 	ListBox* commandBox = new ListBox(nullptr, [&](Widget* w){
 		w->t_x = commandPalette->t_x; 
 		w->t_w = commandPalette->t_w;
-		w->t_y = commandPalette->t_y+5+commandPalette->t_h;
+		w->t_y = commandPalette->t_y+App::text_padding+commandPalette->t_h;
 	});
 	commandBox->rounded = true;
 	commandBox->is_visible_layered = true;

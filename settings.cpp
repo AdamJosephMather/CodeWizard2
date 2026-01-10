@@ -329,12 +329,12 @@ void Settings::handleChildren() {
 				TextEdit* prior = elements_to_edit[before];
 				y = prior->t_y+prior->t_h; // all that just to get the y location... maybe there's a problem with my system. Oh well, it's too late now y'all
 			}else{
-				y = t_y+TextRenderer::get_text_height()+20-scrolled_to;
+				y = t_y+TextRenderer::get_text_height()+App::text_padding*4-scrolled_to;
 			}
 			
-			t->t_y = y+TextRenderer::get_text_height()+5;
-			t->t_h = TextRenderer::get_text_height()+10;
-			t->t_x = t_x+10;
+			t->t_y = y+TextRenderer::get_text_height()+App::text_padding;
+			t->t_h = TextRenderer::get_text_height()+App::text_padding*2;
+			t->t_x = t_x+App::text_padding*2;
 			t->t_w = TextRenderer::get_text_width(40);
 			
 			max_scroll = fmax(0, (t->t_y+t->t_h+scrolled_to)-(t_h-tab_bar->t_h)-(t->t_h)*2);
@@ -377,8 +377,8 @@ void Settings::render() {
 	
 	App::runWithSKIZ(t_x, tab_bar->t_y+tab_bar->t_h, t_w, t_h-tab_bar->t_h, [&](){
 		for (auto it : elements_to_edit) {
-			int y = it.second->t_y-TextRenderer::get_text_height()-5;
-			int x = t_x+10;
+			int y = it.second->t_y-TextRenderer::get_text_height()-App::text_padding;
+			int x = t_x+App::text_padding*2;
 			icu::UnicodeString text = icu::UnicodeString::fromUTF8(it.first->name);
 			
 			TextRenderer::draw_text(x, y, text, App::theme.main_text_color);

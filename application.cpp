@@ -42,7 +42,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 2;
-int App::patch_version = 0;
+int App::patch_version = 1;
 
 
 
@@ -95,7 +95,6 @@ std::string App::WINDOW_TITLE = "CodeWizard2 V";
 
 int App::mouseX = 0;
 int App::mouseY = 0;
-//double _PI = 3.14159265358979323846;
 double SQRT_2;
 
 bool (*App::on_key_event)(int key, int scancode, int action, int mods) = nullptr;
@@ -135,7 +134,7 @@ int App::frameCount = 0;
 
 std::atomic<bool> App::running = true;
 bool App::rerender = true;
-int App::time_till_regular = 5;
+int App::time_till_regular = 40;
 bool App::forceWaitTime = false;
 double App::lastUpdate = 0;
 
@@ -278,7 +277,11 @@ bool App::Init() {
 	int y = settings->getValue("window_y", screenHeight / 2 - WINDOW_HEIGHT / 2);
 	
 	glfwSetWindowPos(window, x, y);
-		
+	
+	TextRenderer::after_font_change = [&](){
+		text_padding = std::min(TextRenderer::get_text_width(1), TextRenderer::get_text_height()) * 0.5;
+	};
+	
 	TextRenderer::set_font_size(settings->getValue("font_size", 23.0f));
 	std::string default_font_path = getExecutableDir()+"\\cascadia\\CascadiaCode-Regular.ttf";
 	std::string font_path = settings->getValue("font_path", default_font_path);
@@ -770,7 +773,7 @@ void App::DoFullRenderWithoutInput() {
 	expectedCursorType = -1; // must be reset every position call
 	std::lock_guard<std::mutex> lock(canMakeChanges); // this prevents separate threads (the lsp clients) from messing with shit while positioning/rendering
 	if (rootelement) {
-		rootelement->position(0, tb->t_h, WINDOW_WIDTH, WINDOW_HEIGHT-tb->t_h);
+		rootelement->position(text_padding, tb->t_h+text_padding, WINDOW_WIDTH-text_padding*2, WINDOW_HEIGHT-tb->t_h-text_padding*2);
 		toastBox->position(0, tb->t_h, WINDOW_WIDTH, WINDOW_HEIGHT-tb->t_h);
 	}
 	

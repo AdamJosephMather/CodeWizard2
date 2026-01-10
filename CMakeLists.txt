@@ -3,21 +3,27 @@ project(CodeWizard)
 
 # debug...
 
-# if(MSVC)
-# 		message(STATUS "Building with MSVC AddressSanitizer enabled")
-# 		set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")  # Remove DLL
-# 		add_compile_options(
-# 			/fsanitize=address
-# 			/Zi
-# 			/MT$<$<CONFIG:Debug>:d>  # Static runtime
-# 		)
-# 		add_link_options(
-# 			/fsanitize=address
-# 			/INCREMENTAL:NO
-# 			/DEBUG:FULL
-# 			/WHOLEARCHIVE:clang_rt.asan-x86_64.lib  # Static ASan lib
-# 		)
+# if (MSVC)
+# 	message(STATUS "Building with MSVC AddressSanitizer enabled")
+# 
+# 	# Let CMake pick the correct /MDd or /MD (recommended for ASan on MSVC)
+# 	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL$<$<CONFIG:Debug>:Debug>")
+# 
+# 	add_compile_options(
+# 		/fsanitize=address
+# 		/Zi
+# 	)
+# 
+# 	add_link_options(
+# 		/fsanitize=address
+# 		/INCREMENTAL:NO
+# 		/DEBUG:FULL
+# 		# REMOVE this line:
+# 		# /WHOLEARCHIVE:clang_rt.asan-x86_64.lib
+# 	)
 # endif()
+
+
 
 
 set(CMAKE_CXX_STANDARD 17)

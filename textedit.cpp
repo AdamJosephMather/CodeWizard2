@@ -2146,18 +2146,24 @@ bool TextEdit::on_mouse_button_event(int button, int action, int mods) {
 bool TextEdit::on_mouse_move_event() {
 	int mx = App::mouseX;
 	int my = App::mouseY;
-
+	 
 	if (is_selecting_text_with_mouse) {
-		Cursor crsr = getCursorForMousePosition(mx, my);
-		Cursor cur = cursors[0];
+		int state = glfwGetMouseButton(App::window, GLFW_MOUSE_BUTTON_LEFT);
 
-		cur.head_char = crsr.head_char; // because this is drag, we don't need to move the anchor
-		cur.head_line = crsr.head_line;
-		cur.preffered_collumn = crsr.preffered_collumn;
-
-		cursors = { cur };
-
-		tryingToEnsureCursorPos = true;
+		if (state == GLFW_RELEASE) {
+			is_selecting_text_with_mouse = false;
+		}else{
+			Cursor crsr = getCursorForMousePosition(mx, my);
+			Cursor cur = cursors[0];
+	
+			cur.head_char = crsr.head_char; // because this is drag, we don't need to move the anchor
+			cur.head_line = crsr.head_line;
+			cur.preffered_collumn = crsr.preffered_collumn;
+	
+			cursors = { cur };
+	
+			tryingToEnsureCursorPos = true;
+		}
 	}
 	
 	return Widget::on_mouse_move_event();

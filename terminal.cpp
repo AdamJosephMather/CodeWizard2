@@ -344,11 +344,15 @@ void Terminal::dumpRow(int r) {
 
 OurCell Terminal::getCell(int row, int col) {
 	std::lock_guard<std::mutex> lock(m_vtermMutex);
-
-	if (row < 0 || col < 0 || row >= m_rows || col >= m_cols) {
-		return { (UChar32)U'?' };
+	
+	if (!m_screen || !m_vt || !m_screenReady.load(std::memory_order_acquire)) {
+		return { (UChar32)U' ', 0, 0, 0, 255, 255, 255 };
 	}
-
+	
+	if (row < 0 || col < 0 || row >= m_rows || col >= m_cols) {
+		return { (UChar32)U' ' , 0,0,0, 255,255,255 };
+	}
+	
 	// If scrolled back, draw from scrollback for the top part
 	int from_sb = std::min(m_view_off, static_cast<int>(m_scrollback.size()));
 	if (from_sb > 0 && row < from_sb) {

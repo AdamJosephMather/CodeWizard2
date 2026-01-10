@@ -24,11 +24,15 @@ TerminalWidgetTabbed::TerminalWidgetTabbed(Widget* parent)  : Widget(parent) {
 		std::lock_guard<std::mutex> lock(App::canMakeChanges);
 		
 		auto it = terminals.find(info.id);
+		
 		if (it != terminals.end()) {
-			it->second->request_close([&](Widget* w){ // wait for it to delete itself
+			auto todel = it->second;
+			
+			todel->request_close([&](Widget* w){ // wait for it to delete itself
 				App::RemoveWidgetFromParent(w);
-				delete it->second;
-				terminals.erase(it->first);
+				
+				terminals.erase(info.id);
+				delete todel;
 			});
 		}
 	};

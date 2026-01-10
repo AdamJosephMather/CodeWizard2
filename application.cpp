@@ -773,7 +773,7 @@ void App::DoFullRenderWithoutInput() {
 	expectedCursorType = -1; // must be reset every position call
 	std::lock_guard<std::mutex> lock(canMakeChanges); // this prevents separate threads (the lsp clients) from messing with shit while positioning/rendering
 	if (rootelement) {
-		rootelement->position(text_padding, tb->t_h+text_padding, WINDOW_WIDTH-text_padding*2, WINDOW_HEIGHT-tb->t_h-text_padding*2);
+		rootelement->position(text_padding, tb->t_h, WINDOW_WIDTH-text_padding*2, WINDOW_HEIGHT-tb->t_h-text_padding);
 		toastBox->position(0, tb->t_h, WINDOW_WIDTH, WINDOW_HEIGHT-tb->t_h);
 	}
 	

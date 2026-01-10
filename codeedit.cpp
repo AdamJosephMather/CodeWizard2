@@ -1191,12 +1191,12 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 	
 	if (parent == App::activeEditor) {
 		if (is_press && timeuntilchauffeur != App::settings->getValue("chauffeur_time", 1000)) {
-			if (key == GLFW_KEY_ESCAPE) {
+			if (key == GLFW_KEY_ESCAPE || timeuntilchauffeur <= 0) {
 				timeuntilchauffeur = 0;
 			}else{
 				timeuntilchauffeur = App::settings->getValue("chauffeur_time", 1000);
 			}
-			
+		
 		}
 		
 		if (key == GLFW_KEY_F5 && is_press && language != "" && file) {

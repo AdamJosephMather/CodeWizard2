@@ -342,12 +342,11 @@ std::string ModelXRunner::generate_fim(const std::string& prefix, const std::str
 		prefix_ids_i32.pop_back();
 	}
 	
-	
 	std::vector<int32_t> all_ids = {};
-	all_ids.push_back(prefixTokenId);
-	all_ids.insert(all_ids.end(), prefix_ids_i32.begin(), prefix_ids_i32.end());
 	all_ids.push_back(suffixTokenId);
 	all_ids.insert(all_ids.end(), suffix_ids_i32.begin(), suffix_ids_i32.end());
+	all_ids.push_back(prefixTokenId);
+	all_ids.insert(all_ids.end(), prefix_ids_i32.begin(), prefix_ids_i32.end());
 	all_ids.push_back(middleTokenId);
 	
 	size_t start_size = all_ids.size();

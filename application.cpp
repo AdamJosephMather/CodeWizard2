@@ -1238,6 +1238,44 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		}
 		
 		return;
+	}else if (action == GLFW_PRESS && key == GLFW_KEY_EQUAL && control) {
+		float new_v = App::settings->getValue("font_size", 23.0f) + 1;
+		
+		if (new_v > 50) {
+			new_v = 50;
+		}
+		
+		settings->setValue("font_size", new_v);
+		
+		TextRenderer::set_font_size(new_v);
+		std::string default_font_path = getExecutableDir()+"\\cascadia\\CascadiaCode-Regular.ttf";
+		std::string font_path = App::settings->getValue("font_path", default_font_path);
+		bool success = TextRenderer::init_font(font_path.c_str());
+		
+		if (!success) {
+			TextRenderer::init_font(default_font_path.c_str());
+		}
+		
+		displayText(icu::UnicodeString::fromUTF8(std::to_string(new_v)));
+	}else if (action == GLFW_PRESS && key == GLFW_KEY_MINUS && control) {
+		float new_v = App::settings->getValue("font_size", 23.0f) - 1;
+		
+		if (new_v < 8) {
+			new_v = 8;
+		}
+		
+		settings->setValue("font_size", new_v);
+		
+		TextRenderer::set_font_size(new_v);
+		std::string default_font_path = getExecutableDir()+"\\cascadia\\CascadiaCode-Regular.ttf";
+		std::string font_path = App::settings->getValue("font_path", default_font_path);
+		bool success = TextRenderer::init_font(font_path.c_str());
+		
+		if (!success) {
+			TextRenderer::init_font(default_font_path.c_str());
+		}
+		
+		displayText(icu::UnicodeString::fromUTF8(std::to_string(new_v)));
 	}
 	
 	if ((action == GLFW_PRESS || action == GLFW_REPEAT) && activeLeafNode == commandPalette) {

@@ -529,7 +529,7 @@ void Settings::position(int x, int y, int w, int h) {
 
 bool Settings::validate_input(SettingsFloat* el) {
 	if (el->key_name == "font_size") {
-		if (el->value < 8 || el->value > 40) {
+		if (el->value < 8 || el->value > 50) {
 			el->value = el->default_value;
 			return false;
 		}

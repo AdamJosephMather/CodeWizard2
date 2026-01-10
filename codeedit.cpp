@@ -1190,7 +1190,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 	Cursor svdCrsr = textedit->cursors[0];
 	
 	if (parent == App::activeEditor) {
-		if (action == GLFW_PRESS && timeuntilchauffeur != App::settings->getValue("chauffeur_time", 1000)) {
+		if (is_press && timeuntilchauffeur != App::settings->getValue("chauffeur_time", 1000)) {
 			if (key == GLFW_KEY_ESCAPE) {
 				timeuntilchauffeur = 0;
 			}else{

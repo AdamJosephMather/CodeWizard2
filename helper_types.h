@@ -450,6 +450,8 @@ static std::pair<bool, double> calcExpression(icu::UnicodeString expression) { /
 			openedBrackets += 1;
 			if (openedBrackets == 1) {
 				subExpression = icu::UnicodeString();
+			}else{
+				subExpression.append(c);
 			}
 		}else if (c == U')') {
 			openedBrackets -= 1;
@@ -460,6 +462,8 @@ static std::pair<bool, double> calcExpression(icu::UnicodeString expression) { /
 				if (!isValid) return {false, 0.0};
 
 				newExpression += doubleToUnicodeString(result);
+			}else{
+				subExpression.append(c);
 			}
 		}else if (openedBrackets != 0) {
 			subExpression.append(c);

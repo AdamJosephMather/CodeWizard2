@@ -10,7 +10,7 @@
 #include "helper_types.h"
 #include <vector>
 #include "panel_holder.h"
-#include "modelxrunner.h"
+//#include "modelxrunner.h"
 #include "terminalwidget.h"
 #include "text_renderer.h"
 #include <cmath>
@@ -46,6 +46,8 @@ int App::patch_version = 1;
 
 
 
+float M_PI = 3.141592653589793238;
+
 HWND App::window_handle = nullptr;
 
 bool App::darkmode = true;
@@ -65,7 +67,7 @@ int App::rep_count = 0;
 int App::current_step = 0;
 std::vector<std::vector<KeyboardEvent>> App::keyboard_events = {{}};
 
-int App::chauffeur_call_id = 0;
+//int App::chauffeur_call_id = 0;
 
 bool App::REQUESTING_STRING = false;
 App::StringGivenFunc App::ON_STRING_GIVEN = nullptr;
@@ -365,12 +367,12 @@ bool App::Init() {
 	
 	
 	
-	if (settings->getValue("use_chauffeur", false)) {
-		std::thread starter([&](){
-			ModelXRunner::load();
-		});
-		starter.detach();
-	}
+	// if (settings->getValue("use_chauffeur", false)) {
+	// 	std::thread starter([&](){
+	// 		ModelXRunner::load();
+	// 	});
+	// 	starter.detach();
+	// }
 	
 	return true;
 }

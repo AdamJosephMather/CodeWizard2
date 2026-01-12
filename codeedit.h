@@ -49,7 +49,7 @@ public:
 	App::UpdateFInfoFunction FUPDATER = nullptr;
 	
 	int timeuntil = -1;
-	int timeuntilchauffeur = -1;
+//	int timeuntilchauffeur = -1;
 	
 	TextEdit* textedit;
 	LineNumbers* line_numbers;
@@ -57,7 +57,7 @@ public:
 	Highlighter* highlighter = nullptr;
 	
 	std::thread hoverthread;
-	std::thread chauffeurthread;
+//	std::thread chauffeurthread;
 	
 	static int indentIdentifierAfterLine(icu::UnicodeString line, icu::UnicodeString nextline);
 	
@@ -76,7 +76,7 @@ public:
 	std::vector<int> errorlines = {};
 	ListBox* completionbox;
 	bool are_code_actions = false;
-	bool is_chauffeur = false;
+//	bool is_chauffeur = false;
 	std::vector<json> code_actions = {};
 	ListBox* errorMenu;
 	std::filesystem::file_time_type last_file_mod_time = {};

@@ -178,7 +178,7 @@ public:
 	static int text_padding;
 	static int border_width;
 	
-	static int chauffeur_call_id;
+//	static int chauffeur_call_id;
 	
 	static Widget* rootelement;
 	static int WINDOW_WIDTH;

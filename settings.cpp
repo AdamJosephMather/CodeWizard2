@@ -222,52 +222,52 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"AI Provider Supports Non-Chat Completions",
 			"use_non_chat_completions",
 			true
-		),
-		makeBool(
-			"Use Chauffeur",
-			"use_chauffeur",
-			false
-		),
-		makeString(
-			"Chauffeur Model Path (Restart CW)",
-			"chauffeur_model_path",
-			""
-		),
-		makeString(
-			"Chauffeur Tokenizer Path (Restart CW)",
-			"chauffeur_tokenizer_path",
-			""
-		),
-		makeInt(
-			"Chauffeur Prefix Lines",
-			"chauffeur_prefix_lines",
-			10
-		),
-		makeInt(
-			"Chauffeur Suffix Lines",
-			"chauffeur_suffix_lines",
-			7
-		),
-		makeInt(
-			"Chauffeur Max Continue",
-			"chauffeur_max_continue",
-			6
-		),
-		makeInt(
-			"Chauffeur Wait Time (ms)",
-			"chauffeur_time",
-			1000
-		),
-		makeFloat(
-			"Chauffeur Temperature (0-1)",
-			"chauffeur_temp",
-			0.6f
-		),
-		makeBool(
-			"Chauffeur Use FIM (recommended)",
-			"use_fim",
-			true
 		)
+//		makeBool(
+//			"Use Chauffeur",
+//			"use_chauffeur",
+//			false
+//		),
+//		makeString(
+//			"Chauffeur Model Path (Restart CW)",
+//			"chauffeur_model_path",
+//			""
+//		),
+//		makeString(
+//			"Chauffeur Tokenizer Path (Restart CW)",
+//			"chauffeur_tokenizer_path",
+//			""
+//		),
+//		makeInt(
+//			"Chauffeur Prefix Lines",
+//			"chauffeur_prefix_lines",
+//			10
+//		),
+//		makeInt(
+//			"Chauffeur Suffix Lines",
+//			"chauffeur_suffix_lines",
+//			7
+//		),
+//		makeInt(
+//			"Chauffeur Max Continue",
+//			"chauffeur_max_continue",
+//			6
+//		),
+//		makeInt(
+//			"Chauffeur Wait Time (ms)",
+//			"chauffeur_time",
+//			1000
+//		),
+//		makeFloat(
+//			"Chauffeur Temperature (0-1)",
+//			"chauffeur_temp",
+//			0.6f
+//		),
+//		makeBool(
+//			"Chauffeur Use FIM (recommended)",
+//			"use_fim",
+//			true
+//		)
 	};
 	
 	settings_menus[2] = {

@@ -11,7 +11,7 @@
 #include <unicode/stringoptions.h>
 #include "editor.h"
 #include "curler.h"
-#include "modelxrunner.h"
+//#include "modelxrunner.h"
 
 std::set<UChar32> whitespace_before_comment = {U'\t', U' '};
 
@@ -319,64 +319,64 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		}
 	});
 	
-	chauffeurthread = std::thread([&]() {
-		while (true){
-			if (closing) {
-				return;
-			}
-			
-			if (timeuntilchauffeur <= 0) {
-				std::this_thread::sleep_for(std::chrono::milliseconds(50));
-			}else{
-				timeuntilchauffeur -= 20;
-				if (timeuntilchauffeur <= 0) {
-					
-					Cursor prefix_c = textedit->cursors[0];
-					Cursor suffix_c = textedit->cursors[0];
-					
-					prefix_c.anchor_line -= App::settings->getValue("chauffeur_prefix_lines", 10);
-					prefix_c.anchor_char = 0;
-					suffix_c.anchor_line += App::settings->getValue("chauffeur_suffix_lines", 7);
-					
-					prefix_c.anchor_line = std::max(0, prefix_c.anchor_line);
-					suffix_c.anchor_line = std::min((int)textedit->lines.size()-1, suffix_c.anchor_line);
-					
-					suffix_c.anchor_char = textedit->lines[suffix_c.anchor_line].line_text.length();
-					
-					std::string prefix_s;
-					std::string suffix_s;
-					
-					icu::UnicodeString prefix = textedit->getSelectedText(prefix_c);
-					icu::UnicodeString suffix = textedit->getSelectedText(suffix_c);
-					
-					prefix.toUTF8String(prefix_s);
-					suffix.toUTF8String(suffix_s);
-					
-					std::string insertion;
-					
-					if (App::settings->getValue("use_fim", true)) {
-						insertion = ModelXRunner::generate_fim(prefix_s, suffix_s, App::settings->getValue("chauffeur_max_continue", 6));
-					}else{
-						insertion = ModelXRunner::generate(prefix_s, App::settings->getValue("chauffeur_max_continue", 6));
-					}
-					
-					if (insertion == "") {
-						continue;
-					}
-					
-					std::vector<icu::UnicodeString> compld = {icu::UnicodeString::fromUTF8(insertion)};
-					
-					completionbox->is_visible_layered = true;
-					completionbox->setElements(compld);
-					are_code_actions = false;
-					is_chauffeur = true;
-					completionbox->toshow = compld.size();
-					App::time_till_regular = 2;
-				}
-				std::this_thread::sleep_for(std::chrono::milliseconds(20));
-			}
-		}
-	});
+//	chauffeurthread = std::thread([&]() {
+//		while (true){
+//			if (closing) {
+//				return;
+//			}
+//			
+//			if (timeuntilchauffeur <= 0) {
+//				std::this_thread::sleep_for(std::chrono::milliseconds(50));
+//			}else{
+//				timeuntilchauffeur -= 20;
+//				if (timeuntilchauffeur <= 0) {
+//					
+//					Cursor prefix_c = textedit->cursors[0];
+//					Cursor suffix_c = textedit->cursors[0];
+//					
+//					prefix_c.anchor_line -= App::settings->getValue("chauffeur_prefix_lines", 10);
+//					prefix_c.anchor_char = 0;
+//					suffix_c.anchor_line += App::settings->getValue("chauffeur_suffix_lines", 7);
+//					
+//					prefix_c.anchor_line = std::max(0, prefix_c.anchor_line);
+//					suffix_c.anchor_line = std::min((int)textedit->lines.size()-1, suffix_c.anchor_line);
+//					
+//					suffix_c.anchor_char = textedit->lines[suffix_c.anchor_line].line_text.length();
+//					
+//					std::string prefix_s;
+//					std::string suffix_s;
+//					
+//					icu::UnicodeString prefix = textedit->getSelectedText(prefix_c);
+//					icu::UnicodeString suffix = textedit->getSelectedText(suffix_c);
+//					
+//					prefix.toUTF8String(prefix_s);
+//					suffix.toUTF8String(suffix_s);
+//					
+//					std::string insertion;
+//					
+//					if (App::settings->getValue("use_fim", true)) {
+//						insertion = ModelXRunner::generate_fim(prefix_s, suffix_s, App::settings->getValue("chauffeur_max_continue", 6));
+//					}else{
+//						insertion = ModelXRunner::generate(prefix_s, App::settings->getValue("chauffeur_max_continue", 6));
+//					}
+//					
+//					if (insertion == "") {
+//						continue;
+//					}
+//					
+//					std::vector<icu::UnicodeString> compld = {icu::UnicodeString::fromUTF8(insertion)};
+//					
+//					completionbox->is_visible_layered = true;
+//					completionbox->setElements(compld);
+//					are_code_actions = false;
+//					is_chauffeur = true;
+//					completionbox->toshow = compld.size();
+//					App::time_till_regular = 2;
+//				}
+//				std::this_thread::sleep_for(std::chrono::milliseconds(20));
+//			}
+//		}
+//	});
 }
 
 void CodeEdit::showhideerrors() {
@@ -1138,9 +1138,9 @@ bool CodeEdit::on_char_event(unsigned int keycode) {
 					completion_id = App::lsp_client_map[lsp]->requestCompletion(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
 				}
 				
-				if (App::settings->getValue("use_chauffeur", false)) {
-					timeuntilchauffeur = App::settings->getValue("chauffeur_time", 1000);
-				}
+//				if (App::settings->getValue("use_chauffeur", false)) {
+//					timeuntilchauffeur = App::settings->getValue("chauffeur_time", 1000);
+//				}
 			}
 		}
 		return true;
@@ -1190,14 +1190,14 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 	Cursor svdCrsr = textedit->cursors[0];
 	
 	if (parent == App::activeEditor) {
-		if (is_press && timeuntilchauffeur != App::settings->getValue("chauffeur_time", 1000)) {
-			if (key == GLFW_KEY_ESCAPE || timeuntilchauffeur <= 0) {
-				timeuntilchauffeur = 0;
-			}else{
-				timeuntilchauffeur = App::settings->getValue("chauffeur_time", 1000);
-			}
-		
-		}
+//		if (is_press && timeuntilchauffeur != App::settings->getValue("chauffeur_time", 1000)) {
+//			if (key == GLFW_KEY_ESCAPE || timeuntilchauffeur <= 0) {
+//				timeuntilchauffeur = 0;
+//			}else{
+//				timeuntilchauffeur = App::settings->getValue("chauffeur_time", 1000);
+//			}
+//		
+//		}
 		
 		if (key == GLFW_KEY_F5 && is_press && language != "" && file) {
 			// at this point we've already tried project build commands
@@ -1690,7 +1690,7 @@ void CodeEdit::completionRecieved(std::vector<std::string> completions, int rec_
 	completionbox->is_visible_layered = true;
 	completionbox->setElements(compld);
 	are_code_actions = false;
-	is_chauffeur = false;
+//	is_chauffeur = false;
 	
 	if (compld.size() >= 7) {
 		completionbox->toshow = 7;
@@ -1785,11 +1785,12 @@ void CodeEdit::activateCompletion() {
 		textedit->cursors = {c};
 		
 		return;
-	}else if (is_chauffeur) {
-		textedit->applyInsertToAllCursors(selected);
-		timeuntilchauffeur = 1; // triggers a new chauffeur run
-		return;
 	}
+//	else if (is_chauffeur) {
+//		textedit->applyInsertToAllCursors(selected);
+//		timeuntilchauffeur = 1; // triggers a new chauffeur run
+//		return;
+//	}
 	
 	auto wrd = textedit->getCurrentWord(textedit->lines[textedit->cursors[0].head_line].line_text, textedit->cursors[0].head_char);
 	
@@ -2212,9 +2213,9 @@ void CodeEdit::request_close(close_callback_type callback) {
 	if (hoverthread.joinable()) {
 		hoverthread.join();
 	}
-	if (chauffeurthread.joinable()) {
-		chauffeurthread.join();
-	}
+//	if (chauffeurthread.joinable()) {
+//		chauffeurthread.join();
+//	}
 	closing = false;
 	
 	Widget::request_close(callback);

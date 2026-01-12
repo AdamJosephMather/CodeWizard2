@@ -148,16 +148,10 @@ Note that for most movement shortcuts ('h', 'j', 'k', 'l', '<', '>', 'a', 'w', '
 
 Hold alt while clicking or pressing an arrow (or one of hjkl keys) to add another cursor. When you're done with them press esc.):"),
 		},{
-			icu::UnicodeString::fromUTF8("AI & Chauffeur"),
+			icu::UnicodeString::fromUTF8("AI"),
 			icu::UnicodeString::fromUTF8(R":(    CodeWizard has support for AI. Specifically, after setting an AI provider, model, and key in the settings, press Alt+A to trigger an insertion at your current cursor position. Or you can then open an AI chat widget to chat with your chosen model in a window.
 
-	For the settings you must get a provider (openrouter or lmstudio for example), a key for the provider (if required), the number of lines to send to the model for completions. If you choose 'Load AI Model On Start' it will send a request to your provider on startup (ONLY DO THIS IF YOU'RE RUNNING AN OFFLINE MODEL). The non-chat completions are not supported by most providers, but lmstudio supports them.
-
-Chauffeur:
-
-	Chauffeur is the local AI autocomplete model I've been working on. To enable chauffeur, you need the Chauffeur model and tokenizer. Both will eventually be available in a separate github repository. Download them, put them somewhere safe. Then you can access the settings in the settings pane under 'Editor'. Chauffeur runs completely locally, CPU only.
-	
-):"),
+	For the settings you must get a provider (openrouter or lmstudio for example), a key for the provider (if required), the number of lines to send to the model for completions. If you choose 'Load AI Model On Start' it will send a request to your provider on startup (ONLY DO THIS IF YOU'RE RUNNING AN OFFLINE MODEL). The non-chat completions are not supported by most providers, but lmstudio supports them.):"),
 		}
 	};
 	

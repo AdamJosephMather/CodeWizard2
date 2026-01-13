@@ -61,7 +61,7 @@ void TerminalWidget::ajm_set_asv3(bool connect) {
 			prefix = "https://";
 		}
 		
-		ajm_asv3_client->connect(prefix+App::settings->getValue("ajm_asv3_tm_url", std::string())+":8050");
+		ajm_asv3_client->connect(prefix+App::settings->getValue("ajm_asv3_tm_url", std::string())+":8060");
 	}
 }
 

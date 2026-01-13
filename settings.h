@@ -71,5 +71,10 @@ public:
 	
 	void position(int x, int y, int w, int h);
 	void render();
+	
+	void after_change(SettingsString* el);
+	void after_change(SettingsInt* el);
+	void after_change(SettingsFloat* el);
+	void after_change(SettingsBool* el);
 private:
 };

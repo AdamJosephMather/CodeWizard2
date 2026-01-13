@@ -2,9 +2,67 @@
 #include "application.h"
 #include "terminal.h"
 #include "text_renderer.h"
+#include <iostream>
 
 TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Terminal");
+	
+	ajm_asv3_tm = new CheckBox(nullptr, [&](CheckBox* c, int,int,int,int){
+		c->t_h = TextRenderer::get_text_height()*1.5;
+		c->t_w = c->t_h;
+		c->t_x = t_w + t_x - c->t_w - App::text_padding;
+		c->t_y = t_y + App::text_padding;
+	}, [&](CheckBox* cb){
+		bool send_to_asv3 = cb->is_checked; // assistant v3
+		
+		ajm_set_asv3(send_to_asv3);
+	});
+	ajm_asv3_tm->rounded = true;
+	ajm_asv3_tm->border = true;
+	ajm_asv3_tm->bgcolor = App::theme.hover_background_color; // brighter for black terminal background
+	
+	if (App::settings->getValue("ajm_asv3_tm_url", std::string()) != std::string()) {
+		App::MoveWidget(ajm_asv3_tm, this);
+	}
+	
+	reset_client();
+}
+
+void TerminalWidget::executeAction(WidgetActionType typ) {
+	Widget::executeAction(typ);
+	
+	if (typ != AJM_SETTINGS_CHANGE) {
+		return;
+	}
+	
+	std::cout << "Settings changed!\n";
+	
+	if (App::settings->getValue("ajm_asv3_tm_url", std::string()) != std::string()) {
+		std::cout << "ON\n";
+		if (ajm_asv3_tm->parent != this) {
+			App::MoveWidget(ajm_asv3_tm, this);
+		}
+		ajm_set_asv3(true);
+	}else{
+		std::cout << "OFF\n";
+		if (ajm_asv3_tm->parent != nullptr) {
+			App::RemoveWidgetFromParent(ajm_asv3_tm);
+		}
+		ajm_set_asv3(false);
+	}
+}
+
+void TerminalWidget::ajm_set_asv3(bool connect) {
+	reset_client();
+	
+	if (connect) {
+		std::string prefix = "http://";
+		if (App::settings->getValue("ajm_asv3_tm_use_https", false)) {
+			prefix = "https://";
+		}
+		
+		ajm_asv3_client->connect(prefix+App::settings->getValue("ajm_asv3_tm_url", std::string())+":8050");
+	}
 }
 
 void TerminalWidget::run() {
@@ -26,8 +84,68 @@ void TerminalWidget::run() {
 	settingup = false;
 }
 
+void TerminalWidget::reset_client() {
+	ASSISTANT_V3_ID = "";
+	
+	if (ajm_asv3_client) {
+		ajm_asv3_client->clear_socket_listeners();
+		ajm_asv3_client->clear_con_listeners();
+
+		std::thread([old_client = ajm_asv3_client]() {
+			if (old_client->opened()) {
+				old_client->sync_close();
+			}
+		}).detach();
+	}
+
+	ajm_asv3_client = std::make_shared<sio::client>();
+
+	ajm_asv3_client->set_open_listener([&]() {
+		App::displayText(icu::UnicodeString::fromUTF8("AssistantV3 Connection Made"));
+		send_assistant_message("setup", "TERMINAL_CW_V0");
+	});
+	
+	ajm_asv3_client->set_fail_listener([&]() {
+		App::displayToast(icu::UnicodeString::fromUTF8("FAILED: AssistantV3 Connection"));
+	});
+	
+	ajm_asv3_client->set_close_listener([&](sio::client::close_reason const& reason) {
+		App::displayToast(icu::UnicodeString::fromUTF8("AssistantV3 Connection Closed."));
+	});
+	
+	ajm_asv3_client->socket()->on("server_response", [&](std::string const& name, sio::message::ptr const& data, bool isAck, sio::message::list &ack_resp) {
+		if (data->get_flag() == sio::message::flag_object) {
+			auto map = data->get_map();
+			if (map.count("setup")) {
+				ASSISTANT_V3_ID = map["setup"]->get_string();
+				std::cout << "\n[Recieved ID] " << ASSISTANT_V3_ID << "\n";
+			}else if (map.count("request")) {
+				std::string instruction = map["request"]->get_string();
+				if (instruction == "TERM_SCREEN") {
+					std::string text = get_last_n_doc_lines(50);
+					send_assistant_message("response", text);
+				}
+			}
+		}
+	});
+}
+
+void TerminalWidget::send_assistant_message(std::string title, std::string message) {
+	sio::message::ptr root = sio::object_message::create();
+	root->get_map()[title] = sio::string_message::create(message);
+	ajm_asv3_client->socket()->emit("client_message", root);
+}
+
 void TerminalWidget::request_close(close_callback_type callback) {
 	term->stop();
+	
+	std::cout << "Initiating instant UI close...";
+
+	reset_client();
+
+	std::cout << "UI is free!";
+	
+	// Now the widget can be deleted immediately
 	Widget::request_close(callback);
 }
 
@@ -144,6 +262,8 @@ void TerminalWidget::render() {
 	}else{
 		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
 	}
+	
+	Widget::render();
 }
 
 static inline void mods_to_bools(int mods, bool& shift, bool& alt, bool& ctrl) {
@@ -291,6 +411,12 @@ bool TerminalWidget::on_char_event(unsigned int keycode) {
 
 bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
 	if (!is_visible || !term || settingup) return false;
+	
+	if (ajm_asv3_tm->parent == this) {
+		if (ajm_asv3_tm->on_mouse_button_event(button, action, mods)) {
+			return true;
+		}
+	}
 
 	bool shift=false, alt=false, ctrl=false;
 	mods_to_bools(mods, shift, alt, ctrl);
@@ -340,6 +466,9 @@ bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
 
 bool TerminalWidget::on_mouse_move_event() {
 	if (!is_visible || !term || settingup) return false;
+	
+	ajm_asv3_tm->on_mouse_move_event();
+	
 	int row=0, col=0;
 	cell_from_cursor(row, col);
 	
@@ -467,5 +596,42 @@ std::string TerminalWidget::selection_text() const {
 		}
 		
 	}
+	return out;
+}
+
+std::string TerminalWidget::get_last_n_doc_lines(int n) {
+	if (!term) return {};
+	if (n <= 0) return {};
+
+	// Pick the most recent doc line by mapping the *bottom visible screen row*.
+	// If your viewport can scroll, this returns "bottom of what you're viewing".
+	const int bottom_screen_row = prev_h_cells - 1;
+	int end_doc = term->docLineIdForScreenRow(bottom_screen_row);
+	if (end_doc < 0) return {};
+
+	int start_doc = end_doc - (n - 1);
+	if (start_doc < 0) start_doc = 0;
+
+	// Full-width selection (so selection_text() returns whole lines)
+	const int W = term->docCols();
+	if (W <= 0) return {};
+
+	// Save selection state (so we don't mess with the user's selection)
+	int saved_r0 = sel_doc_r0, saved_c0 = sel_c0, saved_r1 = sel_doc_r1, saved_c1 = sel_c1;
+	bool saved_selecting = selecting;
+
+	// Set selection to the last N doc lines
+	selecting  = false;
+	sel_doc_r0 = start_doc;
+	sel_c0     = 0;
+	sel_doc_r1 = end_doc;
+	sel_c1     = W - 1;
+
+	std::string out = selection_text();
+
+	// Restore prior selection state
+	selecting  = saved_selecting;
+	sel_doc_r0 = saved_r0; sel_c0 = saved_c0; sel_doc_r1 = saved_r1; sel_c1 = saved_c1;
+
 	return out;
 }

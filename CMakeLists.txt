@@ -45,6 +45,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(libvterm_src)
 
+
+FetchContent_Declare(
+	sioclient
+	GIT_REPOSITORY https://github.com/socketio/socket.io-client-cpp.git
+	GIT_TAG master # or a specific version like 3.1.0
+	GIT_PROGRESS TRUE
+)
+FetchContent_MakeAvailable(sioclient)
+
 # FetchContent_Declare(
 # 	tokenizers_cpp
 # 	GIT_REPOSITORY https://github.com/mlc-ai/tokenizers-cpp.git
@@ -104,6 +113,7 @@ target_link_libraries(${PROJECT_NAME}
 	CURL::libcurl
 	libvterm
 	oniguruma::onig
+	sioclient
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -178,8 +188,8 @@ endif()
 
 
 
-if (MSVC)
-	set_target_properties(${PROJECT_NAME} PROPERTIES
-		WIN32_EXECUTABLE TRUE
-	)
-endif()
+# if (MSVC)
+# 	set_target_properties(${PROJECT_NAME} PROPERTIES
+# 		WIN32_EXECUTABLE TRUE
+# 	)
+# endif()

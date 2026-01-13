@@ -7,7 +7,8 @@
 #include "unicode/unistr.h"
 
 enum WidgetActionType {
-	RESTART_LSP
+	RESTART_LSP,
+	AJM_SETTINGS_CHANGE
 };
 
 class Widget {

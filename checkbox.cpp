@@ -7,6 +7,7 @@ CheckBox::CheckBox(Widget *parent, CheckPositioner positioner, CheckOnClick oncl
 	ONCLICK = onclick;
 	
 	hovered = false;
+	bgcolor = App::theme.darker_background_color;
 	
 	id = icu::UnicodeString::fromUTF8("CheckBox");
 }
@@ -68,9 +69,9 @@ void CheckBox::render() {
 	int radius = App::text_padding;
 	
 	if (rounded) {
-		App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, App::theme.darker_background_color);
+		App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, bgcolor);
 	}else{
-		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
+		App::DrawRect(t_x, t_y, t_w, t_h, bgcolor);
 	}
 	
 	if (is_checked) {

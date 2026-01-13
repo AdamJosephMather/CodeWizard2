@@ -3,6 +3,8 @@
 #include <GLFW/glfw3.h>
 #include "terminal.h"
 #include "widget.h"
+#include "checkbox.h"
+#include <sio_client.h>
 
 class TerminalWidget : public Widget {
 public:
@@ -43,6 +45,18 @@ public:
 	bool rounded = true;
 	
 	void run();
+	
+	void executeAction(WidgetActionType typ);
+	
+	std::string get_last_n_doc_lines(int n);
 private:
 	void cell_from_cursor(int& row, int& col);
+	
+	std::shared_ptr<sio::client> ajm_asv3_client;
+	CheckBox* ajm_asv3_tm = nullptr;
+	
+	void ajm_set_asv3(bool connect);
+	void reset_client();
+	void send_assistant_message(std::string title, std::string message);
+	std::string ASSISTANT_V3_ID = "";
 };

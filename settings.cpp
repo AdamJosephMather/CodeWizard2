@@ -274,10 +274,24 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 		makeLabel("Project Settings Located At (not editable):")
 	};
 	
+	settings_menus[3] = {
+		makeString(
+			"AssistantV3 Term Mirror URL",
+			"ajm_asv3_tm_url",
+			""
+		),
+		makeBool(
+			"AssistantV3 Use HTTPS",
+			"ajm_asv3_tm_use_https",
+			false
+		)
+	};
+	
 	std::vector<std::string> tabs = {
 		"Appearance",
 		"Editor",
-		"Project Specific"
+		"Project Specific",
+		"AJM"
 	};
 	
 	int tabid = 0;
@@ -411,6 +425,7 @@ void Settings::handleChange(TextEdit* te, SettingsElement* se) {
 		
 		if (validate_input(i)) {
 			App::settings->setValue(se->key_name, str);
+			after_change(i);
 		}
 	}else if (auto i = dynamic_cast<SettingsBool*>(se)) {
 		if (str == "true") {
@@ -421,6 +436,7 @@ void Settings::handleChange(TextEdit* te, SettingsElement* se) {
 		
 		if (validate_input(i)) {
 			App::settings->setValue(se->key_name, i->value);
+			after_change(i);
 		}
 	}else if (auto i = dynamic_cast<SettingsInt*>(se)) {
 		int result = -1;
@@ -438,6 +454,7 @@ void Settings::handleChange(TextEdit* te, SettingsElement* se) {
 			i->value = result;
 			if (validate_input(i)) {
 				App::settings->setValue(se->key_name, result);
+				after_change(i);
 			}
 		}
 	}else if (auto i = dynamic_cast<SettingsFloat*>(se)) {
@@ -456,6 +473,7 @@ void Settings::handleChange(TextEdit* te, SettingsElement* se) {
 			i->value = result;
 			if (validate_input(i)) {
 				App::settings->setValue(se->key_name, result);
+				after_change(i);
 			}
 		}
 	}
@@ -630,4 +648,19 @@ bool Settings::validate_input(SettingsString* el) {
 	}
 	
 	return true;
+}
+
+void Settings::after_change(SettingsString* el) {
+	if (el->key_name == "ajm_asv3_tm_url") {
+		App::rootelement->executeAction(AJM_SETTINGS_CHANGE);
+	}
+}
+
+void Settings::after_change(SettingsInt* el) {
+}
+
+void Settings::after_change(SettingsFloat* el) {
+}
+
+void Settings::after_change(SettingsBool* el) {
 }

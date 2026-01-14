@@ -1540,7 +1540,7 @@ bool CodeEdit::hoveringHoverbox(int mx, int my, int padding) {
 }
 
 bool CodeEdit::hoveringCompletionBox(int mx, int my, int padding) {
-	if (completionbox->parent == this) {
+	if (completionbox->parent == this && completionbox->is_visible_layered && completionbox->is_visible) {
 		if (mx >= completionbox->t_x-padding && mx <= completionbox->t_x+completionbox->t_w+padding && my <= completionbox->t_y+completionbox->t_h+padding && my >= completionbox->t_y-padding) {
 			return true;
 		}

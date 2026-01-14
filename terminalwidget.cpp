@@ -124,6 +124,57 @@ void TerminalWidget::reset_client() {
 				if (instruction == "TERM_SCREEN") {
 					std::string text = get_last_n_doc_lines(50);
 					send_assistant_message("response", text);
+				}else if (instruction == "COMMAND") {
+					if (!map.count("command")) { return; }
+					
+					std::string command_string = map["command"]->get_string();
+					
+					bool is_raw = false;
+					std::string latest = "";
+					for (int i = 0; i < command_string.length(); i++) {
+						char c = command_string.at(i);
+						if (c == '\\') {
+							if (is_raw) {
+								latest += c; // this escape character was escaped. So, we add it as per regular
+							}
+							
+							is_raw = !is_raw;
+						}else{
+							if (is_raw) {
+								if (latest != "") {
+									term->sendText(latest);
+								}
+								
+								latest = "";
+								
+								if (c == 'C' || c == 'c') {
+									term->sendCtrl('c');
+								}else if (c == 'n') {
+									term->sendEnter();
+								}else if (c == 't') {
+									term->sendText("\t");
+								}else if (c == 'u') {
+									term->sendSpecialKey(Terminal::SpecialKey::Up);
+								}else if (c == 'd') {
+									term->sendSpecialKey(Terminal::SpecialKey::Down);
+								}else if (c == 'l') {
+									term->sendSpecialKey(Terminal::SpecialKey::Left);
+								}else if (c == 'r') {
+									term->sendSpecialKey(Terminal::SpecialKey::Up);
+								}else if (c == 'b') {
+									term->sendBackspace();
+								}
+							}else{
+								latest += c;
+							}
+							
+							is_raw = false;
+						}
+					}
+					
+					if (latest != "") {
+						term->sendText(latest);
+					}
 				}
 			}
 		}

@@ -61,7 +61,11 @@ void TerminalWidget::ajm_set_asv3(bool connect) {
 			prefix = "https://";
 		}
 		
-		ajm_asv3_client->connect(prefix+App::settings->getValue("ajm_asv3_tm_url", std::string())+":8060");
+		std::map<std::string, std::string> config;
+		config["reconnect"] = "true";
+		config["reconnections"] = "9999999"; // Effectively infinite
+		config["reconnectionDelay"] = "5000"; // 5 seconds between attempts
+		ajm_asv3_client->connect(prefix+App::settings->getValue("ajm_asv3_tm_url", std::string())+":8060", config);
 	}
 }
 

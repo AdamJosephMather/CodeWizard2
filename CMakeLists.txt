@@ -188,8 +188,8 @@ endif()
 
 
 
-# if (MSVC)
-# 	set_target_properties(${PROJECT_NAME} PROPERTIES
-# 		WIN32_EXECUTABLE TRUE
-# 	)
-# endif()
+if (MSVC)
+	set_target_properties(${PROJECT_NAME} PROPERTIES
+		WIN32_EXECUTABLE TRUE
+	)
+endif()

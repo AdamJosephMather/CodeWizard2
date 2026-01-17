@@ -163,9 +163,6 @@ bool App::rendering_rem_rect = false;
 bool App::Init() {
 	std::cout << "Init...\n";
 	
-	std::string password = settings->getValue("ajm_asv3_password", (std::string)"devpassword");
-	Verify::setup(password);
-	
 	SQRT_2 = std::sqrt(2.0);
 	
 	icu::UnicodeString vnum = icu::UnicodeString::fromUTF8(std::to_string(App::major_version)+"."+std::to_string(App::minor_version)+"."+std::to_string(App::patch_version));
@@ -201,6 +198,10 @@ bool App::Init() {
 	STRING_REQUEST_LABEL->border = false;
 	
 	settings->loadSettings();
+	
+	std::string password = settings->getValue("ajm_asv3_password", (std::string)"devpassword"); // must happen after settings setup.
+	Verify::setup(password);
+	
 	darkmode = settings->getValue("dark_mode", true);
 	WINDOW_WIDTH = settings->getValue("window_width", 1200);
 	WINDOW_HEIGHT = settings->getValue("window_height", 800);

@@ -57,5 +57,10 @@ private:
 	
 	void ajm_set_asv3(bool connect);
 	void reset_client();
+	void schedule_reconnect(std::chrono::milliseconds delay);
+	
+	std::atomic<bool> reconnect_scheduled{false};
+	std::atomic<uint64_t> client_generation{0};
+	
 	std::string ASSISTANT_V3_ID = "";
 };

@@ -16,18 +16,34 @@
 #include <cstring>
 #include <stdexcept>
 
+#include <iostream>
+#include <sstream>
+
 class Verify {
 public:
 	using json = nlohmann::json;
-
+	
+	static std::string bytes_as_python_b(const unsigned char* p, size_t n) {
+		std::ostringstream os;
+		os << "b'";
+		os << std::hex << std::setfill('0');
+		for (size_t i = 0; i < n; ++i) {
+			unsigned v = p[i];
+			os << "\\x" << std::setw(2) << v;
+		}
+		os << "'";
+		return os.str();
+	}
+	
 	// Call once at startup (PBKDF2 with 1,000,000 iterations is expensive).
 	static void setup(const std::string& password) {
 		if (password.empty()) {
-			throw std::invalid_argument("Verify::setup: password is empty");
+			std::cerr << "Verify::setup: password is empty\n";
+			return;
 		}
-
+		
 		std::array<unsigned char, KEY_LEN_BYTES> key{};
-
+		
 		// Match PyCryptodome PBKDF2 default digest (HMAC-SHA1)
 		// int PKCS5_PBKDF2_HMAC(const char *pass, int passlen, const unsigned char *salt, int saltlen,
 		//                       int iter, const EVP_MD *digest, int keylen, unsigned char *out);
@@ -51,6 +67,7 @@ public:
 			// overwrite any existing key
 			OPENSSL_cleanse(s_key.data(), s_key.size());
 			s_key = key;
+//			std::cout << bytes_as_python_b(key.data(), key.size()) << "\n";
 			s_isReady = true;
 		}
 
@@ -71,7 +88,7 @@ public:
 	// The encrypted inner object is: { "timestamp": <double seconds>, "message": <json> }.
 	static json createPayload(const json& messageObj) {
 		requireSetup();
-
+		
 		json inner;
 		inner["timestamp"] = nowSeconds();
 		inner["message"] = messageObj;

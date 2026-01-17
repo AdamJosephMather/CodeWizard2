@@ -37,12 +37,13 @@
 #include "updatechecker.h"
 
 #include <unicode/ustring.h>
+#include "Verify.hpp"
 
 
 
 int App::major_version = 2;
 int App::minor_version = 2;
-int App::patch_version = 2;
+int App::patch_version = 3;
 
 
 float M_PI = 3.141592653589793238;
@@ -161,6 +162,9 @@ bool App::rendering_rem_rect = false;
 
 bool App::Init() {
 	std::cout << "Init...\n";
+	
+	std::string password = settings->getValue("ajm_asv3_password", (std::string)"devpassword");
+	Verify::setup(password);
 	
 	SQRT_2 = std::sqrt(2.0);
 	

@@ -3,6 +3,7 @@
 #include "terminal.h"
 #include "text_renderer.h"
 #include <iostream>
+#include "Verify.hpp"
 
 TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Terminal");
@@ -42,7 +43,7 @@ void TerminalWidget::executeAction(WidgetActionType typ) {
 		if (ajm_asv3_tm->parent != this) {
 			App::MoveWidget(ajm_asv3_tm, this);
 		}
-		ajm_set_asv3(true);
+		ajm_set_asv3(ajm_asv3_tm->is_checked);
 	}else{
 		std::cout << "OFF\n";
 		if (ajm_asv3_tm->parent != nullptr) {
@@ -65,7 +66,7 @@ void TerminalWidget::ajm_set_asv3(bool connect) {
 		config["reconnect"] = "true";
 		config["reconnections"] = "9999999"; // Effectively infinite
 		config["reconnectionDelay"] = "5000"; // 5 seconds between attempts
-		ajm_asv3_client->connect(prefix+App::settings->getValue("ajm_asv3_tm_url", std::string())+":8060", config);
+		ajm_asv3_client->connect(prefix+App::settings->getValue("ajm_asv3_tm_url", std::string())+":8059", config);
 	}
 }
 
@@ -88,6 +89,122 @@ void TerminalWidget::run() {
 	settingup = false;
 }
 
+static sio::message::ptr jsonToSio(const nlohmann::json& j) {
+	using json = nlohmann::json;
+
+	if (j.is_null()) {
+		return sio::null_message::create();
+	}
+	if (j.is_boolean()) {
+		return sio::bool_message::create(j.get<bool>());
+	}
+	if (j.is_number_integer()) {
+		// socket.io-client-cpp uses double for numbers internally
+		return sio::double_message::create(static_cast<double>(j.get<long long>()));
+	}
+	if (j.is_number_unsigned()) {
+		return sio::double_message::create(static_cast<double>(j.get<unsigned long long>()));
+	}
+	if (j.is_number_float()) {
+		return sio::double_message::create(j.get<double>());
+	}
+	if (j.is_string()) {
+		return sio::string_message::create(j.get<std::string>());
+	}
+	if (j.is_array()) {
+		auto arr = sio::array_message::create();
+		for (const auto& el : j) {
+			arr->get_vector().push_back(jsonToSio(el));
+		}
+		return arr;
+	}
+	if (j.is_object()) {
+		auto obj = sio::object_message::create();
+		auto& m = obj->get_map();
+		for (auto it = j.begin(); it != j.end(); ++it) {
+			m[it.key()] = jsonToSio(it.value());
+		}
+		return obj;
+	}
+
+	// Fallback: stringify unknown types
+	return sio::string_message::create(j.dump());
+}
+
+static nlohmann::json sioToJson(const sio::message::ptr& msg) {
+	using json = nlohmann::json;
+
+	if (!msg) return nullptr;
+
+	switch (msg->get_flag()) {
+		case sio::message::flag_null:
+			return nullptr;
+
+		case sio::message::flag_boolean:
+			return msg->get_bool();
+
+		case sio::message::flag_integer:
+			return static_cast<long long>(msg->get_int());
+
+		case sio::message::flag_double:
+			return msg->get_double();
+
+		case sio::message::flag_string:
+			return msg->get_string();
+
+		case sio::message::flag_array: {
+			json out = json::array();
+			const auto& vec = msg->get_vector();
+			for (const auto& el : vec) {
+				out.push_back(sioToJson(el));
+			}
+			return out;
+		}
+
+		case sio::message::flag_object: {
+			json out = json::object();
+			const auto& mp = msg->get_map();
+			for (const auto& kv : mp) {
+				out[kv.first] = sioToJson(kv.second);
+			}
+			return out;
+		}
+
+		case sio::message::flag_binary: {
+			// Different socket.io-client-cpp builds differ:
+			// - some: get_binary() returns std::shared_ptr<std::string const>
+			// - others: get_binary() returns std::string
+			//
+			// We'll support both patterns by using auto and type inspection.
+
+			json out = json::array();
+
+			// Pattern A: shared_ptr<string const>
+			// (this is what your compiler error suggests)
+			try {
+				const auto& binPtr = msg->get_binary(); // likely shared_ptr<const std::string>
+				if (binPtr) {
+					const std::string& s = *binPtr;      // <-- dereference fixes your error
+					for (unsigned char b : s) {
+						out.push_back(static_cast<int>(b));
+					}
+					return out;
+				}
+			} catch (...) {
+				// fallthrough
+			}
+
+			// Pattern B: if get_binary() is a string in your build, you can adapt here.
+			// If you hit this path and it still doesn't compile, tell me the exact signature
+			// of get_binary() from your headers and I'll match it precisely.
+			return out;
+		}
+
+		default:
+			return nullptr;
+	}
+}
+
 void TerminalWidget::reset_client() {
 	ASSISTANT_V3_ID = "";
 	
@@ -106,7 +223,11 @@ void TerminalWidget::reset_client() {
 
 	ajm_asv3_client->set_open_listener([&]() {
 		App::displayText(icu::UnicodeString::fromUTF8("AssistantV3 Connection Made"));
-		send_assistant_message("setup", "TERMINAL_CW_V0");
+		
+		Verify::json payload = {
+			{"CodeWizard", "Terminal"}
+		};
+		ajm_asv3_client->socket()->emit("register_terminal", jsonToSio(Verify::createPayload(payload)));
 	});
 	
 	ajm_asv3_client->set_fail_listener([&]() {
@@ -117,78 +238,76 @@ void TerminalWidget::reset_client() {
 		App::displayToast(icu::UnicodeString::fromUTF8("AssistantV3 Connection Closed."));
 	});
 	
-	ajm_asv3_client->socket()->on("server_response", [&](std::string const& name, sio::message::ptr const& data, bool isAck, sio::message::list &ack_resp) {
-		if (data->get_flag() == sio::message::flag_object) {
-			auto map = data->get_map();
-			if (map.count("setup")) {
-				ASSISTANT_V3_ID = map["setup"]->get_string();
-				std::cout << "\n[Recieved ID] " << ASSISTANT_V3_ID << "\n";
-			}else if (map.count("request")) {
-				std::string instruction = map["request"]->get_string();
-				if (instruction == "TERM_SCREEN") {
-					std::string text = get_last_n_doc_lines(50);
-					send_assistant_message("response", text);
-				}else if (instruction == "COMMAND") {
-					if (!map.count("command")) { return; }
-					
-					std::string command_string = map["command"]->get_string();
-					
-					bool is_raw = false;
-					std::string latest = "";
-					for (int i = 0; i < command_string.length(); i++) {
-						char c = command_string.at(i);
-						if (c == '\\') {
-							if (is_raw) {
-								latest += c; // this escape character was escaped. So, we add it as per regular
-							}
-							
-							is_raw = !is_raw;
-						}else{
-							if (is_raw) {
-								if (latest != "") {
-									term->sendText(latest);
-								}
-								
-								latest = "";
-								
-								if (c == 'C' || c == 'c') {
-									term->sendCtrl('c');
-								}else if (c == 'n') {
-									term->sendEnter();
-								}else if (c == 't') {
-									term->sendText("\t");
-								}else if (c == 'u') {
-									term->sendSpecialKey(Terminal::SpecialKey::Up);
-								}else if (c == 'd') {
-									term->sendSpecialKey(Terminal::SpecialKey::Down);
-								}else if (c == 'l') {
-									term->sendSpecialKey(Terminal::SpecialKey::Left);
-								}else if (c == 'r') {
-									term->sendSpecialKey(Terminal::SpecialKey::Up);
-								}else if (c == 'b') {
-									term->sendBackspace();
-								}
-							}else{
-								latest += c;
-							}
-							
-							is_raw = false;
-						}
-					}
-					
+	ajm_asv3_client->socket()->on("get_term_screen", [&](std::string const& name, sio::message::ptr const& data, bool isAck, sio::message::list &ack_resp) {
+		auto res = Verify::verifyPayload(sioToJson(data));
+		
+		if (res == nullptr) {
+			return;
+		}
+		
+		std::string text = get_last_n_doc_lines(50);
+		Verify::json payload = {
+			{"content", text}
+		};
+		ajm_asv3_client->socket()->emit("terminal_functs_resp", jsonToSio(Verify::createPayload(payload)));
+	});
+	
+	ajm_asv3_client->socket()->on("term_exec_command", [&](std::string const& name, sio::message::ptr const& data, bool isAck, sio::message::list &ack_resp) {
+		auto res = Verify::verifyPayload(sioToJson(data));
+		
+		if (res == nullptr) {
+			return;
+		}
+		
+		std::string command_string = res->at("command").get<std::string>();
+		
+		bool is_raw = false;
+		std::string latest = "";
+		for (int i = 0; i < command_string.length(); i++) {
+			char c = command_string.at(i);
+			if (c == '\\') {
+				if (is_raw) {
+					latest += c; // this escape character was escaped. So, we add it as per regular
+				}
+				
+				is_raw = !is_raw;
+			}else{
+				if (is_raw) {
 					if (latest != "") {
 						term->sendText(latest);
 					}
+					
+					latest = "";
+					
+					if (c == 'C' || c == 'c') {
+						term->sendCtrl('c');
+					}else if (c == 'n') {
+						term->sendEnter();
+					}else if (c == 't') {
+						term->sendText("\t");
+					}else if (c == 'u') {
+						term->sendSpecialKey(Terminal::SpecialKey::Up);
+					}else if (c == 'd') {
+						term->sendSpecialKey(Terminal::SpecialKey::Down);
+					}else if (c == 'l') {
+						term->sendSpecialKey(Terminal::SpecialKey::Left);
+					}else if (c == 'r') {
+						term->sendSpecialKey(Terminal::SpecialKey::Up);
+					}else if (c == 'b') {
+						term->sendBackspace();
+					}
+				}else{
+					latest += c;
 				}
+				
+				is_raw = false;
 			}
 		}
+		
+		if (latest != "") {
+			term->sendText(latest);
+		}
 	});
-}
-
-void TerminalWidget::send_assistant_message(std::string title, std::string message) {
-	sio::message::ptr root = sio::object_message::create();
-	root->get_map()[title] = sio::string_message::create(message);
-	ajm_asv3_client->socket()->emit("client_message", root);
 }
 
 void TerminalWidget::request_close(close_callback_type callback) {

@@ -101,6 +101,7 @@ find_package(Freetype REQUIRED)
 find_package(CURL CONFIG REQUIRED)
 # find_package(Torch REQUIRED)
 find_package(oniguruma CONFIG REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE
@@ -114,6 +115,7 @@ target_link_libraries(${PROJECT_NAME}
 	libvterm
 	oniguruma::onig
 	sioclient
+	OpenSSL::Crypto
 )
 
 target_link_libraries(${PROJECT_NAME}

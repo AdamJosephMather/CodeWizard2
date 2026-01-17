@@ -1,6 +1,7 @@
 #include "settings.h"
 #include "text_renderer.h"
 #include "application.h"
+#include "Verify.hpp"
 
 SettingsFloat* Settings::makeFloat(std::string name, std::string key, float default_value) {
 	auto f = new SettingsFloat();
@@ -284,6 +285,11 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"AssistantV3 Use HTTPS",
 			"ajm_asv3_tm_use_https",
 			false
+		),
+		makeString(
+			"AssistantV3 Password",
+			"ajm_asv3_password",
+			"devpassword"
 		)
 	};
 	
@@ -653,6 +659,8 @@ bool Settings::validate_input(SettingsString* el) {
 void Settings::after_change(SettingsString* el) {
 	if (el->key_name == "ajm_asv3_tm_url") {
 		App::rootelement->executeAction(AJM_SETTINGS_CHANGE);
+	}else if (el->key_name == "ajm_asv3_password") {
+		Verify::setup(el->value);
 	}
 }
 

@@ -57,6 +57,5 @@ private:
 	
 	void ajm_set_asv3(bool connect);
 	void reset_client();
-	void send_assistant_message(std::string title, std::string message);
 	std::string ASSISTANT_V3_ID = "";
 };

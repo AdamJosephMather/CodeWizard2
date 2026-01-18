@@ -59,7 +59,7 @@ public:
 		);
 
 		if (ok != 1) {
-			throw std::runtime_error("Verify::setup: PKCS5_PBKDF2_HMAC failed");
+			return;
 		}
 
 		{
@@ -106,7 +106,10 @@ public:
 				nonce,
 				tag
 			)) {
-			throw std::runtime_error("Verify::createPayload: encryption failed");
+			std::cerr << "Verify::createPayload: encryption failed";
+			json out;
+			out["content"] = "Verify failed to encrypt";
+			return out;
 		}
 
 		json out;
@@ -217,7 +220,8 @@ private:
 	static void requireSetup() {
 		std::lock_guard<std::mutex> lock(s_keyMutex);
 		if (!s_isReady) {
-			throw std::runtime_error("Verify: call setup(password) before use");
+			std::cerr << "Verify: call setup(password) before use\n";
+			return;
 		}
 	}
 
@@ -365,14 +369,16 @@ private:
 
 	static std::vector<unsigned char> hexToBytes(const std::string& hex) {
 		if ((hex.size() % 2) != 0) {
-			throw std::invalid_argument("hex string must have even length");
+			std::cerr << "hex string must have even length\n";
+			return {};
 		}
 		std::vector<unsigned char> out(hex.size() / 2);
 		for (size_t i = 0; i < out.size(); ++i) {
 			const int hi = fromHexNibble(hex[i * 2 + 0]);
 			const int lo = fromHexNibble(hex[i * 2 + 1]);
 			if (hi < 0 || lo < 0) {
-				throw std::invalid_argument("invalid hex character");
+				std::cerr << "invalid hex character";
+				return {};
 			}
 			out[i] = static_cast<unsigned char>((hi << 4) | lo);
 		}

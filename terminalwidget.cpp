@@ -241,7 +241,7 @@ void TerminalWidget::reset_client() {
 	ajm_asv3_client->socket()->on("get_term_screen", [&](std::string const& name, sio::message::ptr const& data, bool isAck, sio::message::list &ack_resp) {
 		auto res = Verify::verifyPayload(sioToJson(data));
 		
-		if (res == nullptr) {
+		if (res == std::nullopt) {
 			return;
 		}
 		
@@ -255,7 +255,7 @@ void TerminalWidget::reset_client() {
 	ajm_asv3_client->socket()->on("term_exec_command", [&](std::string const& name, sio::message::ptr const& data, bool isAck, sio::message::list &ack_resp) {
 		auto res = Verify::verifyPayload(sioToJson(data));
 		
-		if (res == nullptr) {
+		if (res == std::nullopt) {
 			return;
 		}
 		

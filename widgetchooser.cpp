@@ -6,6 +6,7 @@
 #include "filetree.h"
 #include "lspdebug.h"
 #include "settings.h"
+#include "mathwindow.h"
 #include "text_renderer.h"
 #include "application.h"
 #include "terminalwidgettabbed.h"
@@ -98,6 +99,18 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	});
 	b7->rounded = true;
 	b7->border = true;
+	
+	auto text8 = icu::UnicodeString::fromUTF8("Math Window");
+	b8 = new Button(this, text8, [&](Button* button, int x, int y, int w, int h, int tw, int th){
+		button->t_x = t_x+t_w/2-tw/2;
+		button->t_y = b7->t_y+b7->t_h+App::text_padding;
+	}, [&](Button* button) {
+		App::ReplaceWith(this, new MathWindow(nullptr));
+		std::cout << "Creating mathwindow\n";
+		delete this;
+	});
+	b8->rounded = true;
+	b8->border = true;
 }
 
 void WidgetChooser::render() {

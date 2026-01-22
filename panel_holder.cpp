@@ -5,6 +5,7 @@
 #include "compare.h"
 #include "editor.h"
 #include "lspdebug.h"
+#include "mathwindow.h"
 #include "terminalwidgettabbed.h"
 #include "widgetchooser.h"
 #include "settings.h"
@@ -356,6 +357,8 @@ void PanelHolder::setState(nlohmann::json state) {
 			new LspDebug(this);
 		}else if (c == "Terminal"){
 			new TerminalWidgetTabbed(this);
+		}else if (c == "MathWindow"){
+			new MathWindow(this);
 		}else { // any unknown, or editor
 			new Editor(this);
 		}
@@ -389,6 +392,8 @@ nlohmann::json PanelHolder::saveConfiguration() {
 			thisitm["children"][i] = "LspDebug";
 		}else if (auto pe = dynamic_cast<TerminalWidgetTabbed*>(c)){
 			thisitm["children"][i] = "Terminal";
+		}else if (auto pe = dynamic_cast<MathWindow*>(c)){
+			thisitm["children"][i] = "MathWindow";
 		}else {
 			thisitm["children"][i] = "Ehhhhh";
 		}

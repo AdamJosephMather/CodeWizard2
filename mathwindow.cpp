@@ -15,8 +15,6 @@ MathWindow::MathWindow(Widget *parent) : Widget(parent) {
 	mathInput->border = true;
 	
 	mathInput->ontextchange = [&](Widget* w){
-		std::cout << "OTC\n";
-		
 		results.clear();
 		results.reserve(mathInput->lines.size());
 		icu::UnicodeString lastCalc = icu::UnicodeString::fromUTF8("_");

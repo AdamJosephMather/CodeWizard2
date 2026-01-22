@@ -1516,7 +1516,6 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 			applyMoveToAllCursors(GLFW_KEY_END, is_shift_held, false);
 			return true;
 		}else if (key == GLFW_KEY_O && !is_control_held) {
-			std::cout << largereditblock << "\n"; // alsdkjflkadsjfl;kasdjlk;fjasdlkfjaslkdfjlkasdjfl;kajsdlkfjasdlkjfalskdjf;laskjdf;laksd
 			vim_repeater = 0;
 			applyMoveToAllCursors(GLFW_KEY_END, is_shift_held, false);
 			applyInsertToAllCursors(icu::UnicodeString::fromUTF8("\n"));

@@ -12,5 +12,5 @@ public:
 	void render();
 private:
 	TextEdit* mathInput = nullptr;
-	TextEdit* mathOutput = nullptr;
+	std::vector<icu::UnicodeString> results = {};
 };

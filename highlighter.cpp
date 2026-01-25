@@ -134,191 +134,162 @@ void Highlighter::fetchAllPatterns(const std::vector<std::shared_ptr<Rule>>& pat
 	}
 }
 
-Match Highlighter::findEarliestPattern(const std::string& line, ContextFrame currentContext, int handledUpTo, bool checkWhile, bool on_start) {
+Match Highlighter::findEarliestPattern(const std::string& line,
+									   ContextFrame currentContext,
+									   int handledUpTo,
+									   bool checkWhile,
+									   bool on_start)
+{
 	int first_index = -1;
 	std::shared_ptr<Rule> first_rule;
 	int length = -1;
 	bool is_end_of_segment = false;
 	std::vector<Captured> captured;
 	OnigRegion* thisRegion = nullptr;
-	
-	const OnigUChar* str = reinterpret_cast<const OnigUChar*>(line.data());
-	const OnigUChar* end = str + line.size();
-	
-	// first let's look for the end of the current contextframe
-	
+
+	const OnigUChar* str    = reinterpret_cast<const OnigUChar*>(line.data());
+	const OnigUChar* strEnd = str + line.size();     // <-- TRUE end, never change
+	const OnigUChar* rangeEnd = strEnd;              // <-- search limit, OK to shrink
+
+	// --- end-of-context search ---
 	bool skip = false;
 	if (currentContext.closable) {
 		RegexInfo* end_reg = currentContext.endReg;
-		
 		OnigRegion* region = onig_region_new();
-		
+
 		int r = onig_search(
 			end_reg->regex,
-			str, end,     // entire buffer
-			str+handledUpTo, end,     // search from str to end
+			str, strEnd,                 // whole string
+			str + handledUpTo, rangeEnd, // search range
 			region,
 			ONIG_OPTION_NONE
 		);
-		
+
 		if (r >= 0 && (on_start || !end_reg->G) && (!on_start || !end_reg->bangG)) {
 			first_index = region->beg[0];
 			length = region->end[0] - region->beg[0];
 			is_end_of_segment = true;
+
 			OnigRegion* copy = onig_region_new();
 			onig_region_copy(copy, region);
 			thisRegion = copy;
-			
-			captured = {};
-			
+
+			captured.clear();
 			for (auto it : currentContext.endCaptures) {
 				int itm = it.first;
 				Capture cap = it.second;
-				
+
 				int indx = region->beg[itm];
-				int len = region->end[itm]-region->beg[itm];
-				
-				if (indx < 0) {
-					continue;
-				}
-				
-				Captured cptrd = {itm, cap, indx, len};
-				captured.push_back(cptrd);
+				int len  = region->end[itm] - region->beg[itm];
+				if (indx < 0) continue;
+
+				captured.push_back({itm, cap, indx, len});
 			}
-			
-			if (first_index == handledUpTo) {
-				skip = true;
-			}
+
+			if (first_index == handledUpTo) skip = true;
+
+			// Optional optimization: restrict future searches to <= first_index
+			rangeEnd = str + first_index;
 		}
-		
+
 		onig_region_free(region, 1);
-		
+
+		// --- while handling stays the same, but use strEnd/rangeEnd too ---
 		RegexInfo* while_reg = currentContext.whileReg;
-		
 		if (while_reg && checkWhile) {
 			OnigRegion* region_while = onig_region_new();
-			
 			r = onig_search(
 				while_reg->regex,
-				str, end,     // entire buffer
-				str+handledUpTo, end,     // search from str to end
+				str, strEnd,
+				str + handledUpTo, rangeEnd,
 				region_while,
 				ONIG_OPTION_NONE
 			);
-			
+
 			if (!skip && (r < 0 || (!on_start && end_reg->G) || (!on_start && end_reg->bangG))) {
-				first_index        = handledUpTo;     // end right where we are
-				length             = 0;               // zero-length (don’t consume text)
-				first_rule.reset();                   // no explicit rule object
-				is_end_of_segment  = true;            // tell caller to pop the context
-				
-				if (thisRegion)                       // discard any earlier region copy
-					onig_region_free(thisRegion, 1);
+				first_index       = handledUpTo;
+				length            = 0;
+				first_rule.reset();
+				is_end_of_segment = true;
+
+				if (thisRegion) onig_region_free(thisRegion, 1);
 				thisRegion = nullptr;
-			
-				captured.clear();                     // no capture data
-				skip = true;                          // we’re done evaluating this line
-				
+
+				captured.clear();
+				skip = true;
 			}
-			
 			onig_region_free(region_while, 1);
 		}
 	}
-	
+
+	// --- pattern search ---
 	for (auto const& p : activePatterns) {
-		if (skip) {
-			break;
-		}
-		
-		regex_t* to_find;
-		
-		bool G = false;
-		bool bangG = false;
-		
-		// there will be no includes here, we already resolved them (as well as 'groups')
+		if (skip) break;
+
+		regex_t* to_find = nullptr;
+		bool G = false, bangG = false;
+
 		if (p->type_of_rule == MATCH) {
 			to_find = p->matchReg->regex;
 			G = p->matchReg->G;
 			bangG = p->matchReg->bangG;
-		}else if (p->type_of_rule == RANGE) {
+		} else if (p->type_of_rule == RANGE) {
 			to_find = p->beginReg->regex;
 			G = p->beginReg->G;
 			bangG = p->beginReg->bangG;
-		}else{
-			std::cout << "Problem in fetch must have occured, got non match/range in search. " << p->type_of_rule << std::endl;
+		} else {
 			continue;
 		}
-		
-		if (!((on_start || !G) && (!on_start || !bangG))){
-			continue;
-		}
-		
+
+		if (!((on_start || !G) && (!on_start || !bangG))) continue;
+
 		OnigRegion* region = onig_region_new();
-		
 		int r = onig_search(
 			to_find,
-			str, end,     // up to the start of the first found (or entire)
-			str+handledUpTo, end,     // search from str to end
+			str, strEnd,
+			str + handledUpTo, rangeEnd,
 			region,
 			ONIG_OPTION_NONE
 		);
-		
+
 		if (r >= 0) {
 			int start = region->beg[0];
-			int len = region->end[0] - region->beg[0];
-			
+			int len   = region->end[0] - region->beg[0];
+
 			if (first_index == -1 || start < first_index) {
 				first_index = start;
 				length = len;
 				first_rule = p;
 				is_end_of_segment = false;
-				
-				end = str+first_index+length;
-				
-				// create copy of the region
+
+				// shrink search range, NOT string end
+				rangeEnd = str + first_index;
+
 				OnigRegion* copy = onig_region_new();
 				onig_region_copy(copy, region);
-				if (thisRegion) {
-					onig_region_free(thisRegion, 1);
-				}
+				if (thisRegion) onig_region_free(thisRegion, 1);
 				thisRegion = copy;
-				
-				if (first_index == handledUpTo) {
-					skip = true;
-				}
-				
-				captured = {};
-				
-				std::map<int,Capture> captures = {};
-				
-				if (p->type_of_rule == MATCH) {
-					captures = p->captures;
-				}else{
-					captures = p->beginCaptures;
-				}
-				
-				captured = {};
-				
-				for (auto it : captures) {
+
+				if (first_index == handledUpTo) skip = true;
+
+				captured.clear();
+				const auto& caps = (p->type_of_rule == MATCH) ? p->captures : p->beginCaptures;
+				for (auto it : caps) {
 					int itm = it.first;
-					Capture cap = it.second;
-					
+					const Capture& cap = it.second;
+
 					int indx = region->beg[itm];
-					int len = region->end[itm]-region->beg[itm];
-					
-					if (indx < 0) {
-						continue;
-					}
-					
-					Captured cptrd = {itm, cap, indx, len};
-					captured.push_back(cptrd);
+					int clen = region->end[itm] - region->beg[itm];
+					if (indx < 0) continue;
+
+					captured.push_back({itm, cap, indx, clen});
 				}
 			}
 		}
-		
+
 		onig_region_free(region, 1);
 	}
-	
+
 	return Match{ first_index, length, first_rule, is_end_of_segment, captured, thisRegion };
 }
 

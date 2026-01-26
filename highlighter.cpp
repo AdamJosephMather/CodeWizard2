@@ -284,10 +284,6 @@ Match Highlighter::findEarliestPattern(const std::string& line, ContextFrame cur
 				}
 				thisRegion = copy;
 				
-//				if (first_index == handledUpTo) {
-//					rangeEnd = str + handledUpTo + 2;
-//				}
-				
 				captured = {};
 				
 				std::map<int,Capture> captures = {};

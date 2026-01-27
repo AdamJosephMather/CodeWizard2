@@ -347,9 +347,123 @@ static std::string fileUriToPath(const std::string& uri) {
 	return uriDecode(path);
 }
 
+static void trim_decimal(std::string& s) {
+	auto dot = s.find('.');
+	if (dot == std::string::npos) return;
+	while (!s.empty() && s.back() == '0') s.pop_back();
+	if (!s.empty() && s.back() == '.') s.pop_back();
+}
+
+static icu::UnicodeString doubleToUnicodeString_pretty(double value) {
+	if (std::isnan(value))  return icu::UnicodeString::fromUTF8("nan");
+	if (std::isinf(value))  return icu::UnicodeString::fromUTF8(value < 0 ? "-inf" : "inf");
+	if (value == 0.0)       return icu::UnicodeString::fromUTF8("0"); // avoid "-0"
+
+	const double av = std::fabs(value);
+
+	// Tune these thresholds to taste.
+	// If the number is tiny or huge, use mantissa*10^exp form.
+	const bool use_10 =
+		(av < 1e-6) || (av >= 1e9);
+
+	// Significant digits for the mantissa (pretty, not necessarily round-trip exact)
+	constexpr int SIG = 9;
+
+	if (!use_10) {
+		// Defaultfloat gives a nice compact decimal in most cases.
+		std::ostringstream oss;
+		oss.setf(std::ios::fmtflags(0), std::ios::floatfield); // defaultfloat
+		oss << std::setprecision(SIG) << value;
+
+		std::string s = oss.str();
+		// If defaultfloat chose scientific (rare with these thresholds), normalize it to decimal-ish:
+		// but your parser doesn't accept 'e', so just force fixed if it happens.
+		if (s.find_first_of("eE") != std::string::npos) {
+			std::ostringstream oss2;
+			oss2.setf(std::ios::fixed);
+			oss2 << std::setprecision(SIG) << value;
+			s = oss2.str();
+		}
+		trim_decimal(s);
+		if (s == "-0") s = "0";
+		return icu::UnicodeString::fromUTF8(s);
+	}
+
+	// Compute base-10 exponent and mantissa.
+	int exp10 = static_cast<int>(std::floor(std::log10(av)));
+	double mant = value / std::pow(10.0, exp10);
+
+	// Rounding can push mantissa to 10.0; normalize if that happens.
+	if (std::fabs(mant) >= 10.0) {
+		mant /= 10.0;
+		exp10 += 1;
+	}
+
+	// Format mantissa as plain decimal (no 'e'), then trim zeros.
+	std::ostringstream moss;
+	moss.setf(std::ios::fixed);
+	// For mantissa in [1,10), fixed with (SIG-1) decimals gives ~SIG significant digits.
+	moss << std::setprecision(std::max(0, SIG - 1)) << mant;
+
+	std::string m = moss.str();
+	trim_decimal(m);
+	if (m == "-0") m = "0";
+
+	// If exponent is 0, just return mantissa.
+	if (exp10 == 0) {
+		return icu::UnicodeString::fromUTF8(m);
+	}
+
+	// Emit parseable form for your evaluator: "<mantissa>*10^<exp>"
+	std::string out = m + "*10^" + std::to_string(exp10);
+	return icu::UnicodeString::fromUTF8(out);
+}
+
 static icu::UnicodeString doubleToUnicodeString(double value) {
-	std::string ascii = std::to_string(value);
-	return icu::UnicodeString::fromUTF8(ascii);
+	// Handle special cases explicitly (optional, but avoids weird outputs).
+	if (std::isnan(value))  return icu::UnicodeString::fromUTF8("nan");
+	if (std::isinf(value))  return icu::UnicodeString::fromUTF8(value < 0 ? "-inf" : "inf");
+	if (value == 0.0)       return icu::UnicodeString::fromUTF8("0"); // avoids "-0"
+
+	const double av = std::fabs(value);
+
+	// We want enough significant digits that parsing back reproduces the same double.
+	constexpr int P = std::numeric_limits<double>::max_digits10; // 17
+
+	// e10 = floor(log10(|value|)) gives exponent in base-10.
+	// For fixed formatting: digits_after_decimal needed to keep ~P significant digits.
+	int e10 = static_cast<int>(std::floor(std::log10(av)));
+
+	int digits_after_decimal;
+	if (e10 >= 0) {
+		// value has (e10+1) digits before decimal.
+		digits_after_decimal = std::max(0, P - (e10 + 1));
+	} else {
+		// value is < 1. Need to skip leading zeros after decimal: -e10 places,
+		// then add (P-1) more digits for significance.
+		digits_after_decimal = (-e10) + (P - 1);
+	}
+
+	// Safety cap to avoid absurdly long strings if someone enters crazy-small numbers.
+	// (You can raise this if you want.)
+	digits_after_decimal = std::min(digits_after_decimal, 400);
+
+	std::ostringstream oss;
+	oss.setf(std::ios::fixed);
+	oss << std::setprecision(digits_after_decimal) << value;
+
+	std::string s = oss.str();
+
+	// Trim trailing zeros and then a trailing decimal point.
+	if (s.find('.') != std::string::npos) {
+		while (!s.empty() && s.back() == '0') s.pop_back();
+		if (!s.empty() && s.back() == '.') s.pop_back();
+	}
+
+	// If we trimmed down to "-0", normalize to "0".
+	if (s == "-0") s = "0";
+
+	return icu::UnicodeString::fromUTF8(s);
 }
 
 static double unicodeStringToDouble_quick(const icu::UnicodeString& str, bool& worked) {

@@ -664,16 +664,12 @@ void Settings::executeAction(WidgetActionType typ) {
 			for (auto e : settings_menus[i]) {
 				if (auto se = dynamic_cast<SettingsBool*>(e)) {
 					se->value = App::settings->getValue(se->key_name, se->default_value);
-					std::cout << se->key_name << " " << se->value << "\n";
 				}else if (auto se = dynamic_cast<SettingsInt*>(e)) {
 					se->value = App::settings->getValue(se->key_name, se->default_value);
-					std::cout << se->key_name << " " << se->value << "\n";
 				}else if (auto se = dynamic_cast<SettingsString*>(e)) {
 					se->value = App::settings->getValue(se->key_name, se->default_value);
-					std::cout << se->key_name << " " << se->value << "\n";
 				}else if (auto se = dynamic_cast<SettingsFloat*>(e)) {
 					se->value = App::settings->getValue(se->key_name, se->default_value);
-					std::cout << se->key_name << " " << se->value << "\n";
 				}
 			}
 		}

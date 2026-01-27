@@ -75,8 +75,9 @@ MathWindow::MathWindow(Widget *parent) : Widget(parent) {
 			
 			auto res = calcExpression(modded);
 			if (res.first){
+				results.push_back(doubleToUnicodeString_pretty(res.second));
+				
 				auto out = doubleToUnicodeString(res.second);
-				results.push_back(out);
 				lastCalc = out;
 				if (varname != "") {
 					vars[varname] = out;

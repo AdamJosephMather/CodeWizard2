@@ -1866,7 +1866,7 @@ void App::fillCmdBox() {
 	if (res.first){
 		INDEXED_FILES.currentlyshowing.push_back(0);
 		INDEXED_FILES.currentlyshowingtype.push_back(1);
-		els.push_back(doubleToUnicodeString(res.second));
+		els.push_back(doubleToUnicodeString_pretty(res.second));
 	}
 	
 	std::string str;

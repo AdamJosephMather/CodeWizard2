@@ -43,7 +43,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 2;
-int App::patch_version = 4;
+int App::patch_version = 5;
 
 
 float M_PI = 3.141592653589793238;
@@ -2308,6 +2308,21 @@ void App::setTintedColor(Color* tint_c, Color* c, float b) {
 	}
 	
 	float tcb = tint_c->r*0.299+tint_c->g*0.587+tint_c->b*0.114;
+	
+	if (tcb == 0) {
+		tint_c->r = 0.1;
+		tint_c->g = 0.1;
+		tint_c->b = 0.1;
+		
+		tcb = 0.1;
+	}else if (tcb < 0.1) {
+		tint_c->r *= 0.1/tcb;
+		tint_c->g *= 0.1/tcb;
+		tint_c->b *= 0.1/tcb;
+		
+		tcb = 0.1;
+	}
+	
 	float scale = (b/tcb+b*2)/3;
 	
 	float new_r = fmin(255.0, tint_c->r*scale);

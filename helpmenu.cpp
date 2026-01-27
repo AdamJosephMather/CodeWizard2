@@ -13,6 +13,7 @@ HelpMenu::HelpMenu(Widget* parent) : Widget(parent) {
 	});
 	closebutton->window_button = true;
 	closebutton->rounded = true;
+	closebutton->background_color = App::theme.del_diff;
 	
 	tb = new Tabs(this);
 	tb->POSITIONER = [&](Widget* t) {

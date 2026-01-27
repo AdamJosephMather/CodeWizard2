@@ -423,15 +423,13 @@ void Settings::handleChange(TextEdit* te, SettingsElement* se) {
 	text.toUTF8String(str);
 	
 	if (auto i = dynamic_cast<SettingsString*>(se)) {
-		if (str == "") {
-			i->value = i->default_value;
-		}else{
+		if (str != "") {
+			std::string oldvalue = i->value;
 			i->value = str;
-		}
-		
-		if (validate_input(i)) {
-			App::settings->setValue(se->key_name, str);
-			after_change(i);
+			if (validate_input(i, oldvalue)) {
+				App::settings->setValue(se->key_name, str);
+				after_change(i);
+			}
 		}
 	}else if (auto i = dynamic_cast<SettingsBool*>(se)) {
 		if (str == "true") {
@@ -485,6 +483,8 @@ void Settings::handleChange(TextEdit* te, SettingsElement* se) {
 	}
 	
 	setWithValue(te, se);
+	
+	App::rootelement->executeAction(WidgetActionType::SETTINGS_CHANGE);
 }
 
 bool Settings::on_key_event(int key, int scancode, int action, int mods) {
@@ -593,11 +593,11 @@ bool Settings::validate_input(SettingsBool* el) {
 	return true;
 }
 
-bool handleColor(bool syntax, SettingsString* el, int indx) {
+bool handleColor(bool syntax, SettingsString* el, int indx, std::string before) {
 	bool worked;
 	Color c = stringToColor(el->value, worked);
 	if (!worked) {
-		el->value = el->default_value;
+		el->value = before; //el->default_value;
 		return false;
 	}
 	
@@ -613,7 +613,7 @@ bool handleColor(bool syntax, SettingsString* el, int indx) {
 	return true;
 }
 
-bool Settings::validate_input(SettingsString* el) {
+bool Settings::validate_input(SettingsString* el, std::string before) {
 	if (el->key_name == "font_path") {
 		if (!std::filesystem::exists(el->value)) {
 			std::cout << "Path: " << el->value << "\ndoes not exist.\n";
@@ -632,28 +632,54 @@ bool Settings::validate_input(SettingsString* el) {
 		
 		return true;
 	}else if (el->key_name == "c_strings_color") {
-		return handleColor(true, el, 1);
+		return handleColor(true, el, 1, before);
 	}else if (el->key_name == "c_comments_color") {
-		return handleColor(true, el, 2);
+		return handleColor(true, el, 2, before);
 	}else if (el->key_name == "c_vars_color") {
-		return handleColor(true, el, 3);
+		return handleColor(true, el, 3, before);
 	}else if (el->key_name == "c_types_color") {
-		return handleColor(true, el, 4);
+		return handleColor(true, el, 4, before);
 	}else if (el->key_name == "c_functs_color") {
-		return handleColor(true, el, 5);
+		return handleColor(true, el, 5, before);
 	}else if (el->key_name == "c_keywords_color") {
-		return handleColor(true, el, 6);
+		return handleColor(true, el, 6, before);
 	}else if (el->key_name == "c_punctuation_color") {
-		return handleColor(true, el, 7);
+		return handleColor(true, el, 7, before);
 	}else if (el->key_name == "c_literals_color") {
-		return handleColor(true, el, 8);
+		return handleColor(true, el, 8, before);
 	}else if (el->key_name == "c_tint_color") {
-		bool worked = handleColor(false, el, -1);
+		bool worked = handleColor(false, el, -1, before);
 		App::updateFromTintColor(&App::theme);
 		return worked;
 	}
 	
 	return true;
+}
+
+void Settings::executeAction(WidgetActionType typ) {
+	if (typ == WidgetActionType::SETTINGS_CHANGE) {
+		std::cout << "Settings changed, reloading...\n";
+		
+		for (int i = 0; i < settings_menus.size(); i++) {
+			for (auto e : settings_menus[i]) {
+				if (auto se = dynamic_cast<SettingsBool*>(e)) {
+					se->value = App::settings->getValue(se->key_name, se->default_value);
+					std::cout << se->key_name << " " << se->value << "\n";
+				}else if (auto se = dynamic_cast<SettingsInt*>(e)) {
+					se->value = App::settings->getValue(se->key_name, se->default_value);
+					std::cout << se->key_name << " " << se->value << "\n";
+				}else if (auto se = dynamic_cast<SettingsString*>(e)) {
+					se->value = App::settings->getValue(se->key_name, se->default_value);
+					std::cout << se->key_name << " " << se->value << "\n";
+				}else if (auto se = dynamic_cast<SettingsFloat*>(e)) {
+					se->value = App::settings->getValue(se->key_name, se->default_value);
+					std::cout << se->key_name << " " << se->value << "\n";
+				}
+			}
+		}
+		
+		tab_bar->tab_clicked_callback(tab_bar->tabs_list[tab_bar->selected_id]);
+	}
 }
 
 void Settings::after_change(SettingsString* el) {

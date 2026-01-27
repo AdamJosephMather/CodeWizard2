@@ -8,7 +8,8 @@
 
 enum WidgetActionType {
 	RESTART_LSP,
-	AJM_SETTINGS_CHANGE
+	AJM_SETTINGS_CHANGE,
+	SETTINGS_CHANGE
 };
 
 class Widget {

@@ -1647,6 +1647,8 @@ void App::executeCommandPaletteAction() {
 						setSynColor(&theme, "c_punctuation_color", 7);
 						setSynColor(&theme, "c_literals_color", 8);
 						displayToast(icu::UnicodeString::fromUTF8("Done!"));
+						
+						App::rootelement->executeAction(WidgetActionType::SETTINGS_CHANGE);
 					}
 				}
 			}

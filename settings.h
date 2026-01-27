@@ -54,6 +54,8 @@ public:
 //	bool on_mouse_move_event();
 	bool on_scroll_event(double xchange, double ychange);
 	
+	void executeAction(WidgetActionType typ);
+	
 	SettingsFloat* makeFloat(std::string name, std::string key, float default_value);
 	SettingsInt* makeInt(std::string name, std::string key, int default_value);
 	SettingsBool* makeBool(std::string name, std::string key, bool default_value);
@@ -67,7 +69,7 @@ public:
 	bool validate_input(SettingsFloat* el);
 	bool validate_input(SettingsInt* el);
 	bool validate_input(SettingsBool* el);
-	bool validate_input(SettingsString* el);
+	bool validate_input(SettingsString* el, std::string before);
 	
 	void position(int x, int y, int w, int h);
 	void render();

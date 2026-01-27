@@ -2,7 +2,6 @@
 
 #include "button.h"
 #include "application.h"
-#include "text_renderer.h"
 
 TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	Button* ext_b = new Button(this, icu::UnicodeString::fromUTF8("X"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -15,6 +14,7 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	ext_b->window_button = true;
 	ext_b->execute_on_down = false;
 	ext_b->rounded = true;
+	ext_b->background_color = App::theme.del_diff;
 	
 	Button* win_b = new Button(this, icu::UnicodeString::fromUTF8("□"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_w-tw*2;
@@ -26,6 +26,7 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	win_b->window_button = true;
 	win_b->execute_on_down = false;
 	win_b->rounded = true;
+	win_b->background_color = App::theme.hover_background_color;
 	
 	Button* min_b = new Button(this, icu::UnicodeString::fromUTF8("-"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_w-tw*3;
@@ -37,6 +38,7 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	min_b->window_button = true;
 	min_b->execute_on_down = false;
 	min_b->rounded = true;
+	min_b->background_color = App::theme.hover_background_color;
 	
 	hovered = false;
 	

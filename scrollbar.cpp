@@ -58,7 +58,7 @@ void Scrollbar::position(int x, int y, int width, int height) {
 		return;
 	}
 	
-	bar_width = TextRenderer::get_text_width(1);
+	bar_width = TextRenderer::get_text_width(1)*1.15;
 	int far_right = parent->t_x+parent->t_w;
 	int far_bottom = parent->t_y+parent->t_h;
 	

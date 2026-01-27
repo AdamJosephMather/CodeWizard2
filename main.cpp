@@ -42,8 +42,6 @@
 int main(int argc, char* argv[]) {
 	curl_global_init(CURL_GLOBAL_DEFAULT);
 	
-	App::Init();
-	
 	Theme theme;
 	
 	theme.add_panel = MakeColor(0.2f, 1.0f, 0.2f, 0.25f);
@@ -80,6 +78,10 @@ int main(int argc, char* argv[]) {
 	theme.syntax_colors[6] = MakeColor(0.6901960784313725, 0.37254901960784315, 0.7803921568627451);
 	theme.syntax_colors[7] = MakeColor(0.4980392156862745, 0.5176470588235295, 0.5568627450980392);
 	theme.syntax_colors[8] = MakeColor(0.7607843137254902, 0.4980392156862745, 0.25098039215686274);
+	
+	App::theme = theme;
+	
+	App::Init();
 	
 	App::setSynColor(&theme, "c_strings_color", 1);
 	App::setSynColor(&theme, "c_comments_color", 2);
@@ -129,6 +131,7 @@ int main(int argc, char* argv[]) {
 		App::adding_panel();
 	});
 	add_button->rounded = true;
+	add_button->background_color = App::theme.hover_background_color;
 	
 	Button* remove_button = new Button(App::tb, icu::UnicodeString::fromUTF8("-"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = add_button->t_w+3;
@@ -137,6 +140,7 @@ int main(int argc, char* argv[]) {
 		App::removing_panel();
 	});
 	remove_button->rounded = true;
+	remove_button->background_color = App::theme.hover_background_color;
 	
 	TextEdit* commandPalette = new TextEdit(App::tb, [&](Widget* w){
 		w->t_x = w->t_w/2 - w->t_w/6;

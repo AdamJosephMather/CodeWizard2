@@ -121,7 +121,7 @@ void Tabs::render() {
 			
 			if (has_close_button){
 				if (hovering.indx == indx && !hovering.body) {
-					c = App::theme.hover_background_color;
+					c = App::theme.del_diff;
 				}else{
 					c = App::theme.extras_background_color;
 				}

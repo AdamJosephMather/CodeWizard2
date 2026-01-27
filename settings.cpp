@@ -658,8 +658,6 @@ bool Settings::validate_input(SettingsString* el, std::string before) {
 
 void Settings::executeAction(WidgetActionType typ) {
 	if (typ == WidgetActionType::SETTINGS_CHANGE) {
-		std::cout << "Settings changed, reloading...\n";
-		
 		for (int i = 0; i < settings_menus.size(); i++) {
 			for (auto e : settings_menus[i]) {
 				if (auto se = dynamic_cast<SettingsBool*>(e)) {

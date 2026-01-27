@@ -410,7 +410,6 @@ void TerminalWidget::render() {
 				App::DrawRect(x, y, TextRenderer::get_text_width(1), TextRenderer::get_text_height(), cell.bg_red, cell.bg_green, cell.bg_blue);
 			}
 			
-			
 			if (ci.row == r && ci.col == c && ci.visible) {
 				if (ci.shape == 1) { // block
 					App::DrawRect(x, y, TextRenderer::get_text_width(1), TextRenderer::get_text_height(), App::theme.white);

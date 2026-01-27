@@ -362,7 +362,7 @@ void TerminalWidget::position(int x, int y, int w, int h) {
 	int width_cells = std::max((w-App::text_padding*2) / TextRenderer::get_text_width(1), 1);
 	int height_cells = std::max((h-App::text_padding*2) / TextRenderer::get_text_height(), 1);
 	
-	if (!settingup && (prev_w_cells != width_cells || prev_h_cells != height_cells)) {
+	if (!settingup && (prev_w_cells != width_cells || prev_h_cells != height_cells) && !glfwGetWindowAttrib(App::window, GLFW_ICONIFIED)) {
 		term->resize(width_cells, height_cells);
 		prev_w_cells = width_cells;
 		prev_h_cells = height_cells;

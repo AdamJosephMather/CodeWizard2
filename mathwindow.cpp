@@ -13,6 +13,8 @@ MathWindow::MathWindow(Widget *parent) : Widget(parent) {
 	});
 	mathInput->rounded = true;
 	mathInput->border = true;
+	mathInput->scrollbar_horizontal = true;
+	mathInput->scrollbar_vertical = true;
 	
 	mathInput->ontextchange = [&](Widget* w){
 		results.clear();
@@ -101,13 +103,13 @@ void MathWindow::position(int x, int y, int w, int h) {
 }
 
 void MathWindow::render() {
-	Widget::render();
-	
 	int x = t_x+mathInput->t_w+1;
 	int w = t_w-mathInput->t_w-1;
 	
-	App::DrawRoundedRect(x, t_y, w, t_h, App::text_padding, App::theme.overlay_background_color);
-	App::DrawRoundBorder(x, t_y, w, t_h, App::theme.border, 5, App::text_padding);
+	App::DrawRoundedRect(x-App::text_padding*2-1, t_y, w+App::text_padding*2+1, t_h, App::text_padding, App::theme.overlay_background_color);
+	App::DrawRoundBorder(x-App::text_padding*2-1, t_y, w+App::text_padding*2+1, t_h, App::theme.border, 5, App::text_padding);
+	
+	Widget::render();
 	
 	int cury = mathInput->start_y+t_y+App::text_padding;
 	x += App::text_padding;

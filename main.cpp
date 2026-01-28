@@ -131,7 +131,8 @@ int main(int argc, char* argv[]) {
 		App::adding_panel();
 	});
 	add_button->rounded = true;
-	add_button->background_color = App::theme.hover_background_color;
+//	add_button->background_color = App::theme.hover_background_color;
+	add_button->background_color = App::theme.add_panel;
 	
 	Button* remove_button = new Button(App::tb, icu::UnicodeString::fromUTF8("-"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = add_button->t_w+3;
@@ -140,7 +141,8 @@ int main(int argc, char* argv[]) {
 		App::removing_panel();
 	});
 	remove_button->rounded = true;
-	remove_button->background_color = App::theme.hover_background_color;
+//	remove_button->background_color = App::theme.hover_background_color;
+	remove_button->background_color = App::theme.remove_panel ;
 	
 	TextEdit* commandPalette = new TextEdit(App::tb, [&](Widget* w){
 		w->t_x = w->t_w/2 - w->t_w/6;

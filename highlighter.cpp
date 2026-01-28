@@ -259,22 +259,29 @@ Match Highlighter::findEarliestPattern(const std::string& line, ContextFrame cur
 		int r = onig_search(
 			to_find,
 			str, strEnd,     // up to the start of the first found (or entire)
-			str+handledUpTo, rangeEnd,     // search from str to end
+			str+handledUpTo, rangeEnd,     // search from str to range end
 			region,
 			ONIG_OPTION_NONE
 		);
+		
+		if (r < 0 && r != ONIG_MISMATCH) {
+			char s[ONIG_MAX_ERROR_MESSAGE_LEN];
+			onig_error_code_to_str((OnigUChar*)s, r);
+			std::cerr << "onig_search error: " << s << "\n";
+		}
 		
 		if (r >= 0) {
 			int start = region->beg[0];
 			int len = region->end[0] - region->beg[0];
 			
-			if (first_index == -1 || start < first_index || (start == first_index && len > length)) {
+			if (first_index == -1 || start < first_index) {
 				first_index = start;
 				length = len;
 				first_rule = p;
 				is_end_of_segment = false;
 				
-				rangeEnd = str + first_index + 2;  // allow start == first_index
+				// this breaks things. I don't know why, can't figure it out.
+//				rangeEnd = str + first_index;
 
 				// create copy of the region
 				OnigRegion* copy = onig_region_new();
@@ -309,6 +316,11 @@ Match Highlighter::findEarliestPattern(const std::string& line, ContextFrame cur
 					
 					Captured cptrd = {itm, cap, indx, len};
 					captured.push_back(cptrd);
+				}
+				
+				if (start == handledUpTo) {
+					onig_region_free(region, 1);
+					break;
 				}
 			}
 		}

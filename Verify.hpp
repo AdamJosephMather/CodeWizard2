@@ -14,10 +14,10 @@
 #include <chrono>
 #include <cstdint>
 #include <cstring>
-#include <stdexcept>
 
 #include <iostream>
 #include <sstream>
+#include "application.h"
 
 class Verify {
 public:
@@ -41,36 +41,46 @@ public:
 			std::cerr << "Verify::setup: password is empty\n";
 			return;
 		}
-		
+	
 		std::array<unsigned char, KEY_LEN_BYTES> key{};
+		std::string cacheKeyName = password + "_calculated_key";
 		
-		// Match PyCryptodome PBKDF2 default digest (HMAC-SHA1)
-		// int PKCS5_PBKDF2_HMAC(const char *pass, int passlen, const unsigned char *salt, int saltlen,
-		//                       int iter, const EVP_MD *digest, int keylen, unsigned char *out);
-		const int ok = PKCS5_PBKDF2_HMAC(
-			password.data(),
-			static_cast<int>(password.size()),
-			SALT.data(),
-			static_cast<int>(SALT.size()),
-			PBKDF2_ITERS,
-			EVP_sha1(),
-			KEY_LEN_BYTES,
-			key.data()
-		);
-
-		if (ok != 1) {
-			return;
+		// 1. Try to load existing key
+		std::string cachedKeyHex = App::settings->getValue(cacheKeyName, (std::string)"");
+	
+		if (!cachedKeyHex.empty() && cachedKeyHex.length() == KEY_LEN_BYTES * 2) {
+			// Load from cache
+			hex_to_bytes(cachedKeyHex, key.data());
+		} else {
+			// 2. Not in cache, calculate it
+			const int ok = PKCS5_PBKDF2_HMAC(
+				password.data(),
+				static_cast<int>(password.size()),
+				SALT.data(),
+				static_cast<int>(SALT.size()),
+				PBKDF2_ITERS,
+				EVP_sha1(),
+				KEY_LEN_BYTES,
+				key.data()
+			);
+	
+			if (ok != 1) {
+				return;
+			}
+	
+			// 3. Store the newly calculated key
+			std::string key_string = bytes_to_hex(key.data(), key.size());
+			App::settings->setValue(cacheKeyName, key_string);
 		}
-
+	
 		{
 			std::lock_guard<std::mutex> lock(s_keyMutex);
 			// overwrite any existing key
 			OPENSSL_cleanse(s_key.data(), s_key.size());
 			s_key = key;
-//			std::cout << bytes_as_python_b(key.data(), key.size()) << "\n";
 			s_isReady = true;
 		}
-
+	
 		OPENSSL_cleanse(key.data(), key.size());
 	}
 
@@ -348,7 +358,7 @@ private:
 		return ok;
 	}
 
-	static std::string bytesToHex(const unsigned char* data, size_t len) {
+	static std::string bytesToHex(const unsigned char* data, size_t len) { // chatgpt made this one
 		static const char* DIGITS = "0123456789abcdef";
 		std::string out;
 		out.resize(len * 2);
@@ -358,6 +368,23 @@ private:
 			out[i * 2 + 1] = DIGITS[(v >> 0) & 0xF];
 		}
 		return out;
+	}
+	
+	static std::string bytes_to_hex(const unsigned char* data, size_t len) { // gemini made this one (we use both...)
+		std::stringstream ss;
+		ss << std::hex << std::setfill('0');
+		for (size_t i = 0; i < len; ++i) {
+			ss << std::setw(2) << static_cast<int>(data[i]);
+		}
+		return ss.str();
+	}
+	
+	// Helper to convert hex string back to bytes
+	static void hex_to_bytes(const std::string& hex, unsigned char* out) {
+		for (size_t i = 0; i < hex.length(); i += 2) {
+			std::string byteString = hex.substr(i, 2);
+			out[i / 2] = static_cast<unsigned char>(strtol(byteString.c_str(), nullptr, 16));
+		}
 	}
 
 	static int fromHexNibble(char c) {

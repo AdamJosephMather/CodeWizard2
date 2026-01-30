@@ -40,6 +40,8 @@
 //extern "C" PfnDliHook __pfnDliNotifyHook2 = DelayHook;
 
 int main(int argc, char* argv[]) {
+	auto start = std::chrono::steady_clock::now();
+	
 	curl_global_init(CURL_GLOBAL_DEFAULT);
 	
 	Theme theme;
@@ -283,6 +285,12 @@ int main(int argc, char* argv[]) {
 	
 	HelpMenu* helpMenu = new HelpMenu(nullptr);
 	App::helpMenu = helpMenu;
+	
+	auto end = std::chrono::steady_clock::now();
+	
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	
+	std::cout << "Init took: " << duration.count() << " milliseconds" << std::endl;
 	
 	App::Run();
 	

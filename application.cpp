@@ -200,6 +200,7 @@ bool App::Init() {
 	settings->loadSettings();
 	
 	std::string password = settings->getValue("ajm_asv3_password", (std::string)"devpassword"); // must happen after settings setup.
+	
 	Verify::setup(password);
 	
 	darkmode = settings->getValue("dark_mode", true);

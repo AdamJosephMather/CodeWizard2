@@ -1410,7 +1410,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 				return true;
 			}
 			
-			if (key == GLFW_KEY_ESCAPE && is_press && in_normal) {
+			if (key == GLFW_KEY_ESCAPE && is_press && (in_normal || !App::settings->getValue("use_vim", false))) {
 				find_menu_open = false;
 				App::RemoveWidgetFromParent(replaceTextEdit);
 				App::RemoveWidgetFromParent(findTextEdit);

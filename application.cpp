@@ -160,6 +160,20 @@ int App::h_nb_current = 0;
 bool App::rendering_add_rect = false;
 bool App::rendering_rem_rect = false;
 
+static void EnablePerMonitorDpiAwareness() {
+	HMODULE user32 = GetModuleHandleW(L"user32.dll");
+	if (user32) {
+		using SetDpiCtxFn = BOOL(WINAPI*)(DPI_AWARENESS_CONTEXT);
+		auto setCtx = (SetDpiCtxFn)GetProcAddress(user32, "SetProcessDpiAwarenessContext");
+		if (setCtx) {
+			setCtx(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+			return;
+		}
+	}
+	// Fallback (older Windows):
+	SetProcessDPIAware();
+}
+
 bool App::Init() {
 	std::cout << "Init...\n";
 	
@@ -207,6 +221,8 @@ bool App::Init() {
 	WINDOW_WIDTH = settings->getValue("window_width", 1200);
 	WINDOW_HEIGHT = settings->getValue("window_height", 800);
 	
+	EnablePerMonitorDpiAwareness();
+	
 	if (!glfwInit()) {
 		std::cerr << "Failed to initialize GLFW\n";
 		return false;
@@ -218,6 +234,8 @@ bool App::Init() {
 	glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
 	
 	window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE.c_str(), nullptr, nullptr);
+	
+	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 
 	if (!window) {
 		std::cerr << "Failed to create window\n";
@@ -554,8 +572,7 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 			return 0;
 		}
 
-		case WM_SETCURSOR:
-		{
+		case WM_SETCURSOR: {
 			// Skip custom cursor handling when maximized/fullscreen
 			if (IsZoomed(hwnd)) {
 				return CallWindowProc(originalWndProc, hwnd, uMsg, wParam, lParam);
@@ -582,28 +599,26 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 			if (!wParam) { break; }
 			return 0;
 		}case WM_GETMINMAXINFO: {
-			auto mmi = reinterpret_cast<LPMINMAXINFO>(lParam);
+			auto* mmi = reinterpret_cast<MINMAXINFO*>(lParam);
 		
-			// get the monitor the window is mostly on
-			HMONITOR hMon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+			HMONITOR hm = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+			MONITORINFO mi = {};
+			mi.cbSize = sizeof(mi);
+			GetMonitorInfoW(hm, &mi);
 		
-			MONITORINFO mi{ sizeof(mi) };
-			GetMonitorInfo(hMon, &mi);
+			// Work area is the monitor minus taskbar/docked bars.
+			const RECT& rcWork = mi.rcWork;
+			const RECT& rcMon  = mi.rcMonitor;
 		
-			// your minimum tracking size
-			mmi->ptMinTrackSize.x = 480;
-			mmi->ptMinTrackSize.y = 300;
+			// ptMaxPosition is RELATIVE TO THE MONITOR (not virtual desktop).
+			mmi->ptMaxPosition.x = rcWork.left - rcMon.left;
+			mmi->ptMaxPosition.y = rcWork.top  - rcMon.top;
 		
-			// compute the maximized size and position *relative* to this monitor
-			RECT&  work    = mi.rcWork;
-			RECT&  monitor = mi.rcMonitor;
+			mmi->ptMaxSize.x = rcWork.right  - rcWork.left;
+			mmi->ptMaxSize.y = rcWork.bottom - rcWork.top;
 		
-			mmi->ptMaxSize.x     = work.right  - work.left;
-			mmi->ptMaxSize.y     = work.bottom - work.top;
-		
-			mmi->ptMaxPosition.x = work.left   - monitor.left;
-			mmi->ptMaxPosition.y = work.top    - monitor.top;
-		
+			// Optional but often helps prevent “extra” stretching:
+			mmi->ptMaxTrackSize = mmi->ptMaxSize;
 			return 0;
 		}case WM_MOVING: {
 		}case WM_SIZING: {
@@ -621,6 +636,16 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 		
 			// Consume the message
 			return TRUE;
+		}case WM_DPICHANGED: {
+			// Windows tells you the correct new window rect in lParam
+			const RECT* suggested = reinterpret_cast<const RECT*>(lParam);
+			SetWindowPos(hwnd, NULL,
+				suggested->left,
+				suggested->top,
+				suggested->right - suggested->left,
+				suggested->bottom - suggested->top,
+				SWP_NOZORDER | SWP_NOACTIVATE);
+			return 0;
 		}
 	}
 	

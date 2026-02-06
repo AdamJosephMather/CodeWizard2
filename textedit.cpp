@@ -1543,6 +1543,8 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 }
 
 bool TextEdit::handleUserKey(int key, int scancode, int action, int mods) {
+	bool is_shift_held = ((mods & GLFW_MOD_SHIFT) != 0);
+	
 	if (mode == 'n') {
 		if (key == GLFW_KEY_I) {
 			mode = 'i';
@@ -1552,7 +1554,7 @@ bool TextEdit::handleUserKey(int key, int scancode, int action, int mods) {
 		}else if (key == GLFW_KEY_N) {
 			mode = 'i';
 			vim_repeater = 0;
-			applyMoveToAllCursors(GLFW_KEY_RIGHT, false, false);
+			applyMoveToAllCursors(GLFW_KEY_RIGHT, is_shift_held, false);
 			HandleOverlappingCursors();
 			return true;
 		}
@@ -2016,38 +2018,38 @@ void TextEdit::position(int x, int y, int w, int h) {
 bool TextEdit::on_scroll_event(double xchange, double ychange) {
 	int mx = App::mouseX;
 	int my = App::mouseY;
-
+	
 	if (glfwGetKey(App::window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(App::window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
 		xchange = ychange;
 		ychange = 0;
 	}
-
+	
 	if (mx < t_x || mx > t_x+t_w || my < t_y || my > t_y+t_h) {
 		return false;
 	}
-
+	
 	int initial_scroll_vert = scrolled_to_vert;
 	int initial_scroll_horz = scrolled_to_horz;
-
+	
 	scrolled_to_horz += xchange*6;
 	scrolled_to_vert += ychange*6;
-
+	
 	if (scrolled_to_vert > max_scroll_vert) {
 		scrolled_to_vert = max_scroll_vert;
 	}else if (scrolled_to_vert < 0.0) {
 		scrolled_to_vert = 0.0;
 	}
-
+	
 	if (scrolled_to_horz > max_scroll_horz) {
 		scrolled_to_horz = max_scroll_horz;
 	}else if (scrolled_to_horz < 0.0) {
 		scrolled_to_horz = 0.0;
 	}
-
+	
 	if (initial_scroll_horz == scrolled_to_horz && initial_scroll_vert == scrolled_to_vert) {
 		return false; // no change
 	}
-
+	
 	return true;
 }
 

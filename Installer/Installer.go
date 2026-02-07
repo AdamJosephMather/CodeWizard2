@@ -2,14 +2,18 @@ package main
 
 import (
 	"archive/zip"
+	"bufio"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
-	"os/exec"
+	"syscall"
+	"unsafe"
 
+	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 )
 
@@ -38,13 +42,19 @@ func main() {
 		fmt.Scanln(&choice)
 		
 		if strings.ToLower(choice) == "uninstall" {
+			waitForCodeWizardClosed()
+		
 			fmt.Println("Uninstalling CodeWizard...")
-			destroyDir(installDir)
-			unregister()
+			fatalIf(destroyDir(installDir))   // <-- don't ignore errors
+			fatalIf(unregister())
 			fmt.Println("Uninstalled CodeWizard.")
+		
 		} else if strings.ToLower(choice) == "update" {
+			waitForCodeWizardClosed()
+		
 			fmt.Println("Updating CodeWizard...")
-			destroyDir(installDir+"\\CodeWizard")
+			fatalIf(destroyDir(filepath.Join(installDir, "CodeWizard"))) // <-- don't ignore errors
+		
 			zipPath, err := resolveBesideMe("CodeWizard.zip")
 			fatalIf(err)
 			fatalIf(extractZip(zipPath, installDir))
@@ -77,7 +87,66 @@ func main() {
 	}
 	
 	fmt.Println("Done. Press enter to finish.")
-	fmt.Scanln()
+	waitEnter("");
+}
+
+var stdin = bufio.NewReader(os.Stdin)
+
+func waitEnter(prompt string) {
+	fmt.Print(prompt)
+	_, _ = stdin.ReadString('\n')
+}
+
+func findProcessPIDsByExeName(exeName string) ([]uint32, error) {
+	snap, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
+	if err != nil {
+		return nil, err
+	}
+	defer windows.CloseHandle(snap)
+
+	var pe windows.ProcessEntry32
+	pe.Size = uint32(unsafe.Sizeof(pe))
+
+	if err := windows.Process32First(snap, &pe); err != nil {
+		return nil, err
+	}
+
+	var pids []uint32
+	for {
+		name := windows.UTF16ToString(pe.ExeFile[:])
+		if strings.EqualFold(name, exeName) {
+			pids = append(pids, pe.ProcessID)
+		}
+
+		err := windows.Process32Next(snap, &pe)
+		if err != nil {
+			if errors.Is(err, syscall.ERROR_NO_MORE_FILES) {
+				break
+			}
+			return nil, err
+		}
+	}
+
+	return pids, nil
+}
+
+func waitForCodeWizardClosed() {
+	for {
+		pids, err := findProcessPIDsByExeName("CodeWizard.exe")
+		if err != nil {
+			// If we can't check for some reason, fall back to asking the user once.
+			fmt.Println("WARNING: Could not check whether CodeWizard is running:", err)
+			waitEnter("Please make sure CodeWizard is closed, then press Enter to continue...")
+			return
+		}
+
+		if len(pids) == 0 {
+			return
+		}
+
+		fmt.Printf("WARNING: CodeWizard is currently running (PID(s): %v).\n", pids)
+		waitEnter("Close CodeWizard, then press Enter to retry...")
+	}
 }
 
 func destroyDir(path string) error {

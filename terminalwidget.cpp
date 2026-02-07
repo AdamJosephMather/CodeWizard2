@@ -640,6 +640,12 @@ bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
 bool TerminalWidget::on_mouse_move_event() {
 	if (!is_visible || !term || settingup) return false;
 	
+	if (selecting && App::mouseY-TextRenderer::get_text_height()*3 < t_y) {
+		on_scroll_event(0, -(float)(t_y-App::mouseY + TextRenderer::get_text_height()*3)/TextRenderer::get_text_width(20));
+	}else if (selecting && App::mouseY+TextRenderer::get_text_height()*3 > t_y+t_h) {
+		on_scroll_event(0, (float)(App::mouseY - (t_y+t_h) + TextRenderer::get_text_height()*3)/TextRenderer::get_text_width(20));
+	}
+	
 	ajm_asv3_tm->on_mouse_move_event();
 	
 	int row=0, col=0;
@@ -667,7 +673,7 @@ bool TerminalWidget::on_scroll_event(double /*xchange*/, double ychange) {
 	int mx = App::mouseX;
 	int my = App::mouseY;
 	
-	if (mx < t_x || mx > t_x + t_w || my < t_y || my > t_y + t_h) return false;
+	if (!selecting && (mx < t_x || mx > t_x + t_w || my < t_y || my > t_y + t_h)) return false;
 	
 	if (!is_visible) { return false; }
 	

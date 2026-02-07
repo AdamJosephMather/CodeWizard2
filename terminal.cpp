@@ -449,56 +449,59 @@ static inline int xtermMod(bool shift, bool alt, bool ctrl) {
 }
 
 bool Terminal::sendSpecialKey(SpecialKey key, bool shift, bool alt, bool ctrl) {
-	// Handle local scrollback for PgUp/PgDn when app doesn't want mouse
-	if (!appWantsMouse()) {
-		if (key == SpecialKey::PageUp) {
-			scrollbackPageUp();
-			VTermRect all{ 0, m_rows, 0, m_cols };
-			onDamage(all);
-			return true;
-		}
-		if (key == SpecialKey::PageDown) {
-			scrollbackPageDown();
-			VTermRect all{ 0, m_rows, 0, m_cols };
-			onDamage(all);
-			return true;
-		}
-	}
-
 	std::string seq;
 	int mod = xtermMod(shift, alt, ctrl);
 
-	auto withMod = [&](const char* /*base*/, char code) {
-		seq = CSI("1;" + std::to_string(mod) + std::string(1, code));
+	auto cursorKey = [&](char code) {
+		if (mod == 1) {
+			// Unmodified: standard CSI cursor key
+			seq = "\x1b[" + std::string(1, code);
+		} else {
+			// Modified: xterm style
+			seq = "\x1b[1;" + std::to_string(mod) + std::string(1, code);
+		}
 	};
 
+//	auto withModTilde = [&](const char* base) {
+//		if (mod == 1) seq = std::string(base);
+//		else {
+//			// Convert e.g. "[5~" into "[5;{mod}~" if you want (optional).
+//			// Many apps accept unmodified only; PgUp/PgDn etc are usually fine as-is.
+//			seq = std::string(base);
+//		}
+//	};
+
 	switch (key) {
-		case SpecialKey::Up:        withMod("\x1b[", 'A'); break;
-		case SpecialKey::Down:      withMod("\x1b[", 'B'); break;
-		case SpecialKey::Right:     withMod("\x1b[", 'C'); break;
-		case SpecialKey::Left:      withMod("\x1b[", 'D'); break;
-		case SpecialKey::Home:      withMod("\x1b[", 'H'); break;
-		case SpecialKey::End:       withMod("\x1b[", 'F'); break;
-		case SpecialKey::InsertKey: seq = CSI("2~"); break;
-		case SpecialKey::DeleteKey: seq = CSI("3~"); break;
-		case SpecialKey::PageUp:    seq = CSI("5~"); break;
-		case SpecialKey::PageDown:  seq = CSI("6~"); break;
-		case SpecialKey::F1:        seq = "\x1bOP"; break;
-		case SpecialKey::F2:        seq = "\x1bOQ"; break;
-		case SpecialKey::F3:        seq = "\x1bOR"; break;
-		case SpecialKey::F4:        seq = "\x1bOS"; break;
-		case SpecialKey::F5:        seq = CSI("15~"); break;
-		case SpecialKey::F6:        seq = CSI("17~"); break;
-		case SpecialKey::F7:        seq = CSI("18~"); break;
-		case SpecialKey::F8:        seq = CSI("19~"); break;
-		case SpecialKey::F9:        seq = CSI("20~"); break;
-		case SpecialKey::F10:       seq = CSI("21~"); break;
-		case SpecialKey::F11:       seq = CSI("23~"); break;
-		case SpecialKey::F12:       seq = CSI("24~"); break;
+		case SpecialKey::Up:    cursorKey('A'); break;
+		case SpecialKey::Down:  cursorKey('B'); break;
+		case SpecialKey::Right: cursorKey('C'); break;
+		case SpecialKey::Left:  cursorKey('D'); break;
+
+		case SpecialKey::Home:  cursorKey('H'); break;
+		case SpecialKey::End:   cursorKey('F'); break;
+
+		case SpecialKey::InsertKey: seq = "\x1b[2~"; break;
+		case SpecialKey::DeleteKey: seq = "\x1b[3~"; break;
+		case SpecialKey::PageUp:    seq = "\x1b[5~"; break;
+		case SpecialKey::PageDown:  seq = "\x1b[6~"; break;
+
+		case SpecialKey::F1:  seq = "\x1bOP"; break;
+		case SpecialKey::F2:  seq = "\x1bOQ"; break;
+		case SpecialKey::F3:  seq = "\x1bOR"; break;
+		case SpecialKey::F4:  seq = "\x1bOS"; break;
+		case SpecialKey::F5:  seq = "\x1b[15~"; break;
+		case SpecialKey::F6:  seq = "\x1b[17~"; break;
+		case SpecialKey::F7:  seq = "\x1b[18~"; break;
+		case SpecialKey::F8:  seq = "\x1b[19~"; break;
+		case SpecialKey::F9:  seq = "\x1b[20~"; break;
+		case SpecialKey::F10: seq = "\x1b[21~"; break;
+		case SpecialKey::F11: seq = "\x1b[23~"; break;
+		case SpecialKey::F12: seq = "\x1b[24~"; break;
 	}
 
 	return writeInput(seq.data(), seq.size());
 }
+
 
 // ============================================================================
 // Mouse

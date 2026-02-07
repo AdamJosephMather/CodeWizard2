@@ -58,6 +58,8 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 		}else if (scrolled_to_vert < 0.0) {
 			scrolled_to_vert = 0.0;
 		}
+		
+		scroll_vertical_change = 0;
 	};
 	
 	scrollbar_h = new Scrollbar(this);
@@ -80,6 +82,8 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 		}else if (scrolled_to_horz < 0.0) {
 			scrolled_to_horz = 0.0;
 		}
+		
+		scroll_horizontal_change = 0;
 	};
 	scrollbar_h->horizontal = true;
 	
@@ -1268,33 +1272,22 @@ icu::UnicodeString TextEdit::getSelectedText(Cursor c) {
 }
 
 void TextEdit::ensureCursorVisible(Cursor c) {
-	int line_start = floor(scrolled_to_vert);
-	int char_start = floor(scrolled_to_horz);
+	double line_start = scrolled_to_vert;
+	double char_start = scrolled_to_horz;
 
-	int end_line = line_start+ceil((float)t_h/(float)TextRenderer::get_text_height());
-	int end_char = char_start+ceil((float)t_w/(float)TextRenderer::get_text_width(1))-1;
-
+	double end_line = line_start+t_h/(float)TextRenderer::get_text_height();
+	double end_char = char_start+t_w/(float)TextRenderer::get_text_width(1)-1;
+	
 	if (!DONT_SCROLL_VERT_CURS) {
 		if (end_line-line_start < 14) {
-			scrolled_to_vert = c.head_line-(end_line-line_start)/2;
-			if (scrolled_to_vert < 0) {
-				scrolled_to_vert = 0;
-			}if (scrolled_to_vert > max_scroll_vert) {
-				scrolled_to_vert = max_scroll_vert;
-			}
+			scroll_vertical_change = (c.head_line-(end_line-line_start)/2) - scrolled_to_vert;
 		}else{
 			int l1 = c.head_line;
-
+			
 			if (l1-4 < line_start) {
-				scrolled_to_vert = l1-4;
+				scroll_vertical_change = l1-4 - line_start;
 			}else if (l1+7 > end_line) {
-				scrolled_to_vert = l1-(end_line-line_start)+7;
-			}
-
-			if (scrolled_to_vert < 0) {
-				scrolled_to_vert = 0;
-			}if (scrolled_to_vert > max_scroll_vert) {
-				scrolled_to_vert = max_scroll_vert;
+				scroll_vertical_change = l1+7 - end_line;
 			}
 		}
 	}
@@ -1302,15 +1295,9 @@ void TextEdit::ensureCursorVisible(Cursor c) {
 	int c1 = _mapFromRealToVisual(c.head_line, c.head_char);
 
 	if (c1-4 < char_start) {
-		scrolled_to_horz = c1-4;
+		scroll_horizontal_change = c1-4-char_start;
 	}else if (c1+7 > end_char) {
-		scrolled_to_horz = c1-(end_char-char_start)+7;
-	}
-
-	if (scrolled_to_horz < 0) {
-		scrolled_to_horz = 0;
-	}if (scrolled_to_horz > max_scroll_horz) {
-		scrolled_to_horz = max_scroll_horz;
+		scroll_horizontal_change = c1+7-end_char;
 	}
 }
 
@@ -1757,12 +1744,47 @@ void TextEdit::position(int x, int y, int w, int h) {
 	
 	POS_FUNC(this);
 	
+	
 	max_scroll_vert = lines.size()-1;
 	max_scroll_horz = max_line_len-1;
 	
 	if (tryingToEnsureCursorPos) {
 		tryingToEnsureCursorPos = false;
 		ensureCursorVisible(cursors[0]);
+	}
+	
+	
+	if (scroll_vertical_change != 0 || scroll_horizontal_change != 0) {
+		double value = (App::settings->getValue("smooth_scroll", 0.1f) * App::settings->getValue("anim_speed", 1.0f));
+		double changexby = scroll_horizontal_change*value;
+		double changeyby = scroll_vertical_change*value;
+		
+		if (scroll_vertical_change < 0.1 && scroll_vertical_change > -0.1) {
+			changeyby = scroll_vertical_change;
+		}
+		if (scroll_horizontal_change < 0.1 && scroll_horizontal_change > -0.1) {
+			changexby = scroll_horizontal_change;
+		}
+		
+		scrolled_to_horz += changexby;
+		scrolled_to_vert += changeyby;
+		
+		scroll_horizontal_change -= changexby;
+		scroll_vertical_change -= changeyby;
+		
+		if (scrolled_to_vert > max_scroll_vert) {
+			scrolled_to_vert = max_scroll_vert;
+		}else if (scrolled_to_vert < 0.0) {
+			scrolled_to_vert = 0.0;
+		}
+		
+		if (scrolled_to_horz > max_scroll_horz) {
+			scrolled_to_horz = max_scroll_horz;
+		}else if (scrolled_to_horz < 0.0) {
+			scrolled_to_horz = 0.0;
+		}
+		
+		App::time_till_regular = 2;
 	}
 	
 	scrollbar_v->is_visible = scrollbar_vertical;
@@ -2028,29 +2050,19 @@ bool TextEdit::on_scroll_event(double xchange, double ychange) {
 		return false;
 	}
 	
-	int initial_scroll_vert = scrolled_to_vert;
-	int initial_scroll_horz = scrolled_to_horz;
+	scroll_horizontal_change += xchange*6;
+	scroll_vertical_change += ychange*6;
 	
-	scrolled_to_horz += xchange*6;
-	scrolled_to_vert += ychange*6;
-	
-	if (scrolled_to_vert > max_scroll_vert) {
-		scrolled_to_vert = max_scroll_vert;
-	}else if (scrolled_to_vert < 0.0) {
-		scrolled_to_vert = 0.0;
+	double theoretical_vert = scrolled_to_vert + scroll_vertical_change;
+	double theoretical_horz = scrolled_to_horz + scroll_horizontal_change;
+	if ((theoretical_vert < max_scroll_vert && theoretical_vert > 0 && ychange != 0)) {
+		return true; // these events we've scrolled, and we're still in bounds, so we handle it.
+	}
+	if ((theoretical_horz < max_scroll_horz && theoretical_horz > 0 && xchange != 0)) {
+		return true;
 	}
 	
-	if (scrolled_to_horz > max_scroll_horz) {
-		scrolled_to_horz = max_scroll_horz;
-	}else if (scrolled_to_horz < 0.0) {
-		scrolled_to_horz = 0.0;
-	}
-	
-	if (initial_scroll_horz == scrolled_to_horz && initial_scroll_vert == scrolled_to_vert) {
-		return false; // no change
-	}
-	
-	return true;
+	return false;
 }
 
 Cursor TextEdit::getCursorForMousePosition(int mx, int my, bool* gottoit) {

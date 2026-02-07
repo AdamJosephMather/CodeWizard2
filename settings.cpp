@@ -184,6 +184,11 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"anim_speed",
 			1.0f
 		),
+		makeFloat(
+			"Smooth Scroll Speed (1 is disabled, default 0.2)",
+			"smooth_scroll",
+			0.1f
+		),
 		makeInt(
 			"Max Files To Index",
 			"max_index_files",

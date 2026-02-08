@@ -1755,7 +1755,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 	
 	
 	if (scroll_vertical_change != 0 || scroll_horizontal_change != 0) {
-		double value = (App::settings->getValue("smooth_scroll", 0.1f) * App::settings->getValue("anim_speed", 1.0f));
+		double value = (App::settings->getValue("smooth_scroll", 0.2f) * App::settings->getValue("anim_speed", 1.0f));
 		double changexby = scroll_horizontal_change*value;
 		double changeyby = scroll_vertical_change*value;
 		

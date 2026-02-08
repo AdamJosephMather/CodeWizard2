@@ -83,6 +83,9 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		w->t_y = y;
 		w->t_w = textedit->t_w/3;
 	});
+	completionbox->ONCLICK = [&](Widget*, int){
+		activateCompletion();
+	};
 	completionbox->is_visible_layered = false;
 	completionbox->rounded = true;
 	

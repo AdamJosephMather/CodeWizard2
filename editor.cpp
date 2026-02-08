@@ -21,7 +21,7 @@ Editor::Editor(Widget* parent) : Widget(parent) {
 		createNew(nullptr); // can do...
 	};
 	
-	tab_bar->erasing_tab = [&](TabInfo info){
+	tab_bar->erasing_tab = [&](TabInfo info) {
 		std::lock_guard<std::mutex> lock(App::canMakeChanges);
 		
 		auto it = editors.find(info.id);
@@ -52,21 +52,17 @@ void Editor::executeAction(WidgetActionType typ) {
 
 void Editor::tabinfoclicked(TabInfo info) {
 	for (auto it : editors) {
-		if (it.first == info.id && it.second->parent != this){
-			App::MoveWidget(it.second, this);
+		if (it.first == info.id){
+			if (it.second->parent != this){
+				App::MoveWidget(it.second, this);
+			}
+			it.second->show();
+			
+			if (auto ce = dynamic_cast<CodeEdit*>(it.second)) {
+				App::setActiveLeafNode(ce->textedit);
+			}
 		}else if (it.first != info.id && it.second->parent == this) {
 			App::RemoveWidgetFromParent(it.second);
-		}
-	}
-	
-	if (CodeEdit* ce = dynamic_cast<CodeEdit*>( editors[info.id] )){
-		App::setActiveLeafNode(ce->textedit);
-	}
-	
-	for (auto it : editors) {
-		if (it.first == info.id) {
-			it.second->show();
-		}else {
 			it.second->hide();
 		}
 	}

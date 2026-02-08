@@ -99,6 +99,13 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		w->t_y = y;
 		w->t_w = textedit->t_w/2;
 		w->t_h = w->t_w/2;
+		
+		if (w->t_y+w->t_h > textedit->t_y+textedit->t_h) {
+			w->t_y -= (w->t_h + TextRenderer::get_text_height());
+		}
+		if (w->t_x+w->t_w > textedit->t_x+textedit->t_w) {
+			w->t_x -= w->t_w;
+		}
 	});
 	hoverbox->background_color = App::theme.extras_background_color;
 	hoverbox->border = true;
@@ -1270,6 +1277,9 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 			if (hoverbox->parent == this && is_press && key != GLFW_KEY_LEFT_SHIFT && key != GLFW_KEY_RIGHT_SHIFT) {
 				App::RemoveWidgetFromParent(hoverbox);
 			}
+		}else if (is_press && App::activeLeafNode == hoverbox && key == GLFW_KEY_ESCAPE && (!App::settings->getValue("use_vim", false) || hoverbox->mode == 'n')) {
+			App::setActiveLeafNode(textedit);
+			App::RemoveWidgetFromParent(hoverbox);
 		}
 		
 		if (App::activeLeafNode == textedit) {
@@ -1558,7 +1568,7 @@ bool CodeEdit::on_mouse_move_event() {
 		return broken_state_menu->on_mouse_move_event();
 	}else if (REQUESTING_FIXIT) {
 		return fixit_request_menu->on_mouse_move_event();
-	}else{
+	}else {
 		int mx = App::mouseX;
 		int my = App::mouseY;
 		
@@ -1566,6 +1576,7 @@ bool CodeEdit::on_mouse_move_event() {
 		Cursor crsr = textedit->getCursorForMousePosition(mx, my, &gottoit);
 		
 		if (hoverbox->parent == this && hoveringHoverbox(mx, my)) {
+			timeuntil = -1; // prevents us from requesting a hover on text beneath the hover box.
 			return hoverbox->on_mouse_move_event();
 		}
 		
@@ -1992,6 +2003,7 @@ void CodeEdit::hoverRecieved(std::string content, std::string type, int id) {
 	if (should_move_mouse_hover){
 		hoverbox->position(t_x, t_y, t_w, t_h);
 		App::moveMouse(hoverbox->t_x+hoverbox->t_w/2, hoverbox->t_y+hoverbox->t_h/2);
+		App::setActiveLeafNode(hoverbox);
 	}
 }
 

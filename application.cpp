@@ -43,7 +43,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 2;
-int App::patch_version = 6;
+int App::patch_version = 7;
 
 
 float M_PI = 3.141592653589793238;
@@ -1748,6 +1748,8 @@ void App::executeCommandPaletteAction() {
 			}
 		}else if(filepath == ":Test Toast Box"){
 			displayToast(icu::UnicodeString::fromUTF8("Example Toast Message."));
+		}else if(filepath == ":Test Text Line"){
+			displayText(icu::UnicodeString::fromUTF8("Example Text Line Message."));
 		}else if (filepath == ":Restart Language Servers (LSPs)") {
 			restartLSPs();
 		}else if (filepath == ":Open `languages.json` file") {
@@ -1910,7 +1912,7 @@ void App::indexFiles() {
 	}
 	
 	static const std::vector<std::string> commands = {
-		"Git Push","Git Pull","Git Force Pull","Help","Save Theme Settings To File","Load Theme Settings From File","Restart Language Servers (LSPs)","Open `languages.json` file","Test Toast Box"
+		"Git Push","Git Pull","Git Force Pull","Help","Save Theme Settings To File","Load Theme Settings From File","Restart Language Servers (LSPs)","Open `languages.json` file","Test Toast Box","Test Text Line"
 	};
 
 	for (auto const& cmd : commands) {

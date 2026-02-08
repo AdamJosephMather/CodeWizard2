@@ -20,7 +20,7 @@ void ScrollNotify::render() {
 	
 	TextRenderer::draw_text(t_x+offset, t_y+App::text_padding, text, App::theme.main_text_color);
 	
-	offset -= App::text_padding*App::settings->getValue("anim_speed", 1.0f);
+	offset -= App::text_padding*0.6*App::settings->getValue("anim_speed", 1.0f);
 	if (offset < -TextRenderer::get_text_width(text.length())) {
 		text = icu::UnicodeString();
 	}

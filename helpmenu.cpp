@@ -105,8 +105,8 @@ In these settings, the following are available as variables in your build comman
 	● Shift+Tab -------- When selecting text, unindent one tab
 	● Ctrl+] ----------- When selecting text, indent one tab
 	● Ctrl+[ ----------- When selecting text, unindent one tab
-	● Alt+3 ------------ Comment selcted region
-	● Alt+4 ------------ Uncomment selcted region
+	● Alt+3 ------------ Comment selected region
+	● Alt+4 ------------ Uncomment selected region
 	● Ctrl+/ ----------- Toggle comment on selected region
 	● F5 --------------- Run code (see 'Using CodeWizard')
 	● Ctrl+F ----------- Open the find/replace menu

@@ -10,9 +10,7 @@ void ContextMenu::render() {
 		return;
 	}
 	
-//	App::DrawRoundedRect(t_x, t_y, t_w, t_h, 6.2, App::theme.border);
-//	App::DrawRoundedRect(t_x+App::border_width, t_y+App::border_width, t_w-App::border_width*2, t_h-App::border_width*2, 6.1, App::theme.extras_background_color);
-	App::DrawRoundedRect(t_x, t_y, t_w, t_h, 6.2, App::theme.extras_background_color, true);
+	App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding+sqrt(App::text_padding), App::theme.extras_background_color, true);
 	Widget::render();
 	
 	int yc = t_y+App::text_padding+App::border_width;
@@ -81,7 +79,8 @@ void ContextMenu::addToMenu(icu::UnicodeString name, Button::OnClick onclick) {
 	b->border = true;
 	b->rounded = true;
 	b->alignLeft = true;
-	b->background_color = App::theme.extras_background_color;
+	b->isContext = true;
+	b->background_color = App::theme.main_text_color;
 	
 	buttons.push_back(b);
 }

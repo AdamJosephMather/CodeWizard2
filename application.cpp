@@ -97,7 +97,7 @@ std::string App::WINDOW_TITLE = "CodeWizard2 V";
 
 int App::mouseX = 0;
 int App::mouseY = 0;
-double SQRT_2;
+const double App::SQRT_2 = 1.41421356;
 
 bool (*App::on_key_event)(int key, int scancode, int action, int mods) = nullptr;
 bool (*App::on_char_event)(unsigned int codepoint) = nullptr;
@@ -176,8 +176,6 @@ static void EnablePerMonitorDpiAwareness() {
 
 bool App::Init() {
 	std::cout << "Init...\n";
-	
-	SQRT_2 = std::sqrt(2.0);
 	
 	icu::UnicodeString vnum = icu::UnicodeString::fromUTF8(std::to_string(App::major_version)+"."+std::to_string(App::minor_version)+"."+std::to_string(App::patch_version));
 	vnum.toUTF8String(vnumstr);
@@ -664,7 +662,7 @@ auto drawCorner = [](float cx, float cy, float startAngle, float endAngle, int s
 };
 
 auto drawInverseCorner = [](float cx, float cy, float startAngle, float endAngle, int segments, double radius) {
-	double biggerrad = radius*SQRT_2;
+	double biggerrad = radius*App::SQRT_2;
 	float center = (startAngle+endAngle)/2;
 	
 	glBegin(GL_TRIANGLE_FAN);
@@ -741,6 +739,73 @@ void App::DrawRect(int x, int y, int w, int h, Color* color) {
 		glVertex2f(x+w, y); // top-right
 		glVertex2f(x+w, y+h); // bottom-right
 		glVertex2f(x, y+h); // bottom-left
+	glEnd();
+}
+
+void App::DrawX(double x, double y, double w, double h, double thickness, Color* color) {
+	double sqrtt = sqrt(thickness);
+	
+	glColor4f(color->r, color->g, color->b, color->a);
+	glBegin(GL_QUADS);
+		glVertex2f(x+sqrtt, y); // top-left
+		glVertex2f(x+w, y+h-sqrtt); // top-right
+		glVertex2f(x+w-sqrtt, y+h); // bottom-right
+		glVertex2f(x, y+sqrtt); // bottom-left
+		
+		glVertex2f(x+w-sqrtt, y);
+		glVertex2f(x, y+h-sqrtt);
+		glVertex2f(x+sqrtt, y+h);
+		glVertex2f(x+w, y+sqrtt);
+	glEnd();
+}
+
+void App::DrawPlus(double x, double y, double w, double h, double thickness, Color* color) {
+	glColor4f(color->r, color->g, color->b, color->a);
+	glBegin(GL_QUADS);
+		glVertex2f(x+w/2-thickness/2, y); // top-(center-left)
+		glVertex2f(x+w/2+thickness/2, y); // top-(center-right)
+		glVertex2f(x+w/2+thickness/2, y+h); // bottom-(center-right)
+		glVertex2f(x+w/2-thickness/2, y+h); // bottom-(center-left)
+		
+		glVertex2f(x, y+h/2-thickness/2); // (center-top)-left
+		glVertex2f(x+w, y+h/2-thickness/2); // (center-top)-right
+		glVertex2f(x+w, y+h/2+thickness/2); // (center-bottom)-right
+		glVertex2f(x, y+h/2+thickness/2); // (center-bottom)-left
+	glEnd();
+}
+
+void App::DrawMinus(double x, double y, double w, double h, double thickness, Color* color) {
+	glColor4f(color->r, color->g, color->b, color->a);
+	glBegin(GL_QUADS);
+		glVertex2f(x, y+h/2-thickness/2); // (center-top)-left
+		glVertex2f(x+w, y+h/2-thickness/2); // (center-top)-right
+		glVertex2f(x+w, y+h/2+thickness/2); // (center-bottom)-right
+		glVertex2f(x, y+h/2+thickness/2); // (center-bottom)-left
+	glEnd();
+}
+
+void App::DrawSquare(double x, double y, double w, double h, double thickness, Color* color) {
+	glColor4f(color->r, color->g, color->b, color->a);
+	glBegin(GL_QUADS);
+		glVertex2f(x, y); // top-left
+		glVertex2f(x+w, y); // top-right
+		glVertex2f(x+w, y+thickness); // bottom-right
+		glVertex2f(x, y+thickness); // bottom-left
+		
+		glVertex2f(x, y+h-thickness); // top-left
+		glVertex2f(x+w, y+h-thickness); // top-right
+		glVertex2f(x+w, y+h); // bottom-right
+		glVertex2f(x, y+h); // bottom-left
+		
+		glVertex2f(x, y); // top-left
+		glVertex2f(x+thickness, y); // top-right
+		glVertex2f(x+thickness, y+h); // bottom-right
+		glVertex2f(x, y+h); // bottom-left
+		
+		glVertex2f(x+w-thickness, y); // top-left
+		glVertex2f(x+w, y); // top-right
+		glVertex2f(x+w, y+h); // bottom-right
+		glVertex2f(x+w-thickness, y+h); // bottom-left
 	glEnd();
 }
 
@@ -1577,7 +1642,10 @@ void App::executeCommandPaletteAction() {
 		}
 	}
 	
-	if (filepath.at(0) == ':') { // it's a command
+	if (INDEXED_FILES.fullPaths[cur_sel] == "") {
+		// this can happen with the sep between files already open and all files.
+		return;
+	}if (filepath.at(0) == ':') { // it's a command
 		if (filepath == ":Git Push") {
 			ON_STRING_GIVEN = [&](icu::UnicodeString str){
 				if (str.length() == 0) {
@@ -1757,12 +1825,46 @@ void App::indexFiles() {
 	std::size_t maxFiles              = settings->getValue("max_index_files", 2000);
 	std::size_t maxDisplayChars       = (commandPalette->t_w-text_padding*2)/TextRenderer::get_text_width(1)-1;
 	
+	
 	std::queue<std::string> dirs;
 	dirs.push(rootPath);
 	
 	const std::size_t rootLen = rootPath.size() + 1; // for the ‘/’ or ‘\’
 	std::size_t seen = 0;
-
+	
+	bool putsep = false;
+	
+	files_in_box = rootelement->getOpenFiles();
+	for (auto fInfo : files_in_box) {
+		if (fInfo[1] == "") {
+			continue;
+		}
+		
+		putsep = true;
+		
+		std::string absPath = fInfo[1];
+		INDEXED_FILES.fullPaths.push_back(absPath);
+		
+		std::string rel = absPath.size() > rootLen
+						  ? absPath.substr(rootLen)
+						  : absPath;
+		if (rel.size() > maxDisplayChars) {
+			rel = rel.substr(rel.size() - maxDisplayChars);
+			auto slash = rel.find_first_of("/\\");
+			if (slash != std::string::npos)
+				rel = rel.substr(slash);
+		}
+		INDEXED_FILES.displayPaths.push_back(icu::UnicodeString::fromUTF8(rel));
+		INDEXED_FILES.indexedNames.push_back(fInfo[0]);
+	}
+	
+	if (putsep) {
+		INDEXED_FILES.fullPaths.push_back("");
+		INDEXED_FILES.displayPaths.push_back(icu::UnicodeString::fromUTF8("---"));
+		INDEXED_FILES.indexedNames.push_back("");
+	}
+	
+	
 	// 1) BFS through the tree, up to maxFiles files
 	while (!dirs.empty() && seen < maxFiles) {
 		auto curDir = dirs.front(); 

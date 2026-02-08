@@ -85,6 +85,8 @@ void Button::render() {
 		return;
 	}
 	
+	Color* textColor = App::theme.main_text_color;
+	
 	if (window_button) {
 		if (hovered) {
 			if (rounded) {
@@ -97,6 +99,21 @@ void Button::render() {
 				App::DrawRect(t_x, t_y, t_w, t_h, background_color);
 				
 				if (border){
+					App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+				}
+			}
+		}
+	}else if (isContext){
+		if (hovered) {
+			textColor = App::theme.darker_background_color;
+			if (rounded) {
+				App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, background_color, border);
+				if (border) {
+					App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+				}
+			}else{
+				App::DrawRect(t_x, t_y, t_w, t_h, background_color);
+				if (border) {
 					App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
 				}
 			}
@@ -120,15 +137,38 @@ void Button::render() {
 		}
 	}
 	
-	int x;
-	if (alignLeft) {
-		x = t_x+App::text_padding;
-	}else{
-		x = t_x+t_w/2-TextRenderer::get_text_width(BUTTON_LABEL.length())/2;
+	if (text_special == 0) {
+		int x;
+		if (alignLeft) {
+			x = t_x+App::text_padding;
+		}else{
+			x = t_x+t_w/2-TextRenderer::get_text_width(BUTTON_LABEL.length())/2;
+		}
+		
+		int y = t_y+t_h/2-TextRenderer::get_text_height()/2;
+		TextRenderer::draw_text(x, y, BUTTON_LABEL, textColor);
+	}else {
+		int wdth = TextRenderer::get_text_height()*.5;
+		
+		int x;
+		if (alignLeft) {
+			x = t_x+App::text_padding;
+		}else{
+			x = t_x+t_w/2-wdth/2;
+		}
+		
+		int y = t_y+t_h/2-wdth/2;
+		
+		if (text_special == 1) {
+			App::DrawX(x, y, wdth, wdth, 2, textColor);
+		}else if (text_special == 2) {
+			App::DrawPlus(x, y, wdth, wdth, 2, textColor);
+		}else if (text_special == 3) {
+			App::DrawMinus(x, y, wdth, wdth, 2, textColor);
+		}else if (text_special == 4) {
+			App::DrawSquare(x, y, wdth, wdth, 2, textColor);
+		}
 	}
-	
-	int y = t_y+t_h/2-TextRenderer::get_text_height()/2;
-	TextRenderer::draw_text(x, y, BUTTON_LABEL, App::theme.main_text_color);
 	
 	Widget::render();
 }

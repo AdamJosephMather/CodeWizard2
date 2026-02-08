@@ -46,7 +46,7 @@ public:
 	bool has_close_button = true;
 	bool can_add_new = true;
 	int screen_add_x = 0;
-	int screen_add_y = 0;
+	int screen_add_endx = 0;
 	
 	void addTab(TabInfo info);
 	void removeTab(int id, int nexttake=-1);

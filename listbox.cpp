@@ -36,21 +36,25 @@ void ListBox::render() {
 	
 	int maxlen = floor(t_w/TextRenderer::get_text_width(1));
 	int y = t_y;
+	Color* textCol;
 	
 	for (int indx = scrolled_to; indx < fmin(elements.size(), scrolled_to+toshow); indx++) {
 		if (selected_id == indx) {
+			textCol = App::theme.darker_background_color;
 			if (rounded) {
-				App::DrawRoundedRect(t_x, y, t_w, th, App::text_padding, App::theme.hover_background_color);
+				App::DrawRoundedRect(t_x, y, t_w, th, App::text_padding, App::theme.main_text_color);
 				App::DrawRoundBorder(t_x, y, t_w, th, App::theme.border, 5, App::text_padding);
 			}else{
-				App::DrawRect(t_x, y, t_w, th, App::theme.hover_background_color);
+				App::DrawRect(t_x, y, t_w, th, App::theme.main_text_color);
 				App::DrawBorder(t_x, y, t_w, th, App::theme.border);
 			}
+		}else{
+			textCol = App::theme.main_text_color;
 		}
 		
 		elementalPositions.push_back({t_x, y, t_w, th, indx});
 		
-		TextRenderer::draw_text(t_x+App::text_padding+1, y+App::text_padding, elements[indx].tempSubStringBetween(0, maxlen), App::theme.main_text_color);
+		TextRenderer::draw_text(t_x+App::text_padding+1, y+App::text_padding, elements[indx].tempSubStringBetween(0, maxlen), textCol);
 		y += th;
 	}
 	

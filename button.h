@@ -27,6 +27,8 @@ public:
 	bool border = false;
 	bool rounded = false;
 	bool alignLeft = false;
+	bool isContext = false;
+	int text_special = 0;
 	Color* background_color;
 	icu::UnicodeString BUTTON_LABEL;
 	

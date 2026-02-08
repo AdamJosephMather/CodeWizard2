@@ -68,5 +68,5 @@ public:
 	void request_close(Widget::close_callback_type cllbck);
 private:
 	GLuint prepareTexture(std::string imagepath);
-	void renderTexture(GLuint texID, int x, int y, int w, int h);
+	void renderTexture(GLuint texID, int x, int y, int w, int h, Color* mainCol);
 };

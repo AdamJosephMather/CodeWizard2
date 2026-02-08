@@ -48,7 +48,7 @@ GLuint FileTree::prepareTexture(std::string imagepath) {
 	return texID;
 }
 
-void FileTree::renderTexture(GLuint texID, int x, int y, int w, int h) {
+void FileTree::renderTexture(GLuint texID, int x, int y, int w, int h, Color* backcol) {
 	if (texID == (GLuint)-1) { return; }
 
 	glPushAttrib(GL_TEXTURE_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT | GL_COLOR_BUFFER_BIT);
@@ -57,10 +57,10 @@ void FileTree::renderTexture(GLuint texID, int x, int y, int w, int h) {
 	glBindTexture(GL_TEXTURE_2D, texID);
 
 	// 1) Set the main text color as the PRIMARY_COLOR
-	glColor4f(App::theme.main_text_color->r,
-			  App::theme.main_text_color->g,
-			  App::theme.main_text_color->b,
-			  App::theme.main_text_color->a);
+	glColor4f(backcol->r,
+			  backcol->g,
+			  backcol->b,
+			  backcol->a);
 
 	// 2) Background color (behind the icon)
 	float blendColor[] = { back_color->r, back_color->g, back_color->b, 1.0f };
@@ -104,22 +104,26 @@ void FileTree::render() {
 	
 	std::lock_guard<std::mutex> lock(tree_mutex);
 	
+	Color* textCol;
 	for (auto itm : toRender) {
 		if (App::mouseX >= itm.x && App::mouseX <= itm.x+itm.w && App::mouseY > itm.y && App::mouseY <= itm.y+itm.h) {
-			App::DrawRoundedRect(itm.x, itm.y, itm.w, itm.h, App::text_padding, App::theme.hover_background_color);
+			
+			App::DrawRoundedRect(itm.x, itm.y, itm.w, itm.h, App::text_padding, App::theme.main_text_color);
 			App::DrawRoundBorder(itm.x, itm.y, itm.w, itm.h, App::theme.border, 5, App::text_padding);
-			back_color = App::theme.hover_background_color;
+			back_color = App::theme.main_text_color;
+			textCol = App::theme.darker_background_color;
 		}else{
+			textCol = App::theme.main_text_color;
 			back_color = App::theme.extras_background_color;
 		}
 		
 		if (itm.is_folder) {
-			renderTexture(folderIcon, itm.x+App::text_padding, itm.y+App::text_padding, TextRenderer::get_text_height(), TextRenderer::get_text_height());
+			renderTexture(folderIcon, itm.x+App::text_padding, itm.y+App::text_padding, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol);
 		}else {
-			renderTexture(fileIcon, itm.x+App::text_padding, itm.y+App::text_padding, TextRenderer::get_text_height(), TextRenderer::get_text_height());
+			renderTexture(fileIcon, itm.x+App::text_padding, itm.y+App::text_padding, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol);
 		}
 		
-		TextRenderer::draw_text(itm.x+TextRenderer::get_text_height()+App::text_padding*2, itm.y+App::text_padding, itm.name, App::theme.main_text_color);
+		TextRenderer::draw_text(itm.x+TextRenderer::get_text_height()+App::text_padding*2, itm.y+App::text_padding, itm.name, textCol);
 	}
 	
 	Widget::render();

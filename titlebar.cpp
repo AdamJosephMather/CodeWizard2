@@ -15,6 +15,7 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	ext_b->execute_on_down = false;
 	ext_b->rounded = true;
 	ext_b->background_color = App::theme.del_diff;
+	ext_b->text_special = 1;
 	
 	Button* win_b = new Button(this, icu::UnicodeString::fromUTF8("□"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_w-tw*2;
@@ -27,6 +28,7 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	win_b->execute_on_down = false;
 	win_b->rounded = true;
 	win_b->background_color = App::theme.hover_background_color;
+	win_b->text_special = 4;
 	
 	Button* min_b = new Button(this, icu::UnicodeString::fromUTF8("-"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_w-tw*3;
@@ -39,6 +41,7 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	min_b->execute_on_down = false;
 	min_b->rounded = true;
 	min_b->background_color = App::theme.hover_background_color;
+	min_b->text_special = 3;
 	
 	hovered = false;
 	

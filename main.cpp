@@ -133,6 +133,7 @@ int main(int argc, char* argv[]) {
 		App::adding_panel();
 	});
 	add_button->rounded = true;
+	add_button->text_special = 2;
 //	add_button->background_color = App::theme.hover_background_color;
 	add_button->background_color = App::theme.add_panel;
 	
@@ -143,6 +144,7 @@ int main(int argc, char* argv[]) {
 		App::removing_panel();
 	});
 	remove_button->rounded = true;
+	remove_button->text_special = 3;
 //	remove_button->background_color = App::theme.hover_background_color;
 	remove_button->background_color = App::theme.remove_panel ;
 	

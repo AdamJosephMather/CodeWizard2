@@ -121,6 +121,8 @@ public:
 	static bool rendering_add_rect;
 	static bool rendering_rem_rect;
 	
+	const static double SQRT_2;
+	
 	static bool darkmode;
 	
 	static std::string empty;
@@ -213,6 +215,10 @@ public:
 	
 	static void DrawRect(int x, int y, int w, int h, Color* color);
 	static void DrawRect(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b);
+	static void DrawX(double x, double y, double w, double h, double thickness, Color* color);
+	static void DrawPlus(double x, double y, double w, double h, double thickness, Color* color);
+	static void DrawMinus(double x, double y, double w, double h, double thickness, Color* color);
+	static void DrawSquare(double x, double y, double w, double h, double thickness, Color* color);
 	static void DrawRoundedRect(float x, float y, float w, float h, float radius, Color* color, bool border = false, int segments = 5);
 	static void DrawInverseRoundedRect(float x, float y, float w, float h, float radius, Color* color, int segments = 5);
 	static void DrawBorder(int x, int y, int w, int h, Color* color);

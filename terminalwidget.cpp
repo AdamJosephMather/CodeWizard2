@@ -519,11 +519,6 @@ bool TerminalWidget::on_key_event(int key, int /*scancode*/, int action, int mod
 	if (key == GLFW_KEY_ENTER || key == GLFW_KEY_KP_ENTER) {
 		return term->sendEnter();
 	} else if (key == GLFW_KEY_BACKSPACE) {
-		if (ctrl) {
-			// Ctrl+Backspace: use CSI-u encoding (DEL with Ctrl modifier)
-			// 127 is DEL, 5 is Ctrl in the xterm/CSI-u modifier set.
-			return term->sendText("\x1b[127;5u");
-		}
 		return term->sendBackspace();
 	} else if (key == GLFW_KEY_TAB) {
 		return term->sendText("\t");

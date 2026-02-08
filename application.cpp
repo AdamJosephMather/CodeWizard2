@@ -1908,7 +1908,15 @@ void App::indexFiles() {
 	
 	if (putsep) {
 		INDEXED_FILES.fullPaths.push_back("");
-		INDEXED_FILES.displayPaths.push_back(icu::UnicodeString::fromUTF8("---"));
+		icu::UnicodeString centered = icu::UnicodeString::fromUTF8(" --- All Files --- ");
+		
+		int charswide = commandPalette->t_w/TextRenderer::get_text_width(1);
+		
+		while (centered.length() < charswide) {
+			centered = UChar32(' ')+centered+UChar32(' ');
+		}
+		
+		INDEXED_FILES.displayPaths.push_back(centered);
 		INDEXED_FILES.indexedNames.push_back("");
 	}
 	

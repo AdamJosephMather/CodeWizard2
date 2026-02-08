@@ -192,6 +192,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 			
 			Label* te2 = new Label(this);
 			te2->background_color = App::theme.main_background_color;
+			te2->border = false;
 			
 			message_te.push_back(te2);
 			from_user.push_back(false);
@@ -220,6 +221,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 						auto la = new Label(this);
 						la->setFullText(icu::UnicodeString::fromUTF8(trim(segment.content)));
 						la->background_color = App::theme.main_background_color;
+						la->border = false;
 						message_te.push_back(la);
 					}
 					from_user.push_back(false);

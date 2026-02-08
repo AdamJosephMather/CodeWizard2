@@ -186,6 +186,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	caseSensitivity->border = true;
 	
 	line_numbers = new LineNumbers(this);
+	line_numbers->border = true;
 	
 	textedit = new TextEdit(this, [&](Widget* t){
 		textedit->t_x = t_x+line_numbers->t_w;

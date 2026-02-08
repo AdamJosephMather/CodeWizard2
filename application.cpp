@@ -1070,11 +1070,11 @@ void App::Run() {
 		int x, y, w, h;
 		glfwGetWindowPos(window, &x, &y);
 		glfwGetWindowSize(window, &w, &h);
-	
-		settings->setValue("window_x",      std::max(0, x));
-		settings->setValue("window_y",      std::max(0, y));
-		settings->setValue("window_width",  std::max(500, w));
-		settings->setValue("window_height", std::max(300, h));
+		
+		settings->setValue("window_x",      x);
+		settings->setValue("window_y",      y);
+		settings->setValue("window_width",  w);
+		settings->setValue("window_height", h);
 	}
 	
 

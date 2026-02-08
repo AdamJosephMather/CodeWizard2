@@ -170,8 +170,52 @@ static void EnablePerMonitorDpiAwareness() {
 			return;
 		}
 	}
-	// Fallback (older Windows):
 	SetProcessDPIAware();
+}
+
+static bool rectIntersects(const RECT& a, const RECT& b) {
+	RECT out{};
+	return IntersectRect(&out, &a, &b) != 0;
+}
+
+static bool rectOnAnyMonitorWorkArea(const RECT& r) {
+	struct Ctx {
+		const RECT* r;
+		bool hit;
+	} ctx{ &r, false };
+
+	auto enumProc = [](HMONITOR hMon, HDC, LPRECT, LPARAM lp) -> BOOL {
+		Ctx* c = reinterpret_cast<Ctx*>(lp);
+		MONITORINFO mi{};
+		mi.cbSize = sizeof(mi);
+		if (GetMonitorInfo(hMon, &mi)) {
+			if (rectIntersects(*c->r, mi.rcWork)) {
+				c->hit = true;
+				return FALSE; // stop enumeration early
+			}
+		}
+		return TRUE;
+	};
+
+	EnumDisplayMonitors(nullptr, nullptr, enumProc, reinterpret_cast<LPARAM>(&ctx));
+	return ctx.hit;
+}
+
+void restoreWindowPosAndSize(GLFWwindow* window, SettingsManager* settings, int screenWidth, int screenHeight) {
+	int w = settings->getValue("window_width", 1200);
+	int h = settings->getValue("window_height", 800);
+
+	int x = settings->getValue("window_x", screenWidth / 2 - w / 2);
+	int y = settings->getValue("window_y", screenHeight / 2 - h / 2);
+	
+	RECT winRect{ x, y, x + w, y + h };
+	if (!rectOnAnyMonitorWorkArea(winRect)) {
+		x = screenWidth/2-w/2;
+		y = screenHeight/2-h/2;
+	}
+	
+	glfwSetWindowSize(window, w, h);
+	glfwSetWindowPos(window, x, y);
 }
 
 bool App::Init() {
@@ -296,10 +340,12 @@ bool App::Init() {
 	int screenWidth = mode->width;
 	int screenHeight = mode->height;
 
-	int x = settings->getValue("window_x", screenWidth / 2 - WINDOW_WIDTH / 2);
-	int y = settings->getValue("window_y", screenHeight / 2 - WINDOW_HEIGHT / 2);
+//	int x = settings->getValue("window_x", screenWidth / 2 - WINDOW_WIDTH / 2);
+//	int y = settings->getValue("window_y", screenHeight / 2 - WINDOW_HEIGHT / 2);
 	
-	glfwSetWindowPos(window, x, y);
+	restoreWindowPosAndSize(window, settings, screenWidth, screenHeight);
+	
+//	glfwSetWindowPos(window, x, y);
 	
 	TextRenderer::after_font_change = [&](){
 		text_padding = std::min(TextRenderer::get_text_width(1), TextRenderer::get_text_height()) * 0.5;

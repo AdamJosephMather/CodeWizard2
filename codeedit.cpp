@@ -663,7 +663,8 @@ void CodeEdit::render() {
 		fixit_request_menu->render();
 	}else{
 		if (find_menu_open) {
-			App::DrawRect(t_x, textedit->t_y + textedit->t_h, t_w, t_h-textedit->t_h, App::theme.extras_background_color);
+			App::DrawRect(t_x, textedit->t_y + textedit->t_h + 1, t_w, t_h-textedit->t_h - 1, App::theme.extras_background_color);
+			App::DrawRect(t_x, textedit->t_y + textedit->t_h, t_w, 1, App::theme.border);
 			
 			App::runWithSKIZ(allButton->t_x, allButton->t_y, allButton->t_w, allButton->t_h, [&](){
 				allButton->render();

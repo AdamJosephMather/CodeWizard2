@@ -43,7 +43,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 2;
-int App::patch_version = 7;
+int App::patch_version = 8;
 
 
 float M_PI = 3.141592653589793238;
@@ -1892,17 +1892,7 @@ void App::indexFiles() {
 		
 		std::string absPath = fInfo[1];
 		INDEXED_FILES.fullPaths.push_back(absPath);
-		
-		std::string rel = absPath.size() > rootLen
-						  ? absPath.substr(rootLen)
-						  : absPath;
-		if (rel.size() > maxDisplayChars) {
-			rel = rel.substr(rel.size() - maxDisplayChars);
-			auto slash = rel.find_first_of("/\\");
-			if (slash != std::string::npos)
-				rel = rel.substr(slash);
-		}
-		INDEXED_FILES.displayPaths.push_back(icu::UnicodeString::fromUTF8(rel));
+		INDEXED_FILES.displayPaths.push_back(icu::UnicodeString::fromUTF8(fInfo[0]));
 		INDEXED_FILES.indexedNames.push_back(fInfo[0]);
 	}
 	

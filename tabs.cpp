@@ -88,6 +88,12 @@ void Tabs::render() {
 	int close_offset_y = tabheight/2-close_size/2;
 	int close_offset_x = end_len/2-close_size/2-1;
 	
+	if (end_len - 2*close_offset_x >= close_size) {
+		close_offset_x -= 1;
+		close_size += 1;
+		close_offset_y -= 1;
+	}
+	
 	for (int indx = 0; indx < tabs_list.size(); indx ++) {
 		auto info = tabs_list[indx];
 		int tab_width = TextRenderer::get_text_width(info.title.length()) + App::text_padding*2;

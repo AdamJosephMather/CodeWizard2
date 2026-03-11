@@ -14,6 +14,21 @@ void Tabs::addTab(TabInfo info) {
 	tabs_list.push_back(info);
 }
 
+void Tabs::nextTab() {
+	for (int i = 0; i < tabs_list.size(); i++) {
+		if (tabs_list[i].id == selected_id) {
+			if (i+1 < tabs_list.size()) {
+				selected_id = tabs_list[i+1].id;
+				tab_clicked_callback(tabs_list[i+1]);
+			}else{
+				selected_id = tabs_list[0].id;
+				tab_clicked_callback(tabs_list[0]);
+			}
+			return;
+		}
+	}
+}
+
 void Tabs::removeTab(int id, int nexttake) {
 	if (id == selected_id) {
 		int nx = 0;

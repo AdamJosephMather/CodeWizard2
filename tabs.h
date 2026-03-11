@@ -52,6 +52,7 @@ public:
 	void removeTab(int id, int nexttake=-1);
 	hit hoveringTab();
 	bool hoveringNewTab();
+	void nextTab();
 	
 //	bool on_key_event(int key, int scancode, int action, int mods);
 	bool on_mouse_button_event(int button, int action, int mods);

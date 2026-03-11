@@ -303,6 +303,7 @@ bool Editor::on_key_event(int key, int scancode, int action, int mods) {
 	// here we will detect ctrl+o, maybe hotkeys for tabs? ctrl+q?
 	
 	bool holding_control = (mods & GLFW_MOD_CONTROL) != 0;
+	bool holding_shift   = (mods & GLFW_MOD_SHIFT) != 0;
 	
 	if (this == App::activeEditor) {
 		if (key == GLFW_KEY_O && action == GLFW_PRESS && holding_control) {
@@ -313,6 +314,9 @@ bool Editor::on_key_event(int key, int scancode, int action, int mods) {
 			return true;
 		}else if (key == GLFW_KEY_W && action == GLFW_PRESS && holding_control) {
 			closeFile(tab_bar->selected_id);
+			return true;
+		}else if (key == GLFW_KEY_TAB && action == GLFW_PRESS && holding_control && holding_shift) {
+			tab_bar->nextTab();
 			return true;
 		}
 	}

@@ -110,6 +110,7 @@ In these settings, the following are available as variables in your build comman
 	● Ctrl+/ ----------- Toggle comment on selected region
 	● F5 --------------- Run code (see 'Using CodeWizard')
 	● Ctrl+F ----------- Open the find/replace menu
+	● Ctrl+Shift+Tab --- Next file tab
 
 Macro Recording:
 	● F12 -------------- To start a macro recording
@@ -199,6 +200,7 @@ void HelpMenu::render() {
 	});
 	
 	App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+	App::DrawRect(t_x, tb->t_y+tb->t_h, t_w, 1, App::theme.border);
 }
 
 void HelpMenu::position(int x, int y, int w, int h) {

@@ -715,7 +715,7 @@ void TerminalWidget::clear_selection() {
 }
 
 std::string TerminalWidget::selection_text() const {
-	if (sel_doc_r0 < 0 || sel_doc_r1 < 0) return {};
+	if (sel_doc_r0 < 0 || sel_doc_r1 < 0 || (sel_doc_r0 == sel_doc_r1 && sel_c0 == sel_c1)) return {};
 
 	int r0 = sel_doc_r0, c0 = sel_c0, r1 = sel_doc_r1, c1 = sel_c1;
 	normalize_sel(r0, c0, r1, c1);

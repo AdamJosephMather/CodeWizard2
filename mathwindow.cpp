@@ -53,7 +53,7 @@ MathWindow::MathWindow(Widget *parent) : Widget(parent) {
 						current.toUTF8String(cur);
 						auto it = vars.find(cur);
 						if (it != vars.end()) {
-							current = it->second;
+							current = "("+it->second+")";
 						}
 						done_str += current;
 						current = "";
@@ -67,7 +67,7 @@ MathWindow::MathWindow(Widget *parent) : Widget(parent) {
 				current.toUTF8String(cur);
 				auto it = vars.find(cur);
 				if (it != vars.end()) {
-					current = it->second;
+					current = "("+it->second+")";
 				}
 				done_str += current;
 				current = "";

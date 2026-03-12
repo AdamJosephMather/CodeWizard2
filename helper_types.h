@@ -542,11 +542,99 @@ static std::pair<bool, icu::UnicodeString> checkForAndEliminate(icu::UnicodeStri
 	return {true, expr};
 }
 
-static std::pair<bool, double> calcExpression(icu::UnicodeString expression) { // we are going to recurse on brackets...
+static int getLengthLeft(icu::UnicodeString str) {
+	int openBrackets = 0;
+	icu::UnicodeString allowed = icu::UnicodeString::fromUTF8("0987654321.");
+	
+	int length = str.length();
+	for (int i = 0; i < str.length(); i++) {
+		UChar32 c = str.char32At(str.length()-i-1);
+		
+		if (c == ')') {
+			openBrackets += 1;
+		}else if (c == '(') {
+			openBrackets -= 1;
+			if (openBrackets < 0) {
+				length = i;
+				break;
+			}else if (openBrackets == 0) {
+				length = i + 1;
+				break;
+			}
+		}else if (openBrackets == 0) {
+			if (allowed.indexOf(c) == -1) {
+				length = i;
+				break;
+			}
+		}
+	}
+	
+	return length;
+}
+
+static int getLengthRight(icu::UnicodeString str) {
+	int openBrackets = 0;
+	icu::UnicodeString allowed = icu::UnicodeString::fromUTF8("0987654321.");
+	
+	int length = str.length();
+	for (int i = 0; i < str.length(); i++) {
+		UChar32 c = str.char32At(i);
+		
+		if (i == 0 && (c == '-' || c == '+')) { // only on the first char
+			continue;
+		}if (c == '(') {
+			openBrackets += 1;
+		}else if (c == ')') {
+			openBrackets -= 1;
+			if (openBrackets < 0) {
+				length = i;
+				break;
+			}else if (openBrackets == 0) {
+				length = i + 1;
+				break;
+			}
+		}else if (openBrackets == 0) {
+			if (allowed.indexOf(c) == -1) {
+				length = i;
+				break;
+			}
+		}
+	}
+	
+	return length;
+}
+
+static icu::UnicodeString fixExponents(icu::UnicodeString exp) {
+	int curIdx = exp.length();
+	
+	while (true) {
+		curIdx -= 1;
+		
+		if (curIdx < 0) {
+			break;
+		}
+		
+		if (exp.char32At(curIdx) != U'^') {
+			continue;
+		}
+		
+		int rightLen = getLengthRight(exp.tempSubStringBetween(curIdx+1, exp.length()));
+		int leftLen = getLengthLeft(exp.tempSubStringBetween(0, curIdx));
+		
+		exp.insert(curIdx+rightLen+1, UChar32(U')'));
+		exp.insert(curIdx-leftLen,  UChar32(U'('));
+		curIdx += 1;
+	}
+	
+	return exp;
+}
+
+static std::pair<bool, double> calcExpression(icu::UnicodeString expression, bool doneExpFix = false) { // we are going to recurse on brackets...
 	if (expression == "") return {false, 0.0};
 	
 	expression = stripOfChar(expression, UChar32(' '));
 	expression = stripOfChar(expression, UChar32(','));
+	expression = stripOfChar(expression, UChar32('	'));
 	expression = replaceWith(expression, icu::UnicodeString::fromUTF8(")("), icu::UnicodeString::fromUTF8(")*("));
 	
 	icu::UnicodeString allowed = icu::UnicodeString::fromUTF8("0987654321+-/*()%^.");
@@ -555,7 +643,14 @@ static std::pair<bool, double> calcExpression(icu::UnicodeString expression) { /
 
 	int openedBrackets = 0;
 	icu::UnicodeString subExpression = "";
-
+	
+	// we need to go through our expression and get all exponents into this form: (a^b) because cases like this: -1^2 needs to be -(1^2) not (-1)^2
+	
+	if (!doneExpFix) {
+		expression = fixExponents(expression);
+	}
+	
+	
 	for (int char_indx = 0; char_indx < expression.length(); char_indx++) {
 		auto c = expression.char32At(char_indx);
 		if (allowed.indexOf(c) == -1) return {false, 0.0};
@@ -572,7 +667,7 @@ static std::pair<bool, double> calcExpression(icu::UnicodeString expression) { /
 			if (openedBrackets < 0) {
 				return {false, 0.0};
 			}else if (openedBrackets == 0) {
-				auto [isValid, result] = calcExpression(subExpression);
+				auto [isValid, result] = calcExpression(subExpression, true);
 				if (!isValid) return {false, 0.0};
 
 				newExpression += doubleToUnicodeString(result);

@@ -353,21 +353,31 @@ Widget* Editor::getFirstEditor() {
 	return this;
 }
 
-std::vector<std::vector<std::string>> Editor::getOpenFiles() {
+std::vector<std::vector<std::string>> Editor::getOpenFiles(bool includeText) {
 	std::vector<std::vector<std::string>> out = {};
 	
 	for (auto itm : tab_bar->tabs_list) {
 		if (auto te = dynamic_cast<CodeEdit*>(editors[itm.id])) {
+			std::vector<std::string> res;
 			if (te->file) {
-				out.push_back({te->file->filename, te->file->filepath});
+				res = {te->file->filename, te->file->filepath, "TEXT"};
 			}else{
-				out.push_back({"Untitled", ""});
+				res = {"Untitled", "", "TEXT"};
 			}
+			
+			if (includeText) { // defaults to false
+				icu::UnicodeString fulltext = te->textedit->getFullText();
+				std::string text;
+				fulltext.toUTF8String(text);
+				res.push_back(text);
+			}
+			
+			out.push_back(res);
 		}else if(auto te = dynamic_cast<ImageView*>(editors[itm.id])){
 			if (te->file) {
-				out.push_back({te->file->filename, te->file->filepath});
+				out.push_back({te->file->filename, te->file->filepath, "IMAGE"});
 			}else{
-				out.push_back({"Untitled Image", ""});
+				out.push_back({"Untitled Image", "", "IMAGE"});
 			}
 		}
 	}

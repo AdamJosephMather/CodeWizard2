@@ -1,5 +1,6 @@
 #include "chat.h"
 #include "application.h"
+#include "label.h"
 #include "text_renderer.h"
 #include "curler.h"
 
@@ -7,7 +8,58 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Chat");
 	
 	querybox = new TextEdit(this, [](Widget*){});
-	querybox->border = true;
+	
+	filesButton = new Button(this, icu::UnicodeString::fromUTF8("Insert File"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+		btn->t_x = t_x + 2;
+		btn->t_y = querybox->t_y - 1 - h;
+	}, [&](Button* btn){
+		auto files = App::rootelement->getOpenFiles(true); // get's the file text(s)
+		
+		textstoadd.clear();
+		std::vector<icu::UnicodeString> els;
+		for (auto f : files) {
+			if (f[2] == "TEXT") {
+				els.push_back(icu::UnicodeString::fromUTF8(f[0]));
+				textstoadd.push_back("File: " + f[0] + "\n\n```" + f[3] + "```"); // full text
+			}
+		}
+		filesAddList->setElements(els);
+		
+		filesAddList->is_visible_layered = !filesAddList->is_visible_layered;
+	});
+	filesButton->rounded = true;
+	filesButton->border = true;
+	
+	newChat = new Button(this, icu::UnicodeString::fromUTF8("Reset Chat"), [&](Widget* btn, int x, int y, int _, int _2, int w, int h){
+		btn->t_x = t_x+App::text_padding;
+		btn->t_y = t_y+App::text_padding;
+	}, [&](Widget*){
+		for (int i = 0; i < message_te.size(); i++) {
+			message_te[i]->request_close([](Widget* w){
+				delete w;
+			});
+		}
+		message_te.clear();
+	});
+	newChat->rounded = true;
+	newChat->border  = true;
+	
+	filesAddList = new ListBox(this, [&](Widget* w){
+		w->t_x = t_x + 2;
+		w->t_y = filesButton->t_y - w->t_h - 3;
+		w->t_w = t_w/2.5;
+	});
+	filesAddList->rounded = true;
+	filesAddList->is_visible_layered = false;
+	filesAddList->ONCLICK = [&](Widget* w, int idx) {
+		std::string message = textstoadd[idx];
+		Label* te = new Label(this);
+		te->background_color = App::theme.extras_background_color;
+		te->setFullText(icu::UnicodeString::fromUTF8(message));
+		message_te.push_back(te);
+		from_user.push_back(true);
+		filesAddList->is_visible_layered = false;
+	};
 }
 
 void Chat::request_close(close_callback_type callback) {
@@ -20,14 +72,15 @@ void Chat::position(int x, int y, int width, int height) {
 	t_x = x;
 	t_y = y;
 	
-	int the_y = t_y+t_h;
 	int bxsz = 4*TextRenderer::get_text_height();
-	the_y -= bxsz;
+	int the_y = t_y+t_h - bxsz;
 	
 	querybox->position(t_x, the_y, t_w, bxsz);
+	filesButton->position(t_x, t_y, t_w, t_h);
+	filesAddList->position(t_x, t_y, t_w, t_h);
+	newChat->position(t_x, t_y, t_w, t_h);
 	
-	the_y -= App::text_padding;
-	the_y -= scrolled_to;
+	the_y -= (App::text_padding + scrolled_to + 4 + filesButton->t_h);
 	min_scroll = 0;
 	
 	for (int mi = message_te.size()-1; mi >= 0; mi--) {
@@ -80,10 +133,20 @@ void Chat::render() {
 		});
 	}
 	
-//	App::DrawRect(t_x, querybox->t_y-App::text_padding, t_w, t_h+t_y-querybox->t_y+App::text_padding, App::theme.extras_background_color);
+	App::DrawRect(querybox->t_x, querybox->t_y-2-filesButton->t_h, querybox->t_w, 2+filesButton->t_h, App::theme.darker_background_color);
 	App::runWithSKIZ(querybox->t_x, querybox->t_y, querybox->t_w, querybox->t_h, [&](){
 		querybox->render();
 	});
+	App::runWithSKIZ(filesButton->t_x, filesButton->t_y, filesButton->t_w, filesButton->t_h, [&](){
+		filesButton->render();
+	});
+	App::runWithSKIZ(filesAddList->t_x, filesAddList->t_y, filesAddList->t_w, filesAddList->t_h, [&](){
+		filesAddList->render();
+	});
+	App::runWithSKIZ(newChat->t_x, newChat->t_y, newChat->t_w, newChat->t_h, [&](){
+		newChat->render();
+	});
+	TextRenderer::draw_text(filesButton->t_x+filesButton->t_w+App::text_padding, filesButton->t_y+App::text_padding, icu::UnicodeString::fromUTF8(App::settings->getValue("lm_studio_model_id",std::string("qwen2.5-coder-1.5b-instruct@q4_k_m"))), App::theme.lesser_text_color);
 	
 	
 	if (rounded) {
@@ -92,6 +155,7 @@ void Chat::render() {
 	}else{
 		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
 	}
+	App::DrawRect(t_x, filesButton->t_y-2, t_w, 1, App::theme.border);
 }
 
 bool Chat::on_scroll_event(double xchange, double ychange) {
@@ -180,6 +244,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 			
 			std::vector<std::pair<bool,std::string>> messages;
 			
+			bool lastwasuser = false;
 			for (int mi = 0; mi < message_te.size(); mi++) {
 				std::string msgstr;
 				if (auto te = dynamic_cast<TextEdit*>(message_te[mi])) {
@@ -187,7 +252,14 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 				}else if (auto te = dynamic_cast<Label*>(message_te[mi])){
 					te->getFullText().toUTF8String(msgstr);
 				}
-				messages.push_back( {from_user[mi], msgstr} );
+				
+				if (from_user[mi] && lastwasuser) {
+					messages[messages.size()-1].second += "\n\n" + msgstr;
+				}else{
+					messages.push_back( {from_user[mi], msgstr} );
+				}
+				
+				lastwasuser = from_user[mi];
 			}
 			
 			Label* te2 = new Label(this);

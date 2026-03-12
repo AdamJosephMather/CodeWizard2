@@ -221,10 +221,10 @@ void Widget::lspmessage(std::string& from, std::string& message) {
 	}
 }
 
-std::vector<std::vector<std::string>> Widget::getOpenFiles() {
+std::vector<std::vector<std::string>> Widget::getOpenFiles(bool includeText) {
 	std::vector<std::vector<std::string>> out = {};
 	for (auto c : children) {
-		auto of = c->getOpenFiles();
+		auto of = c->getOpenFiles(includeText);
 		out.insert(out.end(), of.begin(), of.end());
 	}
 	return out;

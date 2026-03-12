@@ -2,9 +2,9 @@
 
 #include <GLFW/glfw3.h>
 #include <vector>
+#include "listbox.h"
 #include "textedit.h"
 #include "widget.h"
-#include "label.h"
 
 struct Segment {
 	bool isCode;          // true ⇒ this segment is a code block
@@ -33,6 +33,10 @@ private:
 	TextEdit* querybox = nullptr;
 	std::vector<Widget*> message_te = {};
 	std::vector<bool> from_user = {};
+	Button* filesButton;
+	std::vector<std::string> textstoadd = {};
+	ListBox* filesAddList;
+	Button* newChat;
 	
 	std::vector<Segment> splitMarkdown(const std::string& input);
 };

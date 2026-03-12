@@ -61,7 +61,7 @@ public:
 	virtual Widget* findTerminal();
 	virtual void lspmessage(std::string& from, std::string& message);
 	
-	virtual std::vector<std::vector<std::string>> getOpenFiles();
+	virtual std::vector<std::vector<std::string>> getOpenFiles(bool includeText);
 	virtual int openUnnamedFile(int count);
 	
 	virtual void executeAction(WidgetActionType typ);

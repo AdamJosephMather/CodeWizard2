@@ -1606,7 +1606,7 @@ void App::openFilesList() {
 		App::MoveWidget(filesList, rootelement);
 	}
 	
-	files_in_box = rootelement->getOpenFiles();
+	files_in_box = rootelement->getOpenFiles(false);
 	
 	if (auto lb = dynamic_cast<ListBox*>(filesList)) {
 		std::vector<icu::UnicodeString> items;
@@ -1882,7 +1882,7 @@ void App::indexFiles() {
 	
 	bool putsep = false;
 	
-	files_in_box = rootelement->getOpenFiles();
+	files_in_box = rootelement->getOpenFiles(false);
 	for (auto fInfo : files_in_box) {
 		if (fInfo[1] == "") {
 			continue;

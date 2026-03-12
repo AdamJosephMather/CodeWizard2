@@ -219,7 +219,7 @@ int main(int argc, char* argv[]) {
 	Button* filesButton = new Button(App::tb, icu::UnicodeString::fromUTF8("0 Active"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = commandPalette->t_x+commandPalette->t_w+App::text_padding;
 		button->t_y = 0;
-		button->BUTTON_LABEL = icu::UnicodeString::fromUTF8(std::to_string(App::rootelement->getOpenFiles().size())+" Active");
+		button->BUTTON_LABEL = icu::UnicodeString::fromUTF8(std::to_string(App::rootelement->getOpenFiles(false).size())+" Active");
 	}, [&](Button* button) {
 		if (filesList->parent) {
 			App::closeFilesList();

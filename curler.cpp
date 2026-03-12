@@ -67,11 +67,9 @@ void Curler::loadModel() {
 
 	std::string request = "a";
 
-	// --- GET URL & API KEY FROM SETTINGS ---
 	std::string baseUrl = App::settings->getValue("ai_model_url", std::string("http://localhost:1234/v1"));
 	std::string url = baseUrl + "/completions";
 	std::string apiKey = App::settings->getValue("ai_model_api_key", std::string(""));
-	// ------------------------------------
 
 	std::string defmdl = "qwen2.5-coder-1.5b-instruct@q4_k_m";
 
@@ -84,11 +82,10 @@ void Curler::loadModel() {
 
 	std::string json = itm.dump();
 
-	// --- UPDATED THREAD WITH NEW PARAMETER ---
-	new std::thread([url, json, apiKey](){
+	std::thread([url, json, apiKey](){
 		bool wrkd;
 		run_curl(url, json, apiKey, wrkd);
-	});
+	}).detach();
 }
 
 // This is the new, updated signature
@@ -136,8 +133,6 @@ std::string Curler::run_curl(std::string url, std::string json, const std::strin
 }
 
 std::string Curler::StreamChatResponse(const std::vector<std::pair<bool, std::string>>& messages, std::function<void(const std::string&)> stream_callback) {
-	// 1) Build the JSON payload
-	// ... (payload building logic is unchanged)
 	nlohmann::json payload;
 	payload["model"] = App::settings->getValue(
 		"lm_studio_model_id",
@@ -156,19 +151,15 @@ std::string Curler::StreamChatResponse(const std::vector<std::pair<bool, std::st
 
 	std::string body = payload.dump();
 	
-	// --- GET URL & API KEY FROM SETTINGS ---
 	std::string baseUrl = App::settings->getValue("ai_model_url", std::string("http://localhost:1234/v1"));
 	std::string url = baseUrl + "/chat/completions";
 	std::string apiKey = App::settings->getValue("ai_model_api_key", std::string(""));
-	// -------------------------------------
 	
-	// 2) Initialize cURL
 	CURL* curl = curl_easy_init();
 	if (!curl) {
 		throw std::runtime_error("Failed to init curl");
 	}
 
-	// 3) Prepare our streaming state
 	StreamState state;
 	state.onChunk = std::move(stream_callback);
 
@@ -176,12 +167,10 @@ std::string Curler::StreamChatResponse(const std::vector<std::pair<bool, std::st
 	headers = curl_slist_append(headers, "Content-Type: application/json");
 	headers = curl_slist_append(headers, "Accept: text/event-stream");
 	
-	// --- ADDED LOGIC FOR API KEY ---
 	if (!apiKey.empty()) {
 		std::string authHeader = "Authorization: Bearer " + apiKey;
 		headers = curl_slist_append(headers, authHeader.c_str());
 	}
-	// -----------------------------
 
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -189,9 +178,7 @@ std::string Curler::StreamChatResponse(const std::vector<std::pair<bool, std::st
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteStreamCallback);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &state);
 
-	// 4) Perform the request (this will block until the server closes the stream)
 	CURLcode res = curl_easy_perform(curl);
-	// ... (error handling and cleanup are unchanged)
 	if (res != CURLE_OK) {
 		curl_slist_free_all(headers);
 		curl_easy_cleanup(curl);
@@ -201,11 +188,9 @@ std::string Curler::StreamChatResponse(const std::vector<std::pair<bool, std::st
 		);
 	}
 
-	// 5) Cleanup
 	curl_slist_free_all(headers);
 	curl_easy_cleanup(curl);
 
-	// 6) Return the full accumulated text
 	return state.accumulated;
 }
 

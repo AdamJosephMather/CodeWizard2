@@ -11,6 +11,7 @@ HelpMenu::HelpMenu(Widget* parent) : Widget(parent) {
 	}, [&](Widget*){
 		App::RemoveWidgetFromParent(this);
 	});
+	closebutton->text_special = 1;
 	closebutton->window_button = true;
 	closebutton->rounded = true;
 	closebutton->background_color = App::theme.del_diff;

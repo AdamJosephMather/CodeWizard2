@@ -116,13 +116,49 @@ void MathWindow::render() {
 	
 	int line_start = floor(mathInput->scrolled_to_vert);
 	int end_line = line_start+ceil((float)t_h/(float)TextRenderer::get_text_height()) + 1;
+	int textH = TextRenderer::get_text_height();
+	int iconS = textH*0.7;
+	int iconOff = (textH-iconS)/2;
+	
+	if (textH - iconS * 2 != iconOff) {
+		iconS += 1;
+	}
+	
+	int mx = App::mouseX;
+	int my = App::mouseY;
+	
+	onMouseClick = icu::UnicodeString();
 	
 	for (int i = line_start; i <= end_line; i++) {
 		if (i >= results.size()) {
 			break;
 		}
 		
-		TextRenderer::draw_text(x, cury, results[i], App::theme.main_text_color);
-		cury += TextRenderer::get_text_height();
+		if (results[i].length() != 0) {
+			TextRenderer::draw_text(x, cury, results[i], App::theme.main_text_color);
+			int ix = t_w-textH;
+			if (mx >= ix && mx <= ix+textH && my >= cury && my <= cury + textH) {
+				App::DrawRoundedRect(ix, cury, textH, textH, App::text_padding, App::theme.hover_background_color);
+				App::DrawRoundBorder(ix, cury, textH, textH, App::theme.border, 5, App::text_padding);
+				onMouseClick = results[i];
+			}else {
+				App::DrawRoundedRect(ix, cury, textH, textH, App::text_padding, App::theme.main_background_color); // just so it's legible if the text goes underneath
+			}
+			App::DrawPlus(ix+iconOff, cury+iconOff, iconS, iconS, 2, App::theme.main_text_color);
+		}
+		
+		cury += textH;
 	}
+}
+
+bool MathWindow::on_mouse_button_event(int button, int action, int mods) {
+	if (onMouseClick.length() != 0) {
+		std::string txt;
+		onMouseClick.toUTF8String(txt);
+		SetClipboardText(txt);
+		App::displayToast(icu::UnicodeString::fromUTF8("Coppied to clipboard!"));
+		return true;
+	}
+	
+	return Widget::on_mouse_button_event(button, action, mods);
 }

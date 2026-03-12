@@ -223,7 +223,7 @@ bool TextRenderer::init_font(const char* fontPath) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	// --------------------------------------------------------------------------
-	// Debug: write atlas PPM
+	// Debug: write atlas PPM (hella slow)
 	// --------------------------------------------------------------------------
 //	{
 //		std::ofstream ppm("font_atlas_debug.ppm");

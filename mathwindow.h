@@ -8,9 +8,12 @@ class MathWindow : public Widget {
 public:
 	MathWindow(Widget* parent);
 	
-	void position(int x, int y, int w, int h);
-	void render();
+	void position(int x, int y, int w, int h) override;
+	void render() override;
+	
+	bool on_mouse_button_event(int button, int action, int mods) override;
 private:
 	TextEdit* mathInput = nullptr;
 	std::vector<icu::UnicodeString> results = {};
+	icu::UnicodeString onMouseClick = icu::UnicodeString();
 };

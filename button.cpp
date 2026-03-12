@@ -148,7 +148,7 @@ void Button::render() {
 		int y = t_y+t_h/2-TextRenderer::get_text_height()/2;
 		TextRenderer::draw_text(x, y, BUTTON_LABEL, textColor);
 	}else {
-		int wdth = TextRenderer::get_text_height()*.5;
+		int wdth = TextRenderer::get_text_height()*.6;
 		
 		int x;
 		if (alignLeft) {

@@ -98,7 +98,7 @@ void Tabs::render() {
 	int end_x = scrolled_to+t_w;
 	int text_height = (t_h-TextRenderer::get_text_height())/2;
 	int end_len = TextRenderer::get_text_width(2);
-	int close_size = TextRenderer::get_text_height()*.5;
+	int close_size = TextRenderer::get_text_height()*.6;
 	int tabheight = t_h-1;
 	int close_offset_y = tabheight/2-close_size/2;
 	int close_offset_x = end_len/2-close_size/2-1;

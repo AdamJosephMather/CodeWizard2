@@ -1880,7 +1880,9 @@ void App::indexFiles() {
 	const std::size_t rootLen = rootPath.size() + 1; // for the ‘/’ or ‘\’
 	std::size_t seen = 0;
 	
-	bool putsep = false;
+//	bool putsep = false;
+	
+	std::set<std::string> dontshowagain;
 	
 	files_in_box = rootelement->getOpenFiles(false);
 	for (auto fInfo : files_in_box) {
@@ -1888,27 +1890,28 @@ void App::indexFiles() {
 			continue;
 		}
 		
-		putsep = true;
+//		putsep = true;
 		
 		std::string absPath = fInfo[1];
 		INDEXED_FILES.fullPaths.push_back(absPath);
-		INDEXED_FILES.displayPaths.push_back(icu::UnicodeString::fromUTF8(fInfo[0]));
+		INDEXED_FILES.displayPaths.push_back(icu::UnicodeString::fromUTF8(">" + fInfo[0]));
 		INDEXED_FILES.indexedNames.push_back(fInfo[0]);
+		dontshowagain.insert(absPath);
 	}
 	
-	if (putsep) {
-		INDEXED_FILES.fullPaths.push_back("");
-		icu::UnicodeString centered = icu::UnicodeString::fromUTF8(" --- All Files --- ");
-		
-		int charswide = commandPalette->t_w/TextRenderer::get_text_width(1);
-		
-		while (centered.length() < charswide) {
-			centered = UChar32(' ')+centered+UChar32(' ');
-		}
-		
-		INDEXED_FILES.displayPaths.push_back(centered);
-		INDEXED_FILES.indexedNames.push_back("");
-	}
+//	if (putsep) {
+//		INDEXED_FILES.fullPaths.push_back("");
+//		icu::UnicodeString centered = icu::UnicodeString::fromUTF8(" --- All Files --- ");
+//		
+//		int charswide = commandPalette->t_w/TextRenderer::get_text_width(1);
+//		
+//		while (centered.length() < charswide) {
+//			centered = UChar32(' ')+centered+UChar32(' ');
+//		}
+//		
+//		INDEXED_FILES.displayPaths.push_back(centered);
+//		INDEXED_FILES.indexedNames.push_back("");
+//	}
 	
 	
 	// 1) BFS through the tree, up to maxFiles files
@@ -1932,6 +1935,10 @@ void App::indexFiles() {
 				}
 			}else if (entry.is_regular_file()) {
 				std::string absPath = entry.path().string();
+				if (dontshowagain.count(absPath)) {
+					continue;
+				}
+				
 				INDEXED_FILES.fullPaths.push_back(absPath);
 
 				// Compute a relative display path, cropped to last maxDisplayChars

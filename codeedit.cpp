@@ -550,6 +550,16 @@ void CodeEdit::run_fixit() {
 	onTextChanged(textedit);
 }
 
+void CodeEdit::undo_fixit() {
+	std::vector<icu::UnicodeString> lns;
+	for (auto l : textedit->lines) {
+		lns.push_back(l.line_text);
+	}
+	
+	textedit->setFullText(undo_fixit_on_lines(lns));
+	onTextChanged(textedit);
+}
+
 int CodeEdit::analyzeForFixit_on_lines(const std::vector<Line>& lines) {
 	std::vector<icu::UnicodeString> lines_new;
 	

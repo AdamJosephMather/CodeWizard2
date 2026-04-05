@@ -1802,6 +1802,32 @@ void App::executeCommandPaletteAction() {
 			std::string path = settings->getLocalAppDataPath() + "\\CodeWizard\\languages.json";
 			openFromCMD(path, "languages.json");
 			displayToast(icu::UnicodeString::fromUTF8("Remember to reopen CodeWizard after making changes."));
+		}else if (filepath == ":Run FixIt (Spaces to Tabs)") {
+			if (!activeEditor) {
+				displayToast(icu::UnicodeString::fromUTF8("No editor active."));
+			}else{
+				Editor* edtr = (Editor*)activeEditor;
+				auto wdgt = edtr->editors[edtr->tab_bar->selected_id];
+				if (auto cdet = dynamic_cast<CodeEdit*>(wdgt)) {
+					cdet->run_fixit();
+					displayToast(icu::UnicodeString::fromUTF8("Fix-It Complete"));
+				}else{
+					displayToast(icu::UnicodeString::fromUTF8("Active Editor is not a CodeEdit."));
+				}
+			}
+		}else if (filepath == ":Undo FixIt (Tabs to Spaces)") {
+			if (!activeEditor) {
+				displayToast(icu::UnicodeString::fromUTF8("No editor active."));
+			}else{
+				Editor* edtr = (Editor*)activeEditor;
+				auto wdgt = edtr->editors[edtr->tab_bar->selected_id];
+				if (auto cdet = dynamic_cast<CodeEdit*>(wdgt)) {
+					cdet->undo_fixit();
+					displayToast(icu::UnicodeString::fromUTF8("Reverted to Spaces"));
+				}else{
+					displayToast(icu::UnicodeString::fromUTF8("Active Editor is not a CodeEdit."));
+				}
+			}
 		}
 		
 		return;
@@ -1944,7 +1970,7 @@ void App::indexFiles() {
 	}
 	
 	static const std::vector<std::string> commands = {
-		"Git Push","Git Pull","Git Force Pull","Help","Save Theme Settings To File","Load Theme Settings From File","Restart Language Servers (LSPs)","Open `languages.json` file","Test Toast Box","Test Text Line"
+		"Git Push","Git Pull","Git Force Pull","Help","Save Theme Settings To File","Load Theme Settings From File","Restart Language Servers (LSPs)","Open `languages.json` file","Test Toast Box","Test Text Line","Run FixIt (Spaces to Tabs)","Undo FixIt (Tabs to Spaces)"
 	};
 
 	for (auto const& cmd : commands) {

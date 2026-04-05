@@ -301,6 +301,38 @@ static icu::UnicodeString run_fixit_on_lines(std::vector<icu::UnicodeString> lin
 	return newText;
 }
 
+static icu::UnicodeString undo_fixit_on_lines(std::vector<icu::UnicodeString> lines) {
+	icu::UnicodeString spaceUnit("    ");
+	UChar32 newline = U'\n';
+	
+	icu::UnicodeString newText;
+	for (int i = 0; i < lines.size(); i++) {
+		const auto& origLine = lines[i];
+		
+		int32_t origTabs = 0;
+		for (int32_t c = 0; c < origLine.length(); ++c) {
+			if (origLine.char32At(c) == U'\t') ++origTabs;
+			else break;
+		}
+		
+		icu::UnicodeString fixedPrefix;
+		fixedPrefix.remove();  // ensure empty
+		for (int i = 0; i < origTabs; ++i) {
+			fixedPrefix += spaceUnit;
+		}
+		
+		icu::UnicodeString rest = origLine.tempSubString(origTabs);
+		
+		newText += fixedPrefix;
+		newText += rest;
+		if (i != lines.size()-1) {
+			newText += newline;
+		}
+	}
+	
+	return newText;
+}
+
 static icu::UnicodeString run_fixit_on_text(icu::UnicodeString text) {
 	return run_fixit_on_lines( splitByChar(text, U'\n') );
 }

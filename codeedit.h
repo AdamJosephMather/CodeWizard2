@@ -144,6 +144,7 @@ public:
 	void replaceAll(icu::UnicodeString tofind, icu::UnicodeString toreplace, bool case_sensitive);
 	
 	void run_fixit();
+	void undo_fixit();
 	int analyzeForFixit_on_lines(const std::vector<Line>&);
 	
 	void completionRecieved(std::vector<std::string> completions, int id);

@@ -34,6 +34,10 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 		btn->t_x = t_x+App::text_padding;
 		btn->t_y = t_y+App::text_padding;
 	}, [&](Widget*){
+		if (running) {
+			return;
+		}
+		
 		for (int i = 0; i < message_te.size(); i++) {
 			message_te[i]->request_close([](Widget* w){
 				delete w;
@@ -63,6 +67,7 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 }
 
 void Chat::request_close(close_callback_type callback) {
+	while (running) { std::this_thread::sleep_for(std::chrono::milliseconds(50)); }
 	Widget::request_close(callback);
 }
 
@@ -231,7 +236,7 @@ std::vector<Segment> Chat::splitMarkdown(const std::string& input) {
 bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 	if (App::activeLeafNode == querybox) {
 		bool shift_held = ((mods & GLFW_MOD_SHIFT) != 0);
-		if (key == GLFW_KEY_ENTER && action == GLFW_PRESS && !shift_held) {
+		if (key == GLFW_KEY_ENTER && action == GLFW_PRESS && !shift_held && !running) {
 			Label* te = new Label(this);
 			auto message = querybox->getFullText();
 			te->background_color = App::theme.extras_background_color;
@@ -241,6 +246,8 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 			from_user.push_back(true);
 			
 			querybox->setFullText(icu::UnicodeString::fromUTF8(""));
+			
+			
 			
 			std::vector<std::pair<bool,std::string>> messages;
 			
@@ -268,6 +275,8 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 			
 			message_te.push_back(te2);
 			from_user.push_back(false);
+			
+			running = true;
 			
 			new std::thread([messages,te2, this](){
 				std::string full;
@@ -300,6 +309,8 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 				}
 				
 				App::time_till_regular += 2;
+				
+				running = false;
 			});
 			
 			return true;

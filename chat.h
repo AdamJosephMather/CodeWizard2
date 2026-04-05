@@ -37,6 +37,7 @@ private:
 	std::vector<std::string> textstoadd = {};
 	ListBox* filesAddList;
 	Button* newChat;
+	bool running = false;
 	
 	std::vector<Segment> splitMarkdown(const std::string& input);
 };

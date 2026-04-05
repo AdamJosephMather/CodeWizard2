@@ -233,7 +233,7 @@ static int analyzeForFixit(const std::vector<icu::UnicodeString>& lines) {
 	for (auto l : lines) {
 		if (l.length() == 0) {
 			continue;
-		} 
+		}
 		
 		int this_l = 0;
 		for (int c = 0; c < l.length(); c++) {
@@ -256,7 +256,7 @@ static int analyzeForFixit(const std::vector<icu::UnicodeString>& lines) {
 	}
 	
 	if (two == 0 && four == 0) {
-		return 0;
+		return 4;
 	}else if (two >= four){
 		return 2;
 	}else {

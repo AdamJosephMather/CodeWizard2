@@ -3,8 +3,8 @@
 #include "textedit.h"
 #include "linenumbers.h"
 #include "tinyfiledialogs.h"
+#include "helper_types.h"
 
-#include <fstream>
 #include <unicode/regex.h>
 #include <unicode/stringoptions.h>
 
@@ -40,6 +40,25 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 		f1->filename = filename;
 		
 		btn->BUTTON_LABEL = icu::UnicodeString::fromUTF8(filename);
+		cb1Button->BUTTON_LABEL = icu::UnicodeString::fromUTF8("Use Clipboard");
+		
+		reload();
+	});
+	
+	cb1Button = new Button(this, icu::UnicodeString::fromUTF8("Use Clipboard"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+		// position
+		btn->t_x = f1Button->t_x-w-App::text_padding;
+		btn->t_y = t_y+App::text_padding;
+	},  [&](Button* btn){
+		// onclick
+		clipBoardText1 = icu::UnicodeString::fromUTF8(GetClipboardText());
+		
+		f1 = new FileInfo();
+		f1->filepath = "";
+		f1->filename = "";
+		
+		btn->BUTTON_LABEL = icu::UnicodeString::fromUTF8("Coppied!");
+		f1Button->BUTTON_LABEL = icu::UnicodeString::fromUTF8("Select File 1");
 		
 		reload();
 	});
@@ -69,6 +88,25 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 		f2->filename = filename;
 		
 		btn->BUTTON_LABEL = icu::UnicodeString::fromUTF8(filename);
+		cb2Button->BUTTON_LABEL = icu::UnicodeString::fromUTF8("Use Clipboard");
+		
+		reload();
+	});
+	
+	cb2Button = new Button(this, icu::UnicodeString::fromUTF8("Use Clipboard"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+		// position
+		btn->t_x = f2Button->t_x+f2Button->t_w+App::text_padding;
+		btn->t_y = t_y+App::text_padding;
+	},  [&](Button* btn){
+		// onclick
+		clipBoardText2 = icu::UnicodeString::fromUTF8(GetClipboardText());
+		
+		f2 = new FileInfo();
+		f2->filepath = "";
+		f2->filename = "";
+		
+		btn->BUTTON_LABEL = icu::UnicodeString::fromUTF8("Coppied!");
+		f2Button->BUTTON_LABEL = icu::UnicodeString::fromUTF8("Select File 2");
 		
 		reload();
 	});
@@ -77,6 +115,10 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 	f2Button->border = true;
 	f1Button->rounded = true;
 	f2Button->rounded = true;
+	cb1Button->border = true;
+	cb2Button->border = true;
+	cb1Button->rounded = true;
+	cb2Button->rounded = true;
 	
 	textedit = new TextEdit(this, [&](Widget* t){
 		textedit->t_x = t_x+line_numbers->t_w;
@@ -95,10 +137,20 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 	line_numbers->setTextedit(textedit);
 }
 
-void Compare::setOnlyTo(FileInfo* f) {
+void Compare::setOnlyTo(FileInfo* f, int num) {
 	bool worked = true;
-	auto txt = App::readFileToUnicodeString(f->filepath, worked);
-	if (!worked) { textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: " + f->filepath)); return; }
+	icu::UnicodeString txt;
+	
+	if (f->filepath == "") {
+		if (num == 1) {
+			txt = clipBoardText1;
+		}else{
+			txt = clipBoardText2;
+		}
+	}else{
+		txt = App::readFileToUnicodeString(f->filepath, worked);
+		if (!worked) { textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: " + f->filepath)); return; }
+	}
 	
 	auto lines = splitByChar(txt, U'\n');
 	
@@ -134,18 +186,30 @@ void Compare::reload() {
 		textedit->setFullText(icu::UnicodeString());
 		return;
 	}else if (!f1) {
-		setOnlyTo(f2);
+		setOnlyTo(f2, 2);
 		return;
 	}else if (!f2) {
-		setOnlyTo(f1);
+		setOnlyTo(f1, 1);
 		return;
 	}
 	
+	icu::UnicodeString txt;
+	icu::UnicodeString txt2;
+	
 	bool worked = true;
-	auto txt = App::readFileToUnicodeString(f1->filepath, worked);
-	if (!worked) { textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: " + f1->filepath)); return; }
-	auto txt2 = App::readFileToUnicodeString(f2->filepath, worked);
-	if (!worked) { textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: " + f1->filepath)); return; }
+	if (f1->filepath != "") {
+		txt = App::readFileToUnicodeString(f1->filepath, worked);
+		if (!worked) { textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: " + f1->filepath)); return; }
+	}else{
+		txt = clipBoardText1;
+	}
+	
+	if (f2->filepath != "") {
+		txt2 = App::readFileToUnicodeString(f2->filepath, worked);
+		if (!worked) { textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: " + f1->filepath)); return; }
+	}else{
+		txt2 = clipBoardText2;
+	}
 	
 	auto l1 = splitByChar(txt, U'\n');
 	auto l2 = splitByChar(txt2, U'\n');
@@ -200,6 +264,12 @@ void Compare::render() {
 	App::runWithSKIZ(f2Button->t_x, f2Button->t_y, f2Button->t_w, f2Button->t_h, [&](){
 		f2Button->render();
 	});
+	App::runWithSKIZ(cb1Button->t_x, cb1Button->t_y, cb1Button->t_w, cb1Button->t_h, [&](){
+		cb1Button->render();
+	});
+	App::runWithSKIZ(cb2Button->t_x, cb2Button->t_y, cb2Button->t_w, cb2Button->t_h, [&](){
+		cb2Button->render();
+	});
 	App::runWithSKIZ(line_numbers->t_x, line_numbers->t_y, line_numbers->t_w, textedit->t_h, [&](){
 		line_numbers->render();
 	});
@@ -225,6 +295,8 @@ void Compare::position(int x, int y, int w, int h) {
 	
 	f1Button->position(t_x, t_y, t_w, t_h);
 	f2Button->position(t_x, t_y, t_w, t_h);
+	cb1Button->position(t_x, t_y, t_w, t_h);
+	cb2Button->position(t_x, t_y, t_w, t_h);
 	line_numbers->position(t_x, t_y, t_w, t_h);
 	textedit->position(t_x, t_y, t_w, t_h);
 }
@@ -240,6 +312,8 @@ bool Compare::on_key_event(int key, int scancode, int action, int mods) {
 bool Compare::on_mouse_button_event(int button, int action, int mods) {
 	if (f1Button->on_mouse_button_event(button, action, mods)) { return true; }
 	if (f2Button->on_mouse_button_event(button, action, mods)) { return true; }
+	if (cb1Button->on_mouse_button_event(button, action, mods)) { return true; }
+	if (cb2Button->on_mouse_button_event(button, action, mods)) { return true; }
 	if (textedit->scrollbar_v->on_mouse_button_event(button, action, mods)) { return true; }
 	if (textedit->scrollbar_h->on_mouse_button_event(button, action, mods)) { return true; }
 	return false;

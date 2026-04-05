@@ -29,13 +29,18 @@ public:
 	void render();
 	
 	void reload();
-	void setOnlyTo(FileInfo* f);
+	void setOnlyTo(FileInfo* f, int num);
 	
 	bool rounded = true;
 private:
 	FileInfo* f1 = nullptr;
 	FileInfo* f2 = nullptr;
 	
+	icu::UnicodeString clipBoardText1;
+	icu::UnicodeString clipBoardText2;
+	
 	Button* f1Button = nullptr;
 	Button* f2Button = nullptr;
+	Button* cb1Button = nullptr;
+	Button* cb2Button = nullptr;
 };

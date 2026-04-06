@@ -27,4 +27,5 @@ private:
 	Button *b6;
 	Button *b7;
 	Button *b8;
+	Button *b9;
 };

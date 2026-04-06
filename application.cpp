@@ -46,7 +46,7 @@ int App::minor_version = 2;
 int App::patch_version = 9;
 
 
-float M_PI = 3.141592653589793238;
+const float M_PI = 3.141592653589793238;
 
 HWND App::window_handle = nullptr;
 
@@ -788,6 +788,24 @@ void App::DrawRect(int x, int y, int w, int h, Color* color) {
 	glEnd();
 }
 
+void App::DrawCircle(int x, int y, int radius, int segments, Color* color) {
+	float angleStep = 2.0f * 3.1415926f / segments;
+
+	glColor4f(color->r, color->g, color->b, color->a);
+	
+	// GL_TRIANGLE_FAN creates a filled circle
+	// The first vertex is the center, subsequent vertices are on the circumference
+	glBegin(GL_TRIANGLE_FAN);
+		glVertex2f(x, y); // Center point
+		for (int i = 0; i <= segments; i++) {
+			float angle = i * angleStep;
+			float vx = x + cos(angle) * radius;
+			float vy = y + sin(angle) * radius;
+			glVertex2f(vx, vy);
+		}
+	glEnd();
+}
+
 void App::DrawX(double x, double y, double w, double h, double thickness, Color* color) {
 	double sqrtt = sqrt(thickness);
 	
@@ -884,6 +902,91 @@ void App::DrawRect(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b) 
 		glVertex2f(x+w, y+h); // bottom-right
 		glVertex2f(x, y+h); // bottom-left
 	glEnd();
+}
+
+void App::DrawAsteroid(int x, int y, int s, double r, Color* color, int type) {
+	glPushMatrix();
+
+	// Move to position and rotate
+	glTranslatef(x + s / 2.0f, y + s / 2.0f, 0.0f);
+	glRotatef(r * (180.0f / 3.14159265f), 0.0f, 0.0f, 1.0f);
+	
+	// Scale the points by the size parameter
+	glScalef((float)s, (float)s, 1.0f);
+
+	glColor4f(color->r, color->g, color->b, color->a);
+
+	// Pick a shape based on the type
+	glBegin(GL_POLYGON);
+	if (type == 0) {
+		// Type 0: Standard lumpy rock
+		glVertex2f(-0.5f, -0.2f);
+		glVertex2f(-0.3f, -0.5f);
+		glVertex2f( 0.2f, -0.4f);
+		glVertex2f( 0.5f, -0.1f);
+		glVertex2f( 0.4f,  0.3f);
+		glVertex2f( 0.0f,  0.5f);
+		glVertex2f(-0.4f,  0.4f);
+	} 
+	else if (type == 1) {
+		// Type 1: Elongated, sharp rock
+		glVertex2f(-0.2f, -0.5f);
+		glVertex2f( 0.3f, -0.4f);
+		glVertex2f( 0.5f,  0.0f);
+		glVertex2f( 0.2f,  0.5f);
+		glVertex2f(-0.4f,  0.3f);
+		glVertex2f(-0.5f, -0.1f);
+	} 
+	else {
+		// Type 2: C-shaped / Cratered rock
+		glVertex2f(-0.3f, -0.3f);
+		glVertex2f( 0.0f, -0.5f);
+		glVertex2f( 0.4f, -0.3f);
+		glVertex2f( 0.3f,  0.0f);
+		glVertex2f( 0.5f,  0.3f);
+		glVertex2f( 0.1f,  0.5f);
+		glVertex2f(-0.4f,  0.4f);
+		glVertex2f(-0.5f,  0.0f);
+	}
+	glEnd();
+
+	glPopMatrix();
+}
+
+void App::DrawShip(int x, int y, int s, double r, Color* color, bool drawfire) {
+	glPushMatrix();
+
+	// Move to position and rotate
+	glTranslatef(x + s / 2.0f, y + s / 2.0f, 0.0f);
+	glRotatef(r * (180.0f / 3.14159265f), 0.0f, 0.0f, 1.0f);
+	
+	// Scale the points by the size parameter
+	glScalef((float)s, (float)s, 1.0f);
+
+	// --- Draw the Thruster Fire ---
+	if (drawfire) {
+		// You might want a different color for fire, like orange/yellow
+		// Or keep it the same as the ship color for a stylized look
+		glColor4f(1.0f, 0.5f, 0.0f, color->a); // Defaulting to Orange
+		
+		glBegin(GL_POLYGON);
+			glVertex2f(-0.3f,  0.0f);  // Starts at the rear indent
+			glVertex2f(-0.5f,  0.2f);  // Widens slightly
+			glVertex2f(-0.8f,  0.0f);  // Tip of the flame (beyond ship width)
+			glVertex2f(-0.5f, -0.2f);  // Widens slightly
+		glEnd();
+	}
+
+	// --- Draw the Ship ---
+	glColor4f(color->r, color->g, color->b, color->a);
+	glBegin(GL_POLYGON);
+		glVertex2f( 0.5f,  0.0f);  // Nose
+		glVertex2f(-0.5f,  0.4f);  // Top-back wing
+		glVertex2f(-0.3f,  0.0f);  // Rear indent
+		glVertex2f(-0.5f, -0.4f);  // Bottom-back wing
+	glEnd();
+
+	glPopMatrix();
 }
 
 void App::DoFullRenderWithoutInput() {

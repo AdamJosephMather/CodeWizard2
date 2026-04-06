@@ -282,7 +282,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 				std::string full;
 				full = Curler::StreamChatResponse(messages, [&](const std::string& part){
 					te2->setFullText(te2->getFullText()+icu::UnicodeString::fromUTF8(part));
-					App::time_till_regular += 2;
+					App::time_till_regular = 2;
 				});
 				
 				App::RemoveWidgetFromParent(te2);
@@ -308,7 +308,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 					from_user.push_back(false);
 				}
 				
-				App::time_till_regular += 2;
+				App::time_till_regular = 2;
 				
 				running = false;
 			});

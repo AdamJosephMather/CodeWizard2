@@ -16,7 +16,7 @@ void Toast::position(int x, int y, int width, int height) {
 	if (time != -1) {
 		if (glfwGetTime()-time > 4) {
 			time = -1;
-			App::time_till_regular += 2;
+			App::time_till_regular = 2;
 		}
 	}
 }
@@ -68,5 +68,5 @@ void Toast::displayMessage(icu::UnicodeString displ_text) {
 	time = glfwGetTime();
 	displayOffset = t_w;
 	closingOpacity = 1.0;
-	App::time_till_regular += 2;
+	App::time_till_regular = 2;
 }

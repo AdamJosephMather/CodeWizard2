@@ -1258,7 +1258,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 				App::displayToast(icu::UnicodeString::fromUTF8("Contacting AI Provider"));
 				std::string insertion = Curler::StreamInsertion(befr, aftr, [this](std::string s){
 					textedit->insertTextAtCursor(textedit->cursors[0], icu::UnicodeString::fromUTF8(s));
-					App::time_till_regular += 2;
+					App::time_till_regular = 2;
 				});
 			});
 			return true;

@@ -215,6 +215,7 @@ public:
 	
 	static void DrawRect(int x, int y, int w, int h, Color* color);
 	static void DrawRect(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b);
+	static void DrawCircle(int x, int y, int radius, int segments, Color* color);
 	static void DrawX(double x, double y, double w, double h, double thickness, Color* color);
 	static void DrawPlus(double x, double y, double w, double h, double thickness, Color* color);
 	static void DrawMinus(double x, double y, double w, double h, double thickness, Color* color);
@@ -223,6 +224,8 @@ public:
 	static void DrawInverseRoundedRect(float x, float y, float w, float h, float radius, Color* color, int segments = 5);
 	static void DrawBorder(int x, int y, int w, int h, Color* color);
 	static void DrawRoundBorder(int x, int y, int w, int h, Color* color, int segments, double radius);
+	static void DrawAsteroid(int x, int y, int s, double r, Color* color, int type);
+	static void DrawShip(int x, int y, int s, double r, Color* color, bool drawfire);
 	
 	static void setTheme(Theme theme);
 	

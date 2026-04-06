@@ -7,6 +7,7 @@
 #include "lspdebug.h"
 #include "settings.h"
 #include "mathwindow.h"
+#include "asteroids.h"
 #include "text_renderer.h"
 #include "application.h"
 #include "terminalwidgettabbed.h"
@@ -111,6 +112,18 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	});
 	b8->rounded = true;
 	b8->border = true;
+	
+	auto text9 = icu::UnicodeString::fromUTF8("Asteroids");
+	b9 = new Button(this, text9, [&](Button* button, int x, int y, int w, int h, int tw, int th){
+		button->t_x = t_x+t_w/2-tw/2;
+		button->t_y = b8->t_y+b8->t_h+App::text_padding;
+	}, [&](Button* button) {
+		App::ReplaceWith(this, new Asteroids(nullptr));
+		std::cout << "Creating asteroids\n";
+		delete this;
+	});
+	b9->rounded = true;
+	b9->border = true;
 }
 
 void WidgetChooser::render() {

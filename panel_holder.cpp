@@ -1,6 +1,7 @@
 #include "panel_holder.h"
 
 #include "application.h"
+#include "asteroids.h"
 #include "chat.h"
 #include "compare.h"
 #include "editor.h"
@@ -359,6 +360,8 @@ void PanelHolder::setState(nlohmann::json state) {
 			new TerminalWidgetTabbed(this);
 		}else if (c == "MathWindow"){
 			new MathWindow(this);
+		}else if (c == "Asteroids"){
+			new Asteroids(this);
 		}else { // any unknown, or editor
 			new Editor(this);
 		}
@@ -394,6 +397,8 @@ nlohmann::json PanelHolder::saveConfiguration() {
 			thisitm["children"][i] = "Terminal";
 		}else if (auto pe = dynamic_cast<MathWindow*>(c)){
 			thisitm["children"][i] = "MathWindow";
+		}else if (auto pe = dynamic_cast<Asteroids*>(c)){
+			thisitm["children"][i] = "Asteroids";
 		}else {
 			thisitm["children"][i] = "Ehhhhh";
 		}

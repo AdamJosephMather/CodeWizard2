@@ -14,6 +14,9 @@ A rewrite of CodeWizard. CodeWizard2 is *probably not* a useful project to anybo
 
 ## Screenshot(s)
 
+Ever seen Asteroids inside a code editor, with no plugins? I didn't think so.  
+  
+<img width="3840" height="2088" alt="image" src="https://github.com/user-attachments/assets/5eddc5af-5996-4e7b-a364-7e67764d1c80" />
 <img width="2256" height="1432" alt="image" src="https://github.com/user-attachments/assets/b85e5d30-b86b-41e6-99cf-8cf50edf1828" />
 <img width="2256" height="1432" alt="image" src="https://github.com/user-attachments/assets/32000715-f6c2-4342-bde7-104236f3d9da" />
 <img width="2256" height="1432" alt="image" src="https://github.com/user-attachments/assets/63df446e-5361-40cf-94f7-4e239e03c65e" />

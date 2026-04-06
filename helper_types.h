@@ -230,6 +230,8 @@ static int analyzeForFixit(const std::vector<icu::UnicodeString>& lines) {
 	
 	int prev = 0;
 	
+	bool anyspaces = false;
+	
 	for (auto l : lines) {
 		if (l.length() == 0) {
 			continue;
@@ -244,6 +246,10 @@ static int analyzeForFixit(const std::vector<icu::UnicodeString>& lines) {
 			this_l ++;
 		}
 		
+		if (this_l >= 4) {
+			anyspaces = true;
+		}
+		
 		int diff = std::abs(this_l-prev);
 		
 		if (diff == 2) {
@@ -256,7 +262,11 @@ static int analyzeForFixit(const std::vector<icu::UnicodeString>& lines) {
 	}
 	
 	if (two == 0 && four == 0) {
-		return 4;
+		if (anyspaces) {
+			return 4;
+		}else{
+			return 0;
+		}
 	}else if (two >= four){
 		return 2;
 	}else {

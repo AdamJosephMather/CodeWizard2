@@ -747,7 +747,7 @@ bool Terminal::getDocCell(int docId, int col, OurCell& out) {
 bool Terminal::getDocWraps(int docId) {
 	std::lock_guard<std::mutex> lock(m_vtermMutex);
 	
-	if (docId < 0) return false;
+	if (docId < 0 || !m_vt) return false;
 
 	const int sb_size = static_cast<int>(m_scrollback.size());
 	if (docId < sb_size) {

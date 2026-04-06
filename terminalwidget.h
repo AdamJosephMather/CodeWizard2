@@ -50,6 +50,7 @@ public:
 	
 	std::string get_last_n_doc_lines(int n);
 private:
+	std::recursive_mutex m_term_mutex;
 	void cell_from_cursor(int& row, int& col);
 	
 	std::shared_ptr<sio::client> ajm_asv3_client;

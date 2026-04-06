@@ -259,6 +259,11 @@ void TerminalWidget::reset_client() {
 			return;
 		}
 		
+		std::lock_guard<std::recursive_mutex> lock(m_term_mutex);
+		if (!term) {
+			return;
+		}
+		
 		std::string command_string = res->at("command").get<std::string>();
 		
 		bool is_raw = false;
@@ -370,6 +375,7 @@ void TerminalWidget::position(int x, int y, int w, int h) {
 }
 
 void TerminalWidget::render() {
+	std::lock_guard<std::recursive_mutex> lock(m_term_mutex);
 	if (!is_visible) { return; }
 	if (term == nullptr || settingup) {
 		return;
@@ -491,6 +497,7 @@ inline void TerminalWidget::cell_from_cursor(int& row, int& col) {
 static bool s_dragging = false;
 
 bool TerminalWidget::on_key_event(int key, int /*scancode*/, int action, int mods) {
+	std::lock_guard<std::recursive_mutex> lock(m_term_mutex);
 	if (!is_visible || App::activeLeafNode != this) { return false; }
 	
 	if (!term || settingup) return false;
@@ -545,6 +552,7 @@ bool TerminalWidget::on_key_event(int key, int /*scancode*/, int action, int mod
 }
 
 bool TerminalWidget::on_char_event(unsigned int keycode) {
+	std::lock_guard<std::recursive_mutex> lock(m_term_mutex);
 	if (!is_visible || App::activeLeafNode != this) { return false; }
 	
 	if (!term || settingup) return false;
@@ -583,6 +591,7 @@ bool TerminalWidget::on_char_event(unsigned int keycode) {
 }
 
 bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
+	std::lock_guard<std::recursive_mutex> lock(m_term_mutex);
 	if (!is_visible || !term || settingup) return false;
 	
 	if (ajm_asv3_tm->parent == this) {
@@ -638,6 +647,7 @@ bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
 }
 
 bool TerminalWidget::on_mouse_move_event() {
+	std::lock_guard<std::recursive_mutex> lock(m_term_mutex);
 	if (!is_visible || !term || settingup) return false;
 	
 	if (selecting && App::mouseY-TextRenderer::get_text_height()*3 < t_y) {
@@ -670,6 +680,7 @@ bool TerminalWidget::on_mouse_move_event() {
 }
 
 bool TerminalWidget::on_scroll_event(double /*xchange*/, double ychange) {
+	std::lock_guard<std::recursive_mutex> lock(m_term_mutex);
 	int mx = App::mouseX;
 	int my = App::mouseY;
 	
@@ -779,6 +790,7 @@ std::string TerminalWidget::selection_text() const {
 }
 
 std::string TerminalWidget::get_last_n_doc_lines(int n) {
+	std::lock_guard<std::recursive_mutex> lock(m_term_mutex);
 	if (!term) return {};
 	if (n <= 0) return {};
 

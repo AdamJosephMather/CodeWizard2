@@ -39,11 +39,13 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 		}
 		
 		for (int i = 0; i < message_te.size(); i++) {
+			App::RemoveWidgetFromParent(message_te[i]);
 			message_te[i]->request_close([](Widget* w){
 				delete w;
 			});
 		}
 		message_te.clear();
+		from_user.clear();
 	});
 	newChat->rounded = true;
 	newChat->border  = true;

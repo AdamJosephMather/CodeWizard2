@@ -142,6 +142,22 @@ void Asteroids::position(int winx, int winy, int winw, int winh) {
 	int shipx_t_w = shipx*t_w + shipw_over2;
 	int shipy_t_h = shipy*t_h + shipw_over2;
 	
+	
+	if (bullets.size() < 5 && glfwGetKey(App::window, GLFW_KEY_SPACE) == GLFW_PRESS && curTime-lastBullet > 0.2) {
+		auto speed = (double)TextRenderer::get_text_height()*50;
+		double shipw_over2 = TextRenderer::get_text_height();
+		
+		bullets.push_back({
+			shipx + shipw_over2/t_w,
+			shipy + shipw_over2/t_h,
+			std::cos(shipr)*speed,
+			std::sin(shipr)*speed,
+		});
+		
+		lastBullet = curTime;
+	}
+	
+	
 	for (int j = bullets.size()-1; j >= 0; j--) {
 		Bullet *b = &bullets[j];
 		b->timeleft -= deltaTime;
@@ -203,27 +219,16 @@ void Asteroids::position(int winx, int winy, int winw, int winh) {
 				
 				asteroids.erase(asteroids.begin() + i);
 				bullets.erase(bullets.begin() + j);
-				break;
 				
+				if (asteroids.empty()) {
+					playing = false;
+					App::MoveWidget(startGameButton, this);
+				}
+				
+				break;
 			}
 		}
 	}
-}
-
-bool Asteroids::on_key_event(int key, int scancode, int action, int mods) {
-	if (playing && bullets.size() < 5 && key == GLFW_KEY_SPACE && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-		auto speed = (double)TextRenderer::get_text_height()*50;
-		double shipw_over2 = TextRenderer::get_text_height();
-		
-		bullets.push_back({
-			shipx + shipw_over2/t_w,
-			shipy + shipw_over2/t_h,
-			std::cos(shipr)*speed,
-			std::sin(shipr)*speed,
-		});
-		return true;
-	}
-	return false;
 }
 
 void Asteroids::render() {

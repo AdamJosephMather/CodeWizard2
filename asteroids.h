@@ -33,7 +33,7 @@ public:
 	
 	bool rounded = true;
 	
-	bool on_key_event(int key, int scancode, int action, int mods);
+//	bool on_key_event(int key, int scancode, int action, int mods);
 //	bool on_char_event(unsigned int keycode);
 //	bool on_mouse_button_event(int button, int action, int mods);
 //	bool on_mouse_move_event();

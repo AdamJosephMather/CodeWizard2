@@ -42,8 +42,8 @@
 
 
 int App::major_version = 2;
-int App::minor_version = 2;
-int App::patch_version = 9;
+int App::minor_version = 3;
+int App::patch_version = 0;
 
 
 const float M_PI = 3.141592653589793238;

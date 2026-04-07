@@ -86,35 +86,29 @@ void Asteroids::position(int winx, int winy, int winw, int winh) {
 	}
 	
 	if (glfwGetKey(App::window, GLFW_KEY_A) == GLFW_PRESS || glfwGetKey(App::window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-		shipr -= 8 * deltaTime;
+		shipr -= 4 * deltaTime;
 	}
 	
 	if (glfwGetKey(App::window, GLFW_KEY_D) == GLFW_PRESS || glfwGetKey(App::window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-		shipr += 8 * deltaTime;
+		shipr += 4 * deltaTime;
 	}
 	
-	auto magnitude = TextRenderer::get_text_height() * 15 * deltaTime;
 	accelerating = false;
 	
 	if (glfwGetKey(App::window, GLFW_KEY_W) == GLFW_PRESS || glfwGetKey(App::window, GLFW_KEY_UP) == GLFW_PRESS) {
+		auto magnitude = TextRenderer::get_text_height() * 23 * deltaTime;
 		shipv_x += magnitude * std::cos(shipr);
 		shipv_y += magnitude * std::sin(shipr);
 		accelerating = true;
 	}
 	
-	if (glfwGetKey(App::window, GLFW_KEY_S) == GLFW_PRESS || glfwGetKey(App::window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-		shipv_x -= magnitude * std::cos(shipr);
-		shipv_y -= magnitude * std::sin(shipr);
-		accelerating = true;
-	}
-	
-	magnitude = std::sqrt(shipv_x*shipv_x + shipv_y*shipv_y);
+	auto magnitude = std::sqrt(shipv_x*shipv_x + shipv_y*shipv_y);
 	if (magnitude != 0) { // this slows it down no matter what.
-		shipv_x -= (shipv_x/magnitude);
-		shipv_y -= (shipv_y/magnitude);
+		shipv_x -= (shipv_x/magnitude)*0.4;
+		shipv_y -= (shipv_y/magnitude)*0.4;
 	}
 	
-	auto maxspeed = TextRenderer::get_text_height() * 30;
+	auto maxspeed = TextRenderer::get_text_height() * 80;
 	if (magnitude > maxspeed) { // max value
 		shipv_x *= maxspeed/magnitude;
 		shipv_y *= maxspeed/magnitude;
@@ -143,8 +137,8 @@ void Asteroids::position(int winx, int winy, int winw, int winh) {
 	int shipy_t_h = shipy*t_h + shipw_over2;
 	
 	
-	if (bullets.size() < 5 && glfwGetKey(App::window, GLFW_KEY_SPACE) == GLFW_PRESS && curTime-lastBullet > 0.2) {
-		auto speed = (double)TextRenderer::get_text_height()*50;
+	if (bullets.size() < 10 && glfwGetKey(App::window, GLFW_KEY_SPACE) == GLFW_PRESS && curTime-lastBullet > 0.4) {
+		auto speed = (double)TextRenderer::get_text_height()*120;
 		double shipw_over2 = TextRenderer::get_text_height();
 		
 		bullets.push_back({
@@ -200,13 +194,13 @@ void Asteroids::position(int winx, int winy, int winw, int winh) {
 			Bullet *b = &bullets[j];
 			
 			auto dist = std::pow(a->rel_screen_x-b->x*t_w, 2) + std::pow(a->rel_screen_y-b->y*t_h, 2);
-			auto astDst = std::pow(a->rel_screen_s/2, 2);
+			auto astDst = std::pow(a->rel_screen_s/2 + TextRenderer::get_text_height()/2, 2); // add some leeway
 			
 			if (dist < astDst) {
 				if (a->size > 2) {
 					for (int k = 0; k < 3; k++) {
 						Asteroid ast = {
-							(distrib(gen)-50)/1500.0 + a->x, (distrib(gen)-50)/1500.0 + a->y, distrib(gen)/(100.0 / (2 * M_PI)),
+							(distrib(gen)-50)/3000.0 + a->x, (distrib(gen)-50)/3000.0 + a->y, distrib(gen)/(100.0 / (2 * M_PI)),
 							((distrib(gen)+100)/300.0) * a->size,
 							(int)(distrib(gen)/30),
 							((distrib(gen)-50)/8.0) * (double)TextRenderer::get_text_height(), // this is pixels/second
@@ -343,7 +337,7 @@ void Asteroids::resetGame() {
 	
 	asteroids.clear();
 	
-	const int ASTEROID_CONSTANT = 1500; // textwidth^2 / asteroid roughly
+	const int ASTEROID_CONSTANT = 2500; // textwidth^2 / asteroid roughly
 	int asteroid_count = (t_w * t_h) / (TextRenderer::get_text_width(1)*TextRenderer::get_text_width(1)) / ASTEROID_CONSTANT; // this is an area that has been normalized based on scaling (text size)
 	
 	for (int i = 0; i < asteroid_count; i++) {

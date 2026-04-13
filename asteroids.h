@@ -24,7 +24,7 @@ struct Bullet {
 	double y;
 	double vx;
 	double vy;
-	double timeleft = 2;
+	double timeleft = 1;
 };
 
 class Asteroids : public Widget {

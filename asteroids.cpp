@@ -10,8 +10,7 @@ const double M_PI = 3.141592653589793238;
 long double getTime() {
 	auto now = std::chrono::system_clock::now();
 	auto duration = now.time_since_epoch();
-	long seconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
-	return seconds/1000.0;
+	return std::chrono::duration<long double>(duration).count();
 }
 
 Asteroids::Asteroids(Widget* parent) : Widget(parent) {
@@ -22,6 +21,7 @@ Asteroids::Asteroids(Widget* parent) : Widget(parent) {
 	distrib = std::uniform_int_distribution<>(1, 100);
 	
 	lastTime = getTime();
+	lastBullet = getTime();
 	
 	startGameButton = new Button(this, icu::UnicodeString::fromUTF8("Play"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
@@ -136,9 +136,8 @@ void Asteroids::position(int winx, int winy, int winw, int winh) {
 	int shipx_t_w = shipx*t_w + shipw_over2;
 	int shipy_t_h = shipy*t_h + shipw_over2;
 	
-	
-	if (bullets.size() < 10 && glfwGetKey(App::window, GLFW_KEY_SPACE) == GLFW_PRESS && curTime-lastBullet > 0.4) {
-		auto speed = (double)TextRenderer::get_text_height()*120;
+	if (bullets.size() < 10 && glfwGetKey(App::window, GLFW_KEY_SPACE) == GLFW_PRESS && curTime-lastBullet > 0.5) {
+		auto speed = (double)TextRenderer::get_text_height()*110;
 		double shipw_over2 = TextRenderer::get_text_height();
 		
 		bullets.push_back({
@@ -148,9 +147,10 @@ void Asteroids::position(int winx, int winy, int winw, int winh) {
 			std::sin(shipr)*speed,
 		});
 		
+		App::displayText(icu::UnicodeString::fromUTF8("FIRE!"));
+		
 		lastBullet = curTime;
 	}
-	
 	
 	for (int j = bullets.size()-1; j >= 0; j--) {
 		Bullet *b = &bullets[j];

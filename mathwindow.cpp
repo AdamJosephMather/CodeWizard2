@@ -136,7 +136,7 @@ void MathWindow::render() {
 		
 		if (results[i].length() != 0) {
 			TextRenderer::draw_text(x, cury, results[i], App::theme.main_text_color);
-			int ix = t_w-textH;
+			int ix = t_x+t_w-textH-App::text_padding;
 			if (mx >= ix && mx <= ix+textH && my >= cury && my <= cury + textH) {
 				App::DrawRoundedRect(ix, cury, textH, textH, App::text_padding, App::theme.hover_background_color);
 				App::DrawRoundBorder(ix, cury, textH, textH, App::theme.border, 5, App::text_padding);
@@ -152,7 +152,7 @@ void MathWindow::render() {
 }
 
 bool MathWindow::on_mouse_button_event(int button, int action, int mods) {
-	if (onMouseClick.length() != 0) {
+	if (onMouseClick.length() != 0 && action == GLFW_PRESS) {
 		std::string txt;
 		onMouseClick.toUTF8String(txt);
 		SetClipboardText(txt);

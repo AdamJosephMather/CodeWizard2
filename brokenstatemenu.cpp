@@ -1,6 +1,5 @@
 #include "brokenstatemenu.h"
 #include "text_renderer.h"
-#include <cctype>
 
 BrokenStateMenu::BrokenStateMenu(Widget* parent, std::string firsttext, std::string secondtext, std::string query) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("BrokenStateMenu");
@@ -63,7 +62,7 @@ bool BrokenStateMenu::on_key_event(int key, int scancode, int action, int mods) 
 }
 
 bool BrokenStateMenu::on_char_event(unsigned int codepoint) {
-	if (!is_visible || !parent) {
+	if (!is_visible || !parent || this != App::activeLeafNode) {
 		return false;
 	}
 	

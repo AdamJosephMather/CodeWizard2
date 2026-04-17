@@ -35,9 +35,11 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	broken_state_menu = new BrokenStateMenu(nullptr, "Reload", "Overwrite", "File changed on disk.");
 	broken_state_menu->first_callback = [&](){
 		reload_file();
+		App::setActiveLeafNode(textedit);
 	};
 	broken_state_menu->second_callback = [&](){
 		overwrite_file();
+		App::setActiveLeafNode(textedit);
 	};
 	
 	fixit_request_menu = new BrokenStateMenu(nullptr, "Yes", "No", "Detected space based indenting, Fixit?");
@@ -45,10 +47,12 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		App::RemoveWidgetFromParent(fixit_request_menu);
 		run_fixit();
 		REQUESTING_FIXIT = false;
+		App::setActiveLeafNode(textedit);
 	};
 	fixit_request_menu->second_callback = [&](){
 		App::RemoveWidgetFromParent(fixit_request_menu);
 		REQUESTING_FIXIT = false;
+		App::setActiveLeafNode(textedit);
 	};
 	
 	renamecursor = Cursor();
@@ -764,12 +768,14 @@ void CodeEdit::position(int x, int y, int w, int h) {
 		// ensure that the broken state dialog is shown
 		if (broken_state_menu->parent == nullptr) {
 			App::MoveWidget(broken_state_menu, this);
+			App::setActiveLeafNode(broken_state_menu);
 		}
 		broken_state_menu->position(t_x, t_y, t_w, t_h);
 		return;
 	}else if (REQUESTING_FIXIT) {
 		if (fixit_request_menu->parent == nullptr) {
 			App::MoveWidget(fixit_request_menu, this);
+			App::setActiveLeafNode(fixit_request_menu);
 		}
 		fixit_request_menu->position(t_x, t_y, t_w, t_h);
 		return;

@@ -9,7 +9,6 @@ Button::Button(Widget *parent, icu::UnicodeString text, Positioner positioner, O
 	
 	transparent = false;
 	window_button = false;
-	hovered = false;
 	rounded = false;
 	
 	background_color = App::theme.darker_background_color;
@@ -26,7 +25,10 @@ void Button::position(int x, int y, int width, int height) {
 		t_h = TextRenderer::get_text_height() + App::text_padding*2;
 	}
 	
-	if (hovered) {
+	int mx = App::mouseX;
+	int my = App::mouseY;
+	
+	if (t_x <= mx && t_x+t_w >= mx && t_y <= my && t_y+t_h >= my) {
 		App::expectedCursorType = 3;
 	}
 	
@@ -42,7 +44,10 @@ bool Button::on_mouse_button_event(int button, int action, int mods) {
 		return false;
 	}
 	
-	if (!hovered) {
+	int mx = App::mouseX;
+	int my = App::mouseY;
+	
+	if (t_x > mx || t_x+t_w < mx || t_y > my || t_y+t_h < my) {
 		return false;
 	}
 	
@@ -61,29 +66,14 @@ bool Button::on_mouse_button_event(int button, int action, int mods) {
 	return false;
 }
 
-bool Button::on_mouse_move_event() {
-	if (!is_visible) {
-		return false;
-	}
-	
-	int mx = App::mouseX;
-	int my = App::mouseY;
-	
-	if (t_x <= mx && t_x+t_w >= mx && t_y <= my && t_y+t_h >= my) {
-		hovered = true;
-	}else{
-		hovered = false;
-	}
-	
-	Widget::on_mouse_move_event();
-	
-	return false;
-}
-
 void Button::render() {
 	if (!is_visible) {
 		return;
 	}
+	
+	int mx = App::mouseX;
+	int my = App::mouseY;
+	bool hovered = t_x <= mx && t_x+t_w >= mx && t_y <= my && t_y+t_h >= my;
 	
 	Color* textColor = App::theme.main_text_color;
 	

@@ -330,6 +330,11 @@ icu::UnicodeString Editor::getPaletteName() {
 			return icu::UnicodeString::fromUTF8("Untitled");
 		}
 		return icu::UnicodeString::fromUTF8(ce->file->filename);
+	}else if (auto iv = dynamic_cast<ImageView*>(editors[tab_bar->selected_id])) {
+		if (!iv->file || iv->file->filename == "") {
+			return icu::UnicodeString::fromUTF8("Untitled Image");
+		}
+		return icu::UnicodeString::fromUTF8(iv->file->filename);
 	}
 	return icu::UnicodeString::fromUTF8("");
 }

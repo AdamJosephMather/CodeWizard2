@@ -690,6 +690,12 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 				suggested->bottom - suggested->top,
 				SWP_NOZORDER | SWP_NOACTIVATE);
 			return 0;
+		}case WM_NCMOUSEMOVE: {
+			POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+			ScreenToClient(hwnd, &pt);
+			InvalidateRect(hwnd, NULL, FALSE); 
+			App::cursor_position_callback(window, pt.x, pt.y);
+			return 0; // Or break to let default processing happen
 		}
 	}
 	

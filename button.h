@@ -18,7 +18,6 @@ public:
 	void position(int x, int y, int width, int height);
 	
 	bool on_mouse_button_event(int button, int action, int mods);
-	bool on_mouse_move_event();
 	
 	bool transparent;
 	bool window_button;
@@ -35,6 +34,4 @@ public:
 private:
 	Positioner POSITIONER;
 	OnClick ONCLICK;
-	
-	bool hovered;
 };

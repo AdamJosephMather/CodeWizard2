@@ -154,7 +154,9 @@ void Label::position(int x, int y, int w, int h) {
 		if (c != U'\n') {
 			for (int rep = 0; rep < num_chr; rep++) {
 				curline += c;
-				curlineColor.push_back(thisColor);
+				if (handlingColor) {
+					curlineColor.push_back(thisColor);
+				}
 			}
 		}
 		

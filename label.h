@@ -16,6 +16,7 @@ public:
 	std::vector<MarkdownSpan>        colorSpans = {};
 	std::vector<icu::UnicodeString>  drawlines;
 	std::vector<std::vector<Color*>> drawColors;
+	bool handlingColor = false;
 	
 	App::PosFunction POSITIONER = nullptr;
 	

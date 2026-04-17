@@ -140,11 +140,13 @@ void Label::position(int x, int y, int w, int h) {
 		
 		if (c == U'\n' || newlen > most_allowed) {
 			drawlines.push_back(curline);
+			curline = "";
+			
 			if (handlingColor) {
 				drawColors.push_back(curlineColor);
+				curlineColor = {};
 			}
-			curline = "";
-			curlineColor = {};
+			
 			should_be_h += TextRenderer::get_text_height();
 			
 			linewidth = 0;

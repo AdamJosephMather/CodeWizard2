@@ -337,7 +337,7 @@ void Asteroids::resetGame() {
 	
 	asteroids.clear();
 	
-	const int ASTEROID_CONSTANT = 2500; // textwidth^2 / asteroid roughly
+	const int ASTEROID_CONSTANT = 2000; // textwidth^2 / asteroid roughly
 	int asteroid_count = (t_w * t_h) / (TextRenderer::get_text_width(1)*TextRenderer::get_text_width(1)) / ASTEROID_CONSTANT; // this is an area that has been normalized based on scaling (text size)
 	
 	for (int i = 0; i < asteroid_count; i++) {

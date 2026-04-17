@@ -132,7 +132,7 @@ std::string Curler::run_curl(std::string url, std::string json, const std::strin
 	return readBuffer;
 }
 
-std::string Curler::StreamChatResponse(const std::vector<std::pair<bool, std::string>>& messages, std::function<void(const std::string&)> stream_callback) {
+std::string Curler::StreamChatResponse(const std::vector<std::pair<bool, std::string>>& messages, std::function<void(const std::string&)> stream_callback, const std::string& system_prompt) {
 	nlohmann::json payload;
 	payload["model"] = App::settings->getValue(
 		"lm_studio_model_id",
@@ -141,6 +141,11 @@ std::string Curler::StreamChatResponse(const std::vector<std::pair<bool, std::st
 	payload["stream"] = true;
 	
 	nlohmann::json msgarr = nlohmann::json::array();
+	
+	if (!system_prompt.empty()) {
+		msgarr.push_back({{"role", "system"}, {"content", system_prompt}});
+	}
+	
 	for (auto& m : messages) {
 		nlohmann::json mm;
 		mm["role"]  = m.first ? "user" : "assistant";

@@ -11,13 +11,12 @@ Label::Label(Widget* parent) : Widget(parent) {
 	drawlines = {};
 }
 
-void Label::setFullText(icu::UnicodeString text) {
-	auto lns = splitByChar(text, U'\n');
-	
+void Label::setFullText(icu::UnicodeString text, std::vector<MarkdownSpan> spans) {
 	std::lock_guard<std::mutex> lock(positioning);
 	
 	fulltext = text;
 	old_width = -1;
+	colorSpans = spans;
 }
 
 icu::UnicodeString Label::getFullText() {
@@ -53,11 +52,10 @@ void Label::render() {
 		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
 	}
 	
-	
 	int ypos = t_y+App::text_padding;
 	
-	for (auto l : drawlines) {
-		TextRenderer::draw_text(t_x+App::text_padding, ypos, l, App::theme.main_text_color);
+	for (int i = 0; i < drawlines.size(); i++) {
+		TextRenderer::draw_text(t_x+App::text_padding, ypos, drawlines[i], drawColors[i]);
 		ypos += TextRenderer::get_text_height();
 	}
 	
@@ -85,7 +83,8 @@ void Label::position(int x, int y, int w, int h) {
 	if (old_width == t_w) { return; }
 	old_width = t_w;
 	
-	drawlines = {};
+	drawlines.clear();
+	drawColors.clear();
 	
 	icu::UnicodeString curline = icu::UnicodeString();
 	
@@ -94,8 +93,34 @@ void Label::position(int x, int y, int w, int h) {
 	
 	int most_allowed = t_w-App::text_padding*2;
 	
+	int curspan = 0;
+	std::vector<Color*> curlineColor = {};
+	
 	for (auto ci = 0; ci < fulltext.length(); ci++) {
 		UChar32 c = fulltext.char32At(ci);
+		
+		Color* thisColor = App::theme.main_text_color;
+		if (curspan < colorSpans.size()) { // spans are always ordered so that we can only look at one at a time (mucho faster)
+			if (ci >= colorSpans[curspan].start && ci <= colorSpans[curspan].end) {
+				auto t = colorSpans[curspan].type;
+				if (t == MarkdownElem::Header) {
+					thisColor = App::theme.equal_diff;
+				}else if (t == MarkdownElem::Bold) {
+					thisColor = App::theme.add_diff;
+				}else if (t == MarkdownElem::Italic) {
+					thisColor = App::theme.warning_color;
+				}else if (t == MarkdownElem::Link) {
+					thisColor = App::theme.equal_diff;
+				}else if (t == MarkdownElem::Code) {
+					thisColor = App::theme.warning_color;
+				}
+			}
+			
+			if (ci == colorSpans[curspan].end) {
+				curspan ++;
+			}
+		}
+		
 		
 		int num_chr = 1;
 		if (c == U'\t') {
@@ -107,7 +132,9 @@ void Label::position(int x, int y, int w, int h) {
 		
 		if (c == U'\n' || newlen > most_allowed) {
 			drawlines.push_back(curline);
+			drawColors.push_back(curlineColor);
 			curline = "";
+			curlineColor = {};
 			should_be_h += TextRenderer::get_text_height();
 			
 			linewidth = 0;
@@ -117,6 +144,7 @@ void Label::position(int x, int y, int w, int h) {
 		if (c != U'\n') {
 			for (int rep = 0; rep < num_chr; rep++) {
 				curline += c;
+				curlineColor.push_back(thisColor);
 			}
 		}
 		
@@ -124,5 +152,6 @@ void Label::position(int x, int y, int w, int h) {
 	}
 	
 	drawlines.push_back(curline);
+	drawColors.push_back(curlineColor);
 	should_be_h += TextRenderer::get_text_height();
 }

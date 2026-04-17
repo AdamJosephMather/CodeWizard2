@@ -1,5 +1,6 @@
 #pragma once
 
+#include "markdown_utils.h"
 #include "widget.h"
 #include <GLFW/glfw3.h>
 #include "application.h"
@@ -12,14 +13,16 @@ public:
 	bool rect = true;
 	
 	icu::UnicodeString fulltext;
-	std::vector<icu::UnicodeString> drawlines;
+	std::vector<MarkdownSpan>        colorSpans = {};
+	std::vector<icu::UnicodeString>  drawlines;
+	std::vector<std::vector<Color*>> drawColors;
 	
 	App::PosFunction POSITIONER = nullptr;
 	
 	void position(int x, int y, int w, int h);
 	void render();
 	
-	void setFullText(icu::UnicodeString text);
+	void setFullText(icu::UnicodeString text, std::vector<MarkdownSpan> spans = {});
 	icu::UnicodeString getFullText();
 	
 	bool on_mouse_button_event(int button, int action, int mods);

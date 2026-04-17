@@ -3,6 +3,7 @@
 #include "label.h"
 #include "text_renderer.h"
 #include "curler.h"
+#include "markdown_utils.h"
 
 Chat::Chat(Widget *parent) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Chat");
@@ -206,12 +207,15 @@ std::vector<Segment> Chat::splitMarkdown(const std::string& input) {
 		const std::smatch& m = *it;
 		size_t matchPos = m.position(0);
 		size_t matchLen = m.length(0);
-
+		
+		ProcessedMarkdown processed = MarkdownParser::Process(input.substr(lastPos, matchPos - lastPos));
+		
 		// 1) Plaintext before this code block
 		if (matchPos > lastPos) {
 			segments.push_back({
 				/*isCode=*/false,
-				input.substr(lastPos, matchPos - lastPos)
+				processed.cleanText,
+				processed.spans
 			});
 		}
 
@@ -226,9 +230,12 @@ std::vector<Segment> Chat::splitMarkdown(const std::string& input) {
 
 	// 3) Any trailing plaintext after the last code block
 	if (lastPos < input.size()) {
+		ProcessedMarkdown processed = MarkdownParser::Process(input.substr(lastPos));
+		
 		segments.push_back({
 			/*isCode=*/false,
-			input.substr(lastPos)
+			processed.cleanText,
+			processed.spans
 		});
 	}
 
@@ -285,7 +292,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 				full = Curler::StreamChatResponse(messages, [&](const std::string& part){
 					te2->setFullText(te2->getFullText()+icu::UnicodeString::fromUTF8(part));
 					App::time_till_regular = 2;
-				});
+				}, SYSTEM_PROMPT);
 				
 				App::RemoveWidgetFromParent(te2);
 				message_te.erase(message_te.begin()+message_te.size()-1);
@@ -302,7 +309,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 						message_te.push_back(te);
 					}else{
 						auto la = new Label(this);
-						la->setFullText(icu::UnicodeString::fromUTF8(trim(segment.content)));
+						la->setFullText(icu::UnicodeString::fromUTF8(segment.content), segment.spans);
 						la->background_color = App::theme.main_background_color;
 						la->border = false;
 						message_te.push_back(la);

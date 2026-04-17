@@ -3,12 +3,14 @@
 #include <GLFW/glfw3.h>
 #include <vector>
 #include "listbox.h"
+#include "markdown_utils.h"
 #include "textedit.h"
 #include "widget.h"
 
 struct Segment {
 	bool isCode;          // true ⇒ this segment is a code block
 	std::string content;  // the raw text of that segment
+	std::vector<MarkdownSpan> spans;
 };
 
 class Chat : public Widget {
@@ -28,7 +30,6 @@ public:
 	
 	double scrolled_to = 0;
 	int min_scroll = 0;
-	
 private:
 	TextEdit* querybox = nullptr;
 	std::vector<Widget*> message_te = {};
@@ -38,6 +39,8 @@ private:
 	ListBox* filesAddList;
 	Button* newChat;
 	bool running = false;
+	
+	const std::string SYSTEM_PROMPT = "You are an AI model, running inside of the CodeWizard code editor created by Adam Mather.";
 	
 	std::vector<Segment> splitMarkdown(const std::string& input);
 };

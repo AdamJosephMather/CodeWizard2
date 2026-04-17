@@ -22,7 +22,8 @@ public:
 	static void loadModel();
 	static std::string StreamChatResponse(
 		const std::vector<std::pair<bool, std::string>>& messages,
-		std::function<void(const std::string&)> stream_callback
+		std::function<void(const std::string&)> stream_callback,
+		const std::string& system_prompt = ""
 	);
 };
 

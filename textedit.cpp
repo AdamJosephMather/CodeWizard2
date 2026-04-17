@@ -87,7 +87,7 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 	};
 	scrollbar_h->horizontal = true;
 	
-	contextmenu = new ContextMenu(this); // for later
+	contextmenu = new ContextMenu(this);
 	contextmenu->is_visible_2 = false;
 	
 	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Undo (Ctrl+Z)"), [&](Widget* w){
@@ -1646,7 +1646,7 @@ void TextEdit::render() {
 
 	for (auto cs : draw_selection) {
 		int y = TextRenderer::get_text_height()*cs.rel_line+start_y+t_y+App::text_padding;
-
+		
 		int sx = TextRenderer::get_text_width(cs.rel_char_start)+start_x+t_x+App::text_padding;
 		int ex = TextRenderer::get_text_width(cs.rel_char_end)+start_x+t_x+App::text_padding;
 
@@ -1882,25 +1882,14 @@ void TextEdit::position(int x, int y, int w, int h) {
 			if (end_line == ln_num) {
 				end_sec = end_char;
 			}
-
-
-			int first_selec = -1;
-			int last_selec = -1;
-
+			
 			bool add_one_to_last_char = false;
-
-			if (start_sec < first_selec || first_selec == -1) {
-				first_selec = start_sec;
-			}
-			if (end_sec > last_selec) {
-				last_selec = end_sec;
-			}
-
+			
 			if (end_line > ln_num) {
 				add_one_to_last_char = true;
 			}
 
-			selections.push_back({first_selec, last_selec, add_one_to_last_char});
+			selections.push_back({start_sec, end_sec, add_one_to_last_char});
 			draw_selec.push_back({-1, -1});
 		}
 
@@ -1990,11 +1979,14 @@ void TextEdit::position(int x, int y, int w, int h) {
 			}
 
 			auto selec = CursorSelect();
-
+			
 			selec.rel_line = draw_text.size();
 			selec.rel_char_start = draw_selec[i][0];
 			selec.rel_char_end = draw_selec[i][1];
-			draw_selection.push_back(selec);
+			
+			if (selec.rel_char_start != -1) {
+				draw_selection.push_back(selec);
+			}
 		}
 
 		for (int i = 0; i < diagnostics.size(); i++) {
@@ -2128,6 +2120,28 @@ bool TextEdit::on_mouse_button_event(int button, int action, int mods) {
 		contextmenu->is_visible_2 = true;
 		contextmenu->x_loc = mx;
 		contextmenu->y_loc = my;
+		
+		contextmenu->position(t_x, t_y, t_w, t_h);
+		
+		bool updtit = false;
+		int nx = mx;
+		int ny = my;
+		
+		if (contextmenu->t_x + contextmenu->t_w > t_w+t_x) {
+			updtit = true;
+			nx -= contextmenu->t_w;
+		}
+		if (contextmenu->t_y + contextmenu->t_h > t_h+t_y) {
+			updtit = true;
+			ny -= contextmenu->t_h;
+		}
+		
+		if (updtit) {
+			contextmenu->x_loc = nx;
+			contextmenu->y_loc = ny;
+			contextmenu->position(nx, ny, t_w, t_h);
+		}
+		
 		if (cursors[0].anchor_char != cursors[0].head_char || cursors[0].anchor_line != cursors[0].head_line) {
 			return true; // only skip the cursor changing position if there's no selection
 		}

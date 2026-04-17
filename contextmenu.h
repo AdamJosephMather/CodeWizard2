@@ -17,8 +17,8 @@ public:
 	
 	int x_loc = 0;
 	int y_loc = 0;
-	bool is_visible_2 = false;
-	bool is_visible_3 = false;
+	bool is_visible_2 = false; // currently visible
+	bool is_visible_3 = false; // visible ever (ie, use context menu)
 	
 	bool on_mouse_button_event(int button, int action, int mods) override;
 private:

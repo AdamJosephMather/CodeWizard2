@@ -215,6 +215,18 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	
 	textedit->contextmenu->addSeparaterToMenu();
 	
+	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Comment Out Lines (Alt+3)"),   [&](Widget* w){
+		setComments();
+		textedit->contextmenu->is_visible_2 = false;
+	});
+	
+	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Uncomment Lines (Alt+4)"),   [&](Widget* w){
+		removeComments();
+		textedit->contextmenu->is_visible_2 = false;
+	});
+	
+	textedit->contextmenu->addSeparaterToMenu();
+	
 	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Goto Def (LSP)"),   [&](Widget* w){
 		if (App::lsp_client_map[lsp] && file) {
 			goto_id = App::lsp_client_map[lsp]->requestGotoDefinition(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);

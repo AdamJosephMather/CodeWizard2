@@ -26,6 +26,24 @@ TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 		App::MoveWidget(ajm_asv3_tm, this);
 	}
 	
+	contextmenu = new ContextMenu(this);
+	contextmenu->is_visible_2 = false;
+	contextmenu->is_visible_3 = true;
+	
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Copy (Ctrl+C)"),  [&](Widget* w){
+		std::string txt = selection_text();
+		if (!txt.empty()) {
+			SetClipboardText(txt.c_str());
+			clear_selection();
+		}
+		contextmenu->is_visible_2 = false;
+	});
+	
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Paste (Ctrl+V)"), [&](Widget* w){
+		term->sendText(GetClipboardText());
+		contextmenu->is_visible_2 = false;
+	});
+	
 	reset_client();
 }
 
@@ -594,6 +612,8 @@ bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
 	std::lock_guard<std::recursive_mutex> lock(m_term_mutex);
 	if (!is_visible || !term || settingup) return false;
 	
+	if (contextmenu->is_visible_2 && contextmenu->is_visible_3 && contextmenu->on_mouse_button_event(button, action, mods)) { return true; }
+	
 	if (ajm_asv3_tm->parent == this) {
 		if (ajm_asv3_tm->on_mouse_button_event(button, action, mods)) {
 			return true;
@@ -610,12 +630,14 @@ bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
 	if (App::activeLeafNode != this && action == GLFW_PRESS) App::setActiveLeafNode(this);
 	
 	const bool left   = (button == GLFW_MOUSE_BUTTON_LEFT);
+	const bool right  = (button == GLFW_MOUSE_BUTTON_RIGHT);
 	const bool press  = (action == GLFW_PRESS);
 	const bool release= (action == GLFW_RELEASE);
 	
 	// --- Terminal-side selection when the app does NOT want mouse ---
 	if (left && !term->appWantsMouse()) {
 		if (press) {
+			contextmenu->is_visible_2 = false;
 			selecting = true;
 			int doc = term->docLineIdForScreenRow(row);
 			sel_doc_r1 = doc;
@@ -630,6 +652,31 @@ bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
 			sel_c1 = col;
 			selecting = false;
 			return true;
+		}
+	}else if (right && !term->appWantsMouse() && press) {
+		contextmenu->is_visible_2 = true;
+		contextmenu->x_loc = App::mouseX;
+		contextmenu->y_loc = App::mouseY;
+		
+		contextmenu->position(t_x, t_y, t_w, t_h);
+		
+		bool updtit = false;
+		int nx = App::mouseX;
+		int ny = App::mouseY;
+		
+		if (contextmenu->t_x + contextmenu->t_w > t_w+t_x) {
+			updtit = true;
+			nx -= contextmenu->t_w;
+		}
+		if (contextmenu->t_y + contextmenu->t_h > t_h+t_y) {
+			updtit = true;
+			ny -= contextmenu->t_h;
+		}
+		
+		if (updtit) {
+			contextmenu->x_loc = nx;
+			contextmenu->y_loc = ny;
+			contextmenu->position(nx, ny, t_w, t_h);
 		}
 	}
 	

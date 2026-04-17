@@ -15,6 +15,7 @@ MathWindow::MathWindow(Widget *parent) : Widget(parent) {
 	mathInput->border = true;
 	mathInput->scrollbar_horizontal = true;
 	mathInput->scrollbar_vertical = true;
+	mathInput->contextmenu->is_visible_3 = true;
 	
 	mathInput->ontextchange = [&](Widget* w){
 		results.clear();

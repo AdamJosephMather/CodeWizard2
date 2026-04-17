@@ -534,14 +534,14 @@ static inline bool sgrSend(Terminal* t, int b, int row, int col, bool press) {
 }
 
 bool Terminal::mousePress(int row, int col, int button, bool pressed,
-                          bool shift, bool alt, bool ctrl) {
+						  bool shift, bool alt, bool ctrl) {
 	int base = (button == 0 ? 0 : button == 1 ? 1 : 2);
 	int b = (pressed ? base : 3) + sgrMods(shift, alt, ctrl);
 	return sgrSend(this, b, row, col, pressed);
 }
 
 bool Terminal::mouseMove(int row, int col, bool buttonHeld,
-                         bool shift, bool alt, bool ctrl) {
+						 bool shift, bool alt, bool ctrl) {
 	int b = 32 + sgrMods(shift, alt, ctrl);
 	if (!buttonHeld) {
 		b = 35 + sgrMods(shift, alt, ctrl);
@@ -550,7 +550,7 @@ bool Terminal::mouseMove(int row, int col, bool buttonHeld,
 }
 
 bool Terminal::mouseDrag(int startRow, int startCol, int endRow, int endCol, int button,
-                         bool shift, bool alt, bool ctrl) {
+						 bool shift, bool alt, bool ctrl) {
 	if (!mousePress(startRow, startCol, button, true, shift, alt, ctrl)) return false;
 
 	int steps = std::max(std::abs(endRow - startRow), std::abs(endCol - startCol));
@@ -565,7 +565,7 @@ bool Terminal::mouseDrag(int startRow, int startCol, int endRow, int endCol, int
 }
 
 bool Terminal::mouseScroll(int row, int col, int lines,
-                           bool shift, bool alt, bool ctrl) {
+						   bool shift, bool alt, bool ctrl) {
 	if (lines == 0) return true;
 
 	const bool altScreen = m_altScreen.load(std::memory_order_acquire);

@@ -60,6 +60,8 @@ void Editor::tabinfoclicked(TabInfo info) {
 			
 			if (auto ce = dynamic_cast<CodeEdit*>(it.second)) {
 				App::setActiveLeafNode(ce->textedit);
+			}else if (auto iv = dynamic_cast<ImageView*>(it.second)) {
+				App::setActiveLeafNode(iv);
 			}
 		}else if (it.first != info.id && it.second->parent == this) {
 			App::RemoveWidgetFromParent(it.second);

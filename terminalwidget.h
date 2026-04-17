@@ -5,6 +5,7 @@
 #include "widget.h"
 #include "checkbox.h"
 #include <sio_client.h>
+#include "contextmenu.h"
 
 class TerminalWidget : public Widget {
 public:
@@ -13,6 +14,8 @@ public:
 	TerminalWidget(Widget* parent);
 	
 	Widget* findTerminal();
+	
+	ContextMenu* contextmenu;
 	
 	bool settingup = true;
 	

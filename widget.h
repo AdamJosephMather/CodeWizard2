@@ -31,7 +31,7 @@ public:
 	int t_w = 1;
 	int t_h = 1;
 	
-	icu::UnicodeString id;
+	icu::UnicodeString id = icu::UnicodeString::fromUTF8("UNNAMED");
 	
 	bool closing = false;
 	

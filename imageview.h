@@ -7,7 +7,9 @@ class ImageView : public Widget {
 public:
 	ImageView(Widget* parent);
 	void position(int x, int y, int width, int height) override;
+	
 	void render() override;
+	bool on_mouse_button_event(int button, int action, int mods) override;
 	void openFile();
 	
 	bool rounded = true;

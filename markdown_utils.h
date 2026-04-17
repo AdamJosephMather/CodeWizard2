@@ -93,7 +93,7 @@ private:
 		}
 		else if (type == MD_BLOCK_LI) {
 			self->EnsureSpacing(1); // List items just need a fresh line
-			self->m_result += "○ ";
+			self->m_result += " ● ";
 			self->m_openSpans.push({MarkdownElem::ListItem, self->m_result.length(), 0, 0});
 		}
 		return 0;

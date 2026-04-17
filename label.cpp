@@ -28,7 +28,7 @@ bool Label::on_mouse_button_event(int button, int action, int mods) {
 	if (action != GLFW_PRESS || button != GLFW_MOUSE_BUTTON_LEFT) {
 		return Widget::on_mouse_button_event(button, action, mods);
 	}
-	// App::mouseX, App::mouseY inside t_x, t_y, t_w, t_h
+	
 	if (t_x < App::mouseX && App::mouseX < t_x+t_w && t_y < App::mouseY && App::mouseY < t_y+t_h) {
 		if (fulltext.length() != 0) {
 			std::string text;
@@ -170,4 +170,10 @@ void Label::position(int x, int y, int w, int h) {
 		drawColors.push_back(curlineColor);
 	}
 	should_be_h += TextRenderer::get_text_height();
+	
+	if (t_x < App::mouseX && App::mouseX < t_x+t_w && t_y < App::mouseY && App::mouseY < t_y+t_h) {
+		if (App::expectedCursorType == -1 && mx >= t_x && mx <= t_x+t_w && my >= t_y && my <= t_y+t_h) { // only set cursor if expected to be arrow right now
+			App::expectedCursorType = 3; // hand cursor
+		}
+	}
 }

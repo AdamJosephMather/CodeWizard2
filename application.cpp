@@ -43,7 +43,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 3;
-int App::patch_version = 3;
+int App::patch_version = 4;
 
 
 const float M_PI = 3.141592653589793238;
@@ -1694,6 +1694,10 @@ void App::commandUnfocused() {
 			std::filesystem::path p(folder);
 			com_p->setFullText(icu::UnicodeString::fromUTF8(p.filename().string()));
 		}
+		
+		std::string txt;
+		com_p->getFullText().toUTF8String(txt);
+		glfwSetWindowTitle(window, (txt + " - " + WINDOW_TITLE).c_str());
 	}
 	
 	// here let's remove the cp_listbox from the rootwidget

@@ -71,7 +71,6 @@ public:
 	bool validate_input(SettingsBool* el);
 	bool validate_input(SettingsString* el, std::string before);
 	
-	void position(int x, int y, int w, int h);
 	void render();
 	
 	void after_change(SettingsString* el);

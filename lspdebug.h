@@ -9,7 +9,6 @@ public:
 	LspDebug(Widget* parent);
 	
 	void lspmessage(std::string& from, std::string& message);
-	void position(int x, int y, int w, int h);
 	
 	bool rounded = true;
 	void render();

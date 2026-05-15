@@ -9,7 +9,7 @@ Widget::Widget(Widget* p) {
 	}
 	
 	children = {};
-	
+	App::all_widgets.push_back(this);
 }
 
 bool Widget::on_char_event(unsigned int codepoint) {
@@ -38,6 +38,19 @@ bool Widget::on_key_event(int key, int scancode, int action, int mods){
 	}
 	
 	return false;
+}
+
+Widget::~Widget() {
+	for (int i = 0; i < App::all_widgets.size(); i++) {
+		if (App::all_widgets[i] == this) {
+			App::all_widgets.erase(App::all_widgets.begin()+i);
+			break;
+		}
+	}
+}
+
+void Widget::prepare(int mx, int my) {
+	cursor_in_this = (exempt_from_parent_for_cursor || !parent || parent->cursor_in_this) && mx >= t_x && mx <= t_x+t_w && my >= t_y && my <= t_y+t_h;
 }
 
 bool Widget::on_mouse_button_event(int button, int action, int mods){
@@ -83,6 +96,11 @@ bool Widget::on_scroll_event(double xchange, double ychange){
 }
 
 void Widget::position(int x, int y, int width, int height) { // the individual widgets will store the info they need. This here provides the space in which it **can** be placed
+	t_x = x;
+	t_y = y;
+	t_w = width;
+	t_h = height;
+	
 	if (!is_visible) {
 		return;
 	}

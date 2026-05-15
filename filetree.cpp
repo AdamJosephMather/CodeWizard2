@@ -232,10 +232,7 @@ double FileTree::createVisuals(double pos, double depth, TreeStructure* el) {
 }
 
 void FileTree::position(int x, int y, int w, int h) {
-	t_x = x;
-	t_y = y;
-	t_w = w;
-	t_h = h;
+	Widget::position(x, y, w, h);
 	
 	std::lock_guard<std::mutex> lock(tree_mutex);
 	
@@ -263,8 +260,6 @@ void FileTree::position(int x, int y, int w, int h) {
 	}else if (scrolled_to_horz < 0.0) {
 		scrolled_to_horz = 0.0;
 	}
-	
-	Widget::position(x, y, w, h);
 }
 
 bool FileTree::on_mouse_button_event(int button, int action, int mods){

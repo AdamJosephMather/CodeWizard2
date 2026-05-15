@@ -226,14 +226,13 @@ bool HelpMenu::on_char_event(unsigned int codepoint) {
 }
 
 bool HelpMenu::on_mouse_button_event(int button, int action, int mods) {
-	int mx = App::mouseX;
 	int my = App::mouseY;
 	
 	if (my <= App::tb->t_h) {
 		return false;
 	}
 	
-	if (action == GLFW_PRESS && (mx < t_x || mx > t_x+t_w || my < t_y || my > t_y+t_h)) {
+	if (action == GLFW_PRESS && !cursor_in_this) {
 		App::RemoveWidgetFromParent(this);
 		return true;
 	}

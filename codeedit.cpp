@@ -73,6 +73,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		w->t_w = textedit->t_w/3;
 		w->t_h = App::text_padding*2+TextRenderer::get_text_height();
 	});
+	renamebox->id = icu::UnicodeString::fromUTF8("renamebox");
 	renamebox->background_color = App::theme.extras_background_color;
 	renamebox->border = true;
 	
@@ -92,6 +93,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	};
 	completionbox->is_visible_layered = false;
 	completionbox->rounded = true;
+	completionbox->id = icu::UnicodeString::fromUTF8("completionbox");
 	
 	hoverbox = new TextEdit(nullptr, [&](Widget* w){
 		int col = textedit->_mapFromRealToVisual(hoverCrsr.head_line, hoverCrsr.head_char);
@@ -115,6 +117,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	hoverbox->border = true;
 	hoverbox->rounded = true;
 	hoverbox->contextmenu->is_visible_3 = true;
+	hoverbox->id = icu::UnicodeString::fromUTF8("hoverbox");
 	
 	find_menu_open = false;
 	
@@ -212,6 +215,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	textedit->scrollbar_vertical = true;
 	textedit->scrollbar_horizontal = true;
 	textedit->contextmenu->is_visible_3 = true;
+	textedit->id = icu::UnicodeString::fromUTF8("code edit text edit");
 	
 	textedit->contextmenu->addSeparaterToMenu();
 	

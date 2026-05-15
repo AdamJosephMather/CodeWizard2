@@ -155,6 +155,7 @@ int main(int argc, char* argv[]) {
 	commandPalette->background_color = App::theme.extras_background_color;
 	commandPalette->border = true;
 	commandPalette->rounded = true;
+	commandPalette->id = icu::UnicodeString::fromUTF8("CommandPalette");
 	
 	ListBox* commandBox = new ListBox(nullptr, [&](Widget* w){
 		w->t_x = commandPalette->t_x; 

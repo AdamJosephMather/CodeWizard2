@@ -1,7 +1,7 @@
 #include "contextmenu.h"
 #include "application.h"
 
-ContextMenu::ContextMenu(Widget* parent) : Widget(parent) { 
+ContextMenu::ContextMenu(Widget* parent) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("contextmenu");
 }
 
@@ -35,14 +35,13 @@ void ContextMenu::position(int x, int y, int width, int height) {
 		return;
 	}
 	
-	x = x_loc;
-	y = y_loc;
+	t_x = x_loc;
+	t_y = y_loc;
 	
-	maxwidth = 0;
-	Widget::position(x, y, width, height);
+	maxwidth = 0;;
 	
-	int bx = x+App::text_padding+App::border_width;
-	int by = y+App::text_padding+App::border_width;
+	int bx = t_x+App::text_padding+App::border_width;
+	int by = t_y+App::text_padding+App::border_width;
 	
 	for (int bi = 0; bi < buttons.size(); bi++) {
 		Button* b = buttons[bi];
@@ -54,20 +53,15 @@ void ContextMenu::position(int x, int y, int width, int height) {
 		
 		b->t_x = bx;
 		b->t_y = by;
-		b->t_w = maxwidth;
+		b->position(bx, by, maxwidth, height);
 		
 		by += b->t_h+App::text_padding;
 	}
 	
-	t_x = x;
-	t_y = y;
 	t_w = maxwidth+App::text_padding*2+App::border_width*2;
-	t_h = (App::border_width+by)-y;
+	t_h = (App::border_width+by)-t_y;
 	
-	const int mx = App::mouseX;
-	const int my = App::mouseY;
-	
-	if (App::expectedCursorType == -1 && mx >= t_x && mx <= t_x+t_w && my >= t_y && my <= t_y+t_h) {
+	if (App::expectedCursorType == -1 && cursor_in_this) {
 		App::expectedCursorType = 0;
 	}
 }
@@ -107,9 +101,7 @@ bool ContextMenu::on_mouse_button_event(int button, int action, int mods) {
 		return false;
 	}
 	
-	int mx = App::mouseX;
-	int my = App::mouseY;
-	if (mx < t_x || mx > t_x+t_w || my < t_y || my > t_y+t_h) {
+	if (!cursor_in_this) {
 		return false;
 	}
 	

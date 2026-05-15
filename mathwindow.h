@@ -8,7 +8,6 @@ class MathWindow : public Widget {
 public:
 	MathWindow(Widget* parent);
 	
-	void position(int x, int y, int w, int h) override;
 	void render() override;
 	
 	bool on_mouse_button_event(int button, int action, int mods) override;

@@ -124,7 +124,7 @@ bool Scrollbar::on_mouse_button_event(int button, int action, int mods) {
 	int mx = App::mouseX;
 	int my = App::mouseY;
 	
-	if (mx < t_x || mx > t_x+t_w || my < t_y || my > t_y+t_h) { return false; }
+	if (!cursor_in_this) { return false; }
 	
 	if (action == GLFW_PRESS && hovering) {
 		if (horizontal) {

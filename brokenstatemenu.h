@@ -27,7 +27,7 @@ public:
 //	bool on_mouse_move_event();
 //	bool on_scroll_event(double xchange, double ychange);
 	
-	void position(int x, int y, int w, int h) override;
+//	void position(int x, int y, int w, int h) override;
 	void render() override;
 private:
 };

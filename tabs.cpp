@@ -226,9 +226,8 @@ void Tabs::render() {
 
 hit Tabs::hoveringTab(){
 	int mx = App::mouseX;
-	int my = App::mouseY;
 	
-	if (my < t_y || my > t_y+t_h || mx < t_x || mx > t_x+t_w) {
+	if (!cursor_in_this) {
 		return hit();
 	}
 	
@@ -262,9 +261,8 @@ bool Tabs::hoveringNewTab() {
 	}
 	
 	int mx = App::mouseX;
-	int my = App::mouseY;
 	
-	if (my < t_y || my > t_y+t_h || mx < t_x || mx > t_x+t_w) {
+	if (!cursor_in_this) {
 		return false;
 	}
 	
@@ -289,10 +287,7 @@ bool Tabs::on_mouse_button_event(int button, int action, int mods) {
 		return false;
 	}
 	
-	int mx = App::mouseX;
-	int my = App::mouseY;
-	
-	if (my < t_y || my > t_y+t_h || mx < t_x || mx > t_x+t_w) {
+	if (!cursor_in_this) {
 		return false;
 	}
 	
@@ -324,10 +319,7 @@ bool Tabs::on_scroll_event(double xc, double yc) {
 		return false;
 	}
 	
-	int mx = App::mouseX;
-	int my = App::mouseY;
-	
-	if (my < t_y || my > t_y+t_h || mx < t_x || mx > t_x+t_w) {
+	if (!cursor_in_this) {
 		return false;
 	}
 	
@@ -357,7 +349,7 @@ void Tabs::position(int x, int y, int w, int h) {
 		POSITIONER(this);
 	}
 	
-	Widget::position(x, y, w, h);
+	Widget::position(t_x, t_y, t_w, t_h);
 	
 	if (hovering.indx != -1 || hoveringNewTab()) {
 		App::expectedCursorType = 3;

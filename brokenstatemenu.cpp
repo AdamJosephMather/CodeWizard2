@@ -44,15 +44,6 @@ void BrokenStateMenu::render() {
 	Widget::render();
 }
 
-void BrokenStateMenu::position(int x, int y, int w, int h) {
-	t_x = x;
-	t_y = y;
-	t_w = w;
-	t_h = h;
-	
-	Widget::position(t_x, t_y, t_w, t_h);
-}
-
 bool BrokenStateMenu::on_key_event(int key, int scancode, int action, int mods) {
 	if (!is_visible || !parent) {
 		return false;

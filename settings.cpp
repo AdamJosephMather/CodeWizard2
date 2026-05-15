@@ -228,6 +228,11 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"AI Provider Supports Non-Chat Completions",
 			"use_non_chat_completions",
 			true
+		),
+		makeBool(
+			"Auto Clean Up .TMP Files",
+			"use_auto_tmp_clean",
+			true
 		)
 //		makeBool(
 //			"Use Chauffeur",
@@ -512,10 +517,7 @@ bool Settings::on_scroll_event(double xchange, double ychange) {
 		return true;
 	}
 	
-	int mx = App::mouseX;
-	int my = App::mouseY;
-	
-	if (mx < t_x || mx > t_x + t_w || my < t_y || my > t_y + t_h) {
+	if (!cursor_in_this) {
 		return false;
 	}
 	
@@ -545,15 +547,6 @@ bool Settings::on_mouse_button_event(int button, int action, int mods) {
 		}
 	}
 	return false;
-}
-
-void Settings::position(int x, int y, int w, int h) {
-	t_x = x;
-	t_y = y;
-	t_w = w;
-	t_h = h;
-	
-	Widget::position(x, y, w, h);
 }
 
 bool Settings::validate_input(SettingsFloat* el) {

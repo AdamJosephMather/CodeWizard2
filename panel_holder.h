@@ -28,14 +28,10 @@ private:
 	float ratio = 1.0f;
 	bool hastwo = false;
 	bool is_horizontal = false;
-//	bool add = false;
-//	bool rem = false;
-//	bool nad = false;
 	
 	bool has_one_to_add = false;
 	bool has_one_to_rem = false;
 	bool adding_first_pos = false;
-	bool hovered = false;
 	
 	int x_nb = 0;
 	int y_nb = 0;

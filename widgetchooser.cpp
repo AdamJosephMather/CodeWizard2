@@ -141,12 +141,3 @@ void WidgetChooser::render() {
 		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
 	}
 }
-
-void WidgetChooser::position(int x, int y, int w, int h) {
-	t_x = x;
-	t_y = y;
-	t_w = w;
-	t_h = h;
-	
-	Widget::position(x, y, w, h);
-}

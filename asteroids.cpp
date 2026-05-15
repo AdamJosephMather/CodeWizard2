@@ -37,10 +37,6 @@ Asteroids::Asteroids(Widget* parent) : Widget(parent) {
 }
 
 void Asteroids::position(int winx, int winy, int winw, int winh) {
-	t_x = winx;
-	t_y = winy;
-	t_w = winw;
-	t_h = winh;
 	Widget::position(winx, winy, winw, winh);
 	
 	auto curTime = getTime();

@@ -81,7 +81,7 @@ void Label::position(int x, int y, int w, int h) {
 	
 	const int mx = App::mouseX;
 	const int my = App::mouseY;
-	if (mx >= t_x && mx <= t_x+t_w && my >= t_y && my <= t_y+t_h) {
+	if (cursor_in_this) {
 		App::expectedCursorType = 3;
 	}
 	
@@ -172,7 +172,7 @@ void Label::position(int x, int y, int w, int h) {
 	should_be_h += TextRenderer::get_text_height();
 	
 	if (t_x < App::mouseX && App::mouseX < t_x+t_w && t_y < App::mouseY && App::mouseY < t_y+t_h) {
-		if (App::expectedCursorType == -1 && mx >= t_x && mx <= t_x+t_w && my >= t_y && my <= t_y+t_h) { // only set cursor if expected to be arrow right now
+		if (App::expectedCursorType == -1 && cursor_in_this) { // only set cursor if expected to be arrow right now
 			App::expectedCursorType = 3; // hand cursor
 		}
 	}

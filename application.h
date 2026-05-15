@@ -182,6 +182,8 @@ public:
 	
 //	static int chauffeur_call_id;
 	
+	static std::vector<Widget*> all_widgets;
+	
 	static Widget* rootelement;
 	static int WINDOW_WIDTH;
 	static int WINDOW_HEIGHT;
@@ -266,6 +268,7 @@ public:
 
 	static void repeatEveryXSeconds(int intervalSeconds, std::function<void()> task);
 	static void save();
+	static void fixAllTmpFiles();
 	static icu::UnicodeString readFileToUnicodeString(const std::string& filename, bool& worked);
 	
 	static void launchCommandNonBlocking(const std::string& command);

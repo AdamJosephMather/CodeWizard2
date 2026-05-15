@@ -48,6 +48,8 @@ int App::patch_version = 4;
 
 const float M_PI = 3.141592653589793238;
 
+std::vector<Widget*> App::all_widgets = {};
+
 HWND App::window_handle = nullptr;
 
 bool App::darkmode = true;
@@ -94,6 +96,7 @@ Widget* App::before_reps_request = nullptr;
 int App::WINDOW_WIDTH = 1200;
 int App::WINDOW_HEIGHT = 800;
 std::string App::WINDOW_TITLE = "CodeWizard2 V";
+std::string pending_window_title = "";
 
 int App::mouseX = 0;
 int App::mouseY = 0;
@@ -233,6 +236,7 @@ bool App::Init() {
 		w->t_h = new_h;
 		STRING_REQUEST_RECTANGLE->position(w->t_x, w->t_y, w->t_w, w->t_h);
 	});
+	STRING_REQUEST_TEXTEDIT->id = icu::UnicodeString::fromUTF8("STRING_REQUEST_TEXTEDIT");
 	
 	STRING_REQUEST_RECTANGLE = new MyRect(nullptr, [&](Widget* w){
 		int h = TextRenderer::get_text_height()+text_padding*2;
@@ -241,6 +245,7 @@ bool App::Init() {
 		w->t_y = STRING_REQUEST_TEXTEDIT->t_y-h;
 		w->t_h = STRING_REQUEST_TEXTEDIT->t_h+h*2;
 	});
+	STRING_REQUEST_RECTANGLE->id = icu::UnicodeString::fromUTF8("STRING_REQUEST_RECTANGLE");
 	
 	STRING_REQUEST_LABEL = new Label(nullptr);
 	STRING_REQUEST_LABEL->POSITIONER = [&](Widget* w) {
@@ -252,6 +257,7 @@ bool App::Init() {
 	};
 	STRING_REQUEST_LABEL->rect = false;
 	STRING_REQUEST_LABEL->border = false;
+	STRING_REQUEST_LABEL->id = icu::UnicodeString::fromUTF8("STRING_REQUEST_LABEL");
 	
 	settings->loadSettings();
 	
@@ -364,8 +370,10 @@ bool App::Init() {
 	// setup titlebar
 	
 	rootelement = new Widget(nullptr);
+	rootelement->id = icu::UnicodeString::fromUTF8("Root");
 	new PanelHolder(rootelement);
 	tb = new TitleBar(rootelement);
+	tb->exempt_from_parent_for_cursor = true;
 	toastBox = new Toast(nullptr);
 	
 	// Now grab the HWND and force a resize border
@@ -397,6 +405,11 @@ bool App::Init() {
 	repeatEveryXSeconds(4, [&](){
 		std::lock_guard<std::mutex> lock(canMakeChanges);
 		save();
+	});
+	
+	repeatEveryXSeconds(60, [&](){
+		std::lock_guard<std::mutex> lock(canMakeChanges);
+		fixAllTmpFiles();
 	});
 	
 	
@@ -1024,6 +1037,11 @@ void App::DoFullRenderWithoutInput() {
 	
 	expectedCursorType = -1; // must be reset every position call
 	std::lock_guard<std::mutex> lock(canMakeChanges); // this prevents separate threads (the lsp clients) from messing with shit while positioning/rendering
+	
+	for (auto w : all_widgets) { // already sorted by seniority because parents are first
+		w->prepare(mouseX, mouseY); // technically the cursor checks can be off by one frame because of this being before position and not at the same time
+	}
+	
 	if (rootelement) {
 		rootelement->position(text_padding, tb->t_h, WINDOW_WIDTH-text_padding*2, WINDOW_HEIGHT-tb->t_h-text_padding);
 		toastBox->position(0, tb->t_h, WINDOW_WIDTH, WINDOW_HEIGHT-tb->t_h);
@@ -1064,6 +1082,11 @@ void App::DoFullRenderWithoutInput() {
 	time_till_regular -= 1;
 	if (time_till_regular < 0) {
 		time_till_regular = 0;
+	}
+	
+	if (pending_window_title != "") {
+		glfwSetWindowTitle(window, pending_window_title.c_str());
+		pending_window_title = "";
 	}
 	
 	lastUpdate = currentTime;
@@ -1266,21 +1289,18 @@ void App::mouse_button_callback(GLFWwindow* window, int button, int action, int 
 		if (on_mouse_button_event(button, action, mods)) { return; }
 	}
 	
-	int mx = mouseX;
-	int my = mouseY;
-	
 	if (helpMenu->parent != nullptr) {
 		if (helpMenu->on_mouse_button_event(button, action, mods)) { return; }
 	}
 	
 	if (commandBox->parent != nullptr) {
-		if (mx >= commandBox->t_x && mx <= commandBox->t_x+commandBox->t_w && my >= commandBox->t_y && my <= commandBox->t_y+commandBox->t_h) {
+		if (commandBox->cursor_in_this) {
 			commandBox->on_mouse_button_event(button, action, mods);
 			return;
 		}
 	}
 	if (filesList->parent != nullptr) {
-		if (mx >= filesList->t_x && mx <= filesList->t_x+filesList->t_w && my >= filesList->t_y && my <= filesList->t_y+filesList->t_h) {
+		if (filesList->cursor_in_this) {
 			filesList->on_mouse_button_event(button, action, mods);
 			return;
 		}else if (action == GLFW_PRESS) {
@@ -1289,7 +1309,7 @@ void App::mouse_button_callback(GLFWwindow* window, int button, int action, int 
 		}
 	}
 	if (REQUESTING_STRING) {
-		if (mx >= STRING_REQUEST_TEXTEDIT->t_x && mx <= STRING_REQUEST_TEXTEDIT->t_x+STRING_REQUEST_TEXTEDIT->t_w && my >= STRING_REQUEST_TEXTEDIT->t_y && my <= STRING_REQUEST_TEXTEDIT->t_y+STRING_REQUEST_TEXTEDIT->t_h) {
+		if (STRING_REQUEST_TEXTEDIT->cursor_in_this) {
 			STRING_REQUEST_TEXTEDIT->on_mouse_button_event(button, action, mods);
 			return;
 		}else if (action == GLFW_PRESS){
@@ -1303,7 +1323,7 @@ void App::mouse_button_callback(GLFWwindow* window, int button, int action, int 
 		}
 	}
 	
-	if (action == GLFW_PRESS && activeLeafNode == commandPalette && (mx < commandPalette->t_x || my < commandPalette->t_y || mx > commandPalette->t_x+commandPalette->t_w || my > commandPalette->t_y+commandPalette->t_h)) {
+	if (action == GLFW_PRESS && activeLeafNode == commandPalette && !commandPalette->cursor_in_this) {
 		setActiveLeafNode(beforeCommandLeafNode);
 	}
 	
@@ -1608,27 +1628,24 @@ void App::scroll_callback(GLFWwindow* window, double xpos, double ypos) {
 		if (on_scroll_event(-xpos, -ypos)) { return; };
 	}
 	
-	int mx = mouseX;
-	int my = mouseY;
-	
 	if (helpMenu->parent != nullptr) {
 		if (helpMenu->on_scroll_event(-xpos, -ypos)) { return; }
 	}
 	
 	if (commandBox->parent != nullptr) {
-		if (mx >= commandBox->t_x && mx <= commandBox->t_x+commandBox->t_w && my >= commandBox->t_y && my <= commandBox->t_y+commandBox->t_h) {
+		if (commandBox->cursor_in_this) {
 			commandBox->on_scroll_event(-xpos, -ypos);
 			return;
 		}
 	}
 	if (filesList->parent != nullptr) {
-		if (mx >= filesList->t_x && mx <= filesList->t_x+filesList->t_w && my >= filesList->t_y && my <= filesList->t_y+filesList->t_h) {
+		if (filesList->cursor_in_this) {
 			filesList->on_scroll_event(-xpos, -ypos);
 			return;
 		}
 	}
 	if (REQUESTING_STRING) {
-		if (mx >= STRING_REQUEST_TEXTEDIT->t_x && mx <= STRING_REQUEST_TEXTEDIT->t_x+STRING_REQUEST_TEXTEDIT->t_w && my >= STRING_REQUEST_TEXTEDIT->t_y && my <= STRING_REQUEST_TEXTEDIT->t_y+STRING_REQUEST_TEXTEDIT->t_h) {
+		if (STRING_REQUEST_TEXTEDIT->cursor_in_this) {
 			STRING_REQUEST_TEXTEDIT->on_scroll_event(-xpos, -ypos);
 			return;
 		}
@@ -1697,7 +1714,8 @@ void App::commandUnfocused() {
 		
 		std::string txt;
 		com_p->getFullText().toUTF8String(txt);
-		glfwSetWindowTitle(window, (txt + " - " + WINDOW_TITLE).c_str());
+		pending_window_title = txt + " - " + WINDOW_TITLE;
+		time_till_regular = 2;
 	}
 	
 	// here let's remove the cp_listbox from the rootwidget
@@ -1941,6 +1959,8 @@ void App::executeCommandPaletteAction() {
 					displayToast(icu::UnicodeString::fromUTF8("Active Editor is not a CodeEdit."));
 				}
 			}
+		}else if (filepath == ":How Many Widgets Currently?") {
+			displayToast(icu::UnicodeString::fromUTF8("There are: " + std::to_string(all_widgets.size())+" open widgets."));
 		}
 		
 		return;
@@ -1961,8 +1981,6 @@ void App::setSynColor(Theme* t, std::string name, int id) {
 }
 
 void App::openFromCMD(std::string filepath, std::string filename, int line) {
-	std::cout << "Opening from cmd..." << std::endl;
-	
 	FileInfo* finfo = new FileInfo();
 	finfo->filepath = filepath;
 	finfo->filename = filename;
@@ -2083,7 +2101,7 @@ void App::indexFiles() {
 	}
 	
 	static const std::vector<std::string> commands = {
-		"Git Push","Git Pull","Git Force Pull","Help","Save Theme Settings To File","Load Theme Settings From File","Restart Language Servers (LSPs)","Open `languages.json` file","Test Toast Box","Test Text Line","Run FixIt (Spaces to Tabs)","Undo FixIt (Tabs to Spaces)"
+		"Git Push","Git Pull","Git Force Pull","Help","Save Theme Settings To File","Load Theme Settings From File","Restart Language Servers (LSPs)","Open `languages.json` file","Test Toast Box","Test Text Line","Run FixIt (Spaces to Tabs)","Undo FixIt (Tabs to Spaces)","How Many Widgets Currently?"
 	};
 
 	for (auto const& cmd : commands) {
@@ -2301,6 +2319,46 @@ void App::repeatEveryXSeconds(int intervalSeconds, std::function<void()> task) {
 
 void App::save() {
 	rootelement->save();
+}
+
+void App::fixAllTmpFiles() {
+	if (!settings->getValue("use_auto_tmp_clean", true)) return;
+	
+	std::string folderPath = settings->getValue("current_folder", getExecutableDir());
+	
+	if (!std::filesystem::exists(folderPath) || !std::filesystem::is_directory(folderPath)) {
+		return;
+	}
+	
+	std::regex tmpPattern(R"(.*\.tmp~\d+$|.*~RF.*\.TMP$|.*\.tmp$)", std::regex_constants::icase);
+	
+	auto now = std::chrono::system_clock::now();
+	const int kSafeAgeSeconds = 300; // 5 minutes is safer than 20s
+	
+	try {
+		for (const auto& entry : std::filesystem::directory_iterator(folderPath)) {
+			if (!entry.is_regular_file()) continue;
+			
+			std::string fileName = entry.path().filename().string();
+			
+			if (std::regex_match(fileName, tmpPattern)) {
+				auto ftime = std::filesystem::last_write_time(entry);
+				
+				auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+					ftime - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now()
+				);
+
+				auto age = std::chrono::duration_cast<std::chrono::seconds>(now - sctp).count();
+				
+				if (age > kSafeAgeSeconds) {
+					std::error_code ec;
+					std::filesystem::remove(entry.path(), ec);
+				}
+			}
+		}
+	} catch (const std::exception&) {
+		return;
+	}
 }
 
 icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, bool& worked) {

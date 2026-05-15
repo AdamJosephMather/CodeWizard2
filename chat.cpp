@@ -9,6 +9,7 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Chat");
 	
 	querybox = new TextEdit(this, [](Widget*){});
+	querybox->id = icu::UnicodeString::fromUTF8("QueryBox");
 	
 	filesButton = new Button(this, icu::UnicodeString::fromUTF8("Insert File"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		btn->t_x = t_x + 2;
@@ -167,10 +168,7 @@ void Chat::render() {
 }
 
 bool Chat::on_scroll_event(double xchange, double ychange) {
-	int mx = App::mouseX;
-	int my = App::mouseY;
-	
-	if (mx < t_x || my < t_y || mx > t_x+t_w || my > t_y+t_h || !is_visible) { return false; }
+	if (!cursor_in_this || !is_visible) { return false; }
 	
 	scrolled_to += ychange * 6 * TextRenderer::get_text_height();
 	if (scrolled_to > 0) {
@@ -185,10 +183,7 @@ bool Chat::on_scroll_event(double xchange, double ychange) {
 }
 
 bool Chat::on_mouse_button_event(int button, int action, int mods) {
-	int mx = App::mouseX;
-	int my = App::mouseY;
-
-	if (mx < t_x || my < t_y || mx > t_x+t_w || my > t_y+t_h || !is_visible) { return false; }
+	if (!cursor_in_this || !is_visible) { return false; }
 	
 	return Widget::on_mouse_button_event(button, action, mods);
 }

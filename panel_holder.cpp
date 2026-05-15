@@ -58,8 +58,6 @@ void PanelHolder::position(int x, int y, int width, int height) {
 	int mx = App::mouseX;
 	int my = App::mouseY;
 	
-	hovered = mx > t_x && mx < t_x+t_w && my > t_y && my < t_y+t_h;
-	
 	has_one_to_add = false;
 	has_one_to_rem = false;
 	
@@ -68,7 +66,7 @@ void PanelHolder::position(int x, int y, int width, int height) {
 	
 	bool updating_pos = false;
 	
-	if (hovered){
+	if (cursor_in_this){
 		if (!hastwo && App::curr_adding_panel) {
 			has_one_to_add = true;
 			adding_first_pos = false;

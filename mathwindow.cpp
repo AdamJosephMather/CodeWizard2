@@ -94,15 +94,6 @@ MathWindow::MathWindow(Widget *parent) : Widget(parent) {
 	results = {icu::UnicodeString::fromUTF8("")};
 }
 
-void MathWindow::position(int x, int y, int w, int h) {
-	t_x = x;
-	t_y = y;
-	t_w = w;
-	t_h = h;
-	
-	Widget::position(x, y, w, h);
-}
-
 void MathWindow::render() {
 	int x = t_x+mathInput->t_w+1;
 	int w = t_w-mathInput->t_w-1;

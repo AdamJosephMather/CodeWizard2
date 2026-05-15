@@ -7,15 +7,6 @@ LspDebug::LspDebug(Widget *parent) : Widget(parent) {
 	viewbox = new TextEdit(this, [](Widget*){});
 }
 
-void LspDebug::position(int x, int y, int w, int h) {
-	t_x = x;
-	t_y = y;
-	t_w = w;
-	t_h = h;
-	
-	Widget::position(x, y, w, h);
-}
-
 void LspDebug::lspmessage(std::string& from, std::string& message) {
 	new std::thread([=]() {
 		std::lock_guard<std::mutex> lock(App::canMakeChanges);

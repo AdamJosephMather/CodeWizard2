@@ -16,7 +16,7 @@ class Widget {
 public:
 	Widget() : parent(nullptr) {}
 	Widget(Widget* parent);
-	virtual ~Widget() = default;  // now deletes are safe
+	virtual ~Widget();  // now deletes are safe
 	
 	using close_callback_type = std::function<void(Widget*)>;
 	
@@ -31,6 +31,9 @@ public:
 	int t_w = 1;
 	int t_h = 1;
 	
+	bool exempt_from_parent_for_cursor = false;
+	bool cursor_in_this = false;
+	
 	icu::UnicodeString id = icu::UnicodeString::fromUTF8("UNNAMED");
 	
 	bool closing = false;
@@ -44,6 +47,7 @@ public:
 	virtual bool on_mouse_move_event();
 	virtual bool on_scroll_event(double xchange, double ychange);
 	
+	virtual void prepare(int mx, int my);
 	virtual void position(int x, int y, int width, int height); // the individual widgets will store the info they need. This here provides the space in which it **can** be placed
 	virtual void render();
 	

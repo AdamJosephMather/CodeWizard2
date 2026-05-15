@@ -1789,7 +1789,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 	
 	scrollbar_v->is_visible = scrollbar_vertical;
 	scrollbar_h->is_visible = scrollbar_horizontal;
-	Widget::position(x, y, w, h);
+	Widget::position(t_x, t_y, t_w, t_h);
 	
 	// let's make sure vim mode is allowed...
 	
@@ -2022,23 +2022,18 @@ void TextEdit::position(int x, int y, int w, int h) {
 	changed_during_update = false;
 	updateUndoHistory();
 	
-	const int mx = App::mouseX;
-	const int my = App::mouseY;
-	if (App::expectedCursorType == -1 && mx >= t_x && mx <= t_x+t_w && my >= t_y && my <= t_y+t_h) { // only set cursor if expected to be arrow right now
+	if (App::expectedCursorType == -1 && cursor_in_this) { // only set cursor if expected to be arrow right now
 		App::expectedCursorType = 4; // ibar
 	}
 }
 
 bool TextEdit::on_scroll_event(double xchange, double ychange) {
-	int mx = App::mouseX;
-	int my = App::mouseY;
-	
 	if (glfwGetKey(App::window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(App::window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
 		xchange = ychange;
 		ychange = 0;
 	}
 	
-	if (mx < t_x || mx > t_x+t_w || my < t_y || my > t_y+t_h) {
+	if (!cursor_in_this) {
 		return false;
 	}
 	
@@ -2100,7 +2095,7 @@ bool TextEdit::on_mouse_button_event(int button, int action, int mods) {
 		is_selecting_text_with_mouse = false; // this is always true even if the mouse isn't over this element. (or if it's not active.)
 	}
 	
-	if (is_visible && (mx < t_x || mx > t_x+t_w || my < t_y || my > t_y+t_h)) {
+	if (is_visible && !cursor_in_this) {
 		return false;
 	}
 	

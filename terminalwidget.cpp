@@ -370,11 +370,6 @@ void TerminalWidget::runCommand(std::string command) {
 }
 
 void TerminalWidget::position(int x, int y, int w, int h) {
-	t_x = x;
-	t_y = y;
-	t_w = w;
-	t_h = h;
-	
 	Widget::position(x, y, w, h);
 	
 	if (term == nullptr) {
@@ -501,7 +496,7 @@ inline void TerminalWidget::cell_from_cursor(int& row, int& col) {
 	int mx = App::mouseX;
 	int my = App::mouseY;
 	
-	if (mx < t_x || my < t_y || mx > t_x+t_w || my > t_y+t_h) {
+	if (!cursor_in_this) {
 		row = -1;
 		col = -1;
 		return;
@@ -728,14 +723,8 @@ bool TerminalWidget::on_mouse_move_event() {
 
 bool TerminalWidget::on_scroll_event(double /*xchange*/, double ychange) {
 	std::lock_guard<std::recursive_mutex> lock(m_term_mutex);
-	int mx = App::mouseX;
-	int my = App::mouseY;
 	
-	if (!selecting && (mx < t_x || mx > t_x + t_w || my < t_y || my > t_y + t_h)) return false;
-	
-	if (!is_visible) { return false; }
-	
-	if (!term || settingup) return false;
+	if ((!selecting && !cursor_in_this) || !is_visible || !term || settingup) return false;
 	
 	int row=0, col=0;
 	cell_from_cursor(row, col);

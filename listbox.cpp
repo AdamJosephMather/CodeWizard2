@@ -110,9 +110,7 @@ void ListBox::position(int x, int y, int w, int h) {
 	
 	pFunc(this);
 	
-	const int mx = App::mouseX;
-	const int my = App::mouseY;
-	if (mx >= t_x && mx <= t_x+t_w && my >= t_y && my <= t_y+t_h) {
+	if (cursor_in_this) {
 		App::expectedCursorType = 3;
 	}
 }
@@ -125,7 +123,7 @@ bool ListBox::on_scroll_event(double xchange, double ychange) {
 	int mx = App::mouseX;
 	int my = App::mouseY;
 	
-	if (mx < t_x || mx > t_x+t_w || my < t_y || my > t_y+t_h) {
+	if (!cursor_in_this) {
 		return false;
 	}
 	
@@ -167,7 +165,7 @@ bool ListBox::on_mouse_button_event(int button, int action, int mods) {
 	int mx = App::mouseX;
 	int my = App::mouseY;
 	
-	if (mx < t_x || mx > t_x+t_w || my < t_y || my > t_y+t_h) {
+	if (!cursor_in_this) {
 		return false;
 	}
 	
@@ -189,7 +187,7 @@ bool ListBox::on_mouse_move_event() {
 	int mx = App::mouseX;
 	int my = App::mouseY;
 	
-	if (mx < t_x || mx > t_x+t_w || my < t_y || my > t_y+t_h) {
+	if (!cursor_in_this) {
 		return false;
 	}
 	

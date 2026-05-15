@@ -212,62 +212,46 @@ bool PanelHolder::on_mouse_button_event(int button, int action, int mods) {
 		if (first_hovered) {
 			bool gonnadeletethis = false;
 			
-			children[0]->request_close([&](Widget* to_remove){
-				for (int i = 0; i < children.size(); i++) {
-					if (children[i] == to_remove) {
-						children.erase(children.begin()+i);
-						break;
-					}
+			Widget* w1 = children[0];
+			children.erase(children.begin());
+			if (auto sub = dynamic_cast<PanelHolder*>(children[0])) {
+				int our_indx = App::GetWidgetIndexInParent(this);
+				
+				App::MoveWidget(sub, parent);
+				App::RemoveWidgetFromParent(this);
+				
+				if (our_indx == 0) {
+					std::swap(sub->parent->children[0], sub->parent->children[1]);
 				}
 				
-				if (auto sub = dynamic_cast<PanelHolder*>(children[0])) {
-					int our_indx = App::GetWidgetIndexInParent(this);
-					
-					App::MoveWidget(sub, parent);
-					App::RemoveWidgetFromParent(this);
-					
-					if (our_indx == 0) {
-						std::swap(sub->parent->children[0], sub->parent->children[1]);
-					}
-					
-					gonnadeletethis = true;
-				}
-				
-				delete to_remove;
-			});
+				gonnadeletethis = true;
+			}
+			App::deleteWidget(w1);
 			
 			if (gonnadeletethis) {
-				delete this;
+				App::deleteWidget(this);
 			}
 		}else {
 			bool gonnadeletethis = false;
 			
-			children[1]->request_close([&](Widget* to_remove){
-				for (int i = 0; i < children.size(); i++) {
-					if (children[i] == to_remove) {
-						children.erase(children.begin()+i);
-						break;
-					}
+			Widget* w2 = children[1];
+			children.erase(children.begin()+1);
+			if (auto sub = dynamic_cast<PanelHolder*>(children[0])) {
+				int our_indx = App::GetWidgetIndexInParent(this);
+				
+				App::MoveWidget(sub, parent);
+				App::RemoveWidgetFromParent(this);
+				
+				if (our_indx == 0) {
+					std::swap(sub->parent->children[0], sub->parent->children[1]);
 				}
 				
-				if (auto sub = dynamic_cast<PanelHolder*>(children[0])) {
-					int our_indx = App::GetWidgetIndexInParent(this);
-					
-					App::MoveWidget(sub, parent);
-					App::RemoveWidgetFromParent(this);
-					
-					if (our_indx == 0) {
-						std::swap(sub->parent->children[0], sub->parent->children[1]);
-					}
-					
-					gonnadeletethis = true;
-				}
-				
-				delete to_remove;
-			});
+				gonnadeletethis = true;
+			}
+			App::deleteWidget(w2);
 			
 			if (gonnadeletethis) {
-				delete this;
+				App::deleteWidget(this);
 			}
 		}
 		

@@ -1135,7 +1135,63 @@ void App::MoveWidget(Widget* w, Widget* new_parent) {
 	
 	RemoveWidgetFromParent(w);
 	w->parent = new_parent;
+	w->const_parent = new_parent;
 	new_parent->children.push_back(w);
+}
+
+void App::deleteWidget(Widget* w) {
+	std::vector<int> toDelete = {};
+	
+	for (int i = 0; i < all_widgets.size(); i++) {
+		if (all_widgets[i] == w) {
+			toDelete.push_back(i);
+			break;
+		}
+	}
+	
+	while (true) {
+		bool foundOne = false;
+		for (int i = 0; i < all_widgets.size(); i++) {
+			bool doFind = true;
+			for (int w_indx : toDelete) {
+				if (i == w_indx) {
+					doFind = false;
+					break;
+				}
+			}
+			if (!doFind) {
+				continue;
+			}
+			for (int w_indx : toDelete) {
+				if (all_widgets[i]->const_parent == all_widgets[w_indx]) {
+					foundOne = true;
+					toDelete.push_back(i);
+				}
+			}
+		}
+		if (!foundOne) {
+			break;
+		}
+	}
+	
+	std::sort(toDelete.begin(), toDelete.end(), std::greater<int>());
+	
+	for (int i : toDelete) {
+		if (all_widgets[i]->parent != nullptr) {
+			RemoveWidgetFromParent(all_widgets[i]);
+		}
+	}
+	
+	for (int i : toDelete) {
+		Widget* wDelete = all_widgets[i];
+		all_widgets.erase(all_widgets.begin()+i);
+		
+		if (wDelete->before_self_close) {
+			wDelete->before_self_close();
+		}
+		
+		delete wDelete;
+	}
 }
 
 int App::GetWidgetIndexInParent(Widget* w) {
@@ -2359,6 +2415,9 @@ void App::fixAllTmpFiles() {
 	} catch (const std::exception&) {
 		return;
 	}
+	
+	
+	rootelement->treePrint(0);
 }
 
 icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, bool& worked) {

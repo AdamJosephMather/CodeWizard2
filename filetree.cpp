@@ -7,6 +7,10 @@
 FileTree::FileTree(Widget* parent) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("FileTree");
 	
+	before_self_close = [&](){
+		deleteTree(root);
+	};
+	
 	openpaths = { App::settings->getValue("current_folder", getExecutableDir()) };
 	
 	folderIcon = prepareTexture(getExecutableDir()+"\\folderIcon.png");
@@ -144,16 +148,6 @@ void FileTree::deleteTree(TreeStructure* node) {
 		deleteTree(c);
 	}
 	delete node;
-}
-
-void FileTree::request_close(Widget::close_callback_type cllbck) {
-	if (closing) {
-		return;
-	}
-	
-	deleteTree(root);
-	
-	Widget::request_close(cllbck);
 }
 
 void FileTree::fillOutTree(TreeStructure* el) {

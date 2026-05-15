@@ -39,8 +39,6 @@ class CodeEdit : public Widget {
 public:
 	CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::UpdateFInfoFunction fupdater);
 	
-	void request_close(close_callback_type callback);
-	
 	int TABID;
 	
 	std::atomic<bool> is_loading{false};

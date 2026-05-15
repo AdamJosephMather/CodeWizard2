@@ -336,9 +336,7 @@ void Settings::handleChildren() {
 	
 	for (auto c : copy) {
 		if (c && c != tab_bar) {
-			c->request_close([&](Widget* w){
-				close_callback(w);
-			});
+			App::deleteWidget(c);
 		}
 	}
 	

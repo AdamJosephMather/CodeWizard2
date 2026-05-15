@@ -8,6 +8,10 @@
 Chat::Chat(Widget *parent) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Chat");
 	
+	before_self_close = [&](){
+		while (running) { std::this_thread::sleep_for(std::chrono::milliseconds(50)); }
+	};
+	
 	querybox = new TextEdit(this, [](Widget*){});
 	querybox->id = icu::UnicodeString::fromUTF8("QueryBox");
 	
@@ -42,9 +46,7 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 		
 		for (int i = 0; i < message_te.size(); i++) {
 			App::RemoveWidgetFromParent(message_te[i]);
-			message_te[i]->request_close([](Widget* w){
-				delete w;
-			});
+			App::deleteWidget(message_te[i]);
 		}
 		message_te.clear();
 		from_user.clear();
@@ -68,11 +70,6 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 		from_user.push_back(true);
 		filesAddList->is_visible_layered = false;
 	};
-}
-
-void Chat::request_close(close_callback_type callback) {
-	while (running) { std::this_thread::sleep_for(std::chrono::milliseconds(50)); }
-	Widget::request_close(callback);
 }
 
 void Chat::position(int x, int y, int width, int height) {
@@ -292,9 +289,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 				App::RemoveWidgetFromParent(te2);
 				message_te.erase(message_te.begin()+message_te.size()-1);
 				from_user.erase(from_user.begin()+from_user.size()-1);
-				te2->request_close([](Widget* w){
-					delete w;
-				});
+				App::deleteWidget(te2);
 				
 				for (auto segment : splitMarkdown(full)) {
 					if (segment.isCode) {

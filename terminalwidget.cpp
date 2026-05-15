@@ -8,6 +8,13 @@
 TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Terminal");
 	
+	before_self_close = [&](){
+		term->stop();
+		std::cout << "Initiating instant UI close...";
+		reset_client();
+		std::cout << "UI is free!";
+	};
+	
 	ajm_asv3_tm = new CheckBox(nullptr, [&](CheckBox* c, int,int,int,int){
 		c->t_h = TextRenderer::get_text_height()*1.5;
 		c->t_w = c->t_h;
@@ -18,6 +25,7 @@ TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 		
 		ajm_set_asv3(send_to_asv3);
 	});
+	ajm_asv3_tm->const_parent = this;
 	ajm_asv3_tm->rounded = true;
 	ajm_asv3_tm->border = true;
 	ajm_asv3_tm->bgcolor = App::theme.hover_background_color; // brighter for black terminal background
@@ -331,19 +339,6 @@ void TerminalWidget::reset_client() {
 			term->sendText(latest);
 		}
 	});
-}
-
-void TerminalWidget::request_close(close_callback_type callback) {
-	term->stop();
-	
-	std::cout << "Initiating instant UI close...";
-
-	reset_client();
-
-	std::cout << "UI is free!";
-	
-	// Now the widget can be deleted immediately
-	Widget::request_close(callback);
 }
 
 Widget* TerminalWidget::findTerminal() {

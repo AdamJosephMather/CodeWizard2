@@ -22,7 +22,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	}, [&](Button* button) {
 		std::cout << "Init editor in relacement\n";
 		App::ReplaceWith(this, new Editor(nullptr));
-		delete this;
+		App::deleteWidget(this);
 	});
 	b1->rounded = true;
 	b1->border = true;
@@ -34,7 +34,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new FileTree(nullptr));
 		std::cout << "Creating file tree\n";
-		delete this;
+		App::deleteWidget(this);
 	});
 	b2->rounded = true;
 	b2->border = true;
@@ -46,7 +46,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new Settings(nullptr));
 		std::cout << "Creating settings menu\n";
-		delete this;
+		App::deleteWidget(this);
 	});
 	b3->rounded = true;
 	b3->border = true;
@@ -60,7 +60,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 			return;
 		}));
 		std::cout << "Creating compare menu\n";
-		delete this;
+		App::deleteWidget(this);
 	});
 	b4->rounded = true;
 	b4->border = true;
@@ -72,7 +72,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new Chat(nullptr));
 		std::cout << "Creating chat menu\n";
-		delete this;
+		App::deleteWidget(this);
 	});
 	b5->rounded = true;
 	b5->border = true;
@@ -84,7 +84,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new LspDebug(nullptr));
 		std::cout << "Creating lsp debug menu\n";
-		delete this;
+		App::deleteWidget(this);
 	});
 	b6->rounded = true;
 	b6->border = true;
@@ -96,7 +96,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new TerminalWidgetTabbed(nullptr));
 		std::cout << "Creating terminal\n";
-		delete this;
+		App::deleteWidget(this);
 	});
 	b7->rounded = true;
 	b7->border = true;
@@ -108,7 +108,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new MathWindow(nullptr));
 		std::cout << "Creating mathwindow\n";
-		delete this;
+		App::deleteWidget(this);
 	});
 	b8->rounded = true;
 	b8->border = true;
@@ -120,7 +120,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new Asteroids(nullptr));
 		std::cout << "Creating asteroids\n";
-		delete this;
+		App::deleteWidget(this);
 	});
 	b9->rounded = true;
 	b9->border = true;

@@ -31,9 +31,7 @@ Editor::Editor(Widget* parent) : Widget(parent) {
 			App::RemoveWidgetFromParent(w);
 			editors.erase(info.id);
 			
-			w->request_close([&](Widget* w){ // wait for it to delete itself
-				delete w;
-			});
+			App::deleteWidget(w);
 		}
 	};
 	

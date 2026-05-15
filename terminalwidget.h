@@ -24,7 +24,6 @@ public:
 	
 	void position(int x, int y, int w, int h);
 	void render();
-	void request_close(close_callback_type callback);
 	
 	void runCommand(std::string command);
 	

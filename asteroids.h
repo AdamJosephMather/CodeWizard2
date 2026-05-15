@@ -41,7 +41,6 @@ public:
 	
 //	void executeAction(WidgetActionType typ);
 	
-	void request_close(close_callback_type callback);
 	void position(int x, int y, int w, int h);
 	void render();
 	

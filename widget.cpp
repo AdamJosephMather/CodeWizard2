@@ -3,6 +3,7 @@
 
 Widget::Widget(Widget* p) {
 	parent = p;
+	const_parent = p;
 	
 	if (parent) {
 		parent->children.push_back(this);
@@ -138,59 +139,6 @@ void Widget::show() {
 	}
 }
 
-void Widget::close_callback(Widget* ready_to_remove) {
-	for (int i = 0; i < children.size(); i++) {
-		if (children[i] == ready_to_remove) {
-			children.erase(children.begin()+i);
-			break;
-		}
-	}
-	
-	delete ready_to_remove;
-	
-	if (closing && children.size() == 0) {
-		if (before_self_close) {
-			before_self_close(this);
-		}
-		if (on_close){
-			on_close(this);
-		}
-	}
-}
-
-void Widget::request_close(Widget::close_callback_type cllbck) {
-	if (App::activeLeafNode == this || App::activeEditor == this || App::beforeCommandLeafNode == this) {
-		App::setActiveLeafNode(nullptr);
-	}
-	
-	if (closing) {
-		return;
-	}
-	
-	on_close = cllbck;
-	closing = true;
-	
-	if (children.size() == 0) {
-		if (before_self_close) {
-			before_self_close(this);
-		}
-		if (on_close){
-			on_close(this);
-		}
-		return;
-	}
-	
-	auto copy = children;
-	
-	for (auto c : copy) {
-		if (c){
-			c->request_close([&](Widget* to_remove){
-				close_callback(to_remove);
-			});
-		}
-	}
-}
-
 bool Widget::widgetexists(Widget* w) {
 	if (w == nullptr) {
 		return false;
@@ -261,5 +209,17 @@ int Widget::openUnnamedFile(int count) {
 void Widget::executeAction(WidgetActionType typ) {
 	for (auto c : children) {
 		c->executeAction(typ);
+	}
+}
+
+void Widget::treePrint(int depth) {
+	for (int i = 0; i < depth; i++) {
+		std::cout << " ";
+	}
+	std::string idstr;
+	id.toUTF8String(idstr);
+	std::cout << idstr << "\n";
+	for (auto child : children) {
+		child->treePrint(depth+1);
 	}
 }

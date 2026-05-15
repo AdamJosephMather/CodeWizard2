@@ -362,10 +362,3 @@ void Asteroids::resetGame() {
 	
 	bullets.clear();
 }
-
-void Asteroids::request_close(close_callback_type callback) {
-	if (startGameButton->parent != this) {
-		App::MoveWidget(startGameButton, this);
-	}
-	Widget::request_close(callback);
-}

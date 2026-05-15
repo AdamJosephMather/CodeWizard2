@@ -18,12 +18,13 @@ public:
 	Widget(Widget* parent);
 	virtual ~Widget();  // now deletes are safe
 	
-	using close_callback_type = std::function<void(Widget*)>;
+	using close_callback_type = std::function<void()>;
 	
 	bool is_visible = true;
 	bool clickthrough = false;
 	
 	Widget* parent;
+	Widget* const_parent;
 	std::vector<Widget*> children;
 	
 	int t_x = 1;
@@ -38,7 +39,6 @@ public:
 	
 	bool closing = false;
 	
-	close_callback_type on_close = nullptr;
 	close_callback_type before_self_close = nullptr;
 	
 	virtual bool on_key_event(int key, int scancode, int action, int mods);
@@ -54,9 +54,6 @@ public:
 	virtual void hide();
 	virtual void show();
 	
-	virtual void request_close(close_callback_type callback);
-	virtual void close_callback(Widget*);
-	
 	virtual bool widgetexists(Widget*);
 	
 	virtual void save();
@@ -69,4 +66,5 @@ public:
 	virtual int openUnnamedFile(int count);
 	
 	virtual void executeAction(WidgetActionType typ);
+	virtual void treePrint(int s);
 };

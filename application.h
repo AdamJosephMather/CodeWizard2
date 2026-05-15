@@ -258,6 +258,7 @@ public:
 	static int GetWidgetIndexInParent(Widget* w);
 	static void ReplaceWith(Widget* existing, Widget* replacement);
 	static void setActiveLeafNode(Widget* w);
+	static void deleteWidget(Widget* w);
 	
 	static double lastTime;
 	static int frameCount;

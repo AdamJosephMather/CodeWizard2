@@ -16,7 +16,16 @@
 std::set<UChar32> whitespace_before_comment = {U'\t', U' '};
 
 CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::UpdateFInfoFunction fupdater) : Widget(parent) {
-	before_self_close = [&](Widget* w) {
+	before_self_close = [&]() {
+		save();
+		
+		if (highlighter) delete highlighter;
+		
+		closing = true;
+		if (hoverthread.joinable()) {
+			hoverthread.join();
+		}
+		
 		if (App::lsp_client_map[lsp]) {
 			for (int i = static_cast<int>(App::lsp_client_map[lsp]->connected_edits.size())-1; i >= 0; i--) {
 				if (App::lsp_client_map[lsp]->connected_edits[i] == this) { 
@@ -41,6 +50,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		overwrite_file();
 		App::setActiveLeafNode(textedit);
 	};
+	broken_state_menu->const_parent = this;
 	
 	fixit_request_menu = new BrokenStateMenu(nullptr, "Yes", "No", "Detected space based indenting, Fixit?");
 	fixit_request_menu->first_callback = [&](){
@@ -54,6 +64,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		REQUESTING_FIXIT = false;
 		App::setActiveLeafNode(textedit);
 	};
+	fixit_request_menu->const_parent = this;
 	
 	renamecursor = Cursor();
 	renamebox = new TextEdit(nullptr, [&](Widget* w){
@@ -76,6 +87,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	renamebox->id = icu::UnicodeString::fromUTF8("renamebox");
 	renamebox->background_color = App::theme.extras_background_color;
 	renamebox->border = true;
+	renamebox->const_parent = this;
 	
 	completionbox = new ListBox(this, [&](Widget* w){
 		Cursor c = textedit->cursors[0];
@@ -94,6 +106,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	completionbox->is_visible_layered = false;
 	completionbox->rounded = true;
 	completionbox->id = icu::UnicodeString::fromUTF8("completionbox");
+	completionbox->const_parent = this;
 	
 	hoverbox = new TextEdit(nullptr, [&](Widget* w){
 		int col = textedit->_mapFromRealToVisual(hoverCrsr.head_line, hoverCrsr.head_char);
@@ -113,6 +126,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 			w->t_x -= w->t_w;
 		}
 	});
+	hoverbox->const_parent = this;
 	hoverbox->background_color = App::theme.extras_background_color;
 	hoverbox->border = true;
 	hoverbox->rounded = true;
@@ -128,6 +142,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		replaceAll(findTextEdit->getFullText(), replaceTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
 	allButton->rounded = true;
+	allButton->const_parent = this;
 	
 	nextReplButton = new Button(nullptr, icu::UnicodeString::fromUTF8("-→"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = allButton->t_x-App::text_padding-tw;
@@ -136,6 +151,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		activateReplace(true, findTextEdit->getFullText(), replaceTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
 	nextReplButton->rounded = true;
+	nextReplButton->const_parent = this;
 	
 	nextButton = new Button(nullptr, icu::UnicodeString::fromUTF8("-→"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = t_x+t_w-App::text_padding-tw;
@@ -144,6 +160,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		activateFind(true, findTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
 	nextButton->rounded = true;
+	nextButton->const_parent = this;
 	
 	prevButton = new Button(nullptr, icu::UnicodeString::fromUTF8("←-"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = nextButton->t_x-App::text_padding-tw;
@@ -152,6 +169,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		activateFind(false, findTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
 	prevButton->rounded = true;
+	prevButton->const_parent = this;
 	
 	replaceTextEdit = new TextEdit(nullptr, [&](Widget* t){
 		int h = TextRenderer::get_text_height()*std::min((int)replaceTextEdit->lines.size(), 3)+App::text_padding*2;
@@ -167,6 +185,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		nextReplButton->t_y = replaceTextEdit->t_y;
 	});
 	replaceTextEdit->rounded = true;
+	replaceTextEdit->const_parent = this;
 	
 	findTextEdit = new TextEdit(nullptr, [&](Widget* t){
 		int h = TextRenderer::get_text_height()*std::min((int)findTextEdit->lines.size(), 3)+App::text_padding*2;
@@ -182,6 +201,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		prevButton->t_y = findTextEdit->t_y;
 	});
 	findTextEdit->rounded = true;
+	findTextEdit->const_parent = this;
 	
 	caseSensitivity = new CheckBox(nullptr, [&](CheckBox* c, int,int,int,int){
 		c->t_h = findTextEdit->t_h;
@@ -190,6 +210,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		c->t_y = findTextEdit->t_y;
 	}, nullptr);
 	caseSensitivity->rounded = true;
+	caseSensitivity->const_parent = this;
 	
 	allButton->border = true;
 	nextReplButton->border = true;
@@ -261,6 +282,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	});
 	showErrorsButton->transparent = true;
 	showErrorsButton->rounded = true;
+	showErrorsButton->const_parent = this;
 	
 	errorMenu = new ListBox(this, [&](Widget* w){
 		w->t_w = textedit->t_w/3; // height is set by the listbox
@@ -274,6 +296,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	errorMenu->ONCLICK = [&](Widget* w, int sel){
 		gotoerror(sel);
 	};
+	errorMenu->const_parent = this;
 	
 	
 	textedit->highlighter = nullptr;
@@ -2237,35 +2260,4 @@ std::vector<EditSection> CodeEdit::gatherCurrentFileSections(const std::vector<F
 	});
 	
 	return sections;
-}
-
-void CodeEdit::request_close(close_callback_type callback) {
-	save();
-	
-	App::MoveWidget(replaceTextEdit, this); // ensure all of these will be deleted
-	App::MoveWidget(findTextEdit, this);
-	App::MoveWidget(caseSensitivity, this);
-	App::MoveWidget(prevButton, this);
-	App::MoveWidget(nextButton, this);
-	App::MoveWidget(nextReplButton, this);
-	App::MoveWidget(allButton, this);
-	App::MoveWidget(broken_state_menu, this);
-	App::MoveWidget(renamebox, this);
-	App::MoveWidget(completionbox, this);
-	App::MoveWidget(errorMenu, this);
-	App::MoveWidget(showErrorsButton, this);
-	App::MoveWidget(hoverbox, this);
-	
-	delete highlighter;
-	
-	closing = true;
-	if (hoverthread.joinable()) {
-		hoverthread.join();
-	}
-//	if (chauffeurthread.joinable()) {
-//		chauffeurthread.join();
-//	}
-	closing = false;
-	
-	Widget::request_close(callback);
 }

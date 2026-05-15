@@ -38,7 +38,8 @@ void ContextMenu::position(int x, int y, int width, int height) {
 	t_x = x_loc;
 	t_y = y_loc;
 	
-	maxwidth = 0;;
+	maxwidth = 0;
+	Widget::position(t_x, t_y, t_w, t_h);
 	
 	int bx = t_x+App::text_padding+App::border_width;
 	int by = t_y+App::text_padding+App::border_width;
@@ -53,7 +54,7 @@ void ContextMenu::position(int x, int y, int width, int height) {
 		
 		b->t_x = bx;
 		b->t_y = by;
-		b->position(bx, by, maxwidth, height);
+		b->t_w = maxwidth;
 		
 		by += b->t_h+App::text_padding;
 	}
@@ -89,9 +90,7 @@ void ContextMenu::clearMenu() {
 			continue;
 		}
 		
-		b->request_close([](Widget* w){
-			delete w;
-		});
+		App::deleteWidget(b);
 	}
 	buttons.clear();
 }

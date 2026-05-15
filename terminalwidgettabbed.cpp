@@ -28,12 +28,8 @@ TerminalWidgetTabbed::TerminalWidgetTabbed(Widget* parent)  : Widget(parent) {
 		if (it != terminals.end()) {
 			auto todel = it->second;
 			
-			todel->request_close([&](Widget* w){ // wait for it to delete itself
-				App::RemoveWidgetFromParent(w);
-				
-				terminals.erase(info.id);
-				delete todel;
-			});
+			terminals.erase(info.id);
+			App::deleteWidget(todel);
 		}
 	};
 	

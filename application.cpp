@@ -43,7 +43,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 3;
-int App::patch_version = 4;
+int App::patch_version = 5;
 
 
 const float M_PI = 3.141592653589793238;
@@ -946,8 +946,7 @@ void App::DrawAsteroid(int x, int y, int s, double r, Color* color, int type) {
 		glVertex2f( 0.4f,  0.3f);
 		glVertex2f( 0.0f,  0.5f);
 		glVertex2f(-0.4f,  0.4f);
-	} 
-	else if (type == 1) {
+	} else if (type == 1) {
 		// Type 1: Elongated, sharp rock
 		glVertex2f(-0.2f, -0.5f);
 		glVertex2f( 0.3f, -0.4f);
@@ -955,8 +954,7 @@ void App::DrawAsteroid(int x, int y, int s, double r, Color* color, int type) {
 		glVertex2f( 0.2f,  0.5f);
 		glVertex2f(-0.4f,  0.3f);
 		glVertex2f(-0.5f, -0.1f);
-	} 
-	else {
+	} else {
 		// Type 2: C-shaped / Cratered rock
 		glVertex2f(-0.3f, -0.3f);
 		glVertex2f( 0.0f, -0.5f);
@@ -2415,9 +2413,6 @@ void App::fixAllTmpFiles() {
 	} catch (const std::exception&) {
 		return;
 	}
-	
-	
-	rootelement->treePrint(0);
 }
 
 icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, bool& worked) {

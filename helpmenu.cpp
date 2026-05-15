@@ -252,7 +252,7 @@ bool HelpMenu::on_mouse_move_event() {
 }
 
 bool HelpMenu::on_scroll_event(double xchange, double ychange) {
-	if (tb->on_scroll_event(xchange, ychange)) { return true; }
+	if (tb->on_scroll_event(xchange, ychange) || !cursor_in_this) { return true; }
 	
 	scrolled_to[tb->selected_id] += ychange*6.0*(double)TextRenderer::get_text_height();
 	

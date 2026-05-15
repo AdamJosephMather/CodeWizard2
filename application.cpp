@@ -265,6 +265,8 @@ bool App::Init() {
 	
 	Verify::setup(password);
 	
+	setFolder(settings->getValue("current_folder", getExecutableDir()));
+	
 	darkmode = settings->getValue("dark_mode", true);
 	WINDOW_WIDTH = settings->getValue("window_width", 1200);
 	WINDOW_HEIGHT = settings->getValue("window_height", 800);
@@ -1632,6 +1634,19 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 }
 
 void App::setFolder(std::string fpr) {
+	std::filesystem::path new_path(fpr);
+
+	if (!std::filesystem::exists(new_path) || !std::filesystem::is_directory(new_path)) {
+		return; 
+	}
+
+	std::error_code ec;
+	std::filesystem::current_path(new_path, ec);
+	
+	if (ec) {
+		return;
+	}
+	
 	std::string oldfolder = settings->getValue("current_folder", getExecutableDir());
 	for (auto lsp : lsp_client_map){
 		if (lsp.second) {

@@ -36,18 +36,7 @@ void Button::position(int x, int y, int width, int height) {
 }
 
 bool Button::on_mouse_button_event(int button, int action, int mods) {
-	if (!is_visible) {
-		return false;
-	}
-	
-	if (!parent) {
-		return false;
-	}
-	
-	int mx = App::mouseX;
-	int my = App::mouseY;
-	
-	if (t_x > mx || t_x+t_w < mx || t_y > my || t_y+t_h < my) {
+	if (!parent || !cursor_in_this || !is_visible) {
 		return false;
 	}
 	

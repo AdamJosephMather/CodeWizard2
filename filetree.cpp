@@ -256,17 +256,13 @@ void FileTree::position(int x, int y, int w, int h) {
 	}
 }
 
-bool FileTree::on_mouse_button_event(int button, int action, int mods){
+bool FileTree::on_mouse_button_event(int button, int action, int mods) {
+	if (!cursor_in_this || button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS) {
+		return false;
+	}
+	
 	int mx = App::mouseX;
 	int my = App::mouseY;
-	
-	if (t_x > mx || t_y > my || t_x+t_w < mx || t_y+t_h < my) {
-		return false;
-	}
-	
-	if (button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS) {
-		return false;
-	}
 	
 	std::lock_guard<std::mutex> lock(tree_mutex);
 	
@@ -289,7 +285,6 @@ bool FileTree::on_mouse_button_event(int button, int action, int mods){
 				root->name = icu::UnicodeString::fromUTF8(std::filesystem::path(root->path).filename().string());
 				fillOutTree(root);
 			}else{
-				// let's open the file now
 				std::filesystem::path p(vs.ts->path);
 				App::openFromCMD(vs.ts->path, p.filename().string());
 			}
@@ -320,10 +315,7 @@ void FileTree::save() {
 }
 
 bool FileTree::on_scroll_event(double xchange, double ychange){
-	int mx = App::mouseX;
-	int my = App::mouseY;
-	
-	if (t_x > mx || t_y > my || t_x+t_w < mx || t_y+t_h < my) {
+	if (!cursor_in_this) {
 		return false;
 	}
 	

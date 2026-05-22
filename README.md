@@ -33,6 +33,8 @@ CodeWizard2 uses `widgets`, of which we have:
 5. AI Chat
 6. LSP Debug Window
 7. Terminal
+8. Math Window
+9. Asteroids
 
 ## Quick Note
 
@@ -54,7 +56,7 @@ Out of the box, CodeWizard comes with a beautiful UI, Cascadia Code font, TextMa
 ## To install:
 
 1. Download and run installer (in the releases section)
-2. To add new languages languages for CodeWizard, open the file `C:\Users\<username>\AppData\Local\CodeWizard\languages.json` (an example file is below)
+2. To add new languages for CodeWizard, open the file `C:\Users\<username>\AppData\Local\CodeWizard\languages.json` (an example file is below), or inside of CodeWizard's command palette type ```":Open `languages.json` file"``` and it will open it in CodeWizard (remember to restart CodeWizard after making changes).
 3. For every language, you will likely want a TextMate file which you can point to in the languages.json (note `%INSTALL_DIR%` will be replaced with `C:\Users\<username>\AppData\Local\CodeWizard`) - the TextMate language files can be found here: https://github.com/microsoft/vscode/tree/main/extensions (look for .tmLanguage.json)
 4. Project specific settings can be created via opening the settings panel and pressing 'Project Specific' which will create a json file and give you the path. This can be used to set specific LSPs and the project build command.
 

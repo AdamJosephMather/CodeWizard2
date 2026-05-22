@@ -15,7 +15,9 @@ void ImageView::position(int x, int y, int width, int height) {
 	t_h = height;
 }
 
-void ImageView::openFile() {
+void ImageView::openFile(FileInfo* f) {
+	file = f;
+	
 	// Clean up any previous texture
 	if (hasTexture) {
 		glDeleteTextures(1, &texID);

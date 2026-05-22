@@ -43,10 +43,10 @@
 
 int App::major_version = 2;
 int App::minor_version = 3;
-int App::patch_version = 5;
+int App::patch_version = 6;
 
 
-const float M_PI = 3.141592653589793238;
+const float M_PI = 3.141592653589793238; // nice
 
 std::vector<Widget*> App::all_widgets = {};
 

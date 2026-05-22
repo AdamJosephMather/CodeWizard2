@@ -1888,7 +1888,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 			if (end_line > ln_num) {
 				add_one_to_last_char = true;
 			}
-
+			
 			selections.push_back({start_sec, end_sec, add_one_to_last_char});
 			draw_selec.push_back({-1, -1});
 		}
@@ -1896,13 +1896,15 @@ void TextEdit::position(int x, int y, int w, int h) {
 		// run through
 
 		for (int true_char_indx = 0; true_char_indx < thisLn.length()+1; true_char_indx ++) {
+			int cur_length = final_line.length();
 			for (int i = 0; i < selections.size(); i++) {
 				auto s = selections[i];
 				if (s[0] <= true_char_indx && draw_selec[i][0] == -1) {
-					draw_selec[i][0] = final_line.length();
+					draw_selec[i][0] = cur_length; // if there's no stated start, and we are now >= to the start position, record the start in relative characters.
 				}
+				
 				if (s[0] <= true_char_indx && s[1] >= true_char_indx) {
-					draw_selec[i][1] = final_line.length();
+					draw_selec[i][1] = cur_length; // if we're in the selection (start is left of here and end is right of here) then record the end to be here
 				}
 			}
 
@@ -1925,14 +1927,17 @@ void TextEdit::position(int x, int y, int w, int h) {
 					draw_cursor.push_back(dc);
 				}
 			}
-
-			if (true_char_indx >= thisLn.length()) {
+			
+			UChar32 chr;
+			if (true_char_indx > thisLn.length()) {
 				continue;
+			}else if (true_char_indx == thisLn.length()) {
+				chr = U' ';
+			}else{
+				chr = thisLn.char32At(true_char_indx);
 			}
 
 			bool finished_line = false;
-
-			auto chr = thisLn.char32At(true_char_indx);
 
 			std::vector<UChar32> tohandle = {};
 
@@ -1974,8 +1979,16 @@ void TextEdit::position(int x, int y, int w, int h) {
 		}
 
 		for (int i = 0; i < selections.size(); i++) {
-			if (selections[i][2] == 1) {
-				draw_selec[i][1] ++;
+			if (draw_selec[i][0] == -1) { // sometimes a selection on a given line isn't in visible range (ie to the left or right), so we don't want to render anything for those cases. To be clear
+				continue;
+			}
+			
+			if (draw_selec[i][1] == 0 && final_line.length() == 0) {
+				continue;
+			}
+			
+			if (selections[i][2] == 1) { // it's the little things like this that make me wonder what I was smoking when I made this (spoiler: I wasn't smoking anything. I'm just this creative)
+				draw_selec[i][1] ++;     // oh wait I figured it out. It's so that if we wrap a line on the right, we draw a little thing on it, to clarify that we are selecting the newline. Clever me.
 			}
 
 			auto selec = CursorSelect();
@@ -1984,9 +1997,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 			selec.rel_char_start = draw_selec[i][0];
 			selec.rel_char_end = draw_selec[i][1];
 			
-			if (selec.rel_char_start != -1) {
-				draw_selection.push_back(selec);
-			}
+			draw_selection.push_back(selec);
 		}
 
 		for (int i = 0; i < diagnostics.size(); i++) {

@@ -150,19 +150,14 @@ void Editor::createNew(FileInfo* fn) {
 	
 	if (fn) {
 		if (auto ce = dynamic_cast<CodeEdit*>(edtr)){
-			ce->file = fn;
-			ce->openFile();
-		}
-		if (auto iv = dynamic_cast<ImageView*>(edtr)){
-			iv->file = fn;
-			iv->openFile();
+			ce->openFile(fn);
+		}else if (auto iv = dynamic_cast<ImageView*>(edtr)){
+			iv->openFile(fn);
 		}
 	}
 }
 
 void Editor::render() {
-//	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
-	
 	auto e = editors[tab_bar->selected_id];
 	
 	if (App::settings->getValue("use_tabs", true)){

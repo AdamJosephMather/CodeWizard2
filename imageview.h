@@ -10,15 +10,13 @@ public:
 	
 	void render() override;
 	bool on_mouse_button_event(int button, int action, int mods) override;
-	void openFile();
+	void openFile(FileInfo* f);
 	
 	bool rounded = true;
-
-	// the file to load (set by caller before openFile())
+	
 	FileInfo* file = nullptr;
 
 private:
-	// GL texture handle
 	GLuint texID = 0;
 	int imgW = 0, imgH = 0;
 	bool hasTexture = false;

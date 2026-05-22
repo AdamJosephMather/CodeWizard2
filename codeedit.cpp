@@ -613,11 +613,13 @@ int CodeEdit::analyzeForFixit_on_lines(const std::vector<Line>& lines) {
 	return analyzeForFixit(lines_new);
 }
 
-void CodeEdit::openFile() {
+void CodeEdit::openFile(FileInfo* f) {
 	madeChangeBetweenSaves = false;
 	was_in_a_file = true;
-	std::unique_lock<std::mutex> lock(App::canMakeChanges, std::try_to_lock);
+	std::unique_lock<std::mutex> lock(App::canMakeChanges, std::try_to_lock); // the lsp client will block up if we don't try because of goto def
 	std::unique_lock<std::mutex> lock2(saving_lock);
+	
+	file = f; // set it after the locks are in place
 	
 	REQUESTING_FIXIT = false;
 	if (fixit_request_menu->parent == this) {
@@ -912,7 +914,7 @@ void CodeEdit::reload_file() {
 	FILE_BROKEN_STATE = false;
 	App::RemoveWidgetFromParent(broken_state_menu);
 	
-	openFile();
+	openFile(file);
 }
 
 void CodeEdit::save() {

@@ -108,7 +108,7 @@ public:
 	
 	void triggerSaveAs();
 	
-	void openFile();
+	void openFile(FileInfo* f);
 	
 	void save();
 	

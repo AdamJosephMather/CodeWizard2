@@ -1929,10 +1929,8 @@ void TextEdit::position(int x, int y, int w, int h) {
 			}
 			
 			UChar32 chr;
-			if (true_char_indx > thisLn.length()) {
-				continue;
-			}else if (true_char_indx == thisLn.length()) {
-				chr = U' ';
+			if (true_char_indx == thisLn.length()) {
+				chr = U' '; // we draw an extra space on the end because we later need to check if the selections are actually in the visible area. It's a whole thing. IF YOU CAN AVOID THINKING ABOUT IT - DO.
 			}else{
 				chr = thisLn.char32At(true_char_indx);
 			}

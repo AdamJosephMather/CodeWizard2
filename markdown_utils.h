@@ -123,7 +123,7 @@ private:
 
 		switch (type) {
 			case MD_SPAN_STRONG: elem = MarkdownElem::Bold; break;
-			case MD_SPAN_EM:   elem = MarkdownElem::Italic; break;
+			case MD_SPAN_EM:     elem = MarkdownElem::Italic; break;
 			case MD_SPAN_CODE:   elem = MarkdownElem::Code; break;
 			case MD_SPAN_A:      elem = MarkdownElem::Link; break;
 			default: return 0;
@@ -135,8 +135,15 @@ private:
 
 	static int LeaveSpanCallback(MD_SPANTYPE type, void* detail, void* userdata) {
 		auto* self = static_cast<MarkdownParser*>(userdata);
+		
+		// FIX: Guard the stack! Only pop if this is a span type we actually track.
+		if (type != MD_SPAN_STRONG && type != MD_SPAN_EM && 
+			type != MD_SPAN_CODE && type != MD_SPAN_A) {
+			return 0;
+		}
+	
 		if (self->m_openSpans.empty()) return 0;
-
+	
 		auto span = self->m_openSpans.top();
 		self->m_openSpans.pop();
 		span.end = self->m_result.length();

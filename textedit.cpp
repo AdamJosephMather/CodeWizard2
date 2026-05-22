@@ -152,6 +152,11 @@ void TextEdit::setFullText(icu::UnicodeString text) {
 	
 	cursors = {Cursor()};
 	
+	scrolled_to_horz = 0;
+	scrolled_to_vert = 0;
+	scroll_vertical_change = 0;
+	scroll_horizontal_change = 0;
+	
 	if (!largereditblock && ontextchange) {
 		ontextchange(this);
 	}
@@ -1139,10 +1144,10 @@ bool TextEdit::handleInsertKey(int key, int scancode, int action, int mods) {
 
 	if (key == GLFW_KEY_TAB) {
 		if (cursors.size() == 1) {
-			if (getSelectedText(cursors[0]).length() == 0) {
-				applyInsertToAllCursors(icu::UnicodeString::fromUTF8("\t"));
-			}else if (is_shift_held) {
+			if (is_shift_held) {
 				applyIndentChangeToAllCursors(-1);
+			}else if (getSelectedText(cursors[0]).length() == 0) {
+				applyInsertToAllCursors(icu::UnicodeString::fromUTF8("\t"));
 			}else{
 				applyIndentChangeToAllCursors(1);
 			}

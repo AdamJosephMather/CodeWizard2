@@ -108,7 +108,7 @@ void Label::position(int x, int y, int w, int h) {
 		if (handlingColor) {
 			thisColor = App::theme.main_text_color;
 			if (curspan < colorSpans.size()) { // spans are always ordered so that we can only look at one at a time (mucho faster)
-				if (ci >= colorSpans[curspan].start && ci <= colorSpans[curspan].end) {
+				if (ci >= colorSpans[curspan].start && ci < colorSpans[curspan].end) {
 					auto t = colorSpans[curspan].type;
 					if (t == MarkdownElem::Header) {
 						thisColor = App::theme.equal_diff;

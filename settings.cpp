@@ -172,7 +172,11 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 		makeString(
 			"Default Terminal",
 			"terminal_cmd",
+			#ifdef _WIN32
 			"cmd.exe"
+			#else
+			"/bin/bash"
+			#endif
 		),
 		makeBool(
 			"Show FPS",

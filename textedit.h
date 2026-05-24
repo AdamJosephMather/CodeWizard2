@@ -132,6 +132,7 @@ public:
 	int vim_repeater = 0;
 	char mode = 'i';
 	char wasmode = 'i';
+  char ignoringChar = '\0';
 	
 	std::vector<icu::UnicodeString>  draw_text;
 	std::vector<std::vector<Color*>> draw_color;

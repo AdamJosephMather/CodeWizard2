@@ -1180,12 +1180,12 @@ void App::deleteWidget(Widget* w) {
 		}
 	}
 
-  for (int i : toDelete) {
+	for (int i : toDelete) {
 		Widget* wDelete = all_widgets[i];
 		if (wDelete == activeLeafNode) {
 			activeLeafNode = nullptr;
 		}
-    all_widgets.erase(all_widgets.begin()+i);
+		all_widgets.erase(all_widgets.begin()+i);
 		delete wDelete;
 	}
 }

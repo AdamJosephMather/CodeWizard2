@@ -67,7 +67,11 @@ void TerminalWidgetTabbed::render() {
 void TerminalWidgetTabbed::createNew() {
 	auto ti = TabInfo();
 	
+	#ifdef _WIN32
 	ti.title = icu::UnicodeString::fromUTF8(App::settings->getValue("terminal_cmd", (std::string)"cmd.exe"));
+	#else
+	ti.title = icu::UnicodeString::fromUTF8(App::settings->getValue("terminal_cmd", (std::string)"/bin/bash"));
+	#endif
 	ti.id = tabid;
 	tab_bar->addTab(ti);
 	tabid ++;
@@ -94,28 +98,6 @@ void TerminalWidgetTabbed::createNew() {
 		}
 	}
 }
-
-/*void Editor::tabinfoclicked(TabInfo info) {
-	for (auto it : editors) {
-		if (it.first == info.id && it.second->parent != this){
-			App::MoveWidget(it.second, this);
-		}else if (it.first != info.id && it.second->parent == this) {
-			App::RemoveWidgetFromParent(it.second);
-		}
-	}
-	
-	if (CodeEdit* ce = dynamic_cast<CodeEdit*>( editors[info.id] )){
-		App::setActiveLeafNode(ce->textedit);
-	}
-	
-	for (auto it : editors) {
-		if (it.first == info.id) {
-			it.second->show();
-		}else {
-			it.second->hide();
-		}
-	}
-}*/
 
 void TerminalWidgetTabbed::tabinfoclicked(TabInfo info) {
 	for (auto it : terminals) {

@@ -6,4 +6,8 @@ we'll put our highlighting files there too (cause why not...?)
 TODO: ensure smooth scroll when available? (not getting that?)
 TODO: ensure lsps work
 TODO: fix caps remap not getting through to CodeWizard
+  FIX: Use keyd to map caps on a lower level
 TODO: fix 'i' key getting inserted and changing to insert.
+  
+TODO: Fix pypls
+

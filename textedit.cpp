@@ -3,6 +3,7 @@
 #include "application.h"
 #include <set>
 #include <chrono>
+#include <cctype>
 #include "helper_types.h"
 #include <unicode/uchar.h>
 
@@ -1542,12 +1543,14 @@ bool TextEdit::handleUserKey(int key, int scancode, int action, int mods) {
 			mode = 'i';
 			vim_repeater = 0;
 			HandleOverlappingCursors();
+      ignoringChar = 'i';
 			return true;
 		}else if (key == GLFW_KEY_N) {
 			mode = 'i';
 			vim_repeater = 0;
 			applyMoveToAllCursors(GLFW_KEY_RIGHT, is_shift_held, false);
 			HandleOverlappingCursors();
+      ignoringChar = 'n';
 			return true;
 		}
 
@@ -1607,7 +1610,8 @@ bool TextEdit::on_char_event(unsigned int codepoint) {
 			return true;
 		}
 
-		if (wasmode == 'n') {
+		if ((char)std::tolower(ch) == ignoringChar || wasmode == 'n') {
+      ignoringChar = '\0';
 			return true;
 		}
 

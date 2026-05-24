@@ -44,7 +44,7 @@ inline int fdCloseIfValid(int& fd) {
 }
 
 inline std::string defaultShell() {
-	std::string sh = App::settings->getValue("terminal_cmd", (std::string)"");
+	std::string sh = App::settings->getValue("terminal_cmd", (std::string)"/bin/bash");
 	if (sh.empty()) {
 		const char* env = std::getenv("SHELL");
 		sh = env ? env : "/bin/bash";

@@ -1,7 +1,5 @@
-#include "SettingsManager.h"
+#include "settingsmanager.h"
 #include "helper_types.h"
-#include <windows.h>
-#include <shlobj.h> // SHGetFolderPathA
 #include <fstream>
 #include <filesystem>
 #include <iostream>
@@ -10,11 +8,17 @@
 #include <sstream>
 #include <iomanip>
 #include <string>
+#include <cstdlib>
+
+#ifdef _WIN32
+#include <windows.h>
+#include <shlobj.h> // SHGetFolderPathA
+#endif
 
 SettingsManager::SettingsManager() : settings(internalSettings) {}
 
 void SettingsManager::loadSettings() {
-	std::string path = getLocalAppDataPath() + "\\CodeWizard\\settings.json";
+	std::string path = getLocalAppDataPath() + "/CodeWizard/settings.json";
 	std::ifstream file(path);
 	bool gotsettings = false;
 	
@@ -96,7 +100,7 @@ std::string SettingsManager::makeUUID() {
 }
 
 void SettingsManager::saveSettings() {
-	std::string path = getLocalAppDataPath()+"\\CodeWizard\\settings.json";
+	std::string path = getLocalAppDataPath()+"/CodeWizard/settings.json";
 	std::filesystem::create_directories(std::filesystem::path(path).parent_path());
 	std::ofstream file(path);
 	if (file.is_open()) {
@@ -114,11 +118,23 @@ nlohmann::json SettingsManager::getConfig() {
 }
 
 std::string SettingsManager::getLocalAppDataPath() {
+#ifdef _WIN32
 	char path[MAX_PATH];
 	if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, path))) {
 		return std::string(path);
 	}
 	return "";
+#else
+	const char* xdg = std::getenv("XDG_CONFIG_HOME");
+	if (xdg && xdg[0] != '\0') {
+		return std::string(xdg);
+	}
+	const char* home = std::getenv("HOME");
+	if (home) {
+		return std::string(home) + "/.config";
+	}
+	return "/tmp";
+#endif
 }
 
 
@@ -196,7 +212,7 @@ void SettingsManager::setValue(std::string key, std::string val) {
 std::vector<Language> SettingsManager::loadLanguages() {
 	nlohmann::json languages;
 	
-	std::string path = getLocalAppDataPath() + "\\CodeWizard\\languages.json";
+	std::string path = getLocalAppDataPath() + "/CodeWizard/languages.json";
 	std::ifstream file(path);
 	
 	languages = nlohmann::json::object();
@@ -231,14 +247,14 @@ std::vector<Language> SettingsManager::loadLanguages() {
 		std::string replace_dir = "%INSTALL_DIR%";
 		int indx = tmf.find(replace_dir);
 		if (indx != std::string::npos) {
-			tmf = tmf.replace(indx, replace_dir.size(), getLocalAppDataPath()+"\\CodeWizard");
+			tmf = tmf.replace(indx, replace_dir.size(), getLocalAppDataPath()+"/CodeWizard");
 		}
 		language.textmatefile = tmf;
 		
 		std::string lsp = lang["lsp_command"];
 		int indx2 = lsp.find(replace_dir);
 		if (indx2 != std::string::npos) {
-			lsp = lsp.replace(indx2, replace_dir.size(), getLocalAppDataPath()+"\\CodeWizard");
+			lsp = lsp.replace(indx2, replace_dir.size(), getLocalAppDataPath()+"/CodeWizard");
 		}
 		language.lsp = lsp;
 		
@@ -262,7 +278,7 @@ std::string SettingsManager::getProjectSettingsPath() {
 		return "";
 	}
 	
-	std::string path = folder + "\\"+uuid+".json";
+	std::string path = folder + "/"+uuid+".json";
 	return path;
 }
 

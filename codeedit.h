@@ -8,6 +8,10 @@
 #include <GLFW/glfw3.h>
 #include "application.h"
 #include "checkbox.h"
+#include <atomic>
+#include <filesystem>
+#include <mutex>
+#include <thread>
 
 struct Position {
 	int line;
@@ -112,7 +116,7 @@ public:
 	
 	void save();
 	
-	boolean was_in_a_file = false;
+	bool was_in_a_file = false;
 	
 	bool FILE_BROKEN_STATE = false;
 	BrokenStateMenu* broken_state_menu = nullptr;

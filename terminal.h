@@ -1,6 +1,3 @@
-// ============================================================================
-// terminal.h
-// ============================================================================
 #pragma once
 
 #include <unicode/umachine.h>
@@ -13,13 +10,20 @@
 #include <cstring>
 #include <functional>
 
+#ifdef _WIN32
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0A00
 #endif
-
 #include <windows.h>
+#else
+#include <unistd.h>
+#include <termios.h>
+#include <sys/ioctl.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#endif
 
-// ---- libvterm ----
 #define small vterm_small_avoid_winrpc
 extern "C" {
 #include <vterm.h>
@@ -68,7 +72,6 @@ public:
 	OurCell getCell(int row, int col);
 	CursorInfo getCursorInfo();
 
-	// --- Keyboard ---
 	bool sendText(const std::string& utf8);
 	bool sendEnter();
 	bool sendBackspace();
@@ -80,7 +83,6 @@ public:
 	};
 	bool sendSpecialKey(SpecialKey key, bool shift = false, bool alt = false, bool ctrl = false);
 
-	// --- Mouse (cell coords) ---
 	bool enableMouseTracking(bool enable);
 	bool mousePress(int row, int col, int button, bool pressed,
 	                bool shift = false, bool alt = false, bool ctrl = false);
@@ -91,7 +93,6 @@ public:
 	bool mouseScroll(int row, int col, int lines,
 	                 bool shift = false, bool alt = false, bool ctrl = false);
 
-	// --- Scrollback & document access ---
 	int docLineIdForScreenRow(int screenRow) const;
 	int screenRowForDocLineId(int docId) const;
 	bool getDocCell(int docId, int col, OurCell& out);
@@ -105,20 +106,21 @@ public:
 	bool getDocWraps(int docId);
 	
 private:
-	// --- ConPTY ---
 	bool initConPty();
+#ifdef _WIN32
 	bool launchShell(const std::wstring& shell);
+#else
+	bool launchShell(const std::string& shell);
+#endif
 	void teardownConPty();
 	void readerLoop();
 
-	// --- vterm ---
 	bool initVTerm();
 	void teardownVTerm();
 	void flushVTermDamage();
 	void onDamage(const VTermRect& rect);
 	void dumpRow(int r);
 
-	// --- Scrollback helpers ---
 	void clampView();
 	void savePushLine(int cols, const VTermScreenCell* cells);
 	bool savePopLine(int cols, VTermScreenCell* cells);
@@ -126,7 +128,6 @@ private:
 	void scrollbackPageUp();
 	void scrollbackPageDown();
 
-	// --- vterm callback trampolines ---
 	static int s_screen_damage(VTermRect rect, void* user);
 	static int s_screen_moverect(VTermRect dest, VTermRect src, void* user);
 	static int s_screen_movecursor(VTermPos pos, VTermPos oldpos, int visible, void* user);
@@ -136,11 +137,15 @@ private:
 	static int s_screen_sb_pushline(int cols, const VTermScreenCell* cells, void* user);
 	static int s_screen_sb_popline(int cols, VTermScreenCell* cells, void* user);
 
-	// --- Members ---
+#ifdef _WIN32
 	HPCON m_hPC{ nullptr };
 	HANDLE m_hToPty{ INVALID_HANDLE_VALUE };
 	HANDLE m_hFromPty{ INVALID_HANDLE_VALUE };
 	PROCESS_INFORMATION m_pi{};
+#else
+	int m_masterFd{ -1 };
+	pid_t m_childPid{ -1 };
+#endif
 
 	std::thread m_reader;
 	std::atomic<bool> m_running{ false };

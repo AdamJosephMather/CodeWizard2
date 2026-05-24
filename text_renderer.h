@@ -4,6 +4,7 @@
 #include <unicode/ustream.h>
 #include "helper_types.h"
 #include <vector>
+#include <functional>
 
 // Font rendering system
 class TextRenderer {

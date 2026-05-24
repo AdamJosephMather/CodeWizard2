@@ -1,6 +1,3 @@
-// ============================================================================
-// terminal.cpp
-// ============================================================================
 #include "terminal.h"
 #include "application.h"
 
@@ -8,17 +5,24 @@
 #include <cassert>
 #include <algorithm>
 
+#ifdef _WIN32
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0A00
 #endif
-
 #include <windows.h>
 #include <processthreadsapi.h>
 #include <consoleapi2.h>
 #include <consoleapi3.h>
+#else
+#include <cstdlib>
+#include <fcntl.h>
+#include <errno.h>
+#include <stdio.h>
+#endif
 
 namespace {
 
+#ifdef _WIN32
 inline void closeHandleIfValid(HANDLE& h) {
 	if (h && h != INVALID_HANDLE_VALUE) {
 		::CloseHandle(h);
@@ -29,6 +33,34 @@ inline void closeHandleIfValid(HANDLE& h) {
 inline std::wstring defaultShell() {
 	return widen(App::settings->getValue("terminal_cmd", (std::string)"cmd.exe"));
 }
+#else
+inline int fdCloseIfValid(int& fd) {
+	if (fd >= 0) {
+		int ret = ::close(fd);
+		fd = -1;
+		return ret;
+	}
+	return 0;
+}
+
+inline std::string defaultShell() {
+	std::string sh = App::settings->getValue("terminal_cmd", (std::string)"");
+	if (sh.empty()) {
+		const char* env = std::getenv("SHELL");
+		sh = env ? env : "/bin/bash";
+	}
+	return sh;
+}
+
+static std::string wstringToUtf8(const std::wstring& wstr) {
+	icu::UnicodeString u = icu::UnicodeString::fromUTF32(
+		reinterpret_cast<const UChar32*>(wstr.data()),
+		static_cast<int32_t>(wstr.size()));
+	std::string out;
+	u.toUTF8String(out);
+	return out;
+}
+#endif
 
 } // namespace
 
@@ -38,7 +70,9 @@ inline std::wstring defaultShell() {
 
 Terminal::Terminal(int cols, int rows, SCROLLDOWN sd) : m_cols(cols), m_rows(rows) {
 	scrollDown = sd;
+#ifdef _WIN32
 	ZeroMemory(&m_pi, sizeof(m_pi));
+#endif
 }
 
 Terminal::~Terminal() {
@@ -57,10 +91,25 @@ bool Terminal::start(const std::wstring& shell) {
 		return false;
 	}
 	
+#ifdef _WIN32
 	if (!launchShell(shell.empty() ? defaultShell() : shell)) {
 		teardownConPty();
 		return false;
 	}
+#else
+	{
+		std::string shellStr;
+		if (shell.empty()) {
+			shellStr = defaultShell();
+		} else {
+			shellStr = wstringToUtf8(shell);
+		}
+		if (!launchShell(shellStr)) {
+			teardownConPty();
+			return false;
+		}
+	}
+#endif
 	
 	if (!initVTerm()) {
 		stop();
@@ -76,7 +125,7 @@ bool Terminal::start(const std::wstring& shell) {
 void Terminal::stop() {
 	m_running.exchange(false);
 
-	// Unblock pending I/O first to let readerLoop exit quickly
+#ifdef _WIN32
 	if (m_hFromPty != INVALID_HANDLE_VALUE) {
 		::CancelIoEx(m_hFromPty, nullptr);
 	}
@@ -84,29 +133,40 @@ void Terminal::stop() {
 		::CancelIoEx(m_hToPty, nullptr);
 	}
 
-	// Join the reader thread
 	if (m_reader.joinable()) {
 		m_reader.join();
 	}
 
-	// Close pipe handles
 	closeHandleIfValid(m_hToPty);
 	closeHandleIfValid(m_hFromPty);
 
-	// Terminate child process
 	if (m_pi.hProcess) {
 		::WaitForSingleObject(m_pi.hProcess, 200);
 		::TerminateProcess(m_pi.hProcess, 0);
 		closeHandleIfValid(m_pi.hProcess);
 	}
 
-	// Close ConPTY
 	if (m_hPC) {
 		::ClosePseudoConsole(m_hPC);
 		m_hPC = nullptr;
 	}
+#else
+	if (m_masterFd >= 0) {
+		::close(m_masterFd);
+		m_masterFd = -1;
+	}
 
-	// Free libvterm
+	if (m_reader.joinable()) {
+		m_reader.join();
+	}
+
+	if (m_childPid > 0) {
+		::kill(m_childPid, SIGTERM);
+		::waitpid(m_childPid, nullptr, 0);
+		m_childPid = -1;
+	}
+#endif
+
 	teardownVTerm();
 }
 
@@ -122,6 +182,7 @@ bool Terminal::resize(int cols, int rows) {
 		}
 	}
 	
+#ifdef _WIN32
 	if (m_hPC) {
 		COORD size{};
 		size.X = static_cast<SHORT>(cols);
@@ -130,13 +191,27 @@ bool Terminal::resize(int cols, int rows) {
 			return false;
 		}
 	}
+#else
+	if (m_masterFd >= 0) {
+		struct winsize ws;
+		ws.ws_row = static_cast<unsigned short>(rows);
+		ws.ws_col = static_cast<unsigned short>(cols);
+		ws.ws_xpixel = 0;
+		ws.ws_ypixel = 0;
+		if (::ioctl(m_masterFd, TIOCSWINSZ, &ws) < 0) {
+			return false;
+		}
+	}
+#endif
 
 	return true;
 }
 
 // ============================================================================
-// ConPTY
+// ConPTY / PTY
 // ============================================================================
+
+#ifdef _WIN32
 
 bool Terminal::initConPty() {
 	HANDLE hPtyInRead = INVALID_HANDLE_VALUE;
@@ -255,6 +330,100 @@ void Terminal::readerLoop() {
 	}
 }
 
+#else // Linux
+
+bool Terminal::initConPty() {
+	m_masterFd = ::posix_openpt(O_RDWR | O_NOCTTY);
+	if (m_masterFd < 0) {
+		std::cerr << "posix_openpt failed: " << strerror(errno) << "\n";
+		return false;
+	}
+
+	if (::grantpt(m_masterFd) < 0) {
+		std::cerr << "grantpt failed: " << strerror(errno) << "\n";
+		fdCloseIfValid(m_masterFd);
+		return false;
+	}
+
+	if (::unlockpt(m_masterFd) < 0) {
+		std::cerr << "unlockpt failed: " << strerror(errno) << "\n";
+		fdCloseIfValid(m_masterFd);
+		return false;
+	}
+
+	return true;
+}
+
+bool Terminal::launchShell(const std::string& shell) {
+	m_childPid = ::fork();
+	if (m_childPid < 0) {
+		std::cerr << "fork failed: " << strerror(errno) << "\n";
+		return false;
+	}
+
+	if (m_childPid == 0) {
+		::setsid();
+
+		const char* ptsName = ::ptsname(m_masterFd);
+		if (!ptsName) _exit(1);
+
+		int slave = ::open(ptsName, O_RDWR);
+		if (slave < 0) _exit(1);
+
+		::close(m_masterFd);
+
+		::dup2(slave, STDIN_FILENO);
+		::dup2(slave, STDOUT_FILENO);
+		::dup2(slave, STDERR_FILENO);
+		if (slave > 2) ::close(slave);
+
+		::setenv("TERM", "xterm-256color", 1);
+
+		const char* sh = shell.c_str();
+		const char* shBase = std::strrchr(sh, '/');
+		shBase = shBase ? shBase + 1 : sh;
+
+		::execlp(sh, shBase, nullptr);
+		::_exit(1);
+	}
+
+	return true;
+}
+
+void Terminal::teardownConPty() {
+	fdCloseIfValid(m_masterFd);
+
+	if (m_childPid > 0) {
+		::kill(m_childPid, SIGTERM);
+		::waitpid(m_childPid, nullptr, WNOHANG);
+		m_childPid = -1;
+	}
+}
+
+void Terminal::readerLoop() {
+	constexpr size_t BUF = 4096;
+	std::vector<char> buffer(BUF);
+
+	for (;;) {
+		if (!m_running.load()) break;
+		int fd = m_masterFd;
+		if (fd < 0) break;
+
+		ssize_t got = ::read(fd, buffer.data(), BUF);
+		if (got <= 0) {
+			if (got < 0 && errno == EINTR) continue;
+			break;
+		}
+
+		std::lock_guard<std::mutex> lock(m_vtermMutex);
+		if (!m_vt) continue;
+		vterm_input_write(m_vt, buffer.data(), static_cast<size_t>(got));
+		flushVTermDamage();
+	}
+}
+
+#endif
+
 // ============================================================================
 // vterm
 // ============================================================================
@@ -353,7 +522,6 @@ OurCell Terminal::getCell(int row, int col) {
 		return { (UChar32)U' ' , 0,0,0, 255,255,255 };
 	}
 	
-	// If scrolled back, draw from scrollback for the top part
 	int from_sb = std::min(m_view_off, static_cast<int>(m_scrollback.size()));
 	if (from_sb > 0 && row < from_sb) {
 		const auto& line = m_scrollback[m_scrollback.size() - from_sb + row];
@@ -364,7 +532,6 @@ OurCell Terminal::getCell(int row, int col) {
 		}
 	}
 
-	// Otherwise, draw from the live screen
 	int live_row = row - from_sb;
 	VTermScreenCell cell{};
 	vterm_screen_get_cell(m_screen, VTermPos{ live_row, col }, &cell);
@@ -405,11 +572,18 @@ CursorInfo Terminal::getCursorInfo() {
 
 bool Terminal::writeInput(const void* data, size_t bytes) {
 	if (!m_running.load()) return false;
+#ifdef _WIN32
 	HANDLE h = m_hToPty;
 	if (h == INVALID_HANDLE_VALUE) return false;
 	DWORD written = 0;
 	BOOL ok = ::WriteFile(h, data, static_cast<DWORD>(bytes), &written, nullptr);
 	return ok && written == bytes;
+#else
+	int fd = m_masterFd;
+	if (fd < 0) return false;
+	ssize_t written = ::write(fd, data, bytes);
+	return written > 0 && static_cast<size_t>(written) == bytes;
+#endif
 }
 
 // ============================================================================
@@ -454,22 +628,11 @@ bool Terminal::sendSpecialKey(SpecialKey key, bool shift, bool alt, bool ctrl) {
 
 	auto cursorKey = [&](char code) {
 		if (mod == 1) {
-			// Unmodified: standard CSI cursor key
 			seq = "\x1b[" + std::string(1, code);
 		} else {
-			// Modified: xterm style
 			seq = "\x1b[1;" + std::to_string(mod) + std::string(1, code);
 		}
 	};
-
-//	auto withModTilde = [&](const char* base) {
-//		if (mod == 1) seq = std::string(base);
-//		else {
-//			// Convert e.g. "[5~" into "[5;{mod}~" if you want (optional).
-//			// Many apps accept unmodified only; PgUp/PgDn etc are usually fine as-is.
-//			seq = std::string(base);
-//		}
-//	};
 
 	switch (key) {
 		case SpecialKey::Up:    cursorKey('A'); break;
@@ -501,7 +664,6 @@ bool Terminal::sendSpecialKey(SpecialKey key, bool shift, bool alt, bool ctrl) {
 
 	return writeInput(seq.data(), seq.size());
 }
-
 
 // ============================================================================
 // Mouse
@@ -581,7 +743,6 @@ bool Terminal::mouseScroll(int row, int col, int lines,
 		return true;
 	}
 
-	// Terminal scrollback
 	scrollbackLines(lines);
 	VTermRect all{ 0, m_rows, 0, m_cols };
 	onDamage(all);
@@ -714,7 +875,6 @@ bool Terminal::getDocCell(int docId, int col, OurCell& out) {
 
 	const int sb_size = static_cast<int>(m_scrollback.size());
 	if (docId < sb_size) {
-		// From scrollback
 		const auto& line = m_scrollback[docId];
 		if (col < static_cast<int>(line.cells.size())) {
 			out = line.cells[col];
@@ -725,7 +885,6 @@ bool Terminal::getDocCell(int docId, int col, OurCell& out) {
 		return true;
 	}
 
-	// From live screen
 	int live_row = docId - sb_size;
 	if (live_row < 0 || live_row >= m_rows) return false;
 	
@@ -751,15 +910,12 @@ bool Terminal::getDocWraps(int docId) {
 
 	const int sb_size = static_cast<int>(m_scrollback.size());
 	if (docId < sb_size) {
-		// From scrollback
 		const auto& line = m_scrollback[docId];
 		return line.continuation;
 	}
 	
-	// From live screen
 	int live_row = docId - sb_size;
 	if (live_row < 0 || live_row >= m_rows) return false;
-	
 	
 	int wrapped = vterm_state_get_lineinfo(vterm_obtain_state(m_vt), live_row)->continuation;
 	return wrapped;

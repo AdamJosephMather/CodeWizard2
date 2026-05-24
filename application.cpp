@@ -20,11 +20,13 @@
 #include "textedit.h"
 #include "toast.h"
 
+#ifdef _WIN32
 #include <windows.h>
-#include <windowsx.h>  // This header contains GET_X_LPARAM and GET_Y_LPARAM
+#include <windowsx.h>
 #include <dwmapi.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
+#endif
 
 #include <fstream>
 #include <unicode/ucsdet.h>   // CharsetDetector
@@ -46,11 +48,15 @@ int App::minor_version = 3;
 int App::patch_version = 6;
 
 
-const float M_PI = 3.141592653589793238; // nice
+#ifndef M_PI
+const float M_PI = 3.141592653589793238f; // nice
+#endif
 
 std::vector<Widget*> App::all_widgets = {};
 
+#ifdef _WIN32
 HWND App::window_handle = nullptr;
+#endif
 
 bool App::darkmode = true;
 std::string App::empty = "";
@@ -110,6 +116,7 @@ bool (*App::on_scroll_event)(double xchange, double ychange) = nullptr;
 bool (*App::on_resize_event)(int width, int height) = nullptr;
 
 GLFWwindow* App::window = nullptr;
+GLFWwindow* g_main_window = nullptr;
 Widget* App::rootelement = nullptr;
 
 int App::text_padding = 5;
@@ -117,7 +124,9 @@ int App::border_width = 1;
 
 Color* App::bgcolor = MakeColor(0.5, 0.5, 0.5);
 
+#ifdef _WIN32
 WNDPROC App::originalWndProc;
+#endif
 TitleBar* App::tb = nullptr;
 
 bool App::curr_removing_panel = false;
@@ -163,6 +172,7 @@ int App::h_nb_current = 0;
 bool App::rendering_add_rect = false;
 bool App::rendering_rem_rect = false;
 
+#ifdef _WIN32
 static void EnablePerMonitorDpiAwareness() {
 	HMODULE user32 = GetModuleHandleW(L"user32.dll");
 	if (user32) {
@@ -203,6 +213,7 @@ static bool rectOnAnyMonitorWorkArea(const RECT& r) {
 	EnumDisplayMonitors(nullptr, nullptr, enumProc, reinterpret_cast<LPARAM>(&ctx));
 	return ctx.hit;
 }
+#endif
 
 void restoreWindowPosAndSize(GLFWwindow* window, SettingsManager* settings, int screenWidth, int screenHeight) {
 	int w = settings->getValue("window_width", 1200);
@@ -211,11 +222,13 @@ void restoreWindowPosAndSize(GLFWwindow* window, SettingsManager* settings, int 
 	int x = settings->getValue("window_x", screenWidth / 2 - w / 2);
 	int y = settings->getValue("window_y", screenHeight / 2 - h / 2);
 	
+#ifdef _WIN32
 	RECT winRect{ x, y, x + w, y + h };
 	if (!rectOnAnyMonitorWorkArea(winRect)) {
 		x = screenWidth/2-w/2;
 		y = screenHeight/2-h/2;
 	}
+#endif
 	
 	glfwSetWindowSize(window, w, h);
 	glfwSetWindowPos(window, x, y);
@@ -271,7 +284,9 @@ bool App::Init() {
 	WINDOW_WIDTH = settings->getValue("window_width", 1200);
 	WINDOW_HEIGHT = settings->getValue("window_height", 800);
 	
+#ifdef _WIN32
 	EnablePerMonitorDpiAwareness();
+#endif
 	
 	if (!glfwInit()) {
 		std::cerr << "Failed to initialize GLFW\n";
@@ -284,6 +299,7 @@ bool App::Init() {
 	glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
 	
 	window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE.c_str(), nullptr, nullptr);
+	g_main_window = window;
 	
 	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 
@@ -360,7 +376,7 @@ bool App::Init() {
 	};
 	
 	TextRenderer::set_font_size(settings->getValue("font_size", 23.0f));
-	std::string default_font_path = getExecutableDir()+"\\cascadia\\CascadiaCode-Regular.ttf";
+	std::string default_font_path = getExecutableDir()+"/cascadia/CascadiaCode-Regular.ttf";
 	std::string font_path = settings->getValue("font_path", default_font_path);
 	
 	bool success = TextRenderer::init_font(font_path.c_str()); // Or whatever .ttf you have
@@ -378,6 +394,7 @@ bool App::Init() {
 	tb->exempt_from_parent_for_cursor = true;
 	toastBox = new Toast(nullptr);
 	
+#ifdef _WIN32
 	// Now grab the HWND and force a resize border
 	window_handle = glfwGetWin32Window(window);
 
@@ -401,6 +418,7 @@ bool App::Init() {
 
 	// Force Windows to re-evaluate the non-client area:
 	SetWindowPos(window_handle, nullptr, 0,0,0,0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_FRAMECHANGED);
+#endif
 	
 	lastTime = glfwGetTime();
 	
@@ -417,7 +435,7 @@ bool App::Init() {
 	
 	// app icon
 	
-	auto pth_str = getExecutableDir()+"\\app.png";
+	auto pth_str = getExecutableDir()+"/app.png";
 	auto pth = pth_str.c_str();
 
 	GLFWimage icon;
@@ -460,9 +478,7 @@ bool App::Init() {
 }
 
 void App::updateTransparency(bool transparent) {
-	// 1) Make sure window is NOT layered via glfwSetWindowOpacity.
-	//    Keep glfwSetWindowOpacity(window, 1.0f) and use your per-pixel alpha instead.
-	
+#ifdef _WIN32
 	HMODULE hUser = GetModuleHandleW(L"user32.dll");
 	if (!hUser) return;
 
@@ -473,12 +489,7 @@ void App::updateTransparency(bool transparent) {
 
 	ACCENT_POLICY accent = {};
 	if (transparent) {
-		// Plain blur:
 		accent.accentState = ACCENT_ENABLE_BLURBEHIND;
-
-		// Or, for stronger Win10-style acrylic:
-		// accent.accentState = ACCENT_ENABLE_ACRYLICBLURBEHIND;
-		// accent.gradientColor = 0xCC000000; // AARRGGBB tint (here: semi-transparent black)
 	} else {
 		accent.accentState = ACCENT_DISABLED;
 	}
@@ -489,6 +500,7 @@ void App::updateTransparency(bool transparent) {
 	data.SizeOfData= sizeof(accent);
 
 	setWCA(window_handle, &data);
+#endif
 }
 
 void App::checkForUpdates() {
@@ -556,71 +568,56 @@ void App::nada_panel() {
 	curr_adding_panel = false;
 }
 
+#ifdef _WIN32
 LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
 		case WM_NCHITTEST: {
-			// Define hit test areas (titlebar, resize borders, etc.)
 			POINT pt = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
 			ScreenToClient(hwnd, &pt);
 			
-			// Get window dimensions
 			RECT rect;
 			GetClientRect(hwnd, &rect);
 			int windowWidth = rect.right - rect.left;
 			int windowHeight = rect.bottom - rect.top;
 			
-			// Define border thickness for resize areas (only for windowed mode)
 			const int BORDER_THICKNESS = 8;
 			
 			bool isZoomed = IsZoomed(hwnd);
 			
-			// Check for titlebar area first (works for both maximized and windowed)
 			if ((pt.y > BORDER_THICKNESS || isZoomed) && pt.y < tb->t_h && tb->is_out_of_child(pt.x)) {
-				return HTCAPTION; // Makes it draggable
+				return HTCAPTION;
 			}
 			
-			// Skip resize border hit testing when maximized/fullscreen
 			if (isZoomed) {
-				return HTCLIENT; // Everything else is client area when maximized
+				return HTCLIENT;
 			}
 			
-			// Check for corner resize areas first (they take priority)
-			// Top-left corner
 			if (pt.x < BORDER_THICKNESS && pt.y < BORDER_THICKNESS) {
 				return HTTOPLEFT;
 			}
-			// Top-right corner
 			if (pt.x > windowWidth - BORDER_THICKNESS && pt.y < BORDER_THICKNESS) {
 				return HTTOPRIGHT;
 			}
-			// Bottom-left corner
 			if (pt.x < BORDER_THICKNESS && pt.y > windowHeight - BORDER_THICKNESS) {
 				return HTBOTTOMLEFT;
 			}
-			// Bottom-right corner
 			if (pt.x > windowWidth - BORDER_THICKNESS && pt.y > windowHeight - BORDER_THICKNESS) {
 				return HTBOTTOMRIGHT;
 			}
 			
-			// Check for edge resize areas
-			// Left edge
 			if (pt.x < BORDER_THICKNESS) {
 				return HTLEFT;
 			}
-			// Right edge
 			if (pt.x > windowWidth - BORDER_THICKNESS) {
 				return HTRIGHT;
 			}
-			// Top edge
 			if (pt.y < BORDER_THICKNESS) {
 				return HTTOP;
 			}
-			// Bottom edge
 			if (pt.y > windowHeight - BORDER_THICKNESS) {
 				return HTBOTTOM;
 			}
 			
-			// Default to client area
 			return HTCLIENT;
 		}
 		
@@ -632,12 +629,10 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 		}
 
 		case WM_SETCURSOR: {
-			// Skip custom cursor handling when maximized/fullscreen
 			if (IsZoomed(hwnd)) {
 				return CallWindowProc(originalWndProc, hwnd, uMsg, wParam, lParam);
 			}
 			
-			// LOWORD(lParam) is the hit test code the system last determined
 			WORD ht = LOWORD(lParam);
 			HCURSOR hCur = nullptr;
 			switch (ht) {
@@ -665,38 +660,30 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 			mi.cbSize = sizeof(mi);
 			GetMonitorInfoW(hm, &mi);
 		
-			// Work area is the monitor minus taskbar/docked bars.
 			const RECT& rcWork = mi.rcWork;
 			const RECT& rcMon  = mi.rcMonitor;
 		
-			// ptMaxPosition is RELATIVE TO THE MONITOR (not virtual desktop).
 			mmi->ptMaxPosition.x = rcWork.left - rcMon.left;
 			mmi->ptMaxPosition.y = rcWork.top  - rcMon.top;
 		
 			mmi->ptMaxSize.x = rcWork.right  - rcWork.left;
 			mmi->ptMaxSize.y = rcWork.bottom - rcWork.top;
 		
-			// Optional but often helps prevent “extra” stretching:
 			mmi->ptMaxTrackSize = mmi->ptMaxSize;
 			return 0;
 		}case WM_MOVING: {
 		}case WM_SIZING: {
-			// Let Windows do its thing first
 			CallWindowProc(originalWndProc, hwnd, uMsg, wParam, lParam);
 		
-			// lParam is a RECT* for the new window position
 			RECT* rc = reinterpret_cast<RECT*>(lParam);
 			int newW = rc->right  - rc->left;
 			int newH = rc->bottom - rc->top;
 		
-			// Force our OpenGL viewport and projection to update
 			App::resize_callback(App::window, newW, newH);
 			InvalidateRect(hwnd, NULL, FALSE);
 		
-			// Consume the message
 			return TRUE;
 		}case WM_DPICHANGED: {
-			// Windows tells you the correct new window rect in lParam
 			const RECT* suggested = reinterpret_cast<const RECT*>(lParam);
 			SetWindowPos(hwnd, NULL,
 				suggested->left,
@@ -710,12 +697,13 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 			ScreenToClient(hwnd, &pt);
 			InvalidateRect(hwnd, NULL, FALSE); 
 			App::cursor_position_callback(window, pt.x, pt.y);
-			return 0; // Or break to let default processing happen
+			return 0;
 		}
 	}
 	
 	return CallWindowProc(originalWndProc, hwnd, uMsg, wParam, lParam);
 }
+#endif
 
 auto drawCorner = [](float cx, float cy, float startAngle, float endAngle, int segments, double radius) {
 	glBegin(GL_TRIANGLE_FAN);
@@ -1151,27 +1139,30 @@ void App::deleteWidget(Widget* w) {
 	
 	while (true) {
 		bool foundOne = false;
+		std::vector<int> newIndices;
 		for (int i = 0; i < all_widgets.size(); i++) {
-			bool doFind = true;
+			bool alreadyInToDelete = false;
 			for (int w_indx : toDelete) {
 				if (i == w_indx) {
-					doFind = false;
+					alreadyInToDelete = true;
 					break;
 				}
 			}
-			if (!doFind) {
+			if (alreadyInToDelete) {
 				continue;
 			}
 			for (int w_indx : toDelete) {
 				if (all_widgets[i]->const_parent == all_widgets[w_indx]) {
 					foundOne = true;
-					toDelete.push_back(i);
+					newIndices.push_back(i);
+					break;
 				}
 			}
 		}
 		if (!foundOne) {
 			break;
 		}
+		toDelete.insert(toDelete.end(), newIndices.begin(), newIndices.end());
 	}
 	
 	std::sort(toDelete.begin(), toDelete.end(), std::greater<int>());
@@ -1184,12 +1175,17 @@ void App::deleteWidget(Widget* w) {
 	
 	for (int i : toDelete) {
 		Widget* wDelete = all_widgets[i];
-		all_widgets.erase(all_widgets.begin()+i);
-		
 		if (wDelete->before_self_close) {
 			wDelete->before_self_close();
 		}
-		
+	}
+
+  for (int i : toDelete) {
+		Widget* wDelete = all_widgets[i];
+		if (wDelete == activeLeafNode) {
+			activeLeafNode = nullptr;
+		}
+    all_widgets.erase(all_widgets.begin()+i);
 		delete wDelete;
 	}
 }
@@ -1576,7 +1572,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		settings->setValue("font_size", new_v);
 		
 		TextRenderer::set_font_size(new_v);
-		std::string default_font_path = getExecutableDir()+"\\cascadia\\CascadiaCode-Regular.ttf";
+		std::string default_font_path = getExecutableDir()+"/cascadia/CascadiaCode-Regular.ttf";
 		std::string font_path = App::settings->getValue("font_path", default_font_path);
 		bool success = TextRenderer::init_font(font_path.c_str());
 		
@@ -1595,7 +1591,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		settings->setValue("font_size", new_v);
 		
 		TextRenderer::set_font_size(new_v);
-		std::string default_font_path = getExecutableDir()+"\\cascadia\\CascadiaCode-Regular.ttf";
+		std::string default_font_path = getExecutableDir()+"/cascadia/CascadiaCode-Regular.ttf";
 		std::string font_path = App::settings->getValue("font_path", default_font_path);
 		bool success = TextRenderer::init_font(font_path.c_str());
 		
@@ -1761,14 +1757,20 @@ void App::min_button() {
 
 void App::win_button() {
 	rerender = true;
+#ifdef _WIN32
 	HWND hwnd = glfwGetWin32Window(window);
 	if (IsZoomed(hwnd)) {
-		// already maximized -> restore
 		ShowWindow(hwnd, SW_RESTORE);
 	} else {
-		// not maximized -> maximize
 		ShowWindow(hwnd, SW_MAXIMIZE);
 	}
+#else
+	if (glfwGetWindowAttrib(window, GLFW_MAXIMIZED)) {
+		glfwRestoreWindow(window);
+	} else {
+		glfwMaximizeWindow(window);
+	}
+#endif
 }
 
 void App::commandUnfocused() {
@@ -1902,7 +1904,11 @@ void App::executeCommandPaletteAction() {
 				str.toUTF8String(mes);
 				
 				std::string folder = settings->getValue("current_folder", getExecutableDir());
-				launchCommandNonBlocking("cd /d "+folder+" && git add . && git commit -m \""+mes+"\" && git push");
+#ifdef _WIN32
+				launchCommandNonBlocking("cd /d \""+folder+"\" && git add . && git commit -m \""+mes+"\" && git push");
+#else
+				launchCommandNonBlocking("cd \""+folder+"\" && git add . && git commit -m \""+mes+"\" && git push");
+#endif
 			};
 			REQUESTING_STRING = true;
 			STRING_REQUEST_TEXTEDIT->setFullText(icu::UnicodeString());
@@ -1914,9 +1920,14 @@ void App::executeCommandPaletteAction() {
 			setActiveLeafNode(STRING_REQUEST_TEXTEDIT);
 		}else if (filepath == ":Git Pull") {
 			std::string folder = settings->getValue("current_folder", getExecutableDir());
-			launchCommandNonBlocking("cd /d "+folder+" && git pull");
+#ifdef _WIN32
+			launchCommandNonBlocking("cd /d \""+folder+"\" && git pull");
+#else
+			launchCommandNonBlocking("cd \""+folder+"\" && git pull");
+#endif
 		}else if (filepath == ":Git Force Pull") {
 			std::string folder = settings->getValue("current_folder", getExecutableDir());
+#ifdef _WIN32
 			launchCommandNonBlocking(
 				"pushd \"" + folder + "\" && "
 				"git merge --abort 2>nul & git rebase --abort 2>nul & git cherry-pick --abort 2>nul & "
@@ -1924,6 +1935,14 @@ void App::executeCommandPaletteAction() {
 				"git reset --hard @{u} && "
 				"popd"
 			);
+#else
+			launchCommandNonBlocking(
+				"cd \"" + folder + "\" && "
+				"git merge --abort 2>/dev/null; git rebase --abort 2>/dev/null; git cherry-pick --abort 2>/dev/null; "
+				"git fetch --prune origin && "
+				"git reset --hard @{u}"
+			);
+#endif
 		}else if (filepath == ":Help") {
 			MoveWidget(helpMenu, rootelement);
 		}else if (filepath == ":Save Theme Settings To File") {
@@ -1999,7 +2018,7 @@ void App::executeCommandPaletteAction() {
 		}else if (filepath == ":Restart Language Servers (LSPs)") {
 			restartLSPs();
 		}else if (filepath == ":Open `languages.json` file") {
-			std::string path = settings->getLocalAppDataPath() + "\\CodeWizard\\languages.json";
+			std::string path = settings->getLocalAppDataPath() + "/CodeWizard/languages.json";
 			openFromCMD(path, "languages.json");
 			displayToast(icu::UnicodeString::fromUTF8("Remember to reopen CodeWizard after making changes."));
 		}else if (filepath == ":Run FixIt (Spaces to Tabs)") {
@@ -2054,35 +2073,37 @@ void App::openFromCMD(std::string filepath, std::string filename, int line) {
 	finfo->filepath = filepath;
 	finfo->filename = filename;
 	
-	if (auto edtr = dynamic_cast<Editor*>(rootelement->fileOpen(filepath))) { // first check if *an* editor currently has it open
+	auto openInEditor = [&](Editor* edtr) {
 		if (line != -1) {
 			edtr->fileOpenRequested(finfo, line, 0, line, 0);
 		}else{
 			edtr->fileOpenRequested(finfo);
 		}
-	}else if (auto edtr = dynamic_cast<Editor*>(beforeCommandLeafNode)) { // then did we just come from an editor?
-		if (line != -1) {
-			edtr->fileOpenRequested(finfo, line, 0, line, 0);
-		}else{
-			edtr->fileOpenRequested(finfo);
+	};
+	
+	if (auto edtr = dynamic_cast<Editor*>(rootelement->fileOpen(filepath))) {
+		openInEditor(edtr);
+		return;
+	}
+	
+	if (beforeCommandLeafNode && rootelement->widgetexists(beforeCommandLeafNode)) {
+		if (auto edtr = dynamic_cast<Editor*>(beforeCommandLeafNode)) {
+			openInEditor(edtr);
+			return;
 		}
-	}else if (auto edtr = dynamic_cast<Editor*>(activeEditor)) {
-		if (line != -1) {
-			edtr->fileOpenRequested(finfo, line, 0, line, 0);
-		}else{
-			edtr->fileOpenRequested(finfo);
+	}
+	
+	if (activeEditor && rootelement->widgetexists(activeEditor)) {
+		if (auto edtr = dynamic_cast<Editor*>(activeEditor)) {
+			openInEditor(edtr);
+			return;
 		}
-	}else {
-		Widget* wdgt = rootelement->getFirstEditor();
+	}
+	
+	if (Widget* wdgt = rootelement->getFirstEditor()) {
 		if (auto edtr = dynamic_cast<Editor*>(wdgt)) {
-			if (line != -1) {
-				edtr->fileOpenRequested(finfo, line, 0, line, 0);
-			}else{
-				edtr->fileOpenRequested(finfo);
-			}
-		}else{
-			std::cout << "Fuck. Just fuck." << std::endl;
-			// we have no choice in this matter (there is no open editor on which we can call.)
+			openInEditor(edtr);
+			return;
 		}
 	}
 }
@@ -2601,29 +2622,33 @@ void App::launchCommandNonBlocking(const std::string& command) {
 		}
 		return;
 	}
-	
-	
-	
-	// Build the full parameter string: "/k \"your command\""
+
+#ifdef _WIN32
 	std::string params = "/k \"" + command + "\"";
-
-	// Launch cmd.exe in a new console window
 	HINSTANCE result = ShellExecuteA(
-		/*hwnd=*/       NULL,
-		/*operation=*/  "open",
-		/*file=*/       "C:\\Windows\\System32\\cmd.exe",
-		/*parameters=*/ params.c_str(),
-		/*directory=*/  NULL,
-		/*show cmd=*/   SW_SHOW
+		NULL, "open", "C:\\Windows\\System32\\cmd.exe",
+		params.c_str(), NULL, SW_SHOW
 	);
-
-	// Error check: return value > 32 indicates success
 	if ((INT_PTR)result <= 32) {
 		throw std::runtime_error(
 			"Failed to launch cmd.exe (error code " +
 			std::to_string((INT_PTR)result) + ")"
 		);
 	}
+#else
+	std::string escaped;
+	for (char c : command) {
+		if (c == '\'') escaped += "'\\''";
+		else escaped += c;
+	}
+	std::string full_cmd = "x-terminal-emulator -e 'bash -c \"" + escaped + "; exec bash\"' 2>/dev/null || "
+		"gnome-terminal -- bash -c '\"" + escaped + "; exec bash\"' 2>/dev/null || "
+		"xterm -e 'bash -c \"" + escaped + "; exec bash\"' &";
+	int ret = system(full_cmd.c_str());
+	if (ret == -1) {
+		throw std::runtime_error("Failed to launch terminal");
+	}
+#endif
 }
 
 void searchTheseFiles(const std::string& st, std::vector<std::string> files, SearchResult* res) {

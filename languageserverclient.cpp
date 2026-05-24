@@ -14,6 +14,7 @@
 #endif
 
 #include <algorithm>
+#include <cctype>
 
 // Global variables (keeping same structure as original)
 std::string langID;
@@ -45,7 +46,7 @@ bool alreadyDoneShutdownLoop = false;
 bool failedToStart = false;
 int initializeRequestId = -999;
 
-// 1) helpers at top of the .cpp
+#ifdef _WIN32
 static std::wstring Utf8ToWide(const std::string& s) {
 	if (s.empty()) return {};
 	int n = MultiByteToWideChar(CP_UTF8, 0, s.data(), (int)s.size(), nullptr, 0);
@@ -67,10 +68,7 @@ static std::wstring QuoteIfNeeded(const std::wstring& s) {
 	out.push_back(L'"');
 	return out;
 }
-
-// 2) in ProcessImpl (types already map to W with UNICODE, so keep them)
-PROCESS_INFORMATION piProcInfo{};
-STARTUPINFOW siStartInfo{};   // <-- ensure W
+#endif
 
 // Process implementation
 class Process::ProcessImpl {
@@ -202,13 +200,13 @@ bool Process::start(const std::string& program, const std::vector<std::string>& 
 	
 	if (impl->pid == 0) {
 		// Child process
-		close(impl->stdin_pipe[1]);
-		close(impl->stdout_pipe[0]);
+		::close(impl->stdin_pipe[1]);
+		::close(impl->stdout_pipe[0]);
 		dup2(impl->stdin_pipe[0], STDIN_FILENO);
 		dup2(impl->stdout_pipe[1], STDOUT_FILENO);
 		dup2(impl->stdout_pipe[1], STDERR_FILENO);
-		close(impl->stdin_pipe[0]);
-		close(impl->stdout_pipe[1]);
+		::close(impl->stdin_pipe[0]);
+		::close(impl->stdout_pipe[1]);
 
 		std::vector<char*> args;
 		args.push_back(const_cast<char*>(program.c_str()));
@@ -221,8 +219,8 @@ bool Process::start(const std::string& program, const std::vector<std::string>& 
 		exit(1);
 	} else {
 		// Parent process
-		close(impl->stdin_pipe[0]);
-		close(impl->stdout_pipe[1]);
+		::close(impl->stdin_pipe[0]);
+		::close(impl->stdout_pipe[1]);
 		
 		// Make stdout non-blocking
 		int flags = fcntl(impl->stdout_pipe[0], F_GETFL, 0);
@@ -287,7 +285,7 @@ void Process::terminate() {
 	}
 #else
 	if (impl->pid > 0) {
-		kill(impl->pid, SIGTERM);
+		::kill(impl->pid, SIGTERM);
 	}
 #endif
 }

@@ -17,8 +17,10 @@
 #include "panel_holder.h"
 #include "text_renderer.h"
 
+#ifdef _WIN32
 #include <Windows.h>
 #include <delayimp.h>
+#endif
 
 
 //static FARPROC WINAPI DelayHook(unsigned dliNotify, PDelayLoadInfo info) {
@@ -300,6 +302,8 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
+#ifdef _WIN32
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
 	return main(__argc, __argv);
 }
+#endif

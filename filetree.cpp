@@ -13,8 +13,8 @@ FileTree::FileTree(Widget* parent) : Widget(parent) {
 	
 	openpaths = { App::settings->getValue("current_folder", getExecutableDir()) };
 	
-	folderIcon = prepareTexture(getExecutableDir()+"\\folderIcon.png");
-	fileIcon = prepareTexture(getExecutableDir()+"\\fileIcon.png");
+	folderIcon = prepareTexture(getExecutableDir()+"/folderIcon.png");
+	fileIcon = prepareTexture(getExecutableDir()+"/fileIcon.png");
 }
 
 GLuint FileTree::prepareTexture(std::string imagepath) {

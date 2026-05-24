@@ -5,7 +5,9 @@
 #include <chrono>
 #include <cmath>
 
+#ifndef M_PI
 const double M_PI = 3.141592653589793238;
+#endif
 
 long double getTime() {
 	auto now = std::chrono::system_clock::now();
@@ -194,10 +196,12 @@ void Asteroids::position(int winx, int winy, int winw, int winh) {
 			
 			if (dist < astDst) {
 				if (a->size > 2) {
+					double ax = a->x, ay = a->y;
+					int asize = a->size;
 					for (int k = 0; k < 3; k++) {
 						Asteroid ast = {
-							(distrib(gen)-50)/3000.0 + a->x, (distrib(gen)-50)/3000.0 + a->y, distrib(gen)/(100.0 / (2 * M_PI)),
-							((distrib(gen)+100)/300.0) * a->size,
+							(distrib(gen)-50)/3000.0 + ax, (distrib(gen)-50)/3000.0 + ay, distrib(gen)/(100.0 / (2 * M_PI)),
+							((distrib(gen)+100)/300.0) * asize,
 							(int)(distrib(gen)/30),
 							((distrib(gen)-50)/8.0) * (double)TextRenderer::get_text_height(), // this is pixels/second
 							((distrib(gen)-50)/8.0) * (double)TextRenderer::get_text_height(),

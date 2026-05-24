@@ -1,24 +1,44 @@
 #pragma once
 
+#ifdef _WIN32
 #include <corecrt_io.h>
+#include <process.h>
+#include <windows.h>
+#else
+#include <unistd.h>
+#include <string>
+#include <GLFW/glfw3.h>
+
+extern GLFWwindow* g_main_window;
+
+static std::string GetClipboardText() {
+	const char* text = glfwGetClipboardString(g_main_window);
+	return text ? std::string(text) : "";
+}
+
+static void SetClipboardText(const std::string& text) {
+	glfwSetClipboardString(g_main_window, text.c_str());
+}
+#endif
+
+#include <cstdlib>
+#include <cmath>
 #include <functional>
 #include <iostream>
-#include <process.h>
+#include <iomanip>
 #include <vector>
 #include "unicode/unistr.h"
 #include <unicode/unum.h>
-#include <windows.h>
 #include <filesystem>
 #include <sstream>
 #include <fstream>
 #include <map>
 #include <array>
-#include <codecvt>
 #include <locale>
-#include <filesystem>
 #include <string>
 #include <cstdio>
 #include <system_error>
+#include <algorithm>
 
 using SearchFileKey  = std::pair<std::string, std::string>;
 using SearchMatch    = std::pair<int, std::string>;
@@ -164,6 +184,7 @@ static icu::UnicodeString replaceWith(const icu::UnicodeString base, const icu::
 	return result;
 }
 
+#ifdef _WIN32
 static std::string GetClipboardText() {
 	if (!OpenClipboard(nullptr)) return "";
 
@@ -212,11 +233,20 @@ static void SetClipboardText(const std::string& text) {
 		GlobalFree(hGlob); // clean up if clipboard open fails
 	}
 }
+#endif
 
 static std::string getExecutablePath() {
+#ifdef _WIN32
 	char path[MAX_PATH];
 	GetModuleFileNameA(NULL, path, MAX_PATH);
 	return std::string(path);
+#else
+	std::string path(4096, '\0');
+	ssize_t len = readlink("/proc/self/exe", path.data(), path.size());
+	if (len == -1) return "";
+	path.resize(len);
+	return path;
+#endif
 }
 
 static std::string getExecutableDir() {
@@ -924,10 +954,16 @@ static bool URISEqual(std::string u1, std::string u2) {
 	return areSameFile(f1_p, f2_p);
 }
 
+#ifdef _WIN32
 static std::wstring widen(const std::string& s) {
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> conv;
-	return conv.from_bytes(s);
+	if (s.empty()) return {};
+	int len = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, nullptr, 0);
+	if (len <= 0) return {};
+	std::wstring wstr(len - 1, L'\0');
+	MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, wstr.data(), len);
+	return wstr;
 }
+#endif
 
 inline bool atomicWriteReplace(const std::filesystem::path& target,
 							   const std::string& bytes,
@@ -956,6 +992,7 @@ inline bool atomicWriteReplace(const std::filesystem::path& target,
 		std::fclose(f);
 	}
 
+#ifdef _WIN32
 	std::wstring wtmp = widen(tmp.string());
 	std::wstring wdst = widen(target.string());
 	if (!ReplaceFileW(wdst.c_str(), wtmp.c_str(), nullptr,
@@ -968,6 +1005,14 @@ inline bool atomicWriteReplace(const std::filesystem::path& target,
 			return false;
 		}
 	}
+#else
+	std::filesystem::rename(tmp, target, ec);
+	if (ec) {
+		if (err) *err = "rename failed: " + ec.message();
+		std::filesystem::remove(tmp, ec);
+		return false;
+	}
+#endif
 	
 	return true;
 }

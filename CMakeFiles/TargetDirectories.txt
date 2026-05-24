@@ -1,0 +1,16 @@
+/home/adamj/Documents/C/CodeWizard2/CMakeFiles/libvterm.dir
+/home/adamj/Documents/C/CodeWizard2/CMakeFiles/CodeWizard.dir
+/home/adamj/Documents/C/CodeWizard2/CMakeFiles/edit_cache.dir
+/home/adamj/Documents/C/CodeWizard2/CMakeFiles/rebuild_cache.dir
+/home/adamj/Documents/C/CodeWizard2/CMakeFiles/list_install_components.dir
+/home/adamj/Documents/C/CodeWizard2/CMakeFiles/install.dir
+/home/adamj/Documents/C/CodeWizard2/CMakeFiles/install/local.dir
+/home/adamj/Documents/C/CodeWizard2/CMakeFiles/install/strip.dir
+/home/adamj/Documents/C/CodeWizard2/_deps/sioclient-build/CMakeFiles/sioclient.dir
+/home/adamj/Documents/C/CodeWizard2/_deps/sioclient-build/CMakeFiles/sioclient_tls.dir
+/home/adamj/Documents/C/CodeWizard2/_deps/sioclient-build/CMakeFiles/edit_cache.dir
+/home/adamj/Documents/C/CodeWizard2/_deps/sioclient-build/CMakeFiles/rebuild_cache.dir
+/home/adamj/Documents/C/CodeWizard2/_deps/sioclient-build/CMakeFiles/list_install_components.dir
+/home/adamj/Documents/C/CodeWizard2/_deps/sioclient-build/CMakeFiles/install.dir
+/home/adamj/Documents/C/CodeWizard2/_deps/sioclient-build/CMakeFiles/install/local.dir
+/home/adamj/Documents/C/CodeWizard2/_deps/sioclient-build/CMakeFiles/install/strip.dir

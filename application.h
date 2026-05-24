@@ -5,31 +5,22 @@
 #include <atomic>
 #include <functional>
 
-#ifndef _WIN64
-#define _WIN64
-#endif
-#ifndef _M_X64
-#define _M_X64
-#endif
-#ifndef _AMD64_
-#define _AMD64_
-#endif
-
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #define _WIN32_WINNT 0x0A00
-
-#include <GLFW/glfw3.h>
 #include <minwindef.h>
-#include <string>
-#include <vector>
 #include <windef.h>
 #include <winuser.h>
+#include <dwmapi.h>
+#endif
+
+#include <GLFW/glfw3.h>
+#include <string>
+#include <vector>
 #include "helper_types.h"
 #include "titlebar.h"
 #include "widget.h"
 #include <mutex>
-
-#include <dwmapi.h>
 
 #ifndef GL_COMBINE
 #define GL_COMBINE              0x8570
@@ -46,6 +37,7 @@
 #define GL_PREVIOUS             0x8578
 #endif
 
+#ifdef _WIN32
 enum ACCENT_STATE {
 	ACCENT_DISABLED                  = 0,
 	ACCENT_ENABLE_GRADIENT           = 1,
@@ -78,6 +70,7 @@ struct WINDOWCOMPOSITIONATTRIBDATA {
 
 using pfnSetWindowCompositionAttribute =
 	BOOL (WINAPI*)(HWND, WINDOWCOMPOSITIONATTRIBDATA*);
+#endif
 
 struct StoredSearch {
 	std::string path;
@@ -105,7 +98,9 @@ public:
 	using UpdateFInfoFunction = std::function<void(Widget*, FileInfo*)>;
 	using StringGivenFunc = std::function<void(icu::UnicodeString)>;
 	
+#ifdef _WIN32
 	static HWND window_handle;
+#endif
 	
 	static int major_version;
 	static int minor_version;
@@ -234,8 +229,10 @@ public:
 	static Color* bgcolor;
 	
 	static TitleBar *tb;
+#ifdef _WIN32
 	static LRESULT CALLBACK CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	static WNDPROC originalWndProc;
+#endif
 	
 	static void min_button();
 	static void win_button();

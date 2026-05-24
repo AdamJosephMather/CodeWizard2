@@ -1,0 +1,2 @@
+cmake -S . -B build -DCMAKE_PREFIX_PATH=/home/adamj/Documents/C/vcpkg/installed/x64-linux
+cmake --build build

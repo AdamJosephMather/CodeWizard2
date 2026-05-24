@@ -353,10 +353,6 @@ std::vector<std::pair<int,icu::UnicodeString>> Compare::calculateDifferences(con
 		
 		int d = direction[x][y];
 		
-		std::string l1, l2;
-		t1[x-1].toUTF8String(l1);
-		t2[y-1].toUTF8String(l2);
-		
 		if (d == 2) {
 			x -= 1;
 			y -= 1;

@@ -29,8 +29,16 @@ project(CodeWizard)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Set the icon file
-set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/resources.rc")
+
+# adress sanitization on linux?
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+
+
+# Set the icon file (Windows only)
+if(WIN32)
+	set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/resources.rc")
+endif()
 
 if (MSVC)
 	add_compile_options(/wd4244 /wd4305 /wd4267)
@@ -83,8 +91,10 @@ target_include_directories(libvterm PUBLIC
 )
 
 add_definitions(-DNOMINMAX)
-# Windows needs these for ConPTY APIs
-add_definitions(-D_WIN32_WINNT=0x0A00 -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE)
+if(WIN32)
+	# Windows needs these for ConPTY APIs
+	add_definitions(-D_WIN32_WINNT=0x0A00 -DNTDDI_VERSION=0x0A000008 -DUNICODE -D_UNICODE)
+endif()
 
 
 add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_renderer.cpp application.cpp widget.cpp button.cpp titlebar.cpp panel_holder.cpp widgetchooser.cpp editor.cpp filetree.cpp tabs.cpp settings.cpp codeedit.cpp linenumbers.cpp textedit.cpp highlighter.cpp tinyfiledialogs.c brokenstatemenu.cpp checkbox.cpp settingsmanager.cpp languageserverclient.cpp listbox.cpp imageview.cpp compare.cpp curler.cpp toast.cpp chat.cpp label.cpp myrect.cpp lspdebug.cpp terminal.cpp terminalwidget.cpp terminalwidgettabbed.cpp helpmenu.cpp scrollbar.cpp updatechecker.cpp contextmenu.cpp scrollnotify.cpp mathwindow.cpp asteroids.cpp md4c.c )
@@ -97,6 +107,7 @@ add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_render
 
 # Use vcpkg-provided GLFW and ICU
 find_package(glfw3 CONFIG REQUIRED)
+find_package(OpenGL REQUIRED)
 find_package(ICU   REQUIRED COMPONENTS uc i18n data)  # must list each component :contentReference[oaicite:0]{index=0}
 find_package(Freetype REQUIRED)
 find_package(CURL CONFIG REQUIRED)
@@ -107,7 +118,7 @@ find_package(OpenSSL REQUIRED)
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE
 	glfw
-	opengl32
+	OpenGL::GL
 	ICU::uc            # core Unicode (formerly icuuc) :contentReference[oaicite:1]{index=1}
 	ICU::i18n          # internationalization (formerly icui18n)
 	ICU::data          # ICU data blobs (formerly icudata)
@@ -119,17 +130,19 @@ target_link_libraries(${PROJECT_NAME}
 	OpenSSL::Crypto
 )
 
-target_link_libraries(${PROJECT_NAME}
-	PRIVATE
-	
-	# ${TORCH_LIBRARIES}
-	# tokenizers_cpp
-	
-	ole32
-	shell32
-	strsafe
-	dwmapi
-)
+if(WIN32)
+	target_link_libraries(${PROJECT_NAME}
+		PRIVATE
+		
+		# ${TORCH_LIBRARIES}
+		# tokenizers_cpp
+		
+		ole32
+		shell32
+		strsafe
+		dwmapi
+	)
+endif()
 
 if (MSVC)
 	target_compile_options(${PROJECT_NAME} PRIVATE /bigobj)

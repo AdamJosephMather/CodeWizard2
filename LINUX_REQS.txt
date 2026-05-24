@@ -1,0 +1,1 @@
+Zenity must be installed for file/folder selection dialogs to work (tinyfiledialogs uses it as its GUI backend on Linux).

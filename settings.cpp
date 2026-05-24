@@ -94,7 +94,7 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 		makeString(
 			"Font Path",
 			"font_path",
-			getExecutableDir()+"\\cascadia\\CascadiaCode-Regular.ttf"
+			getExecutableDir()+"/cascadia/CascadiaCode-Regular.ttf"
 		),
 		makeString(
 			"Tint Color",
@@ -555,7 +555,7 @@ bool Settings::validate_input(SettingsFloat* el) {
 		}
 		
 		TextRenderer::set_font_size(el->value);
-		std::string default_font_path = getExecutableDir()+"\\cascadia\\CascadiaCode-Regular.ttf";
+		std::string default_font_path = getExecutableDir()+"/cascadia/CascadiaCode-Regular.ttf";
 		std::string font_path = App::settings->getValue("font_path", default_font_path);
 		bool success = TextRenderer::init_font(font_path.c_str());
 		

@@ -1,8 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/adamj/Documents/C/CodeWizard2/cmake_install.cmake",
-		"/home/adamj/Documents/C/CodeWizard2/_deps/sioclient-build/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

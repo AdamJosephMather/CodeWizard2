@@ -1,3 +1,0 @@
-/home/adamj/Documents/C/CodeWizard2/_deps/libvterm_src-subbuild/CMakeFiles/libvterm_src-populate.dir
-/home/adamj/Documents/C/CodeWizard2/_deps/libvterm_src-subbuild/CMakeFiles/edit_cache.dir
-/home/adamj/Documents/C/CodeWizard2/_deps/libvterm_src-subbuild/CMakeFiles/rebuild_cache.dir

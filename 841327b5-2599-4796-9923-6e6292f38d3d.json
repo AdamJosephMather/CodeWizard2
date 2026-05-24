@@ -1,0 +1,6 @@
+{
+	"LSPs": {
+		"language_name_here": "clangd --compile-commands-dir=/home/adamj/Documents/C/CodeWizard2/build"
+	},
+	"build_command": "cd \"/home/adamj/Documents/C/CodeWizard2\" && cat LINUX_BUILD.txt | bash"
+}

@@ -10,9 +10,17 @@ TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 	
 	before_self_close = [&](){
 		term->stop();
-		std::cout << "Initiating instant UI close...";
-		reset_client();
-		std::cout << "UI is free!";
+		ASSISTANT_V3_ID = "";
+		if (ajm_asv3_client) {
+			ajm_asv3_client->clear_socket_listeners();
+			ajm_asv3_client->clear_con_listeners();
+			std::thread([old_client = ajm_asv3_client]() {
+				if (old_client->opened()) {
+					old_client->sync_close();
+				}
+			}).detach();
+			ajm_asv3_client.reset();
+		}
 	};
 	
 	ajm_asv3_tm = new CheckBox(nullptr, [&](CheckBox* c, int,int,int,int){

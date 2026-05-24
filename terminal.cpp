@@ -151,6 +151,19 @@ void Terminal::stop() {
 		m_hPC = nullptr;
 	}
 #else
+	// Kill child first so the slave PTY is closed,
+	// which causes read() on the master to return EIO/EOF
+	// and the reader thread to wake up and exit.
+	if (m_childPid > 0) {
+		::kill(m_childPid, SIGTERM);
+		int wstatus;
+		if (::waitpid(m_childPid, &wstatus, WNOHANG) == 0) {
+			::kill(m_childPid, SIGKILL);
+			::waitpid(m_childPid, nullptr, WNOHANG);
+		}
+		m_childPid = -1;
+	}
+
 	if (m_masterFd >= 0) {
 		::close(m_masterFd);
 		m_masterFd = -1;
@@ -158,12 +171,6 @@ void Terminal::stop() {
 
 	if (m_reader.joinable()) {
 		m_reader.join();
-	}
-
-	if (m_childPid > 0) {
-		::kill(m_childPid, SIGTERM);
-		::waitpid(m_childPid, nullptr, 0);
-		m_childPid = -1;
 	}
 #endif
 

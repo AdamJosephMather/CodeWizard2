@@ -22,23 +22,28 @@ struct DrawLine : Drawable {
 
 struct DataType {
 	bool scatter = false;
-	std::vector<double> x;
-	std::vector<double> y;
-	Button* scatterButton;
-	Button* removeButton;
+	std::vector<double> x = {};
+	std::vector<double> y = {};
+	Button* scatterButton = nullptr;
+	Button* removeButton = nullptr;
+	int id;
+	
+	std::vector<double> modified_x = {};
+	std::vector<double> modified_y = {};
+	
+	Color* c;
 	
 	virtual ~DataType() = default;
-};
-
-struct PastedData : DataType {
-	TextEdit* x_edit;
-	TextEdit* y_edit;
-};
-
-struct FileData : DataType {
+	
+	bool file = false;
+	
+	// for files
 	icu::UnicodeString filename;
 	std::string filepath;
-	Button* refresh;
+	
+	// for non files
+	TextEdit* x_edit = nullptr;
+	TextEdit* y_edit = nullptr;
 };
 
 class GraphWindow : public Widget {
@@ -49,16 +54,23 @@ public:
 	
 	bool on_mouse_button_event(int button, int action, int mods) override;
 	bool on_mouse_move_event() override;
+	bool on_scroll_event(double xchange, double ychange) override;
 	void position(int x, int y, int w, int h) override;
 	
 	void executeAction(WidgetActionType typ) override;
 private:
 	std::vector<Color*> colorsList;
 	std::vector<std::unique_ptr<Drawable>> drawables = {};
-	std::vector<std::unique_ptr<DataType>> allData = {};
+	std::vector<DataType> allData = {};
 	
 	void setColors();
+	void addThing(bool isfile, std::string filepath="");
+	void updateInfoFor(int id);
 	void recalculateDrawables();
+	void recalculateDisplayedValues();
+	std::vector<double> getVals(icu::UnicodeString text, bool& allgood);
+	
+	std::vector<std::filesystem::path> get_files_in_directory(const std::filesystem::path& dir_path);
 	
 	std::pair<int,int> fromScaledToPixels(double x, double y);
 	std::pair<double,double> fromPixelsToScaled(int x, int y);
@@ -69,9 +81,18 @@ private:
 	double ymax = 10;
 	
 	Button* reset;
+	Button* addCords;
+	Button* addFile;
+	Button* addFolder;
+	TextEdit* averageText;
 	
 	int screenHeight = 0;
 	int screenStart = 0;
+	
+	int id_glob = 0;
+	int EXISTING_VAL = 0;
+	
+	int TOTAL_ITEM_HEIGHT = 0;
 	
 	double scroll = 0;
 	

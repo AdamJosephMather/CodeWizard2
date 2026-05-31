@@ -1543,14 +1543,14 @@ bool TextEdit::handleUserKey(int key, int scancode, int action, int mods) {
 			mode = 'i';
 			vim_repeater = 0;
 			HandleOverlappingCursors();
-      ignoringChar = 'i';
+	  ignoringChar = 'i';
 			return true;
 		}else if (key == GLFW_KEY_N) {
 			mode = 'i';
 			vim_repeater = 0;
 			applyMoveToAllCursors(GLFW_KEY_RIGHT, is_shift_held, false);
 			HandleOverlappingCursors();
-      ignoringChar = 'n';
+	  ignoringChar = 'n';
 			return true;
 		}
 
@@ -1611,7 +1611,7 @@ bool TextEdit::on_char_event(unsigned int codepoint) {
 		}
 
 		if ((char)std::tolower(ch) == ignoringChar || wasmode == 'n') {
-      ignoringChar = '\0';
+	  ignoringChar = '\0';
 			return true;
 		}
 

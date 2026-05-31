@@ -7,6 +7,7 @@
 #include "editor.h"
 #include "lspdebug.h"
 #include "mathwindow.h"
+#include "graphwindow.h"
 #include "terminalwidgettabbed.h"
 #include "widgetchooser.h"
 #include "settings.h"
@@ -344,6 +345,8 @@ void PanelHolder::setState(nlohmann::json state) {
 			new MathWindow(this);
 		}else if (c == "Asteroids"){
 			new Asteroids(this);
+		}else if (c == "GraphWindow"){
+			new GraphWindow(this);
 		}else { // any unknown, or editor
 			new Editor(this);
 		}
@@ -381,6 +384,8 @@ nlohmann::json PanelHolder::saveConfiguration() {
 			thisitm["children"][i] = "MathWindow";
 		}else if (auto pe = dynamic_cast<Asteroids*>(c)){
 			thisitm["children"][i] = "Asteroids";
+		}else if (auto pe = dynamic_cast<GraphWindow*>(c)){
+			thisitm["children"][i] = "GraphWindow";
 		}else {
 			thisitm["children"][i] = "Ehhhhh";
 		}

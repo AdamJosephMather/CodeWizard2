@@ -9,7 +9,8 @@
 enum WidgetActionType {
 	RESTART_LSP,
 	AJM_SETTINGS_CHANGE,
-	SETTINGS_CHANGE
+	SETTINGS_CHANGE,
+	THEME_CALCULATED
 };
 
 class Widget {

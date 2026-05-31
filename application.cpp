@@ -45,7 +45,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 3;
-int App::patch_version = 7;
+int App::patch_version = 8;
 
 
 #ifndef M_PI
@@ -813,6 +813,20 @@ void App::DrawCircle(int x, int y, int radius, int segments, Color* color) {
 			glVertex2f(vx, vy);
 		}
 	glEnd();
+}
+
+void App::DrawLine(float x1, float y1, float x2, float y2, float width, Color* color) {
+	glLineWidth(width);
+
+	// Set the color
+	glColor4f(color->r, color->g, color->b, color->a);
+
+	glBegin(GL_LINES);
+		glVertex2f(x1, y1);
+		glVertex2f(x2, y2);
+	glEnd();
+
+	glLineWidth(1.0f);
 }
 
 void App::DrawX(double x, double y, double w, double h, double thickness, Color* color) {
@@ -2809,6 +2823,8 @@ void App::updateFromTintColor(Theme* t) {
 		setTintedColor(t->tint_color, t->overlay_background_color, 0.8);
 		setTintedColor(t->tint_color, t->lesser_text_color,        0.4);
 	}
+	
+	rootelement->executeAction(WidgetActionType::THEME_CALCULATED);
 }
 
 void App::displayToast(icu::UnicodeString text) {

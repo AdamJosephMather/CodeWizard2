@@ -213,6 +213,7 @@ public:
 	static void DrawRect(int x, int y, int w, int h, Color* color);
 	static void DrawRect(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b);
 	static void DrawCircle(int x, int y, int radius, int segments, Color* color);
+	static void DrawLine(float x1, float y1, float x2, float y2, float width, Color* color);
 	static void DrawX(double x, double y, double w, double h, double thickness, Color* color);
 	static void DrawPlus(double x, double y, double w, double h, double thickness, Color* color);
 	static void DrawMinus(double x, double y, double w, double h, double thickness, Color* color);

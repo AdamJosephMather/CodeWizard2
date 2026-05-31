@@ -1,7 +1,6 @@
 #pragma once
 
 #include "button.h"
-#include "helper_types.h"
 #include "widget.h"
 #include <GLFW/glfw3.h>
 
@@ -27,4 +26,5 @@ private:
 	Button *b7;
 	Button *b8;
 	Button *b9;
+	Button *b10;
 };

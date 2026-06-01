@@ -453,7 +453,9 @@ bool GraphWindow::on_scroll_event(double xchange, double ychange) {
 			ymin -= changeBy;
 			ymax += changeBy;
 		}
-	}else if (App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart+screenHeight && App::mouseY <= t_h){
+		
+		return true;
+	}else if (App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart+screenHeight && App::mouseY <= t_h+t_y){
 		scroll += ychange * 6 * TextRenderer::get_text_height();
 		
 		int maxScroll = allData.size() * (TOTAL_ITEM_HEIGHT+App::text_padding);
@@ -463,9 +465,11 @@ bool GraphWindow::on_scroll_event(double xchange, double ychange) {
 		}else if (scroll > maxScroll) {
 			scroll = maxScroll;
 		}
+		
+		return true;
 	}
 	
-	return true;
+	return false;
 }
 
 void GraphWindow::recalculateDisplayedValues() {

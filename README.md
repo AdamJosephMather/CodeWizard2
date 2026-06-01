@@ -20,6 +20,7 @@ Ever seen Asteroids inside a code editor, with no plugins? I didn't think so.
 <img width="2256" height="1432" alt="image" src="https://github.com/user-attachments/assets/b85e5d30-b86b-41e6-99cf-8cf50edf1828" />
 <img width="2256" height="1432" alt="image" src="https://github.com/user-attachments/assets/32000715-f6c2-4342-bde7-104236f3d9da" />
 <img width="2256" height="1432" alt="image" src="https://github.com/user-attachments/assets/63df446e-5361-40cf-94f7-4e239e03c65e" />
+<img width="2256" height="1432" alt="image" src="https://github.com/user-attachments/assets/1e04443f-6276-43c3-bb4b-b31bf703463b" />
 
 
 
@@ -35,6 +36,7 @@ CodeWizard2 uses `widgets`, of which we have:
 7. Terminal
 8. Math Window
 9. Asteroids
+10. Graph Window
 
 ## Quick Note
 

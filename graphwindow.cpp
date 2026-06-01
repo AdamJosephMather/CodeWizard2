@@ -79,7 +79,7 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 	addFolder->rounded = true;
 	
 	averageText = new TextEdit(this, [=](Widget* t){
-		t->t_x = addFolder->t_x+addFolder->t_w+App::text_padding*2+TextRenderer::get_text_width(4);
+		t->t_x = addFolder->t_x+addFolder->t_w+App::text_padding+TextRenderer::get_text_width(4);
 		t->t_y = addFile->t_y;
 		t->t_w = TextRenderer::get_text_width(20);
 		t->t_h = TextRenderer::get_text_height()+2*App::text_padding;
@@ -263,7 +263,7 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 			}
 		}
 		
-		recalculateDrawables();
+		recalculateDrawables(false);
 	});
 	remBut->border = true;
 	remBut->rounded = true;
@@ -284,7 +284,7 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 				
 				allData[i].scatter = !allData[i].scatter;
 				
-				recalculateDrawables();
+				recalculateDrawables(false);
 				break;
 			}
 		}
@@ -300,15 +300,15 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 		TextEdit* yed;
 		
 		xed = new TextEdit(this, [=](Widget* t){
-			t->t_x = remBut->t_x;
+			t->t_x = remBut->t_x + 2*App::text_padding + TextRenderer::get_text_width(2);
 			t->t_y = remBut->t_y+remBut->t_h+App::text_padding;
-			t->t_w = t_w - 6*App::text_padding;
+			t->t_w = t_w - 8*App::text_padding - TextRenderer::get_text_width(2);
 			t->t_h = TextRenderer::get_text_height()+2*App::text_padding;
 		});
 		xed->rounded = true;
 		xed->border = true;
 		yed = new TextEdit(this, [=](Widget* t){
-			t->t_x = remBut->t_x;
+			t->t_x = xed->t_x;
 			t->t_y = xed->t_y+xed->t_h+App::text_padding;
 			t->t_w = xed->t_w;
 			t->t_h = xed->t_h;
@@ -334,6 +334,16 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 	if (isfile) {
 		recalculateDrawables();
 	}
+}
+
+bool GraphWindow::on_key_event(int key, int scancode, int action, int mods) {
+	if (App::activeLeafNode == averageText && key == GLFW_KEY_ENTER) {
+		if (action == GLFW_PRESS) {
+			recalculateDrawables(false);
+		}
+		return true;
+	}
+	return Widget::on_key_event(key, scancode, action, mods);
 }
 
 std::vector<double> GraphWindow::getVals(icu::UnicodeString text, bool& allgood) {
@@ -427,14 +437,22 @@ bool GraphWindow::on_scroll_event(double xchange, double ychange) {
 	int widths = t_w-2*App::text_padding;
 	int startX = t_x+App::text_padding;
 	
+	bool isShiftDown = (glfwGetKey(App::window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) || (glfwGetKey(App::window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS);
+	
 	if (App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart && App::mouseY <= screenStart+screenHeight) {
-		double changeBy = (xmax-xmin)*0.1 * ychange;
+		double changeBy = (xmax-xmin)*0.1 * xchange; // always affect x by ychange. But, also affect it by xchange
 		xmin -= changeBy;
 		xmax += changeBy;
 		
-		changeBy = (ymax-ymin)*0.01 * ychange;
-		ymin -= changeBy;
-		ymax += changeBy;
+		changeBy = (xmax-xmin)*0.1 * ychange;
+		xmin -= changeBy;
+		xmax += changeBy;
+		
+		if (!isShiftDown) {
+			changeBy = (ymax-ymin)*0.1 * ychange;
+			ymin -= changeBy;
+			ymax += changeBy;
+		}
 	}else if (App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart+screenHeight && App::mouseY <= t_h){
 		scroll += ychange * 6 * TextRenderer::get_text_height();
 		
@@ -465,7 +483,7 @@ void GraphWindow::recalculateDisplayedValues() {
 	}
 	
 	for (int i = 0; i < allData.size(); i++) {
-		if (avVal <= 1) {
+		if (avVal <= 1 || allData[i].scatter) {
 			allData[i].modified_x = allData[i].x;
 			allData[i].modified_y = allData[i].y;
 			continue;
@@ -514,17 +532,19 @@ void GraphWindow::recalculateDisplayedValues() {
 	}
 }
 
-void GraphWindow::recalculateDrawables() {
+void GraphWindow::recalculateDrawables(bool changeEm) {
 	drawables.clear();
 	
 	recalculateDisplayedValues();
 	
-	bool setFirst = true;
+	bool setFirst = changeEm;
 	
-	xmin = -10;
-	xmax = 10;
-	ymin = -10;
-	ymax = 10;
+	if (changeEm) {
+		xmin = -10;
+		xmax = 10;
+		ymin = -10;
+		ymax = 10;
+	}
 	
 	for (size_t i = 0; i < allData.size(); i++) {
 		if (allData[i].modified_x.size() != allData[i].modified_y.size()) {
@@ -536,24 +556,26 @@ void GraphWindow::recalculateDrawables() {
 			double x = allData[i].modified_x[j];
 			double y = allData[i].modified_y[j];
 			
-			if (setFirst) {
-				xmin = x;
-				xmax = x;
-				ymin = y;
-				ymax = y;
-				setFirst = false;
-			}
-			if (xmin > x) {
-				xmin = x;
-			}
-			if (xmax < x) {
-				xmax = x;
-			}
-			if (ymin > y) {
-				ymin = y;
-			}
-			if (ymax < y) {
-				ymax = y;
+			if (changeEm) {
+				if (setFirst) {
+					xmin = x;
+					xmax = x;
+					ymin = y;
+					ymax = y;
+					setFirst = false;
+				}
+				if (xmin > x) {
+					xmin = x;
+				}
+				if (xmax < x) {
+					xmax = x;
+				}
+				if (ymin > y) {
+					ymin = y;
+				}
+				if (ymax < y) {
+					ymax = y;
+				}
 			}
 			
 			if (allData[i].scatter) {
@@ -574,22 +596,24 @@ void GraphWindow::recalculateDrawables() {
 		}
 	}
 	
-	if (xmin == xmax) {
-		xmin -= 1;
-		xmax += 1;
-	}else{
-		double changeBy = (xmax-xmin)*0.1;
-		xmin -= changeBy;
-		xmax += changeBy;
-	}
-	
-	if (ymin == ymax) {
-		ymin -= 1;
-		ymax += 1;
-	}else{
-		double changeBy = (ymax-ymin)*0.1;
-		ymin -= changeBy;
-		ymax += changeBy;
+	if (changeEm) {
+		if (xmin == xmax) {
+			xmin -= 1;
+			xmax += 1;
+		}else{
+			double changeBy = (xmax-xmin)*0.1;
+			xmin -= changeBy;
+			xmax += changeBy;
+		}
+		
+		if (ymin == ymax) {
+			ymin -= 1;
+			ymax += 1;
+		}else{
+			double changeBy = (ymax-ymin)*0.1;
+			ymin -= changeBy;
+			ymax += changeBy;
+		}
 	}
 }
 
@@ -682,15 +706,17 @@ void GraphWindow::render() {
 		for (int i = 0; i < allData.size(); i++) {
 			int y = addCords->t_y+addCords->t_h+App::text_padding+(App::text_padding+TOTAL_ITEM_HEIGHT)*i;
 			
-			App::DrawRoundedRect(itemsStart, y, itemsWidth, TOTAL_ITEM_HEIGHT, App::text_padding, App::theme.main_background_color, false, 5);
+			App::DrawRoundedRect(itemsStart, y, itemsWidth, TOTAL_ITEM_HEIGHT, App::text_padding, App::theme.darker_background_color, false, 5);
 			App::DrawRoundBorder(itemsStart, y, itemsWidth, TOTAL_ITEM_HEIGHT, allData[i].c, App::text_padding, 5);
 			
 			allData[i].removeButton->render();
 			allData[i].scatterButton->render();
 			if (allData[i].x_edit) {
+				TextRenderer::draw_text(allData[i].x_edit->t_x-App::text_padding-TextRenderer::get_text_width(2), allData[i].x_edit->t_y+App::text_padding, icu::UnicodeString::fromUTF8("x:"), App::theme.main_text_color);
 				App::runWithSKIZ(allData[i].x_edit->t_x, allData[i].x_edit->t_y, allData[i].x_edit->t_w, allData[i].x_edit->t_h, [&](){
 					allData[i].x_edit->render();
 				});
+				TextRenderer::draw_text(allData[i].y_edit->t_x-App::text_padding-TextRenderer::get_text_width(2), allData[i].y_edit->t_y+App::text_padding, icu::UnicodeString::fromUTF8("y:"), App::theme.main_text_color);
 				App::runWithSKIZ(allData[i].y_edit->t_x, allData[i].y_edit->t_y, allData[i].y_edit->t_w, allData[i].y_edit->t_h, [&](){
 					allData[i].y_edit->render();
 				});
@@ -720,9 +746,15 @@ bool GraphWindow::on_mouse_button_event(int button, int action, int mods) {
 		ymax = fmax(xy1.second, xy2.second);
 		
 		selectingSquare = false;
-	}else if (!selectingSquare && action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_1) {
-		squareStartX = App::mouseX;
-		squareStartY = App::mouseY;
+		canSelect = false;
+	}else if (App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart && App::mouseY <= screenStart+screenHeight) {
+		if (!selectingSquare && action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_1) {
+			squareStartX = App::mouseX;
+			squareStartY = App::mouseY;
+			canSelect = true;
+		}else{
+			canSelect = false;
+		}
 	}
 	
 	return Widget::on_mouse_button_event(button, action, mods);
@@ -744,8 +776,9 @@ bool GraphWindow::on_mouse_move_event() {
 		ymax = fmax(xy1.second, xy2.second);
 		
 		selectingSquare = false;
-	}else if (clicking && !selectingSquare && App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart && App::mouseY <= screenStart+screenHeight) {
+	}else if (canSelect && clicking && !selectingSquare && App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart && App::mouseY <= screenStart+screenHeight) {
 		selectingSquare = true;
+		
 	}
 	
 	return Widget::on_mouse_move_event();

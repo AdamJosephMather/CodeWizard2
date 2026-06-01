@@ -55,6 +55,7 @@ public:
 	bool on_mouse_button_event(int button, int action, int mods) override;
 	bool on_mouse_move_event() override;
 	bool on_scroll_event(double xchange, double ychange) override;
+	bool on_key_event(int key, int scancode, int action, int mods) override;
 	void position(int x, int y, int w, int h) override;
 	
 	void executeAction(WidgetActionType typ) override;
@@ -66,7 +67,7 @@ private:
 	void setColors();
 	void addThing(bool isfile, std::string filepath="");
 	void updateInfoFor(int id);
-	void recalculateDrawables();
+	void recalculateDrawables(bool changeMinsMax=true);
 	void recalculateDisplayedValues();
 	std::vector<double> getVals(icu::UnicodeString text, bool& allgood);
 	
@@ -97,6 +98,7 @@ private:
 	double scroll = 0;
 	
 	bool selectingSquare = false;
+	bool canSelect = false;
 	int squareStartX = 0;
 	int squareStartY = 0;
 };

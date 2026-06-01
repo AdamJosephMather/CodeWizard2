@@ -155,6 +155,57 @@ Hold alt while clicking or pressing an arrow (or one of hjkl keys) to add anothe
 			icu::UnicodeString::fromUTF8(R":(    CodeWizard has support for AI. Specifically, after setting an AI provider, model, and key in the settings, press Alt+A to trigger an insertion at your current cursor position. Or you can then open an AI chat widget to chat with your chosen model in a window.
 
 	For the settings you must get a provider (openrouter or lmstudio for example), a key for the provider (if required), the number of lines to send to the model for completions. If you choose 'Load AI Model On Start' it will send a request to your provider on startup (ONLY DO THIS IF YOU'RE RUNNING AN OFFLINE MODEL). The non-chat completions are not supported by most providers, but lmstudio supports them.):"),
+		},{
+			icu::UnicodeString::fromUTF8("Math/Graph Windows"),
+			icu::UnicodeString::fromUTF8(R":(Math Window:
+
+	● The math window allows for multi step equasions. Variables are accepted as so: `x = 12` or `test = 12` and so on.
+
+	● The _ variable is reserved for the previous line's value. For instance:
+      ```
+      3*4 # 12
+      _+1 # returns 13
+      ```
+
+	● Exponents use the ^ symbol, like: `5*10^4` or `5.2^-3`, etc.
+
+	● Bedmas order is followed.
+
+Graphing Window:
+
+	● The graphing window allows you to view data on an xy plane. By providing the x and y values like this: `x1, x2, x3`, `y1, y2, y3`, you can view data in either a scatter or line graph.
+
+	● Furthermore, the data can be averaged with a simple moving average, but only the line graphs will be affected.
+
+	● Next, you can both type in values directly, or load them from a file (or load all files in a folder). We support these formats:
+
+	● Y only, one line:
+	```
+	y1, y2, y3, y4
+	```
+
+	● Y only, multi line:
+	```
+	y1
+	y2
+	y3
+	y4
+	```
+
+	● X and Y, two lines
+	```
+	x1, x2, x3, x4
+	y1, y2, y3, y4
+	```
+
+	● X and Y, multi line:
+	```
+	x1, y1
+	x2, y2
+	x3, y3
+	x4, y4
+	```
+):"),
 		}
 	};
 	

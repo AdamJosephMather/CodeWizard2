@@ -1032,7 +1032,7 @@ void App::DoFullRenderWithoutInput() {
 	rendering_rem_rect = false;
 	
 	expectedCursorType = -1; // must be reset every position call
-	std::lock_guard<std::mutex> lock(canMakeChanges); // this prevents separate threads (the lsp clients) from messing with shit while positioning/rendering
+	std::unique_lock<std::mutex> lock(canMakeChanges); // this prevents separate threads (the lsp clients) from messing with shit while positioning/rendering
 	
 	for (auto w : all_widgets) { // already sorted by seniority because parents are first
 		w->prepare(mouseX, mouseY); // technically the cursor checks can be off by one frame because of this being before position and not at the same time
@@ -1122,6 +1122,9 @@ void App::DoFullRenderWithoutInput() {
 	}
 	
 	glDisable(GL_SCISSOR_TEST);
+	
+	lock.unlock(); // swap takes a while (due to vsync), so we can unlock the mutex ahead of time
+	
 	glfwSwapBuffers(window);
 }
 

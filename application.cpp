@@ -976,18 +976,13 @@ void App::DrawAsteroid(int x, int y, int s, double r, Color* color, int type) {
 
 void App::DrawShip(int x, int y, int s, double r, Color* color, bool drawfire) {
 	glPushMatrix();
-
-	// Move to position and rotate
+	
 	glTranslatef(x + s / 2.0f, y + s / 2.0f, 0.0f);
 	glRotatef(r * (180.0f / 3.14159265f), 0.0f, 0.0f, 1.0f);
 	
-	// Scale the points by the size parameter
 	glScalef((float)s, (float)s, 1.0f);
-
-	// --- Draw the Thruster Fire ---
+	
 	if (drawfire) {
-		// You might want a different color for fire, like orange/yellow
-		// Or keep it the same as the ship color for a stylized look
 		glColor4f(1.0f, 0.5f, 0.0f, color->a); // Defaulting to Orange
 		
 		glBegin(GL_POLYGON);
@@ -997,8 +992,7 @@ void App::DrawShip(int x, int y, int s, double r, Color* color, bool drawfire) {
 			glVertex2f(-0.5f, -0.2f);  // Widens slightly
 		glEnd();
 	}
-
-	// --- Draw the Ship ---
+	
 	glColor4f(color->r, color->g, color->b, color->a);
 	glBegin(GL_POLYGON);
 		glVertex2f( 0.5f,  0.0f);  // Nose
@@ -1006,7 +1000,7 @@ void App::DrawShip(int x, int y, int s, double r, Color* color, bool drawfire) {
 		glVertex2f(-0.3f,  0.0f);  // Rear indent
 		glVertex2f(-0.5f, -0.4f);  // Bottom-back wing
 	glEnd();
-
+	
 	glPopMatrix();
 }
 
@@ -1128,7 +1122,6 @@ void App::DoFullRenderWithoutInput() {
 	}
 	
 	glDisable(GL_SCISSOR_TEST);
-	
 	glfwSwapBuffers(window);
 }
 

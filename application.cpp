@@ -1100,7 +1100,7 @@ void App::DoFullRenderWithoutInput() {
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // we need to overwrite everything now (rgb and a)
 	
 	if (settings->getValue("use_transparency", false)) {
-		glClearColor(bgcolor->r, bgcolor->g, bgcolor->b, 0.65f); // reduce opacity to .65
+		glClearColor(bgcolor->r, bgcolor->g, bgcolor->b, settings->getValue("opacity", 0.65f)); // reduce opacity to "opacity"
 	}else{
 		glClearColor(bgcolor->r, bgcolor->g, bgcolor->b, 1.0f);
 	}

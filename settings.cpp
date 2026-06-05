@@ -91,6 +91,11 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"use_transparency",
 			false
 		),
+		makeFloat(
+			"Transparency Mode Opacity",
+			"opacity",
+			0.65f
+		),
 		makeString(
 			"Font Path",
 			"font_path",
@@ -566,6 +571,13 @@ bool Settings::validate_input(SettingsFloat* el) {
 		if (!success) {
 			TextRenderer::init_font(default_font_path.c_str());
 		}
+	}else if (el->key_name == "opacity") {
+		if (el->value < 0 || el->value > 1) {
+			el->value = el->default_value;
+			return false;
+		}
+		
+		App::reclear = true;
 	}
 	
 	return true;

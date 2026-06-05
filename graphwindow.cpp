@@ -821,6 +821,7 @@ bool GraphWindow::on_mouse_move_event() {
 void GraphWindow::executeAction(WidgetActionType t) {
 	if (t == WidgetActionType::THEME_CALCULATED) {
 		setColors();
+		rerender = true;
 	}
 }
 

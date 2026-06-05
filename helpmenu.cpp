@@ -10,7 +10,7 @@ HelpMenu::HelpMenu(Widget* parent) : Widget(parent) {
 		b->t_h = height;
 	}, [&](Widget*){
 		App::RemoveWidgetFromParent(this);
-		App::reclear = true;
+		App::reclear = 2;
 	});
 	closebutton->text_special = 1;
 	closebutton->window_button = true;

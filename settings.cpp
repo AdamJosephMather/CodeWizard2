@@ -577,7 +577,7 @@ bool Settings::validate_input(SettingsFloat* el) {
 			return false;
 		}
 		
-		App::reclear = true;
+		App::reclear = 2;
 	}
 	
 	return true;

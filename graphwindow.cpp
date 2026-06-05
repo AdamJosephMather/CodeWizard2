@@ -643,7 +643,11 @@ std::pair<double,double> GraphWindow::fromPixelsToScaled(int x, int y) {
 }
 
 void GraphWindow::render() {
-	if (rerender || App::reclear) {
+	if (rerender) {
+		App::reclear = 2;
+	}
+	
+	if (App::reclear != 0) {
 		App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.overlay_background_color, true, 5);
 	}else{
 		App::DrawRect(t_x+App::text_padding, t_y+App::text_padding, t_w-2*App::text_padding, reset->t_h, App::theme.overlay_background_color);
@@ -666,14 +670,14 @@ void GraphWindow::render() {
 		TextRenderer::draw_text(t_x + t_w - width - App::text_padding, t_y + App::text_padding, str, App::theme.main_text_color);
 	}
 	
-	if (rerender || App::reclear) {
+	if (App::reclear != 0) {
 		App::DrawRect(startX, screenStart, widths, screenHeight, App::theme.main_background_color);
 	}
 	
 	// draw graphs here
 	
 	App::runWithSKIZ(startX, screenStart, widths, screenHeight, [&](){
-		if (!rerender && !App::reclear) {
+		if (App::reclear == 0) {
 			return;
 		}
 		
@@ -702,7 +706,7 @@ void GraphWindow::render() {
 	});
 	
 	
-	if (rerender || App::reclear) {
+	if (App::reclear != 0) {
 		App::DrawInverseRoundedRect(startX, screenStart, widths, screenHeight, App::text_padding, App::theme.overlay_background_color, 5);
 		App::DrawRoundBorder(startX, screenStart, widths, screenHeight, App::theme.border, 5, App::text_padding);
 		rerender = false;

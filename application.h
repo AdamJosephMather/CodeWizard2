@@ -119,6 +119,8 @@ public:
 	const static double SQRT_2;
 	
 	static bool darkmode;
+	static bool last_transparency_w_clear;
+	static bool reclear;
 	
 	static std::string empty;
 	static void setSynColor(Theme* t, std::string name, int id);

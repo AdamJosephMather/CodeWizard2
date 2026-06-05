@@ -422,6 +422,12 @@ void GraphWindow::updateInfoFor(int id) {
 }
 
 void GraphWindow::position(int x, int y, int w, int h) {
+	OldRenderState NEWSTATE = {x, y, w, h, reset->t_h, reset->t_y};
+	if (OLDSTATE.t_x != NEWSTATE.t_x || OLDSTATE.t_y != NEWSTATE.t_y || OLDSTATE.t_w != NEWSTATE.t_w || OLDSTATE.t_h != NEWSTATE.t_h || OLDSTATE.b_h != NEWSTATE.b_h || OLDSTATE.b_y != NEWSTATE.b_y || selectingSquare) {
+		rerender = true;
+		OLDSTATE = NEWSTATE;
+	}
+	
 	screenHeight = h*.6;
 	screenStart = reset->t_y+reset->t_h+App::text_padding;
 	
@@ -453,6 +459,8 @@ bool GraphWindow::on_scroll_event(double xchange, double ychange) {
 			ymin -= changeBy;
 			ymax += changeBy;
 		}
+		
+		rerender = true;
 		
 		return true;
 	}else if (App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart+screenHeight && App::mouseY <= t_h+t_y){
@@ -537,6 +545,7 @@ void GraphWindow::recalculateDisplayedValues() {
 }
 
 void GraphWindow::recalculateDrawables(bool changeEm) {
+	rerender = true;
 	drawables.clear();
 	
 	recalculateDisplayedValues();
@@ -634,13 +643,16 @@ std::pair<double,double> GraphWindow::fromPixelsToScaled(int x, int y) {
 }
 
 void GraphWindow::render() {
-	App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.overlay_background_color, true, 5);
+	if (rerender || App::reclear) {
+		App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.overlay_background_color, true, 5);
+	}else{
+		App::DrawRect(t_x+App::text_padding, t_y+App::text_padding, t_w-2*App::text_padding, reset->t_h, App::theme.overlay_background_color);
+	}
 	
 	reset->render();
 	
 	int widths = t_w-2*App::text_padding;
 	int startX = t_x+App::text_padding;
-	
 	
 	if (App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart && App::mouseY <= screenStart+screenHeight) {
 		auto loc = fromPixelsToScaled(App::mouseX, App::mouseY);
@@ -654,11 +666,17 @@ void GraphWindow::render() {
 		TextRenderer::draw_text(t_x + t_w - width - App::text_padding, t_y + App::text_padding, str, App::theme.main_text_color);
 	}
 	
-	App::DrawRect(startX, screenStart, widths, screenHeight, App::theme.main_background_color);
+	if (rerender || App::reclear) {
+		App::DrawRect(startX, screenStart, widths, screenHeight, App::theme.main_background_color);
+	}
 	
 	// draw graphs here
 	
 	App::runWithSKIZ(startX, screenStart, widths, screenHeight, [&](){
+		if (!rerender && !App::reclear) {
+			return;
+		}
+		
 		auto lineVals = fromScaledToPixels(0, 0);
 		
 		App::DrawLine(startX, lineVals.second, widths+startX, lineVals.second, 1, App::theme.main_text_color);
@@ -683,8 +701,12 @@ void GraphWindow::render() {
 		}
 	});
 	
-	App::DrawInverseRoundedRect(startX, screenStart, widths, screenHeight, App::text_padding, App::theme.overlay_background_color, 5);
-	App::DrawRoundBorder(startX, screenStart, widths, screenHeight, App::theme.border, 5, App::text_padding);
+	
+	if (rerender || App::reclear) {
+		App::DrawInverseRoundedRect(startX, screenStart, widths, screenHeight, App::text_padding, App::theme.overlay_background_color, 5);
+		App::DrawRoundBorder(startX, screenStart, widths, screenHeight, App::theme.border, 5, App::text_padding);
+		rerender = false;
+	}
 	
 	// now we'll draw the data panel
 	
@@ -734,6 +756,9 @@ void GraphWindow::render() {
 	
 	App::DrawInverseRoundedRect(startX, dataStart, widths, dataHeight, App::text_padding, App::theme.overlay_background_color, 5);
 	App::DrawRoundBorder(startX, dataStart, widths, dataHeight, App::theme.border, 5, App::text_padding);
+	
+	App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color, 5);
+	App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
 }
 
 bool GraphWindow::on_mouse_button_event(int button, int action, int mods) {
@@ -751,6 +776,7 @@ bool GraphWindow::on_mouse_button_event(int button, int action, int mods) {
 		
 		selectingSquare = false;
 		canSelect = false;
+		rerender = true;
 	}else if (App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart && App::mouseY <= screenStart+screenHeight) {
 		if (!selectingSquare && action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_1) {
 			squareStartX = App::mouseX;

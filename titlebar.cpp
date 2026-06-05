@@ -115,6 +115,8 @@ void TitleBar::render() {
 		return;
 	}
 	
+	App::DrawRect(0, 0, t_w, t_h, App::theme.main_background_color);
+	
 	App::SKIZ_X = 0;
 	App::SKIZ_Y = 0;
 	App::SKIZ_W = t_w;
@@ -127,6 +129,5 @@ void TitleBar::render() {
 	}
 	
 	glDisable(GL_SCISSOR_TEST);
-	App::DrawRect(0, t_h-1, t_w, 1, App::theme.main_background_color);
 	glEnable(GL_SCISSOR_TEST);
 }

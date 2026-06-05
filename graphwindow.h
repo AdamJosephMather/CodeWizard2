@@ -5,6 +5,15 @@
 #include "helper_types.h"
 #include "textedit.h"
 
+struct OldRenderState {
+	int t_x = -1;
+	int t_y = -1;
+	int t_w = -1;
+	int t_h = -1;
+	int b_h = -1;
+	int b_y = -1;
+};
+
 struct Drawable {
 	double x; // in scale
 	double y; // in scale
@@ -63,6 +72,10 @@ private:
 	std::vector<Color*> colorsList;
 	std::vector<std::unique_ptr<Drawable>> drawables = {};
 	std::vector<DataType> allData = {};
+	
+	OldRenderState OLDSTATE = {};
+	
+	bool rerender = true;
 	
 	void setColors();
 	void addThing(bool isfile, std::string filepath="");

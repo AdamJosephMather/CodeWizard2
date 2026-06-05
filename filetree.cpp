@@ -90,9 +90,6 @@ void FileTree::renderTexture(GLuint texID, int x, int y, int w, int h, Color* ba
 	// We’re doing all the "alpha compositing" in RGB, so blending can stay off
 	glDisable(GL_BLEND);
 
-	// IMPORTANT: don’t overwrite the main_text_color with white anymore
-	// glColor4f(1.0f, 1.0f, 1.0f, 1.0f);  // <-- remove this
-
 	glBegin(GL_QUADS);
 		glTexCoord2f(0.0f, 1.0f); glVertex2f(x,   y+h);
 		glTexCoord2f(1.0f, 1.0f); glVertex2f(x+w, y+h);
@@ -110,8 +107,8 @@ void FileTree::render() {
 	
 	Color* textCol;
 	for (auto itm : toRender) {
-		if (App::mouseX >= itm.x && App::mouseX <= itm.x+itm.w && App::mouseY > itm.y && App::mouseY <= itm.y+itm.h) {
-			
+		if (cursor_in_this && App::mouseX >= itm.x && App::mouseX <= itm.x+itm.w && App::mouseY > itm.y && App::mouseY <= itm.y+itm.h) {
+
 			App::DrawRoundedRect(itm.x, itm.y, itm.w, itm.h, App::text_padding, App::theme.main_text_color);
 			App::DrawRoundBorder(itm.x, itm.y, itm.w, itm.h, App::theme.border, 5, App::text_padding);
 			back_color = App::theme.main_text_color;

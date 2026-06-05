@@ -10,6 +10,7 @@ HelpMenu::HelpMenu(Widget* parent) : Widget(parent) {
 		b->t_h = height;
 	}, [&](Widget*){
 		App::RemoveWidgetFromParent(this);
+		App::reclear = true;
 	});
 	closebutton->text_special = 1;
 	closebutton->window_button = true;
@@ -38,7 +39,7 @@ HelpMenu::HelpMenu(Widget* parent) : Widget(parent) {
 CodeWizard was created by Adam Mather.):"),
 		},{
 			icu::UnicodeString::fromUTF8("Using CodeWizard"),
-			icu::UnicodeString::fromUTF8(R":(    CodeWizard is an extremely opinionated editor. Namely, most actions are handled via keyboard key combos, mouse support is limited, and it's designed to work in the way I will use it.
+			icu::UnicodeString::fromUTF8(R":(	CodeWizard is an extremely opinionated editor. Namely, most actions are handled via keyboard key combos, mouse support is limited, and it's designed to work in the way I will use it.
 
 Opening Files/Folders:
 	
@@ -60,7 +61,7 @@ Quirks:
 ):"),
 		},{
 			icu::UnicodeString::fromUTF8("Widgets"),
-			icu::UnicodeString::fromUTF8(R":(    Widgets are the gas on which CodeWizard runs. The most important widgets are the: editor, settings menu, file tree, and terminal widgets. The editor is where all code editing happens, including a tab bar (by default). The file tree is a tree constructed to match the files in your actively selected directory (see Using CodeWizard.) The terminal widget will take over the execution for your code if it's open, otherwise CodeWizard will open a Microsoft Command Prompt and run your code there. And of course the settings menu is where some of CodeWizard's settings are managed.
+			icu::UnicodeString::fromUTF8(R":(	Widgets are the gas on which CodeWizard runs. The most important widgets are the: editor, settings menu, file tree, and terminal widgets. The editor is where all code editing happens, including a tab bar (by default). The file tree is a tree constructed to match the files in your actively selected directory (see Using CodeWizard.) The terminal widget will take over the execution for your code if it's open, otherwise CodeWizard will open a Microsoft Command Prompt and run your code there. And of course the settings menu is where some of CodeWizard's settings are managed.
 
 	To open a new widget, click the '+' button in the top left of the screen, hover over where you want the new widget, and click again. (This will not work while in the help menu.)
 	
@@ -68,7 +69,7 @@ Quirks:
 ):"),
 		},{
 			icu::UnicodeString::fromUTF8("Settings"),
-			icu::UnicodeString::fromUTF8(R":(    The majority of settings are accessible via the settings widget (see 'Widgets'.) This includes editor appearance, toggling features (file tabs, etc,) and AI settings (see AI).
+			icu::UnicodeString::fromUTF8(R":(	The majority of settings are accessible via the settings widget (see 'Widgets'.) This includes editor appearance, toggling features (file tabs, etc,) and AI settings (see AI).
 
 	However, CodeWizard also stores language settings in a json file located in C:\Users\<username>\AppData\Local\CodeWizard\languages.json. This file is where you can add syntax highlighting and language servers for specific languages. By default CodeWizard comes setup for some languages, including Python, C++, Go, R, Java, JavaScript, HTML, and Rust.
 	
@@ -76,7 +77,7 @@ Quirks:
 ):"),
 		},{
 			icu::UnicodeString::fromUTF8("Languages"),
-			icu::UnicodeString::fromUTF8(R":(    Languages in CodeWizard are extensible and all configured in the languages settings (see 'Settings')
+			icu::UnicodeString::fromUTF8(R":(	Languages in CodeWizard are extensible and all configured in the languages settings (see 'Settings')
 
 CodeWizard requires a few things:
 	
@@ -152,7 +153,7 @@ Note that for most movement shortcuts ('h', 'j', 'k', 'l', '<', '>', 'a', 'w', '
 Hold alt while clicking or pressing an arrow (or one of hjkl keys) to add another cursor. When you're done with them press esc.):"),
 		},{
 			icu::UnicodeString::fromUTF8("AI"),
-			icu::UnicodeString::fromUTF8(R":(    CodeWizard has support for AI. Specifically, after setting an AI provider, model, and key in the settings, press Alt+A to trigger an insertion at your current cursor position. Or you can then open an AI chat widget to chat with your chosen model in a window.
+			icu::UnicodeString::fromUTF8(R":(	CodeWizard has support for AI. Specifically, after setting an AI provider, model, and key in the settings, press Alt+A to trigger an insertion at your current cursor position. Or you can then open an AI chat widget to chat with your chosen model in a window.
 
 	For the settings you must get a provider (openrouter or lmstudio for example), a key for the provider (if required), the number of lines to send to the model for completions. If you choose 'Load AI Model On Start' it will send a request to your provider on startup (ONLY DO THIS IF YOU'RE RUNNING AN OFFLINE MODEL). The non-chat completions are not supported by most providers, but lmstudio supports them.):"),
 		},{
@@ -162,10 +163,10 @@ Hold alt while clicking or pressing an arrow (or one of hjkl keys) to add anothe
 	● The math window allows for multi step equasions. Variables are accepted as so: `x = 12` or `test = 12` and so on.
 
 	● The _ variable is reserved for the previous line's value. For instance:
-      ```
-      3*4 # 12
-      _+1 # returns 13
-      ```
+	  ```
+	  3*4 # 12
+	  _+1 # returns 13
+	  ```
 
 	● Exponents use the ^ symbol, like: `5*10^4` or `5.2^-3`, etc.
 

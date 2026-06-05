@@ -45,7 +45,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 3;
-int App::patch_version = 8;
+int App::patch_version = 9;
 
 
 #ifndef M_PI
@@ -58,6 +58,8 @@ std::vector<Widget*> App::all_widgets = {};
 HWND App::window_handle = nullptr;
 #endif
 
+bool App::last_transparency_w_clear = false;
+bool App::reclear = true;
 bool App::darkmode = true;
 std::string App::empty = "";
 
@@ -552,18 +554,21 @@ void App::restartLSPs() {
 
 void App::adding_panel() {
 	rerender = true;
+	reclear = true;
 	curr_removing_panel = false;
 	curr_adding_panel = true;
 }
 
 void App::removing_panel() {
 	rerender = true;
+	reclear = true;
 	curr_adding_panel = false;
 	curr_removing_panel = true;
 }
 
 void App::nada_panel() {
 	rerender = true;
+	reclear = true;
 	curr_removing_panel = false;
 	curr_adding_panel = false;
 }
@@ -1005,6 +1010,10 @@ void App::DrawShip(int x, int y, int s, double r, Color* color, bool drawfire) {
 }
 
 void App::DoFullRenderWithoutInput() {
+	if (curr_adding_panel || curr_removing_panel) {
+		reclear = true;
+	}
+	
 	double currentTime = glfwGetTime();
 	frameCount++;
 	
@@ -1060,6 +1069,7 @@ void App::DoFullRenderWithoutInput() {
 	
 	//render
 	
+	
 	if (!rerender && time_till_regular == 0) {
 		if (forceWaitTime && !replaying_macro) { // we don't want to hold up operations happening over multiple frames (think highlighting out of view lines that we don't need to re-render for)
 			int time = 10;
@@ -1095,7 +1105,17 @@ void App::DoFullRenderWithoutInput() {
 		glClearColor(bgcolor->r, bgcolor->g, bgcolor->b, 1.0f);
 	}
 	
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	if (settings->getValue("use_transparency", false) != last_transparency_w_clear) {
+		reclear = true;
+	}
+	
+	
+	if (reclear) {
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		last_transparency_w_clear = settings->getValue("use_transparency", false);
+		// change reclear to false later
+	}
 	
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE); // don't let anything else touch alpha
 	
@@ -1122,6 +1142,7 @@ void App::DoFullRenderWithoutInput() {
 	}
 	
 	glDisable(GL_SCISSOR_TEST);
+	reclear = false;
 	
 	lock.unlock(); // swap takes a while (due to vsync), so we can unlock the mutex ahead of time
 	
@@ -1380,6 +1401,7 @@ void App::mouse_button_callback(GLFWwindow* window, int button, int action, int 
 			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 			RemoveWidgetFromParent(STRING_REQUEST_LABEL);
 			setActiveLeafNode(nullptr);
+			reclear = true;
 		}else{
 			return;
 		}
@@ -1470,6 +1492,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 			MoveWidget(STRING_REQUEST_LABEL, rootelement);
 			before_reps_request = activeLeafNode;
 			setActiveLeafNode(STRING_REQUEST_TEXTEDIT);
+			reclear = true;
 		}
 		return;
 	}
@@ -1497,6 +1520,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 			RemoveWidgetFromParent(STRING_REQUEST_LABEL);
 			setActiveLeafNode(nullptr);
+			reclear = true;
 			if (ON_STRING_GIVEN) {
 				ON_STRING_GIVEN(STRING_REQUEST_TEXTEDIT->getFullText());
 			}
@@ -1506,6 +1530,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 			RemoveWidgetFromParent(STRING_REQUEST_RECTANGLE);
 			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 			RemoveWidgetFromParent(STRING_REQUEST_LABEL);
+			reclear = true;
 			if (beforeCommandLeafNode && rootelement->widgetexists(beforeCommandLeafNode)){
 				setActiveLeafNode(beforeCommandLeafNode);
 			}else{
@@ -1527,6 +1552,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		curr_removing_panel = false;
 		curr_adding_panel = false;
 		rerender = true;
+		reclear = true;
 		return;
 	}if (action == GLFW_PRESS && key == GLFW_KEY_O && control && shift) {
 		std::string fldr = settings->getValue("current_folder", std::string());
@@ -1730,6 +1756,8 @@ void App::scroll_callback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 void App::resize_callback(GLFWwindow* window, int width, int height) {
+	reclear = true;
+	
 	WINDOW_WIDTH = width;
 	WINDOW_HEIGHT = height;
 	
@@ -1803,15 +1831,21 @@ void App::commandUnfocused() {
 	if (commandBox && commandBox->parent != nullptr) {
 		RemoveWidgetFromParent(commandBox);
 	}
+	
+	reclear = true;
 }
 
 void App::closeFilesList() {
+	reclear = true;
+	
 	if (filesList && filesList->parent != nullptr) {
 		RemoveWidgetFromParent(filesList);
 	}
 }
 
 void App::openFilesList() {
+	reclear = true;
+	
 	if (!filesList) { return; }
 	
 	if (filesList->parent == nullptr) {
@@ -1928,6 +1962,7 @@ void App::executeCommandPaletteAction() {
 			MoveWidget(STRING_REQUEST_TEXTEDIT, rootelement);
 			MoveWidget(STRING_REQUEST_LABEL, rootelement);
 			setActiveLeafNode(STRING_REQUEST_TEXTEDIT);
+			reclear = true;
 		}else if (filepath == ":Git Pull") {
 			std::string folder = settings->getValue("current_folder", getExecutableDir());
 #ifdef _WIN32
@@ -1955,6 +1990,7 @@ void App::executeCommandPaletteAction() {
 #endif
 		}else if (filepath == ":Help") {
 			MoveWidget(helpMenu, rootelement);
+			reclear = true;
 		}else if (filepath == ":Save Theme Settings To File") {
 			const char * fp = tinyfd_saveFileDialog(
 				"Save as?", // dialog title
@@ -2322,6 +2358,7 @@ void App::setActiveLeafNode(Widget* w) {
 		RemoveWidgetFromParent(STRING_REQUEST_RECTANGLE);
 		RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 		RemoveWidgetFromParent(STRING_REQUEST_LABEL);
+		reclear = true;
 	}
 	
 	if (w == commandPalette && activeLeafNode != commandPalette) {

@@ -141,6 +141,8 @@ void MathWindow::render() {
 		
 		cury += textH;
 	}
+	
+	App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
 }
 
 bool MathWindow::on_mouse_button_event(int button, int action, int mods) {

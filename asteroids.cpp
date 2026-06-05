@@ -145,8 +145,6 @@ void Asteroids::position(int winx, int winy, int winw, int winh) {
 			std::sin(shipr)*speed,
 		});
 		
-		App::displayText(icu::UnicodeString::fromUTF8("FIRE!"));
-		
 		lastBullet = curTime;
 	}
 	
@@ -226,6 +224,8 @@ void Asteroids::position(int winx, int winy, int winw, int winh) {
 }
 
 void Asteroids::render() {
+	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.main_background_color);
+	
 	Color* asteroid_color = App::theme.main_text_color;
 	if (!playing) {
 		asteroid_color = App::theme.hover_background_color;

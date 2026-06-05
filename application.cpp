@@ -366,12 +366,7 @@ bool App::Init() {
 	int screenWidth = mode->width;
 	int screenHeight = mode->height;
 
-//	int x = settings->getValue("window_x", screenWidth / 2 - WINDOW_WIDTH / 2);
-//	int y = settings->getValue("window_y", screenHeight / 2 - WINDOW_HEIGHT / 2);
-	
 	restoreWindowPosAndSize(window, settings, screenWidth, screenHeight);
-	
-//	glfwSetWindowPos(window, x, y);
 	
 	TextRenderer::after_font_change = [&](){
 		text_padding = std::min(TextRenderer::get_text_width(1), TextRenderer::get_text_height()) * 0.5;

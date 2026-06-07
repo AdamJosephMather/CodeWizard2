@@ -109,6 +109,8 @@ public:
 	
 	void position(int x, int y, int w, int h);
 	void render();
+	void renderExtras();
+	void renderFindBox();
 	
 	void triggerSaveAs();
 	
@@ -172,5 +174,7 @@ public:
 	
 	void setComments();
 	void removeComments();
+	
+	bool DO_RENDER = true;
 private:
 };

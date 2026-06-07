@@ -61,6 +61,7 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 		}
 		
 		scroll_vertical_change = 0;
+		DO_POSITION = true;
 	};
 	
 	scrollbar_h = new Scrollbar(this);
@@ -85,6 +86,7 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 		}
 		
 		scroll_horizontal_change = 0;
+		DO_POSITION = true;
 	};
 	scrollbar_h->horizontal = true;
 	
@@ -162,6 +164,7 @@ void TextEdit::setFullText(icu::UnicodeString text) {
 		ontextchange(this);
 	}
 	
+	DO_POSITION = true;
 	contextmenu->is_visible_2 = false;
 }
 
@@ -224,6 +227,8 @@ void TextEdit::Highlight(int first_visible_line, int last_visible_line) {
 			}
 
 			if (!line->highlightinguptodate || prev_line_info->contextStack.back().hash != line->prev_hash) {
+				DO_POSITION = true;
+				
 				auto ln = highlighter(line->line_text, *prev_line_info);
 
 				if (i >= first_visible_line && i <= last_visible_line) {
@@ -855,6 +860,7 @@ void TextEdit::insertNewCursorDown() {
 	auto nc = applyMoveToCursor(lowest, GLFW_KEY_DOWN, false, false);
 
 	cursors.push_back(nc);
+	DO_POSITION = true;
 }
 
 void TextEdit::insertNewCursorUp() {
@@ -868,6 +874,7 @@ void TextEdit::insertNewCursorUp() {
 	auto nc = applyMoveToCursor(highest, GLFW_KEY_UP, false, false);
 
 	cursors.push_back(nc);
+	DO_POSITION = true;
 }
 
 void TextEdit::HandleOverlappingCursors() {
@@ -990,6 +997,7 @@ void TextEdit::deleteTextAtCursor(Cursor c, int key, bool control) {
 	lines[el].line_text.extractBetween(ec, lines[el].line_text.length(), end);
 
 	changed_during_update = true;
+	DO_POSITION = true;
 
 	Edit e = { EditType::ChangeLine, lines[sl], sl };
 	historyThisUpdate.edits.push_back(e);
@@ -1305,6 +1313,8 @@ void TextEdit::ensureCursorVisible(Cursor c) {
 	}else if (c1+7 > end_char) {
 		scroll_horizontal_change = c1+7-end_char;
 	}
+
+	DO_POSITION = true;
 }
 
 void TextEdit::applyInsertToAllCursors(icu::UnicodeString to_insert) {
@@ -1373,6 +1383,7 @@ void TextEdit::insertTextAtCursor(Cursor c, icu::UnicodeString insert_text) {
 	end.toUTF8String(endthing);
 
 	changed_during_update = true;
+	DO_POSITION = true;
 
 	if (nl == 0) {
 		Edit e = { EditType::ChangeLine, lines[sl], sl };
@@ -1456,7 +1467,8 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 	}
 
 	if (key == GLFW_KEY_A && is_control_held) {
-		cursors = {cursors[0]}; // go ahead and get rid of all there rest.
+		DO_POSITION = true;
+		cursors = {cursors[0]};
 		cursors[0].anchor_char = 0;
 		cursors[0].anchor_line = 0;
 		cursors[0].head_line = lines.size()-1;
@@ -1478,6 +1490,7 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 	if (mode == 'n') {
 		if (key == GLFW_KEY_ESCAPE) {
 			cursors = {cursors[0]};
+			DO_POSITION = true;
 		}else if (key == GLFW_KEY_H && !is_control_held) {
 			applyMoveToAllCursors(GLFW_KEY_LEFT, is_shift_held, is_control_held);
 			return true;
@@ -1529,6 +1542,7 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 	}else{
 		if (key == GLFW_KEY_ESCAPE && !App::settings->getValue("use_vim", false)) {
 			cursors = {cursors[0]};
+			DO_POSITION = true;
 		}
 	}
 
@@ -1541,6 +1555,7 @@ bool TextEdit::handleUserKey(int key, int scancode, int action, int mods) {
 	if (mode == 'n') {
 		if (key == GLFW_KEY_I) {
 			mode = 'i';
+			DO_POSITION = true;
 			vim_repeater = 0;
 			HandleOverlappingCursors();
 	  ignoringChar = 'i';
@@ -1570,6 +1585,7 @@ bool TextEdit::handleUserKey(int key, int scancode, int action, int mods) {
 	if (mode == 'i') {
 		if (key == GLFW_KEY_ESCAPE && App::settings->getValue("use_vim", false)) {
 			mode = 'n';
+			DO_POSITION = true;
 			HandleOverlappingCursors();
 			return true;
 		}
@@ -1649,18 +1665,18 @@ void TextEdit::render() {
 	}else {
 		App::DrawRect(t_x, t_y, t_w, t_h, background_color);
 	}
-
+	
 	int curx = start_x+t_x+App::text_padding;
 	int cury = start_y+t_y+App::text_padding;
-
+	
 	for (auto cs : draw_selection) {
 		int y = TextRenderer::get_text_height()*cs.rel_line+start_y+t_y+App::text_padding;
 		
 		int sx = TextRenderer::get_text_width(cs.rel_char_start)+start_x+t_x+App::text_padding;
 		int ex = TextRenderer::get_text_width(cs.rel_char_end)+start_x+t_x+App::text_padding;
-
+		
 		int w = ex-sx;
-
+		
 		App::DrawRect(sx, y, w, TextRenderer::get_text_height(), App::theme.hover_background_color);
 	}
 
@@ -1746,6 +1762,11 @@ Color* TextEdit::getColorFromTokens(int indx, std::vector<ColoredTokens> tokens,
 }
 
 void TextEdit::position(int x, int y, int w, int h) {
+	int old_x = t_x;
+	int old_y = t_y;
+	int old_w = t_w;
+	int old_h = t_h;
+	
 	t_x = x;
 	t_y = y;
 	t_w = w;
@@ -1753,12 +1774,19 @@ void TextEdit::position(int x, int y, int w, int h) {
 	
 	POS_FUNC(this);
 	
+	if (old_x != t_x || old_y != t_y || old_w != t_w || old_h != t_h) {
+		DO_POSITION = true;
+	}
+	if (changed_during_update || scroll_vertical_change != 0 || scroll_horizontal_change != 0) {
+		DO_POSITION = true;
+	}
 	
 	max_scroll_vert = lines.size()-1;
 	max_scroll_horz = max_line_len-1;
 	
 	if (tryingToEnsureCursorPos) {
 		tryingToEnsureCursorPos = false;
+		DO_POSITION = true;
 		ensureCursorVisible(cursors[0]);
 	}
 	
@@ -1806,7 +1834,27 @@ void TextEdit::position(int x, int y, int w, int h) {
 		mode = 'i';
 	}
 	
-	// all widgets positioned, time to determine visible text
+	// let's set the cursor info
+	if (App::expectedCursorType == -1 && cursor_in_this) { // only set cursor if expected to be arrow right now
+		App::expectedCursorType = 4; // ibar
+	}
+	
+	bool active = App::activeLeafNode == this;
+	if (WAS_ACTIVE != active) {
+		DO_POSITION = true;
+		WAS_ACTIVE = active;
+	}
+	
+	if (!DO_POSITION) {
+		wasmode = mode;
+		changed_during_update = false;
+		DID_POSITION = false;
+		updateUndoHistory();
+		return;
+	}
+	
+	DID_POSITION = true;
+	DO_POSITION = false;
 	
 	draw_text.clear();
 	draw_color.clear();
@@ -1820,7 +1868,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 	start_x = -fmod(scrolled_to_horz, 1) * TextRenderer::get_text_width(1);
 	start_y = -fmod(scrolled_to_vert, 1) * TextRenderer::get_text_height();
 
-	if (char_start >= 1) { // huh? Why in the fuck.... I mean it works? (also yes, I did write this... (the code I mean))
+	if (char_start >= 1) {
 		char_start -= 1;
 		start_x -= TextRenderer::get_text_width(1);
 	}
@@ -2039,10 +2087,6 @@ void TextEdit::position(int x, int y, int w, int h) {
 	
 	changed_during_update = false;
 	updateUndoHistory();
-	
-	if (App::expectedCursorType == -1 && cursor_in_this) { // only set cursor if expected to be arrow right now
-		App::expectedCursorType = 4; // ibar
-	}
 }
 
 bool TextEdit::on_scroll_event(double xchange, double ychange) {
@@ -2057,6 +2101,7 @@ bool TextEdit::on_scroll_event(double xchange, double ychange) {
 	
 	scroll_horizontal_change += xchange*6;
 	scroll_vertical_change += ychange*6;
+	DO_POSITION = true;
 	
 	double theoretical_vert = scrolled_to_vert + scroll_vertical_change;
 	double theoretical_horz = scrolled_to_horz + scroll_horizontal_change;
@@ -2163,6 +2208,7 @@ bool TextEdit::on_mouse_button_event(int button, int action, int mods) {
 	}
 	
 	if (action == GLFW_PRESS) {
+		DO_POSITION = true;
 		Cursor crsr = getCursorForMousePosition(mx, my);
 
 		if (glfwGetKey(App::window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS || glfwGetKey(App::window, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS) {

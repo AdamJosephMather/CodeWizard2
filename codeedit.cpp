@@ -57,11 +57,13 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		App::RemoveWidgetFromParent(fixit_request_menu);
 		run_fixit();
 		REQUESTING_FIXIT = false;
+		DO_RENDER = true;
 		App::setActiveLeafNode(textedit);
 	};
 	fixit_request_menu->second_callback = [&](){
 		App::RemoveWidgetFromParent(fixit_request_menu);
 		REQUESTING_FIXIT = false;
+		DO_RENDER = true;
 		App::setActiveLeafNode(textedit);
 	};
 	fixit_request_menu->const_parent = this;
@@ -71,6 +73,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		if (renamecursor.head_line > textedit->lines.size() && renamebox->parent == this) {
 			App::RemoveWidgetFromParent(renamebox);
 			App::setActiveLeafNode(textedit);
+			DO_RENDER = true;
 			return;
 		}
 		
@@ -265,6 +268,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 			if (renamebox->parent != this){
 				App::MoveWidget(renamebox, this);
 				App::setActiveLeafNode(renamebox);
+				DO_RENDER = true;
 			}
 			renamebox->wasmode = 'n';
 			renamebox->mode = 'i';
@@ -309,6 +313,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		if (hoverbox->parent == this) {
 			App::RemoveWidgetFromParent(hoverbox);
 			hoverCrsr = Cursor();
+			DO_RENDER = true;
 		}
 		
 		if (!App::lsp_client_map[lsp] || !file || file->filepath == "") {
@@ -345,6 +350,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 			
 			if (textedit->contextmenu->is_visible_2 && hoverbox->parent == this) {
 				App::RemoveWidgetFromParent(hoverbox);
+				DO_RENDER = true;
 			}
 			
 			if (timeuntil <= 0) {
@@ -622,6 +628,7 @@ void CodeEdit::openFile(FileInfo* f) {
 	file = f; // set it after the locks are in place
 	
 	REQUESTING_FIXIT = false;
+	DO_RENDER = true;
 	if (fixit_request_menu->parent == this) {
 		App::RemoveWidgetFromParent(fixit_request_menu);
 	}
@@ -658,6 +665,7 @@ void CodeEdit::openFile(FileInfo* f) {
 		int indt = analyzeForFixit_on_lines(textedit->lines);
 		if (indt != 0) {
 			REQUESTING_FIXIT = true;
+			DO_RENDER = true;
 			App::MoveWidget(fixit_request_menu, this);
 		}
 		
@@ -716,45 +724,89 @@ int CodeEdit::indentIdentifierAfterLine(icu::UnicodeString line, icu::UnicodeStr
 	return indent_levels;
 }
 
+void CodeEdit::renderExtras() {
+	App::runWithSKIZ(completionbox->t_x, completionbox->t_y, completionbox->t_w, completionbox->t_h, [&](){
+		completionbox->render();
+	});
+	App::runWithSKIZ(errorMenu->t_x, errorMenu->t_y, errorMenu->t_w, errorMenu->t_h, [&](){
+		errorMenu->render();
+	});
+	if (showErrorsButton->parent == this) {
+		App::runWithSKIZ(showErrorsButton->t_x, showErrorsButton->t_y, showErrorsButton->t_w, showErrorsButton->t_h, [&](){
+			showErrorsButton->render();
+		});
+	}
+	if (hoverbox->parent == this) {
+		App::runWithSKIZ(hoverbox->t_x, hoverbox->t_y, hoverbox->t_w, hoverbox->t_h, [&](){
+			hoverbox->render();
+		});
+	}
+	
+	if (renamebox->parent == this) {
+		App::runWithSKIZ(renamebox->t_x, renamebox->t_y, renamebox->t_w, renamebox->t_h, [&](){
+			renamebox->render();
+		});
+	}
+}
+
+void CodeEdit::renderFindBox() {
+	if (find_menu_open) {
+		App::DrawRect(t_x, textedit->t_y + textedit->t_h + 1, t_w, t_h-textedit->t_h - 1, App::theme.extras_background_color);
+		App::DrawRect(t_x, textedit->t_y + textedit->t_h, t_w, 1, App::theme.border);
+		
+		App::runWithSKIZ(allButton->t_x, allButton->t_y, allButton->t_w, allButton->t_h, [&](){
+			allButton->render();
+		});
+		
+		App::runWithSKIZ(nextReplButton->t_x, nextReplButton->t_y, nextReplButton->t_w, nextReplButton->t_h, [&](){
+			nextReplButton->render();
+		});
+		
+		App::runWithSKIZ(replaceTextEdit->t_x, replaceTextEdit->t_y, replaceTextEdit->t_w, replaceTextEdit->t_h, [&](){
+			replaceTextEdit->render();
+		});
+		
+		App::runWithSKIZ(nextButton->t_x, nextButton->t_y, nextButton->t_w, nextButton->t_h, [&](){
+			nextButton->render();
+		});
+		
+		App::runWithSKIZ(prevButton->t_x, prevButton->t_y, prevButton->t_w, prevButton->t_h, [&](){
+			prevButton->render();
+		});
+		
+		App::runWithSKIZ(findTextEdit->t_x, findTextEdit->t_y, findTextEdit->t_w, findTextEdit->t_h, [&](){
+			findTextEdit->render();
+		});
+		App::runWithSKIZ(caseSensitivity->t_x, caseSensitivity->t_y, caseSensitivity->t_w, caseSensitivity->t_h, [&](){
+			caseSensitivity->render();
+		});
+	}
+}
+
 void CodeEdit::render() {
+	if (textedit->DID_POSITION || findTextEdit->DID_POSITION || replaceTextEdit->DID_POSITION || renamebox->DID_POSITION || hoverbox->DID_POSITION || FILE_BROKEN_STATE || REQUESTING_FIXIT) {
+		DO_RENDER = true;
+	}
+	
+	if (!DO_RENDER && App::reclear == 0) {
+		renderFindBox();
+		renderExtras();
+		// needs to happen because otherwise we don't get hovering when mouse moves this is so scuffed
+		textedit->scrollbar_h->render();
+		textedit->scrollbar_v->render();
+		textedit->contextmenu->render();
+		return;
+	}
+	DO_RENDER = false;
+	
 	if (FILE_BROKEN_STATE) {
 		// we don't need to run with skiz because this is already skizzed in that size
 		broken_state_menu->render();
 	}else if (REQUESTING_FIXIT){
 		// we don't need to run with skiz because this is already skizzed in that size
 		fixit_request_menu->render();
-	}else{
-		if (find_menu_open) {
-			App::DrawRect(t_x, textedit->t_y + textedit->t_h + 1, t_w, t_h-textedit->t_h - 1, App::theme.extras_background_color);
-			App::DrawRect(t_x, textedit->t_y + textedit->t_h, t_w, 1, App::theme.border);
-			
-			App::runWithSKIZ(allButton->t_x, allButton->t_y, allButton->t_w, allButton->t_h, [&](){
-				allButton->render();
-			});
-			
-			App::runWithSKIZ(nextReplButton->t_x, nextReplButton->t_y, nextReplButton->t_w, nextReplButton->t_h, [&](){
-				nextReplButton->render();
-			});
-			
-			App::runWithSKIZ(replaceTextEdit->t_x, replaceTextEdit->t_y, replaceTextEdit->t_w, replaceTextEdit->t_h, [&](){
-				replaceTextEdit->render();
-			});
-			
-			App::runWithSKIZ(nextButton->t_x, nextButton->t_y, nextButton->t_w, nextButton->t_h, [&](){
-				nextButton->render();
-			});
-			
-			App::runWithSKIZ(prevButton->t_x, prevButton->t_y, prevButton->t_w, prevButton->t_h, [&](){
-				prevButton->render();
-			});
-			
-			App::runWithSKIZ(findTextEdit->t_x, findTextEdit->t_y, findTextEdit->t_w, findTextEdit->t_h, [&](){
-				findTextEdit->render();
-			});
-			App::runWithSKIZ(caseSensitivity->t_x, caseSensitivity->t_y, caseSensitivity->t_w, caseSensitivity->t_h, [&](){
-				caseSensitivity->render();
-			});
-		}
+	}else {
+		renderFindBox();
 		
 		App::runWithSKIZ(line_numbers->t_x, line_numbers->t_y, line_numbers->t_w, textedit->t_h, [&](){
 			line_numbers->render();
@@ -763,28 +815,7 @@ void CodeEdit::render() {
 		App::runWithSKIZ(textedit->t_x, textedit->t_y, textedit->t_w, textedit->t_h, [&](){
 			textedit->render();
 			
-			App::runWithSKIZ(completionbox->t_x, completionbox->t_y, completionbox->t_w, completionbox->t_h, [&](){
-				completionbox->render();
-			});
-			App::runWithSKIZ(errorMenu->t_x, errorMenu->t_y, errorMenu->t_w, errorMenu->t_h, [&](){
-				errorMenu->render();
-			});
-			if (showErrorsButton->parent == this) {
-				App::runWithSKIZ(showErrorsButton->t_x, showErrorsButton->t_y, showErrorsButton->t_w, showErrorsButton->t_h, [&](){
-					showErrorsButton->render();
-				});
-			}
-			if (hoverbox->parent == this) {
-				App::runWithSKIZ(hoverbox->t_x, hoverbox->t_y, hoverbox->t_w, hoverbox->t_h, [&](){
-					hoverbox->render();
-				});
-			}
-			
-			if (renamebox->parent == this) {
-				App::runWithSKIZ(renamebox->t_x, renamebox->t_y, renamebox->t_w, renamebox->t_h, [&](){
-					renamebox->render();
-				});
-			}
+			renderExtras();
 		});
 	}
 	
@@ -846,6 +877,7 @@ void CodeEdit::position(int x, int y, int w, int h) {
 	if (App::activeLeafNode != renamebox && renamebox->parent == this) {
 		App::RemoveWidgetFromParent(renamebox);
 		App::setActiveLeafNode(textedit);
+		DO_RENDER = true;
 	}
 	if (renamebox->parent == this) {
 		renamebox->position(t_x, t_y, t_w, t_h);
@@ -901,6 +933,7 @@ void CodeEdit::triggerSaveAs() {
 
 void CodeEdit::overwrite_file() {
 	FILE_BROKEN_STATE = false;
+	DO_RENDER = true;
 	App::RemoveWidgetFromParent(broken_state_menu);
 	
 	std::error_code ec;
@@ -912,6 +945,7 @@ void CodeEdit::overwrite_file() {
 
 void CodeEdit::reload_file() {
 	FILE_BROKEN_STATE = false;
+	DO_RENDER = true;
 	App::RemoveWidgetFromParent(broken_state_menu);
 	
 	openFile(file);
@@ -931,9 +965,11 @@ void CodeEdit::save() {
 			
 			if (current != last_file_mod_time) { // some other process edited the file since we touched it
 				FILE_BROKEN_STATE = true;
+				DO_RENDER = true;
 				return;
 			}else if (!madeChangeBetweenSaves) { // we did not make any changes to the file - return early
 				FILE_BROKEN_STATE = false;
+				DO_RENDER = true;
 				if (broken_state_menu->parent == this) {
 					App::RemoveWidgetFromParent(broken_state_menu);
 				}
@@ -942,10 +978,12 @@ void CodeEdit::save() {
 		}else if (was_in_a_file) { // there's an error and we were in the file - file must have been deleted. Clever me.
 			// the file did exist, but no longer does
 			FILE_BROKEN_STATE = true;
+			DO_RENDER = true;
 			return;
 		}
 		
 		FILE_BROKEN_STATE = false;
+		DO_RENDER = true;
 		if (broken_state_menu->parent == this) {
 			App::RemoveWidgetFromParent(broken_state_menu);
 		}
@@ -1195,6 +1233,7 @@ bool CodeEdit::on_char_event(unsigned int keycode) {
 	if (App::activeLeafNode != hoverbox) {
 		if (hoverbox->parent == this) {
 			App::RemoveWidgetFromParent(hoverbox);
+			DO_RENDER = true;
 		}
 	}
 	
@@ -1315,9 +1354,11 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 			if (key == GLFW_KEY_ESCAPE) {
 				App::RemoveWidgetFromParent(renamebox);
 				App::setActiveLeafNode(textedit);
+				DO_RENDER = true;
 				return true;
 			}else if (key == GLFW_KEY_ENTER){
 				App::RemoveWidgetFromParent(renamebox);
+				DO_RENDER = true;
 				if (App::lsp_client_map[lsp]) {
 					std::string rename;
 					renamebox->getFullText().toUTF8String(rename);
@@ -1328,15 +1369,18 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 			}
 		}else if (renamebox->parent == this){
 			App::RemoveWidgetFromParent(renamebox);
+			DO_RENDER = true;
 		}
 		
 		if (App::activeLeafNode != hoverbox) {
 			if (hoverbox->parent == this && is_press && key != GLFW_KEY_LEFT_SHIFT && key != GLFW_KEY_RIGHT_SHIFT) {
 				App::RemoveWidgetFromParent(hoverbox);
+				DO_RENDER = true;
 			}
 		}else if (is_press && App::activeLeafNode == hoverbox && key == GLFW_KEY_ESCAPE && (!App::settings->getValue("use_vim", false) || hoverbox->mode == 'n')) {
 			App::setActiveLeafNode(textedit);
 			App::RemoveWidgetFromParent(hoverbox);
+			DO_RENDER = true;
 		}
 		
 		if (App::activeLeafNode == textedit) {
@@ -1352,6 +1396,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 					if (renamebox->parent != this){
 						App::MoveWidget(renamebox, this);
 						App::setActiveLeafNode(renamebox);
+						DO_RENDER = true;
 					}
 					renamebox->wasmode = 'n';
 					renamebox->mode = 'i';
@@ -1372,6 +1417,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 					return true;
 				}else if (GLFW_KEY_ESCAPE == key && action == GLFW_PRESS && (textedit->mode == 'n' || !App::settings->getValue("use_vim", false))) {
 					completionbox->is_visible_layered = false;
+					DO_RENDER = true;
 					return true;
 				}
 			}
@@ -1426,6 +1472,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 		}else if (key == GLFW_KEY_F && is_press && (control_held || (App::activeLeafNode == textedit && textedit->mode == 'n'))) {
 			// open find menu and whatnot
 			find_menu_open = true;
+			DO_RENDER = true;
 			
 			App::MoveWidget(replaceTextEdit, this); // move them back to be children.
 			App::MoveWidget(findTextEdit, this);
@@ -1450,7 +1497,9 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 			findTextEdit->cursors = { newcursor };
 			findTextEdit->wasmode = 'n'; // this is a dirty hack because otherwise we sometimes end up sending a 'f' key to the findtextedit. This way we can ignore it in the char callback
 			findTextEdit->mode = 'i';
+			findTextEdit->tryingToEnsureCursorPos = true;
 			replaceTextEdit->mode = 'i';
+			replaceTextEdit->tryingToEnsureCursorPos = true;
 			
 			App::setActiveLeafNode(findTextEdit);
 			return true;
@@ -1484,6 +1533,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 			
 			if (key == GLFW_KEY_ESCAPE && is_press && (in_normal || !App::settings->getValue("use_vim", false))) {
 				find_menu_open = false;
+				DO_RENDER = true;
 				App::RemoveWidgetFromParent(replaceTextEdit);
 				App::RemoveWidgetFromParent(findTextEdit);
 				App::RemoveWidgetFromParent(caseSensitivity);
@@ -1509,6 +1559,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 		
 		if (textedit->cursors.size() > 1 || (svdCrsr.head_char != c.head_char || svdCrsr.head_line != c.head_line || svdCrsr.anchor_char != c.anchor_char || svdCrsr.anchor_line != c.anchor_line)) {
 			completionbox->is_visible_layered = false;
+			DO_RENDER = true;
 		}
 		
 		return wrkd;
@@ -1587,12 +1638,14 @@ bool CodeEdit::on_mouse_button_event(int button, int action, int mods) {
 		
 		if (hoveringHoverbox(mx, my)) {
 			completionbox->is_visible_layered = false;
+			DO_RENDER = true;
 			return hoverbox->on_mouse_button_event(button, action, mods);
 		}
 		if (hoveringCompletionBox(mx, my)) {
 			return completionbox->on_mouse_button_event(button, action, mods);
 		}else{
 			completionbox->is_visible_layered = false;
+			DO_RENDER = true;
 		}
 		
 		if (showErrorsButton->on_mouse_button_event(button, action, mods)) {return true;} // this doesn't get first dibs because it's after the textedit in the children list
@@ -1646,6 +1699,7 @@ bool CodeEdit::on_mouse_move_event() {
 				if (d.sc-1 <= crsr.head_char && d.ec+1 >= crsr.head_char) { // introduce some leeway (or however it's spelt. Sound it out)
 					if (hoverbox->parent != this) {
 						App::MoveWidget(hoverbox, this);
+						DO_RENDER = true;
 					}
 					
 					hoverbox->setFullText(d.message);
@@ -1671,6 +1725,7 @@ bool CodeEdit::on_mouse_move_event() {
 		
 		if (hoverbox->parent == this && !hoveringHoverbox(mx, my, TextRenderer::get_text_height())) {
 			App::RemoveWidgetFromParent(hoverbox);
+			DO_RENDER = true;
 		}
 		
 		for (auto w : children) {
@@ -1716,10 +1771,12 @@ void CodeEdit::actionsReceived(int id, json resp) {
 	
 	if (els.empty()) {
 		completionbox->is_visible_layered = false;
+		DO_RENDER = true;
 		return;
 	}
 	
 	completionbox->is_visible_layered = true;
+	DO_RENDER = true;
 	completionbox->setElements(els);
 	if (els.size() >= 7) {
 		completionbox->toshow = 7;
@@ -1738,6 +1795,7 @@ void CodeEdit::completionRecieved(std::vector<std::string> completions, int rec_
 	
 	if (textedit->cursors.size() > 1) {
 		completionbox->is_visible_layered = false;
+		DO_RENDER = true;
 		return;
 	}
 	
@@ -1757,10 +1815,12 @@ void CodeEdit::completionRecieved(std::vector<std::string> completions, int rec_
 	
 	if (compld.size() == 0) {
 		completionbox->is_visible_layered = false;
+		DO_RENDER = true;
 		return;
 	}
 	
 	completionbox->is_visible_layered = true;
+	DO_RENDER = true;
 	completionbox->setElements(compld);
 	are_code_actions = false;
 //	is_chauffeur = false;
@@ -1917,6 +1977,8 @@ void CodeEdit::publishDiagnostics(std::string filename, std::vector<std::string>
 		return;
 	}
 	
+	DO_RENDER = true;
+	
 	for (int i = 0; i < textedit->lines.size(); i++) {
 		textedit->lines[i].diagnostics.clear();
 	}
@@ -2051,6 +2113,7 @@ void CodeEdit::hoverRecieved(std::string content, std::string type, int id) {
 	
 	if (hoverbox->parent != this) {
 		App::MoveWidget(hoverbox, this);
+		DO_RENDER = true;
 	}
 	
 	hoverbox->setFullText(icu::UnicodeString::fromUTF8(content));
@@ -2061,6 +2124,7 @@ void CodeEdit::hoverRecieved(std::string content, std::string type, int id) {
 		hoverbox->position(t_x, t_y, t_w, t_h);
 		App::moveMouse(hoverbox->t_x+hoverbox->t_w/2, hoverbox->t_y+hoverbox->t_h/2);
 		App::setActiveLeafNode(hoverbox);
+		DO_RENDER = true;
 	}
 }
 
@@ -2073,6 +2137,7 @@ void CodeEdit::onTextChanged(Widget* w) {
 	if (hoverbox->parent == this) {
 		App::RemoveWidgetFromParent(hoverbox);
 		hoverCrsr = Cursor();
+		DO_RENDER = true;
 	}
 	
 	if (!App::lsp_client_map[lsp] || !file || file->filepath == "") {

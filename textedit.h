@@ -208,9 +208,13 @@ public:
 	Color* background_color = App::theme.darker_background_color;
 	
 	bool DONT_SCROLL_VERT_CURS = false;
+	bool DO_POSITION = false;
+	bool WAS_ACTIVE = false;
+	bool DID_POSITION = false;
 private:
 	std::pair<int,int> _handleSectionRemoved(int l, int c, int sl, int el, int sc, int ec);
 	std::pair<int,int> _handleSectionAdded(int l, int c, int sl, int sc, int nl, int nc);
 	int _findNextWord(Cursor c, int dir);
 	int charType(UChar32 c);
+	
 };

@@ -667,7 +667,7 @@ void GraphWindow::render() {
 		
 		int width = TextRenderer::get_text_width(str.length());
 		
-		TextRenderer::draw_text(t_x + t_w - width - App::text_padding, t_y + App::text_padding, str, App::theme.main_text_color);
+		TextRenderer::draw_text(t_x + t_w - width - App::text_padding, reset->t_y + App::text_padding, str, App::theme.main_text_color);
 	}
 	
 	if (App::reclear != 0) {

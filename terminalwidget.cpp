@@ -407,12 +407,12 @@ void TerminalWidget::render() {
 		return;
 	}
 	
-	if (term->RERENDER) {
+	if (term->RERENDER || t_x != old_tx || t_y != old_ty || t_w != old_tw || t_h != old_th) {
 		term->RERENDER = false;
 		needsRerender = 2;
 	}
 	
-	if (t_x == old_tx && t_y == old_ty && t_w == old_tw && t_h == old_th && needsRerender == 0 && App::reclear == 0) {
+	if (needsRerender == 0 && App::reclear == 0) {
 		Widget::render(); // still renders the checkbox / other thing
 		return;
 	}

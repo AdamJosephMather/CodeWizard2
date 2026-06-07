@@ -175,6 +175,6 @@ public:
 	void setComments();
 	void removeComments();
 	
-	int DO_RENDER = 2;
+	int DO_RENDER = 3;
 private:
 };

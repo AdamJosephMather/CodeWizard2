@@ -114,4 +114,6 @@ private:
 	bool canSelect = false;
 	int squareStartX = 0;
 	int squareStartY = 0;
+	
+	bool moving = false;
 };

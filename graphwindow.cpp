@@ -769,7 +769,7 @@ bool GraphWindow::on_mouse_button_event(int button, int action, int mods) {
 	int widths = t_w-2*App::text_padding;
 	int startX = t_x+App::text_padding;
 	
-	if (selectingSquare && action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_1) {
+	if (selectingSquare && action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_LEFT) {
 		auto xy1 = fromPixelsToScaled(fmax(startX, fmin(App::mouseX, startX+widths)), fmax(screenStart, fmin(App::mouseY, screenStart+screenHeight)));
 		auto xy2 = fromPixelsToScaled(squareStartX, squareStartY);
 		
@@ -781,13 +781,22 @@ bool GraphWindow::on_mouse_button_event(int button, int action, int mods) {
 		selectingSquare = false;
 		canSelect = false;
 		rerender = true;
+	}else if (moving && action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_RIGHT) {
+		rerender = true;
+		moving = false;
 	}else if (App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart && App::mouseY <= screenStart+screenHeight) {
-		if (!selectingSquare && action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_1) {
+		if (!moving && !selectingSquare && action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) {
 			squareStartX = App::mouseX;
 			squareStartY = App::mouseY;
 			canSelect = true;
 		}else{
 			canSelect = false;
+		}
+		
+		if (!moving && !selectingSquare && action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_RIGHT) {
+			moving = true;
+			squareStartX = App::mouseX;
+			squareStartY = App::mouseY;
 		}
 	}
 	
@@ -813,6 +822,24 @@ bool GraphWindow::on_mouse_move_event() {
 	}else if (canSelect && clicking && !selectingSquare && App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart && App::mouseY <= screenStart+screenHeight) {
 		selectingSquare = true;
 		
+	}
+	
+	if (moving) {
+		auto scld_trgt = fromPixelsToScaled(App::mouseX, App::mouseY);
+		auto scld_crnt = fromPixelsToScaled(squareStartX, squareStartY);
+		
+		double dx = scld_crnt.first - scld_trgt.first;
+		double dy = scld_crnt.second - scld_trgt.second;
+		
+		xmin += dx;
+		xmax += dx;
+		ymin += dy;
+		ymax += dy;
+		
+		squareStartX = App::mouseX;
+		squareStartY = App::mouseY;
+		
+		rerender = true;
 	}
 	
 	return Widget::on_mouse_move_event();

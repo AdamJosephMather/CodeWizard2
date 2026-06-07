@@ -45,7 +45,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 3;
-int App::patch_version = 9;
+int App::patch_version = 10;
 
 
 #ifndef M_PI

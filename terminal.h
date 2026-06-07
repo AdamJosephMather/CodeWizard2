@@ -105,6 +105,8 @@ public:
 	bool appWantsMouse() const;
 	bool getDocWraps(int docId);
 	
+	bool RERENDER = true;
+	
 private:
 	bool initConPty();
 #ifdef _WIN32

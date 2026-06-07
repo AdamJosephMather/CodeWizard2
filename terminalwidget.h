@@ -66,4 +66,10 @@ private:
 	std::atomic<uint64_t> client_generation{0};
 	
 	std::string ASSISTANT_V3_ID = "";
+	
+	int old_tx = -1;
+	int old_ty = -1;
+	int old_tw = -1;
+	int old_th = -1;
+	bool needsRerender = true;
 };

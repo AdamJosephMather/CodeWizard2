@@ -53,7 +53,8 @@ void TerminalWidgetTabbed::position(int x, int y, int w, int h) {
 }
 
 void TerminalWidgetTabbed::render() {
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
+	App::DrawRect(t_x, t_y, t_w, tab_bar->t_h, App::theme.darker_background_color);
+	
 	App::runWithSKIZ(tab_bar->t_x, tab_bar->t_y, tab_bar->t_w, tab_bar->t_h, [&](){
 		tab_bar->render();
 	});

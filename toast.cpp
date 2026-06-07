@@ -17,6 +17,7 @@ void Toast::position(int x, int y, int width, int height) {
 		if (glfwGetTime()-time > 4) {
 			time = -1;
 			App::time_till_regular = 2;
+			App::reclear = 2;
 		}
 	}
 }
@@ -31,6 +32,7 @@ void Toast::render() {
 	if (time != -1) {
 		if (displayOffset != 0) {
 			App::time_till_regular = 2;
+			App::reclear = 2;
 		}
 		
 		displayOffset *= (1.0 - 0.1 * App::settings->getValue("anim_speed", 1.0f));
@@ -46,6 +48,7 @@ void Toast::render() {
 		TextRenderer::draw_text(x_disp+radius, t_y+t_h/2-TextRenderer::get_text_height()/2, text, App::theme.main_text_color);
 	}else if (displayOffset >= 0) {
 		App::time_till_regular = 2;
+		App::reclear = 2;
 		
 		displayOffset += ((float)t_w-displayOffset)*.1*App::settings->getValue("anim_speed", 1.0f);
 		
@@ -69,4 +72,5 @@ void Toast::displayMessage(icu::UnicodeString displ_text) {
 	displayOffset = t_w;
 	closingOpacity = 1.0;
 	App::time_till_regular = 2;
+	App::reclear = 2;
 }

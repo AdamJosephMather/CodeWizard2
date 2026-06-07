@@ -178,6 +178,8 @@ void Terminal::stop() {
 }
 
 bool Terminal::resize(int cols, int rows) {
+	RERENDER = true;
+	
 	{
 		std::lock_guard<std::mutex> lock(m_vtermMutex);
 		if (m_vt) {
@@ -493,6 +495,8 @@ void Terminal::onDamage(const VTermRect& rect) {
 	for (int r = rect.start_row; r < rect.end_row; ++r) {
 		dumpRow(r);
 	}
+	
+	RERENDER = true;
 }
 
 void Terminal::dumpRow(int r) {
@@ -512,6 +516,7 @@ void Terminal::dumpRow(int r) {
 	
 	std::fflush(stdout);
 	App::time_till_regular = std::max(App::time_till_regular, 2);
+	RERENDER = true;
 }
 
 // ============================================================================
@@ -835,6 +840,7 @@ void Terminal::scrollbackLines(int delta) {
 	if (delta == 0) return;
 	m_view_off += delta;
 	clampView();
+	RERENDER = true;
 }
 
 void Terminal::scrollbackPageUp() {
@@ -938,7 +944,9 @@ int Terminal::s_screen_damage(VTermRect rect, void* user) {
 	return 1;
 }
 
-int Terminal::s_screen_moverect(VTermRect /*dest*/, VTermRect /*src*/, void* /*user*/) {
+int Terminal::s_screen_moverect(VTermRect /*dest*/, VTermRect /*src*/, void* user) {
+	auto* self = static_cast<Terminal*>(user);
+	if (self) self->RERENDER = true;
 	return 1;
 }
 
@@ -955,6 +963,7 @@ int Terminal::s_screen_movecursor(VTermPos pos, VTermPos /*oldpos*/, int visible
 int Terminal::s_screen_settermprop(VTermProp prop, VTermValue* val, void* user) {
 	auto* self = static_cast<Terminal*>(user);
 	if (!self || !val) return 0;
+	self->RERENDER = true;
 
 	switch (prop) {
 		case VTERM_PROP_CURSORVISIBLE:

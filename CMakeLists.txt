@@ -189,6 +189,24 @@ if(MSVC AND WIN32)
 	)
 endif()
 
+# Define your source and destination paths
+set(CASCADIA_SRC_DIR "${CMAKE_SOURCE_DIR}/cascadia")
+set(CASCADIA_BUILD_DIR "$<TARGET_FILE_DIR:${PROJECT_NAME}>/cascadia")
+
+# Optional: Verify the source directory actually exists before proceeding
+if(NOT EXISTS "${CASCADIA_SRC_DIR}")
+	message(FATAL_ERROR "Cascadia directory not found at: ${CASCADIA_SRC_DIR}")
+endif()
+
+# Post-build command to copy the directory
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_directory
+			"${CASCADIA_SRC_DIR}"
+			"${CASCADIA_BUILD_DIR}"
+	COMMENT "Copying Cascadia assets to build output directory"
+	VERBATIM
+)
+
 # message(STATUS "Torch_DIR=${Torch_DIR}")
 # message(STATUS "TORCH_LIBRARIES=${TORCH_LIBRARIES}")
 

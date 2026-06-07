@@ -33,7 +33,7 @@ TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 		
 		ajm_set_asv3(send_to_asv3);
 		
-		needsRerender = true;
+		needsRerender = 2;
 	});
 	ajm_asv3_tm->const_parent = this;
 	ajm_asv3_tm->rounded = true;
@@ -55,13 +55,13 @@ TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 			clear_selection();
 		}
 		contextmenu->is_visible_2 = false;
-		needsRerender = true;
+		needsRerender = 2;
 	});
 	
 	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Paste (Ctrl+V)"), [&](Widget* w){
 		term->sendText(GetClipboardText());
 		contextmenu->is_visible_2 = false;
-		needsRerender = true;
+		needsRerender = 2;
 	});
 	
 	reset_client();
@@ -407,13 +407,17 @@ void TerminalWidget::render() {
 		return;
 	}
 	
-	if (!term->RERENDER && t_x == old_tx && t_y == old_ty && t_w == old_tw && t_h == old_th && !needsRerender && App::reclear == 0) {
+	if (term->RERENDER) {
+		term->RERENDER = false;
+		needsRerender = 2;
+	}
+	
+	if (t_x == old_tx && t_y == old_ty && t_w == old_tw && t_h == old_th && needsRerender == 0 && App::reclear == 0) {
 		Widget::render(); // still renders the checkbox / other thing
 		return;
 	}
 	
-	term->RERENDER = false;
-	needsRerender = false;
+	needsRerender -= 1;
 	
 	int row_to_use = (prev_h_cells/2);
 	int col_to_use = (prev_w_cells/2);
@@ -654,7 +658,7 @@ bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
 	if (left && !term->appWantsMouse()) {
 		if (press) {
 			contextmenu->is_visible_2 = false;
-			needsRerender = true;
+			needsRerender = 2;
 			selecting = true;
 			int doc = term->docLineIdForScreenRow(row);
 			sel_doc_r1 = doc;
@@ -716,10 +720,10 @@ bool TerminalWidget::on_mouse_move_event() {
 	
 	if (selecting && App::mouseY-TextRenderer::get_text_height()*3 < t_y) {
 		on_scroll_event(0, -(float)(t_y-App::mouseY + TextRenderer::get_text_height()*3)/TextRenderer::get_text_width(20));
-		needsRerender = true;
+		needsRerender = 2;
 	}else if (selecting && App::mouseY+TextRenderer::get_text_height()*3 > t_y+t_h) {
 		on_scroll_event(0, (float)(App::mouseY - (t_y+t_h) + TextRenderer::get_text_height()*3)/TextRenderer::get_text_width(20));
-		needsRerender = true;
+		needsRerender = 2;
 	}
 	
 	ajm_asv3_tm->on_mouse_move_event();
@@ -730,7 +734,7 @@ bool TerminalWidget::on_mouse_move_event() {
 	// Grow selection locally if app doesn't want mouse
 	if (!term->appWantsMouse()) {
 		if (selecting) {
-			needsRerender = true;
+			needsRerender = 2;
 			
 			int state = glfwGetMouseButton(App::window, GLFW_MOUSE_BUTTON_LEFT);
 			if (state != GLFW_PRESS) { selecting = false; return false; }
@@ -751,7 +755,7 @@ bool TerminalWidget::on_scroll_event(double /*xchange*/, double ychange) {
 	
 	if ((!selecting && !cursor_in_this) || !is_visible || !term || settingup) return false;
 	
-	needsRerender = true;
+	needsRerender = 2;
 	
 	int row=0, col=0;
 	cell_from_cursor(row, col);

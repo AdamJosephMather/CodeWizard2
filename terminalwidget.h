@@ -71,5 +71,5 @@ private:
 	int old_ty = -1;
 	int old_tw = -1;
 	int old_th = -1;
-	bool needsRerender = true;
+	int needsRerender = 2;
 };

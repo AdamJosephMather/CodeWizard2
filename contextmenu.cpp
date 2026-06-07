@@ -57,6 +57,11 @@ void ContextMenu::position(int x, int y, int width, int height) {
 		b->t_w = maxwidth;
 		
 		by += b->t_h+App::text_padding;
+		
+		// hate to do this a second time but we need to because button isn't sized until it is. So.
+		if (App::mouseX >= b->t_x && App::mouseX <= b->t_x+b->t_w && App::mouseY >= b->t_y && App::mouseY <= b->t_y+b->t_h) {
+			App::expectedCursorType = 3;
+		}
 	}
 	
 	t_w = maxwidth+App::text_padding*2+App::border_width*2;
@@ -68,7 +73,7 @@ void ContextMenu::position(int x, int y, int width, int height) {
 }
 
 void ContextMenu::addToMenu(icu::UnicodeString name, Button::OnClick onclick) {
-	Button* b = new Button(this, name, [&](Widget *btn, int x, int y, int av_width, int av_height, int w, int h){
+	Button* b = new Button(this, name, [&](Widget *btn, int x, int y, int av_width, int av_height, int w, int h) {
 		maxwidth = std::max(maxwidth, w);
 	}, onclick);
 	b->border = true;

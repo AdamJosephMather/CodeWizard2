@@ -73,3 +73,10 @@ bool BrokenStateMenu::on_char_event(unsigned int codepoint) {
 	
 	return true;
 }
+
+bool BrokenStateMenu::on_mouse_button_event(int button, int action, int mods) {
+	if (cursor_in_this && action == GLFW_PRESS) {
+		App::setActiveLeafNode(this);
+	}
+	return Widget::on_mouse_button_event(button, action, mods);
+}

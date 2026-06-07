@@ -18,6 +18,8 @@ void ImageView::position(int x, int y, int width, int height) {
 void ImageView::openFile(FileInfo* f) {
 	file = f;
 	
+	App::setActiveLeafNode(this);
+	
 	// Clean up any previous texture
 	if (hasTexture) {
 		glDeleteTextures(1, &texID);

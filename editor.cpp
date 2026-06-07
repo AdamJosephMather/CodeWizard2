@@ -262,9 +262,9 @@ void Editor::fileOpenRequested(FileInfo* f, int lns, int chrs, int ln, int chr) 
 		}
 	}
 	
-	if (auto ce = dynamic_cast<CodeEdit*>(editors[tab_bar->selected_id])) { // we do this cast because not all widgets have FileInfo file; variables.
-		App::setActiveLeafNode(ce->textedit);
-	}
+//	if (auto ce = dynamic_cast<CodeEdit*>(editors[tab_bar->selected_id])) { // we do this cast because not all widgets have FileInfo file; variables.
+//		App::setActiveLeafNode(ce->textedit);
+//	}
 	
 	moveto(lns, chrs, ln, chr);
 	App::commandUnfocused();

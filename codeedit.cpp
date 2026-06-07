@@ -44,11 +44,9 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	broken_state_menu = new BrokenStateMenu(nullptr, "Reload", "Overwrite", "File changed on disk.");
 	broken_state_menu->first_callback = [&](){
 		reload_file();
-		App::setActiveLeafNode(textedit);
 	};
 	broken_state_menu->second_callback = [&](){
 		overwrite_file();
-		App::setActiveLeafNode(textedit);
 	};
 	broken_state_menu->const_parent = this;
 	
@@ -633,6 +631,7 @@ void CodeEdit::openFile(FileInfo* f) {
 		App::RemoveWidgetFromParent(fixit_request_menu);
 	}
 	std::string path = file->filepath;
+	App::setActiveLeafNode(textedit);
 	
 	detectLanguage();
 	
@@ -667,6 +666,7 @@ void CodeEdit::openFile(FileInfo* f) {
 			REQUESTING_FIXIT = true;
 			DO_RENDER = 2;
 			App::MoveWidget(fixit_request_menu, this);
+			App::setActiveLeafNode(fixit_request_menu);
 		}
 		
 		if (App::lsp_client_map[lsp]) {
@@ -948,6 +948,8 @@ void CodeEdit::overwrite_file() {
 	madeChangeBetweenSaves = true;
 	was_in_a_file = false;
 	save();
+	
+	App::setActiveLeafNode(textedit);
 }
 
 void CodeEdit::reload_file() {

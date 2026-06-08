@@ -181,6 +181,7 @@ public:
 	
 	void position(int x, int y, int w, int h);
 	void render();
+	void executeAction(WidgetActionType typ);
 	void Highlight(int first_line, int last_line);
 	History createHistory();
 	
@@ -211,6 +212,8 @@ public:
 	bool DO_POSITION = false;
 	bool WAS_ACTIVE = false;
 	bool DID_POSITION = false;
+	
+	int tabWidth = 4;
 private:
 	std::pair<int,int> _handleSectionRemoved(int l, int c, int sl, int el, int sc, int ec);
 	std::pair<int,int> _handleSectionAdded(int l, int c, int sl, int sc, int nl, int nc);

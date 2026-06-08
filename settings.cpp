@@ -174,6 +174,11 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"invert_scroll_h",
 			false
 		),
+		makeInt(
+			"Tab Width",
+			"tab_width",
+			4
+		),
 		makeString(
 			"Default Terminal",
 			"terminal_cmd",
@@ -589,7 +594,13 @@ bool Settings::validate_input(SettingsInt* el) {
 			el->value = el->default_value;
 			return false;
 		}
+	}else if (el->key_name == "tab_width") {
+		if (el->value < 1 || el->value > 25) {
+			el->value = el->default_value;
+			return false;
+		}
 	}
+	
 	
 	return true;
 }
@@ -697,6 +708,9 @@ void Settings::after_change(SettingsString* el) {
 }
 
 void Settings::after_change(SettingsInt* el) {
+	if (el->key_name == "tab_width") {
+		App::rootelement->executeAction(TAB_WIDTH_CHANGE);
+	}
 }
 
 void Settings::after_change(SettingsFloat* el) {

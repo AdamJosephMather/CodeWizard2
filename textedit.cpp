@@ -128,7 +128,7 @@ int TextEdit::getVisLen(const icu::UnicodeString& line) {
 		UChar32 c = line.char32At(c_indx);
 
 		if (c == U'\t') {
-			ln += 4;
+			ln += tabWidth;
 		}else{
 			ln ++;
 		}
@@ -209,7 +209,7 @@ void TextEdit::Highlight(int first_visible_line, int last_visible_line) {
 					UChar32 c = line->line_text.char32At(c_indx);
 
 					if (c == U'\t') {
-						ln += 4;
+						ln += tabWidth;
 					}else{
 						ln ++;
 					}
@@ -777,7 +777,7 @@ int TextEdit::_mapFromRealToVisual(int line, int c) {
 		UChar32 chr = str.char32At(i);
 
 		if (chr == U'\t') {
-			visual_loc += 4;
+			visual_loc += tabWidth;
 		}else{
 			visual_loc += 1;
 		}
@@ -808,7 +808,7 @@ int TextEdit::_mapFromVisualToReal(int line, int c) {
 		int new_vis = visual_loc;
 
 		if (chr == U'\t') {
-			new_vis += 4;
+			new_vis += tabWidth;
 		}else{
 			new_vis += 1;
 		}
@@ -1761,7 +1761,16 @@ Color* TextEdit::getColorFromTokens(int indx, std::vector<ColoredTokens> tokens,
 	return retcol;
 }
 
+void TextEdit::executeAction(WidgetActionType typ) {
+	if (typ == TAB_WIDTH_CHANGE) {
+		DO_POSITION = true;
+	}
+	Widget::executeAction(typ);
+}
+
 void TextEdit::position(int x, int y, int w, int h) {
+	tabWidth = App::settings->getValue("tab_width", 4);
+	
 	int old_x = t_x;
 	int old_y = t_y;
 	int old_w = t_w;
@@ -1855,6 +1864,11 @@ void TextEdit::position(int x, int y, int w, int h) {
 	
 	DID_POSITION = true;
 	DO_POSITION = false;
+	
+	std::vector<UChar32> tabReplacementChars = {};
+	for (int i = 0; i < tabWidth; i++) {
+		tabReplacementChars.push_back(U' ');
+	}
 	
 	draw_text.clear();
 	draw_color.clear();
@@ -1999,7 +2013,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 			std::vector<UChar32> tohandle = {};
 
 			if (chr == U'\t') {
-				tohandle = {U' ', U' ', U' ', U' '};
+				tohandle = tabReplacementChars;
 			}else{
 				tohandle = {chr};
 			}

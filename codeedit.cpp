@@ -1987,6 +1987,7 @@ void CodeEdit::publishDiagnostics(std::string filename, std::vector<std::string>
 	}
 	
 	DO_RENDER = 3;
+	textedit->DO_POSITION = true;
 	
 	for (int i = 0; i < textedit->lines.size(); i++) {
 		textedit->lines[i].diagnostics.clear();

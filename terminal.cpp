@@ -940,7 +940,10 @@ bool Terminal::getDocWraps(int docId) {
 
 int Terminal::s_screen_damage(VTermRect rect, void* user) {
 	auto* self = static_cast<Terminal*>(user);
-	if (self) self->onDamage(rect);
+	if (self) {
+		self->onDamage(rect);
+		self->RERENDER = true;
+	}
 	return 1;
 }
 
@@ -956,6 +959,7 @@ int Terminal::s_screen_movecursor(VTermPos pos, VTermPos /*oldpos*/, int visible
 		self->m_cursorInfo.row = pos.row;
 		self->m_cursorInfo.col = pos.col;
 		self->m_cursorInfo.visible = (visible != 0);
+		self->RERENDER = true;
 	}
 	return 1;
 }
@@ -1006,6 +1010,7 @@ int Terminal::s_screen_resize(int rows, int cols, void* user) {
 	self->m_rows = rows;
 	self->m_cols = cols;
 	self->m_rowBuf.resize(static_cast<size_t>(cols) + 1, 0);
+	self->RERENDER = true;
 	return 1;
 }
 
@@ -1016,12 +1021,14 @@ int Terminal::s_screen_sb_pushline(int cols, const VTermScreenCell* cells, void*
 		return 1;
 	}
 	self->savePushLine(cols, cells);
+	self->RERENDER = true;
 	return 1;
 }
 
 int Terminal::s_screen_sb_popline(int cols, VTermScreenCell* cells, void* user) {
 	auto* self = static_cast<Terminal*>(user);
 	if (!self) return 1;
+	self->RERENDER = true;
 	if (self->m_altScreen.load(std::memory_order_acquire)) {
 		return 0;
 	}

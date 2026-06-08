@@ -414,11 +414,8 @@ void TerminalWidget::render() {
 	
 	if (needsRerender == 0 && App::reclear == 0) {
 		Widget::render(); // still renders the checkbox / other thing
-		std::cout << "NO RERENDER\n";
 		return;
 	}
-	
-	std::cout << "RERENDER\n";
 	
 	needsRerender -= 1;
 	

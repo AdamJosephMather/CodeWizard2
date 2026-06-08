@@ -1951,9 +1951,10 @@ void TextEdit::position(int x, int y, int w, int h) {
 		}
 
 		// run through
-
-		for (int true_char_indx = 0; true_char_indx < thisLn.length()+1; true_char_indx ++) {
+		
+		for (int true_char_indx = 0; true_char_indx < thisLn.length()+1; true_char_indx += 1) {
 			int cur_length = final_line.length();
+			
 			for (int i = 0; i < selections.size(); i++) {
 				auto s = selections[i];
 				if (s[0] <= true_char_indx && draw_selec[i][0] == -1) {
@@ -1980,14 +1981,16 @@ void TextEdit::position(int x, int y, int w, int h) {
 				if (App::activeLeafNode == this && c.head_line == ln_num && c.head_char == true_char_indx && cur_char >= char_start) {
 					CursorScreen dc = CursorScreen();
 					dc.rel_line = draw_text.size();
-					dc.rel_char = final_line.length();
+					dc.rel_char = cur_length;
 					draw_cursor.push_back(dc);
 				}
 			}
 			
 			UChar32 chr;
+			int chr_advance = 1;
+			
 			if (true_char_indx == thisLn.length()) {
-				chr = U' '; // we draw an extra space on the end because we later need to check if the selections are actually in the visible area. It's a whole thing. IF YOU CAN AVOID THINKING ABOUT IT - DO.
+				chr = U' ';
 			}else{
 				chr = thisLn.char32At(true_char_indx);
 			}
@@ -1999,6 +2002,11 @@ void TextEdit::position(int x, int y, int w, int h) {
 			if (chr == U'\t') {
 				tohandle = {U' ', U' ', U' ', U' '};
 			}else{
+				chr = thisLn.char32At(true_char_indx);
+				chr_advance = U16_LENGTH(chr);
+				if (chr_advance != 1) {
+					chr = 0xFFFD;
+				}
 				tohandle = {chr};
 			}
 
@@ -2019,7 +2027,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 						final_color.push_back(col);
 					}
 				}
-
+				
 				cur_char ++;
 
 				if (cur_char > end_char) {
@@ -2030,7 +2038,9 @@ void TextEdit::position(int x, int y, int w, int h) {
 
 			if (finished_line) {
 				break;
-			}
+			}	
+			
+//			skipnext = chr_advance-1;
 		}
 
 		for (int i = 0; i < selections.size(); i++) {

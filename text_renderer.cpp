@@ -282,8 +282,14 @@ void TextRenderer::draw_text(float x, float y,
 	glBegin(GL_QUADS);
 	for (int32_t i = 0; i < unicodeStr.length(); ) {
 		UChar32 cp = unicodeStr.char32At(i);
+		
 		int idx = lookup_packedchar_index(cp);
-		if (idx >= 0 && glyphIdx < static_cast<int>(colors.size())) {
+		if (idx < 0 && cp != 0xFFFF) {
+			idx = lookup_packedchar_index(0xFFFD);
+		}
+		
+		
+		if (glyphIdx < static_cast<int>(colors.size()) && idx >= 0) {
 			AlignedQuad q;
 			
 			float cx_temp = cursorX;
@@ -297,11 +303,10 @@ void TextRenderer::draw_text(float x, float y,
 			glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, q.y0);
 			glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, q.y1);
 			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
-		} else if (idx < 0) {
-//			std::cout << "Missing glyph U+" << std::hex << cp << std::dec << "\n";
 		}
 		
-		cursorX += TEXT_WIDTH; // enforces monospacing
+		int codepoints_16 = U16_LENGTH(cp);
+		cursorX += TEXT_WIDTH*codepoints_16; // enforces monospacing
 
 		i = unicodeStr.moveIndex32(i, 1);
 		++glyphIdx;
@@ -339,22 +344,25 @@ void TextRenderer::draw_text(float x, float y,
 	for (int32_t i = 0; i < unicodeStr.length(); ) {
 		UChar32 cp = unicodeStr.char32At(i);
 		int idx = lookup_packedchar_index(cp);
+		if (idx < 0 && cp != 0xFFFF) {
+			idx = lookup_packedchar_index(0xFFFD);
+		}
+		
 		if (idx >= 0) {
 			AlignedQuad q;
 			
 			float cx_temp = cursorX;
 			
 			GetPackedQuad(cdata, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
-
+	
 			glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, q.y0);
 			glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, q.y0);
 			glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, q.y1);
 			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
-		} else if (idx < 0) {
-//			std::cout << "Missing glyph U+" << std::hex << cp << std::dec << "\n";
 		}
 		
-		cursorX += TEXT_WIDTH; // enforces monospaced
+		int codepoints_16 = U16_LENGTH(cp);
+		cursorX += TEXT_WIDTH*codepoints_16; // enforces monospaced
 
 		i = unicodeStr.moveIndex32(i, 1);
 	}
@@ -393,22 +401,25 @@ void TextRenderer::draw_text(float x, float y,
 	for (int32_t i = 0; i < unicodeStr.length(); ) {
 		UChar32 cp = unicodeStr.char32At(i);
 		int idx = lookup_packedchar_index(cp);
+		if (idx < 0 && cp != 0xFFFF) {
+			idx = lookup_packedchar_index(0xFFFD);
+		}
+		
 		if (idx >= 0) {
 			AlignedQuad q;
 			
 			float cx_temp = cursorX;
 			
 			GetPackedQuad(cdata, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
-
+	
 			glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, q.y0);
 			glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, q.y0);
 			glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, q.y1);
 			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
-		} else if (idx < 0) {
-//			std::cout << "Missing glyph U+" << std::hex << cp << std::dec << "\n";
 		}
 		
-		cursorX += TEXT_WIDTH;
+		int codepoints_16 = U16_LENGTH(cp);
+		cursorX += TEXT_WIDTH*codepoints_16;
 
 		i = unicodeStr.moveIndex32(i, 1);
 	}

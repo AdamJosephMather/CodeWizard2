@@ -44,6 +44,31 @@
 int main(int argc, char* argv[]) {
 	auto start = std::chrono::steady_clock::now();
 	
+	
+	#ifdef _WIN32
+		HRESULT comHr = CoInitializeEx(
+			nullptr,
+			COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE
+		);
+	
+		bool didInitCom = SUCCEEDED(comHr);
+	
+		if (FAILED(comHr)) {
+			std::cerr << "CoInitializeEx failed: 0x"
+					  << std::hex << static_cast<unsigned long>(comHr)
+					  << std::dec << "\n";
+		}
+	#endif
+	
+		// your app code here
+	
+	#ifdef _WIN32
+		if (didInitCom) {
+			CoUninitialize();
+		}
+	#endif
+	
+	
 	curl_global_init(CURL_GLOBAL_DEFAULT);
 	
 	Theme theme;

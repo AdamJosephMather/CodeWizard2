@@ -141,17 +141,27 @@ EmojiTexture EmojiRenderer::get_or_create_texture(const icu::UnicodeString& emoj
 
 #ifdef _WIN32
 bool EmojiRenderer::init_windows_api() {
-	HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-	
-	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, d2d_factory.GetAddressOf());
+	HRESULT hr;
+
+	hr = D2D1CreateFactory(
+		D2D1_FACTORY_TYPE_SINGLE_THREADED,
+		d2d_factory.GetAddressOf()
+	);
 	if (FAILED(hr)) return false;
 
-	hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), 
-							 reinterpret_cast<IUnknown**>(dwrite_factory.GetAddressOf()));
+	hr = DWriteCreateFactory(
+		DWRITE_FACTORY_TYPE_SHARED,
+		__uuidof(IDWriteFactory),
+		reinterpret_cast<IUnknown**>(dwrite_factory.GetAddressOf())
+	);
 	if (FAILED(hr)) return false;
 
-	hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, 
-						  IID_PPV_ARGS(wic_factory.GetAddressOf()));
+	hr = CoCreateInstance(
+		CLSID_WICImagingFactory,
+		nullptr,
+		CLSCTX_INPROC_SERVER,
+		IID_PPV_ARGS(wic_factory.GetAddressOf())
+	);
 	if (FAILED(hr)) return false;
 
 	return true;

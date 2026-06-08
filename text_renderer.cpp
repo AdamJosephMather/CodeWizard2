@@ -331,13 +331,15 @@ bool TextRenderer::try_get_keycap_sequence(const icu::UnicodeString& str,
 bool TextRenderer::try_get_emoji_sequence(const icu::UnicodeString& str,
 										  int32_t index,
 										  icu::UnicodeString& out_sequence) {
-	if (index >= str.length())
+	if (index >= str.length()) {
 		return false;
+	}
 
 	// Keycap sequences start with ASCII digits/#/*, so the normal emoji
 	// property gate below will reject them unless handled first.
-	if (try_get_keycap_sequence(str, index, out_sequence))
+	if (try_get_keycap_sequence(str, index, out_sequence)) {
 		return true;
+	}
 
 	UChar32 cp = str.char32At(index);
 
@@ -346,22 +348,25 @@ bool TextRenderer::try_get_emoji_sequence(const icu::UnicodeString& str,
 		u_hasBinaryProperty(cp, UCHAR_EMOJI_PRESENTATION)    ||
 		(cp >= 0x1F1E0 && cp <= 0x1F1FF);
 
-	if (!looksLikeEmoji)
+	if (!looksLikeEmoji) {
 		return false;
+	}
 
 	UErrorCode status = U_ZERO_ERROR;
 	std::unique_ptr<icu::BreakIterator> brk(
 		icu::BreakIterator::createCharacterInstance(
 			icu::Locale::getDefault(), status));
 
-	if (U_FAILURE(status))
+	if (U_FAILURE(status)) {
 		return false;
+	}
 
 	brk->setText(str);
 
 	int32_t end = brk->following(index);
-	if (end == icu::BreakIterator::DONE || end <= index)
+	if (end == icu::BreakIterator::DONE || end <= index) {
 		return false;
+	}
 
 	out_sequence = str.tempSubStringBetween(index, end);
 	return true;

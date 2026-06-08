@@ -1555,15 +1555,22 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 	}if (action == GLFW_PRESS && key == GLFW_KEY_O && control && shift) {
 		std::string fldr = settings->getValue("current_folder", std::string());
 		
+		std::cout << "a.\n";
+		std::cout << fldr << "\n";
 		const char * fpr = tinyfd_selectFolderDialog(
 			"Open folder?",
 			fldr.c_str()
 		);
+		std::cout << "b.\n";
 		
 		if (fpr) {
+			std::cout << "c.\n";
 			setFolder(fpr);
+			std::cout << "d.\n";
 		}
+		std::cout << "e.\n";
 		commandUnfocused();
+		std::cout << "f.\n";
 		return;
 	}else if (action == GLFW_PRESS && key == GLFW_KEY_S && control && !shift) {
 		displayText(icu::UnicodeString::fromUTF8("Saving..."));

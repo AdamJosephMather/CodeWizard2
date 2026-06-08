@@ -17,6 +17,8 @@ public:
 	static void draw_text(float x, float y, const icu::UnicodeString& unicodeStr, Color* color);
 	static void draw_text(float x, float y, const icu::UnicodeString& unicodeStr, uint8_t r, uint8_t g, uint8_t b);
 	
+	static bool try_get_emoji_sequence(const icu::UnicodeString& str, int32_t index, icu::UnicodeString& out_sequence);
+	
 	// Cleanup resources
 	static void cleanup();
 	

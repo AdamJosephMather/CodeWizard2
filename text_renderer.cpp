@@ -1,4 +1,5 @@
 #include "text_renderer.h"
+#include <unicode/brkiter.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <fstream>
@@ -258,6 +259,50 @@ bool TextRenderer::init_font(const char* fontPath) {
 int TextRenderer::get_text_width(int len) { return TEXT_WIDTH * len; }
 int TextRenderer::get_text_height()       { return TEXT_HEIGHT; }
 
+bool TextRenderer::try_get_emoji_sequence(const icu::UnicodeString& str,
+							 int32_t                  index,
+							 icu::UnicodeString&       out_sequence)
+{
+	if (index >= str.length())
+		return false;
+
+	UChar32 cp = str.char32At(index);
+
+	// Gate on the leading codepoint.
+	// UCHAR_EXTENDED_PICTOGRAPHIC  – main emoji picture blocks
+	// UCHAR_EMOJI_PRESENTATION     – default-emoji-presentation chars (e.g. ☎️)
+	// Regional Indicator range     – flag sequences (🇺🇸, 🇬🇧 …)
+	const bool looksLikeEmoji =
+		u_hasBinaryProperty(cp, UCHAR_EXTENDED_PICTOGRAPHIC) ||
+		u_hasBinaryProperty(cp, UCHAR_EMOJI_PRESENTATION)    ||
+		(cp >= 0x1F1E0 && cp <= 0x1F1FF);
+
+	if (!looksLikeEmoji)
+		return false;
+
+	// ICU's grapheme-cluster iterator handles every multi-codepoint emoji
+	// sequence defined by UAX #29 and UTS #51, so we get the whole cluster
+	// in one shot without manually chasing ZWJs, modifiers, etc.
+	UErrorCode status = U_ZERO_ERROR;
+	std::unique_ptr<icu::BreakIterator> brk(
+		icu::BreakIterator::createCharacterInstance(icu::Locale::getDefault(), status));
+
+	if (U_FAILURE(status))
+		return false;
+
+	brk->setText(str);
+
+	// following(index) → first boundary strictly after `index`.
+	// Because `index` is itself a cluster boundary, this lands at the end
+	// of the emoji cluster.
+	int32_t end = brk->following(index);
+	if (end == icu::BreakIterator::DONE || end <= index)
+		return false;
+
+	out_sequence = str.tempSubStringBetween(index, end);
+	return true;   // caller skips out_sequence.length() UTF-16 code units
+}
+
 void TextRenderer::draw_text(float x, float y,
 							 const icu::UnicodeString& unicodeStr,
 							 const std::vector<Color*>& colors)
@@ -285,8 +330,19 @@ void TextRenderer::draw_text(float x, float y,
 		
 		int idx = lookup_packedchar_index(cp);
 		if (idx < 0 && cp != 0xFFFF) {
-			idx = lookup_packedchar_index(0xFFFD);
+			icu::UnicodeString emojiSeq;
+			if (try_get_emoji_sequence(unicodeStr, i, emojiSeq)) {
+				// TODO: render emojiSeq at (cursorX, cursorY - ascent_px)
+				int32_t seqLen = emojiSeq.length();   // UTF-16 code units
+				cursorX  += TEXT_WIDTH * seqLen;
+				i        += seqLen;
+				glyphIdx += seqLen;
+				continue;
+			}
+			idx = lookup_packedchar_index(0xFFFD);    // unknown non-emoji fallback
 		}
+		
+		
 		
 		
 		if (glyphIdx < static_cast<int>(colors.size()) && idx >= 0) {
@@ -345,7 +401,15 @@ void TextRenderer::draw_text(float x, float y,
 		UChar32 cp = unicodeStr.char32At(i);
 		int idx = lookup_packedchar_index(cp);
 		if (idx < 0 && cp != 0xFFFF) {
-			idx = lookup_packedchar_index(0xFFFD);
+			icu::UnicodeString emojiSeq;
+			if (try_get_emoji_sequence(unicodeStr, i, emojiSeq)) {
+				// TODO: render emojiSeq at (cursorX, cursorY - ascent_px)
+				int32_t seqLen = emojiSeq.length();   // UTF-16 code units
+				cursorX += TEXT_WIDTH * seqLen;
+				i       += seqLen;
+				continue;
+			}
+			idx = lookup_packedchar_index(0xFFFD);    // unknown non-emoji fallback
 		}
 		
 		if (idx >= 0) {
@@ -402,7 +466,15 @@ void TextRenderer::draw_text(float x, float y,
 		UChar32 cp = unicodeStr.char32At(i);
 		int idx = lookup_packedchar_index(cp);
 		if (idx < 0 && cp != 0xFFFF) {
-			idx = lookup_packedchar_index(0xFFFD);
+			icu::UnicodeString emojiSeq;
+			if (try_get_emoji_sequence(unicodeStr, i, emojiSeq)) {
+				// TODO: render emojiSeq at (cursorX, cursorY - ascent_px)
+				int32_t seqLen = emojiSeq.length();   // UTF-16 code units
+				cursorX += TEXT_WIDTH * seqLen;
+				i       += seqLen;
+				continue;
+			}
+			idx = lookup_packedchar_index(0xFFFD);    // unknown non-emoji fallback
 		}
 		
 		if (idx >= 0) {

@@ -1987,12 +1987,11 @@ void TextEdit::position(int x, int y, int w, int h) {
 			}
 			
 			UChar32 chr;
-			int chr_advance = 1;
 			
 			if (true_char_indx == thisLn.length()) {
 				chr = U' ';
 			}else{
-				chr = thisLn.char32At(true_char_indx);
+				chr = thisLn.charAt(true_char_indx);
 			}
 
 			bool finished_line = false;
@@ -2002,11 +2001,6 @@ void TextEdit::position(int x, int y, int w, int h) {
 			if (chr == U'\t') {
 				tohandle = {U' ', U' ', U' ', U' '};
 			}else{
-				chr = thisLn.char32At(true_char_indx);
-				chr_advance = U16_LENGTH(chr);
-				if (chr_advance != 1) {
-					chr = 0xFFFD;
-				}
 				tohandle = {chr};
 			}
 
@@ -2038,9 +2032,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 
 			if (finished_line) {
 				break;
-			}	
-			
-//			skipnext = chr_advance-1;
+			}
 		}
 
 		for (int i = 0; i < selections.size(); i++) {

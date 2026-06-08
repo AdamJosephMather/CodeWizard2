@@ -1717,7 +1717,7 @@ void TextEdit::render() {
 		App::DrawRect(x, y, w, TextRenderer::get_text_height(), cs.color);
 
 		if (mode == 'n' && cs.rel_char < draw_text[cs.rel_line].length()) {
-			TextRenderer::draw_text(x, y, draw_text[cs.rel_line].char32At(cs.rel_char), App::theme.darker_background_color);
+			TextRenderer::draw_text(x, y, draw_text[cs.rel_line].char32At(cs.rel_char), App::theme.darker_background_color, false); // don't draw emojis here because... it doesn't work
 		}
 	}
 	

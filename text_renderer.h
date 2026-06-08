@@ -2,6 +2,7 @@
 
 #include <unicode/unistr.h>
 #include <unicode/ustream.h>
+#include "EmojiRenderer.h"
 #include "helper_types.h"
 #include <vector>
 #include <functional>
@@ -13,11 +14,12 @@ public:
 	static bool init_font(const char* fontPath);
 	
 	// Draw text at specified position with per-glyph colors
-	static void draw_text(float x, float y, const icu::UnicodeString& unicodeStr, const std::vector<Color*>& colors);
-	static void draw_text(float x, float y, const icu::UnicodeString& unicodeStr, Color* color);
-	static void draw_text(float x, float y, const icu::UnicodeString& unicodeStr, uint8_t r, uint8_t g, uint8_t b);
+	static void draw_text(float x, float y, const icu::UnicodeString& unicodeStr, const std::vector<Color*>& colors, bool renderEmojis=true);
+	static void draw_text(float x, float y, const icu::UnicodeString& unicodeStr, Color* color, bool renderEmojis=true);
+	static void draw_text(float x, float y, const icu::UnicodeString& unicodeStr, uint8_t r, uint8_t g, uint8_t b, bool renderEmojis=true);
 	
 	static bool try_get_emoji_sequence(const icu::UnicodeString& str, int32_t index, icu::UnicodeString& out_sequence);
+	static bool try_get_keycap_sequence(const icu::UnicodeString& str, int32_t index, icu::UnicodeString& out_sequence);
 	
 	// Cleanup resources
 	static void cleanup();

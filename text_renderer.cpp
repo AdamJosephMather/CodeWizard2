@@ -68,14 +68,15 @@ const int TEX_W = 2048, TEX_H = 2048;
 int TEXT_WIDTH  = 1;  // monospace char cell
 int TEXT_HEIGHT = 1;
 int ascent_px   = 0;
+EmojiRenderer* emoji_renderer;
+
+static std::unordered_map<int, int> packedIndexByCp;
 
 static int lookup_packedchar_index(int cp)
 {
-	for (const auto& pr : packedRanges) {
-		if (cp >= pr.first && cp < pr.first + pr.count)
-			return pr.offset + (cp - pr.first);
-	}
-	return -1;
+	auto it = packedIndexByCp.find(cp);
+	if (it == packedIndexByCp.end()) return -1;
+	return it->second;
 }
 
 void TextRenderer::set_font_size(float sz) { font_size = sz; }
@@ -145,68 +146,90 @@ bool TextRenderer::init_font(const char* fontPath) {
 		{ 0x0400, 0x0100 }, // Cyrillic
 		{ 0x0370, 0x0090 }, // Greek and Coptic
 		{ 0xFFFD, 0x0001 }, // Replacement Character
-		{ 0xFE00, 0x0010 }, // Variation Selectors
 		{ 0x25A0, 0x0060 }, // Geometric Shapes (U+25A0–U+25FF), includes □ (U+25A1)
 	};
 
-	int totalGlyphs = 0;
-	for (auto& r : ranges) totalGlyphs += r.count;
-	cdata.assign(totalGlyphs, {});
-
-	packedRanges.clear();
-	int runningOffset = 0;
-	for (auto& r : ranges) {
-		packedRanges.push_back({ r.first, r.count, runningOffset });
-		runningOffset += r.count;
-	}
+	int totalCandidateGlyphs = 0;
+	for (auto& r : ranges) totalCandidateGlyphs += r.count;
+	
+	cdata.clear();
+	cdata.reserve(totalCandidateGlyphs);
+	
+	packedIndexByCp.clear();
+	packedIndexByCp.reserve(totalCandidateGlyphs);
 
 	// Simple skyline/shelf packing ‑ not optimal but robust for mono‑sized glyphs
 	int pen_x = 1; // 1‑pixel padding around glyphs
 	int pen_y = 1;
 	int row_h = 0;
 
-	for (const auto& pr : packedRanges) {
-		for (int cp = pr.first; cp < pr.first + pr.count; ++cp) {
-			int glyph_index = FT_Get_Char_Index(ftFace, cp);
-			// Load & render glyph into ftFace->glyph->bitmap
-			if (FT_Load_Glyph(ftFace, glyph_index, FT_LOAD_RENDER | FT_LOAD_TARGET_NORMAL)) {
-				continue; // glyph missing
+	for (const auto& r : ranges) {
+		for (int cp = r.first; cp < r.first + r.count; ++cp) {
+	
+			if (cp >= 0xFE00 && cp <= 0xFE0F) {
+				continue;
 			}
+	
+			FT_UInt glyph_index = FT_Get_Char_Index(ftFace, static_cast<FT_ULong>(cp));
+	
+			if (glyph_index == 0) {
+				continue;
+			}
+	
+			if (FT_Load_Glyph(ftFace, glyph_index, FT_LOAD_RENDER | FT_LOAD_TARGET_NORMAL)) {
+				continue;
+			}
+	
 			FT_GlyphSlot g = ftFace->glyph;
+	
 			int gw = g->bitmap.width;
 			int gh = g->bitmap.rows;
-
-			// Row wrap
-			if (pen_x + gw + 1 >= TEX_W) {
-				pen_x = 1;
-				pen_y += row_h + 1;
-				row_h = 0;
+	
+			// Row wrap. Zero-size glyphs like space are valid and should still be stored.
+			if (gw > 0 && gh > 0) {
+				if (pen_x + gw + 1 >= TEX_W) {
+					pen_x = 1;
+					pen_y += row_h + 1;
+					row_h = 0;
+				}
+	
+				if (pen_y + gh + 1 >= TEX_H) {
+					std::cerr << "Font atlas overflow - increase TEX_W/H or trim ranges\n";
+					return false;
+				}
 			}
-			if (pen_y + gh + 1 >= TEX_H) {
-				std::cerr << "Font atlas overflow – increase TEX_W/H or trim ranges\n";
-				return false;
+	
+			PackedChar pc = {};
+	
+			if (gw > 0 && gh > 0) {
+				for (int y = 0; y < gh; ++y) {
+					unsigned char* dst = &atlas[(pen_y + y) * TEX_W + pen_x];
+					const unsigned char* src = g->bitmap.buffer + y * g->bitmap.pitch;
+					std::memcpy(dst, src, gw);
+				}
+	
+				pc.x0 = static_cast<unsigned short>(pen_x);
+				pc.y0 = static_cast<unsigned short>(pen_y);
+				pc.x1 = static_cast<unsigned short>(pen_x + gw);
+				pc.y1 = static_cast<unsigned short>(pen_y + gh);
+	
+				pen_x += gw + 1;
+				if (gh > row_h) row_h = gh;
+			} else {
+				// Valid glyph with no bitmap, e.g. space.
+				pc.x0 = static_cast<unsigned short>(pen_x);
+				pc.y0 = static_cast<unsigned short>(pen_y);
+				pc.x1 = static_cast<unsigned short>(pen_x);
+				pc.y1 = static_cast<unsigned short>(pen_y);
 			}
-
-			// Copy bitmap into atlas
-			for (int y = 0; y < gh; ++y) {
-				unsigned char* dst = &atlas[(pen_y + y) * TEX_W + pen_x];
-				const unsigned char* src = g->bitmap.buffer + y * g->bitmap.pitch;
-				std::memcpy(dst, src, gw);
-			}
-
-			// Store metrics
-			int dstIdx = lookup_packedchar_index(cp);
-			PackedChar& pc = cdata[dstIdx];
-			pc.x0 = static_cast<unsigned short>(pen_x);
-			pc.y0 = static_cast<unsigned short>(pen_y);
-			pc.x1 = static_cast<unsigned short>(pen_x + gw);
-			pc.y1 = static_cast<unsigned short>(pen_y + gh);
+	
 			pc.xoff = static_cast<float>(g->bitmap_left);
 			pc.yoff = static_cast<float>(-g->bitmap_top);
 			pc.xadvance = static_cast<float>(g->advance.x >> 6);
-
-			pen_x += gw + 1;
-			if (gh > row_h) row_h = gh;
+	
+			int dstIdx = static_cast<int>(cdata.size());
+			cdata.push_back(pc);
+			packedIndexByCp[cp] = dstIdx;
 		}
 	}
 
@@ -253,25 +276,71 @@ bool TextRenderer::init_font(const char* fontPath) {
 		after_font_change();
 	}
 	
+	if (emoji_renderer) {
+		delete emoji_renderer;
+	}
+	emoji_renderer = new EmojiRenderer();
+	
 	return true;
 }
 
 int TextRenderer::get_text_width(int len) { return TEXT_WIDTH * len; }
 int TextRenderer::get_text_height()       { return TEXT_HEIGHT; }
 
-bool TextRenderer::try_get_emoji_sequence(const icu::UnicodeString& str,
-							 int32_t                  index,
-							 icu::UnicodeString&       out_sequence)
-{
+static bool is_keycap_base(UChar32 cp) {
+	return (cp >= U'0' && cp <= U'9') || cp == U'#' || cp == U'*';
+}
+
+bool TextRenderer::try_get_keycap_sequence(const icu::UnicodeString& str,
+										   int32_t index,
+										   icu::UnicodeString& out_sequence) {
 	if (index >= str.length())
 		return false;
 
+	int32_t i = index;
+
+	UChar32 base = str.char32At(i);
+	if (!is_keycap_base(base))
+		return false;
+
+	i += U16_LENGTH(base);
+
+	// Optional variation selector:
+	// 0034 FE0F 20E3 = fully-qualified keycap
+	// 0033      20E3 = unqualified keycap
+	if (i < str.length()) {
+		UChar32 maybeVS16 = str.char32At(i);
+		if (maybeVS16 == 0xFE0F) {
+			i += U16_LENGTH(maybeVS16);
+		}
+	}
+
+	if (i >= str.length())
+		return false;
+
+	UChar32 maybeKeycap = str.char32At(i);
+	if (maybeKeycap != 0x20E3)
+		return false;
+
+	i += U16_LENGTH(maybeKeycap);
+
+	out_sequence = str.tempSubStringBetween(index, i);
+	return true;
+}
+
+bool TextRenderer::try_get_emoji_sequence(const icu::UnicodeString& str,
+										  int32_t index,
+										  icu::UnicodeString& out_sequence) {
+	if (index >= str.length())
+		return false;
+
+	// Keycap sequences start with ASCII digits/#/*, so the normal emoji
+	// property gate below will reject them unless handled first.
+	if (try_get_keycap_sequence(str, index, out_sequence))
+		return true;
+
 	UChar32 cp = str.char32At(index);
 
-	// Gate on the leading codepoint.
-	// UCHAR_EXTENDED_PICTOGRAPHIC  – main emoji picture blocks
-	// UCHAR_EMOJI_PRESENTATION     – default-emoji-presentation chars (e.g. ☎️)
-	// Regional Indicator range     – flag sequences (🇺🇸, 🇬🇧 …)
 	const bool looksLikeEmoji =
 		u_hasBinaryProperty(cp, UCHAR_EXTENDED_PICTOGRAPHIC) ||
 		u_hasBinaryProperty(cp, UCHAR_EMOJI_PRESENTATION)    ||
@@ -280,33 +349,28 @@ bool TextRenderer::try_get_emoji_sequence(const icu::UnicodeString& str,
 	if (!looksLikeEmoji)
 		return false;
 
-	// ICU's grapheme-cluster iterator handles every multi-codepoint emoji
-	// sequence defined by UAX #29 and UTS #51, so we get the whole cluster
-	// in one shot without manually chasing ZWJs, modifiers, etc.
 	UErrorCode status = U_ZERO_ERROR;
 	std::unique_ptr<icu::BreakIterator> brk(
-		icu::BreakIterator::createCharacterInstance(icu::Locale::getDefault(), status));
+		icu::BreakIterator::createCharacterInstance(
+			icu::Locale::getDefault(), status));
 
 	if (U_FAILURE(status))
 		return false;
 
 	brk->setText(str);
 
-	// following(index) → first boundary strictly after `index`.
-	// Because `index` is itself a cluster boundary, this lands at the end
-	// of the emoji cluster.
 	int32_t end = brk->following(index);
 	if (end == icu::BreakIterator::DONE || end <= index)
 		return false;
 
 	out_sequence = str.tempSubStringBetween(index, end);
-	return true;   // caller skips out_sequence.length() UTF-16 code units
+	return true;
 }
 
 void TextRenderer::draw_text(float x, float y,
 							 const icu::UnicodeString& unicodeStr,
-							 const std::vector<Color*>& colors)
-{
+							 const std::vector<Color*>& colors,
+							 bool renderEmojis) {
 	y += ascent_px; // baseline adjustment
 
 	GLboolean wasBlendEnabled = glIsEnabled(GL_BLEND);
@@ -328,22 +392,35 @@ void TextRenderer::draw_text(float x, float y,
 	for (int32_t i = 0; i < unicodeStr.length(); ) {
 		UChar32 cp = unicodeStr.char32At(i);
 		
-		int idx = lookup_packedchar_index(cp);
-		if (idx < 0 && cp != 0xFFFF) {
-			icu::UnicodeString emojiSeq;
-			if (try_get_emoji_sequence(unicodeStr, i, emojiSeq)) {
-				// TODO: render emojiSeq at (cursorX, cursorY - ascent_px)
-				int32_t seqLen = emojiSeq.length();   // UTF-16 code units
-				cursorX  += TEXT_WIDTH * seqLen;
-				i        += seqLen;
-				glyphIdx += seqLen;
-				continue;
+		icu::UnicodeString emojiSeq;
+		if (try_get_emoji_sequence(unicodeStr, i, emojiSeq)) {
+			int32_t seqLen = emojiSeq.length();   // UTF-16 code units
+			float dist_right = seqLen*TEXT_WIDTH;
+			
+			if (renderEmojis) {
+				float emojiSize = std::fmin(dist_right, TEXT_HEIGHT); // Or whatever size mapping you prefer
+				
+				// 1. Break the current quad batch
+				glEnd(); 
+				
+				// 2. Render the emoji (this will bind its own texture)
+				emoji_renderer->draw_emoji(emojiSeq, cursorX + (dist_right - emojiSize)/2, cursorY - ascent_px + (TEXT_HEIGHT - emojiSize)/2, emojiSize);
+				
+				// 3. Restore state and resume the quad batch for the rest of your font
+				glBindTexture(GL_TEXTURE_2D, fontTex);
+				glBegin(GL_QUADS); 
 			}
-			idx = lookup_packedchar_index(0xFFFD);    // unknown non-emoji fallback
+			
+			cursorX  += dist_right;
+			i        += seqLen;
+			glyphIdx += seqLen;
+			continue;
 		}
 		
-		
-		
+		int idx = lookup_packedchar_index(cp);
+		if (idx < 0 && cp != 0xFFFF) {
+			idx = lookup_packedchar_index(0xFFFD);    // unknown non-emoji fallback
+		}
 		
 		if (glyphIdx < static_cast<int>(colors.size()) && idx >= 0) {
 			AlignedQuad q;
@@ -376,8 +453,8 @@ void TextRenderer::draw_text(float x, float y,
 
 void TextRenderer::draw_text(float x, float y,
 							 const icu::UnicodeString& unicodeStr,
-							 Color* color)
-{
+							 Color* color,
+							 bool renderEmojis) {
 	y += ascent_px; // baseline adjustment
 
 	GLboolean wasBlendEnabled = glIsEnabled(GL_BLEND);
@@ -399,16 +476,33 @@ void TextRenderer::draw_text(float x, float y,
 	glBegin(GL_QUADS);
 	for (int32_t i = 0; i < unicodeStr.length(); ) {
 		UChar32 cp = unicodeStr.char32At(i);
+		
+		icu::UnicodeString emojiSeq;
+		if (try_get_emoji_sequence(unicodeStr, i, emojiSeq)) {
+			int32_t seqLen = emojiSeq.length();   // UTF-16 code units
+			float dist_right = seqLen*TEXT_WIDTH;
+			
+			if (renderEmojis) {
+				float emojiSize = std::fmin(dist_right, TEXT_HEIGHT); // Or whatever size mapping you prefer
+				
+				// 1. Break the current quad batch
+				glEnd(); 
+				
+				// 2. Render the emoji (this will bind its own texture)
+				emoji_renderer->draw_emoji(emojiSeq, cursorX + (dist_right - emojiSize)/2, cursorY - ascent_px + (TEXT_HEIGHT - emojiSize)/2, emojiSize);
+				
+				// 3. Restore state and resume the quad batch for the rest of your font
+				glBindTexture(GL_TEXTURE_2D, fontTex);
+				glBegin(GL_QUADS); 
+			}
+			
+			cursorX  += dist_right;
+			i        += seqLen;
+			continue;
+		}
+		
 		int idx = lookup_packedchar_index(cp);
 		if (idx < 0 && cp != 0xFFFF) {
-			icu::UnicodeString emojiSeq;
-			if (try_get_emoji_sequence(unicodeStr, i, emojiSeq)) {
-				// TODO: render emojiSeq at (cursorX, cursorY - ascent_px)
-				int32_t seqLen = emojiSeq.length();   // UTF-16 code units
-				cursorX += TEXT_WIDTH * seqLen;
-				i       += seqLen;
-				continue;
-			}
 			idx = lookup_packedchar_index(0xFFFD);    // unknown non-emoji fallback
 		}
 		
@@ -441,8 +535,8 @@ void TextRenderer::draw_text(float x, float y,
 							 const icu::UnicodeString& unicodeStr,
 							 uint8_t r,
 							 uint8_t g,
-							 uint8_t b)
-{
+							 uint8_t b,
+							 bool renderEmojis) {
 	y += ascent_px; // baseline adjustment
 
 	GLboolean wasBlendEnabled = glIsEnabled(GL_BLEND);
@@ -464,16 +558,33 @@ void TextRenderer::draw_text(float x, float y,
 	glBegin(GL_QUADS);
 	for (int32_t i = 0; i < unicodeStr.length(); ) {
 		UChar32 cp = unicodeStr.char32At(i);
+		
+		icu::UnicodeString emojiSeq;
+		if (try_get_emoji_sequence(unicodeStr, i, emojiSeq)) {
+			int32_t seqLen = emojiSeq.length();   // UTF-16 code units
+			float dist_right = seqLen*TEXT_WIDTH;
+			
+			if (renderEmojis) {
+				float emojiSize = std::fmin(dist_right, TEXT_HEIGHT); // Or whatever size mapping you prefer
+				
+				// 1. Break the current quad batch
+				glEnd(); 
+				
+				// 2. Render the emoji (this will bind its own texture)
+				emoji_renderer->draw_emoji(emojiSeq, cursorX + (dist_right - emojiSize)/2, cursorY - ascent_px + (TEXT_HEIGHT - emojiSize)/2, emojiSize);
+				
+				// 3. Restore state and resume the quad batch for the rest of your font
+				glBindTexture(GL_TEXTURE_2D, fontTex);
+				glBegin(GL_QUADS); 
+			}
+			
+			cursorX  += dist_right;
+			i        += seqLen;
+			continue;
+		}
+		
 		int idx = lookup_packedchar_index(cp);
 		if (idx < 0 && cp != 0xFFFF) {
-			icu::UnicodeString emojiSeq;
-			if (try_get_emoji_sequence(unicodeStr, i, emojiSeq)) {
-				// TODO: render emojiSeq at (cursorX, cursorY - ascent_px)
-				int32_t seqLen = emojiSeq.length();   // UTF-16 code units
-				cursorX += TEXT_WIDTH * seqLen;
-				i       += seqLen;
-				continue;
-			}
 			idx = lookup_packedchar_index(0xFFFD);    // unknown non-emoji fallback
 		}
 		
@@ -502,8 +613,7 @@ void TextRenderer::draw_text(float x, float y,
 	if (!wasTexEnabled) glDisable(GL_TEXTURE_2D);
 }
 
-void TextRenderer::cleanup()
-{
+void TextRenderer::cleanup() {
 	if (fontTex) {
 		glDeleteTextures(1, &fontTex);
 		fontTex = 0;

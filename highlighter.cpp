@@ -3,6 +3,7 @@
 #include <iostream>
 #include <random>
 #include <set>
+#include "helper_types.h"
 
 static std::set<char> punctuationset = {'!', '#', '$', '%', '&', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~'};
 
@@ -505,23 +506,6 @@ std::pair<std::vector<Token>,TextMateInfo> Highlighter::analizeSection(const std
 	}
 	
 	return { tokens, currentInfo };
-}
-
-std::string Highlighter::to_ascii_replacing_non_ascii(const icu::UnicodeString& ustr, char replacement) {
-	std::string out;
-	out.reserve(ustr.length());
-	
-	for (int32_t i = 0; i < ustr.length(); i++) {
-		UChar32 cp = ustr.char32At(i);
-		
-		if (cp >= 0 && cp <= 0x7F) {
-			out.push_back(static_cast<char>(cp));
-		} else {
-			out.push_back(replacement);
-		}
-	}
-
-	return out;
 }
 
 LineResult Highlighter::highlightLine(icu::UnicodeString input_string, TextMateInfo currentInfo) {

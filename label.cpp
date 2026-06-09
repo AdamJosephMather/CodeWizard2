@@ -2,6 +2,7 @@
 #include "text_renderer.h"
 #include "application.h"
 #include "helper_types.h"
+#include <unicode/brkiter.h>
 #include <unicode/uchar.h>
 
 Label::Label(Widget* parent) : Widget(parent) {
@@ -9,6 +10,71 @@ Label::Label(Widget* parent) : Widget(parent) {
 	
 	fulltext = icu::UnicodeString::fromUTF8("");
 	drawlines = {};
+}
+
+inline bool is_keycap_base_fast(UChar c) {
+	return (c >= '0' && c <= '9') || c == '#' || c == '*';
+}
+
+int32_t Label::get_emoji_sequence_length(const icu::UnicodeString& str, int32_t index) {
+	const int32_t len = str.length();
+	if (index >= len) {
+		return 0;
+	}
+
+	// 1. FAST PATH: Keycap Sequence Detection
+	// Since all keycap components fit into single UTF-16 code units, 
+	// we can use direct array subscripting for O(1) evaluation.
+	const UChar first = str[index];
+	if (is_keycap_base_fast(first)) {
+		if (index + 1 < len) {
+			const UChar second = str[index + 1];
+			// Unqualified keycap (e.g., "3" + Combining Enclosing Keycap)
+			if (second == 0x20E3) {
+				return 2; 
+			}
+			// Fully-qualified keycap (e.g., "3" + VS16 + Combining Enclosing Keycap)
+			if (second == 0xFE0F && index + 2 < len && str[index + 2] == 0x20E3) {
+				return 3;
+			}
+		}
+		return 0; // Valid base character, but doesn't form a keycap emoji sequence
+	}
+
+	// 2. Property Check for General Emojis
+	const UChar32 cp = str.char32At(index);
+	const bool looksLikeEmoji =
+		u_hasBinaryProperty(cp, UCHAR_EXTENDED_PICTOGRAPHIC) ||
+		u_hasBinaryProperty(cp, UCHAR_EMOJI_PRESENTATION)    ||
+		(cp >= 0x1F1E0 && cp <= 0x1F1FF);
+
+	if (!looksLikeEmoji) {
+		return 0;
+	}
+
+	// 3. SLOW PATH: Multi-grapheme Emoji Boundaries (Flags, ZWJ sequences, Modifiers)
+	// We use thread_local to instantiate the BreakIterator EXACTLY ONCE per thread.
+	thread_local std::unique_ptr<icu::BreakIterator> brk = []() {
+		UErrorCode status = U_ZERO_ERROR;
+		auto iterator = std::unique_ptr<icu::BreakIterator>(
+			icu::BreakIterator::createCharacterInstance(icu::Locale::getDefault(), status));
+		return U_SUCCESS(status) ? std::move(iterator) : nullptr;
+	}();
+
+	if (!brk) {
+		return 0; // Safety fallback if ICU fails to initialize the iterator
+	}
+
+	// setText() is lightweight; it points the iterator to the existing buffer without copying
+	brk->setText(str);
+	
+	const int32_t end = brk->following(index);
+	if (end == icu::BreakIterator::DONE || end <= index) {
+		return 0;
+	}
+
+	// Returns the total number of UTF-16 code units spanning the emoji sequence
+	return end - index;
 }
 
 void Label::setFullText(icu::UnicodeString text, std::vector<MarkdownSpan> spans) {
@@ -102,13 +168,23 @@ void Label::position(int x, int y, int w, int h) {
 	std::vector<Color*> curlineColor = {};
 	Color* thisColor;
 	
+	int byteIndex = 0;
+	
 	for (auto ci = 0; ci < fulltext.length(); ci++) {
-		UChar32 c = fulltext.char32At(ci);
+		char16_t c = fulltext.charAt(ci);
+		
+		int bytes = 0;
+		int emojiUtf16Count = get_emoji_sequence_length(fulltext, ci);
+		if (emojiUtf16Count == 0) {
+			bytes = U8_LENGTH(c);
+		}else{
+			bytes = emojiUtf16Count*2;
+		}
 		
 		if (handlingColor) {
 			thisColor = App::theme.main_text_color;
 			if (curspan < colorSpans.size()) { // spans are always ordered so that we can only look at one at a time (mucho faster)
-				if (ci >= colorSpans[curspan].start && ci < colorSpans[curspan].end) {
+				if (byteIndex >= colorSpans[curspan].start && byteIndex < colorSpans[curspan].end) {
 					auto t = colorSpans[curspan].type;
 					if (t == MarkdownElem::Header) {
 						thisColor = App::theme.equal_diff;
@@ -123,20 +199,25 @@ void Label::position(int x, int y, int w, int h) {
 					}
 				}
 				
-				if (ci == colorSpans[curspan].end) {
+				if (byteIndex == colorSpans[curspan].end) {
 					curspan ++;
 				}
 			}
 		}
 		
+		byteIndex += bytes;
 		
 		int num_chr = 1;
 		if (c == U'\t') {
-			num_chr = 4;
+			num_chr = App::settings->getValue("tab_width", 4);
 			c = ' ';
 		}
 		
 		int newlen = linewidth + TextRenderer::get_text_width(num_chr);
+		
+		if (emojiUtf16Count != 0) {
+			newlen += TextRenderer::get_text_width(1);
+		}
 		
 		if (c == U'\n' || newlen > most_allowed) {
 			drawlines.push_back(curline);
@@ -154,15 +235,28 @@ void Label::position(int x, int y, int w, int h) {
 		}
 		
 		if (c != U'\n') {
-			for (int rep = 0; rep < num_chr; rep++) {
-				curline += c;
-				if (handlingColor) {
-					curlineColor.push_back(thisColor);
+			if (emojiUtf16Count != 0) {
+				for (int i = 0; i < emojiUtf16Count; i++) {
+					curline.append(fulltext.charAt(ci+i));
+					if (handlingColor) {
+						curlineColor.push_back(thisColor);
+					}
+				}
+			}else{
+				for (int rep = 0; rep < num_chr; rep++) {
+					curline += c;
+					if (handlingColor) {
+						curlineColor.push_back(thisColor);
+					}
 				}
 			}
 		}
 		
 		linewidth = newlen;
+		
+		if (emojiUtf16Count != 0) {
+			ci += emojiUtf16Count-1;
+		}
 	}
 	
 	drawlines.push_back(curline);

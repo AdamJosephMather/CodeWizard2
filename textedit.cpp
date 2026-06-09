@@ -766,72 +766,115 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 }
 
 int TextEdit::_mapFromRealToVisual(int line, int c) {
-	auto str = lines[line].line_text;
+	const icu::UnicodeString& str = lines[line].line_text;
+	const int32_t len = str.length();
 
-	if (c == 0) {
+	if (c <= 0) {
 		return 0;
+	}
+
+	if (c > len) {
+		c = len;
 	}
 
 	int visual_loc = 0;
 
-	for (int i = 0; i < str.length(); i++) {
-		UChar32 chr = str.char32At(i);
+	for (int32_t i = 0; i < len; ) {
+		const int32_t real_start = i;
 
-		if (chr == U'\t') {
-			visual_loc += tabWidth;
-		}else{
-			visual_loc += 1;
+		int32_t emoji_len = get_emoji_sequence_length(str, i);
+
+		int32_t real_advance;
+		int visual_advance;
+
+		if (emoji_len > 0) {
+			real_advance = emoji_len;
+			visual_advance = 2;
+		} else {
+			UChar32 chr = str.char32At(i);
+			real_advance = U16_LENGTH(chr);
+
+			if (chr == U'\t') {
+				visual_advance = tabWidth;
+			} else {
+				visual_advance = 1;
+			}
 		}
 
-		if (i+1 == c) {
-			return visual_loc;
+		const int32_t real_end = real_start + real_advance;
+
+		// If c lands anywhere inside this visual unit, map it to the visual
+		// position after that unit. This keeps emoji/surrogate pairs indivisible.
+		if (c <= real_end) {
+			return visual_loc + visual_advance;
 		}
+
+		visual_loc += visual_advance;
+		i = real_end;
 	}
 
 	return visual_loc;
 }
 
 int TextEdit::_mapFromVisualToReal(int line, int c) {
-	auto str = lines[line].line_text;
+	const icu::UnicodeString& str = lines[line].line_text;
+	const int32_t len = str.length();
 
-	int visual_loc = 0;
-	int real_loc = 0;
-
-	if (c == 0 || str.length() == 0) {
+	if (c <= 0 || len == 0) {
 		return 0;
 	}
 
-	for (int i = 0; i < str.length(); i++) {
-		real_loc = i;
+	int visual_loc = 0;
 
-		UChar32 chr = str.char32At(real_loc);
+	for (int32_t i = 0; i < len; ) {
+		const int32_t real_start = i;
 
-		int new_vis = visual_loc;
+		int32_t emoji_len = get_emoji_sequence_length(str, i);
 
-		if (chr == U'\t') {
-			new_vis += tabWidth;
-		}else{
-			new_vis += 1;
-		}
+		int32_t real_advance;
+		int visual_advance;
 
-		if (new_vis == c) {
-			return real_loc+1;
-		}
+		if (emoji_len > 0) {
+			real_advance = emoji_len;
+			visual_advance = 2;
+		} else {
+			UChar32 chr = str.char32At(i);
+			real_advance = U16_LENGTH(chr);
 
-		if (new_vis > c) {
-			int d1 = c-visual_loc;
-			int d2 = new_vis-c;
-
-			if (d1 < d2) {
-				return real_loc;
+			if (chr == U'\t') {
+				visual_advance = tabWidth;
+			} else {
+				visual_advance = 1;
 			}
-			return real_loc+1;
 		}
 
-		visual_loc = new_vis;
+		const int visual_end = visual_loc + visual_advance;
+		const int32_t real_end = real_start + real_advance;
+
+		if (visual_end == c) {
+			return real_end;
+		}
+
+		if (visual_end > c) {
+			const int d1 = c - visual_loc;
+			const int d2 = visual_end - c;
+
+			// Snap to whichever side is visually closer.
+			// For emoji width 2:
+			//   clicking/locating at first half => before emoji
+			//   second half or exact middle => after emoji
+			if (d1 < d2) {
+				return real_start;
+			}
+
+			return real_end;
+		}
+
+		visual_loc = visual_end;
+		i = real_end;
 	}
 
-	return real_loc+1;
+	return len;
 }
 
 void TextEdit::applyMoveToAllCursors(int key, bool shift, bool control) {

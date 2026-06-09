@@ -45,7 +45,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 4;
-int App::patch_version = 0; // 🚀 (we now support emojis)
+int App::patch_version = 1; // 🚀 (we now support emojis)
 
 
 #ifndef M_PI

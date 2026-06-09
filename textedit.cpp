@@ -5,6 +5,7 @@
 #include <chrono>
 #include <cctype>
 #include "helper_types.h"
+#include <unicode/brkiter.h>
 #include <unicode/uchar.h>
 
 #define CODEWIZARD_WORD_WRAP 10000
@@ -179,14 +180,14 @@ History TextEdit::createHistory() {
 
 void TextEdit::Highlight(int first_visible_line, int last_visible_line) {
 	max_line_len = 0;
-
+	
 	for (int i = first_visible_line; i < last_visible_line; i ++) {
 		Line* line = &lines[i];
-
+		
 		if (line->changed) {
 			line->visual_length = getVisLen(line->line_text);
 		}
-
+		
 		if (line->visual_length > max_line_len) {
 			max_line_len = line->visual_length;
 		}
@@ -194,55 +195,55 @@ void TextEdit::Highlight(int first_visible_line, int last_visible_line) {
 	
 	if (highlighter) {
 		auto first_info = getblankhighlighting();
-
+		
 		int highlighted = 0;
-
+		
 		for (int i = 0; i < lines.size(); i ++) {
 			Line* line = &lines[i];
-
+			
 			if (line->changed) {
 				int ln = 0;
 				line->changed = false;
 				line->highlightinguptodate = false;
-
+				
 				for (int c_indx = 0; c_indx < line->line_text.length(); c_indx++) {
 					UChar32 c = line->line_text.char32At(c_indx);
-
+					
 					if (c == U'\t') {
 						ln += tabWidth;
 					}else{
 						ln ++;
 					}
 				}
-
+				
 				line->visual_length = ln;
 			}
-
+			
 			TextMateInfo* prev_line_info;
-
+			
 			if (i == 0) {
 				prev_line_info = &first_info;
 			}else{
 				prev_line_info = &lines[i-1].after_line_colored;
 			}
-
+			
 			if (!line->highlightinguptodate || prev_line_info->contextStack.back().hash != line->prev_hash) {
 				DO_POSITION = true;
 				
 				auto ln = highlighter(line->line_text, *prev_line_info);
-
+				
 				if (i >= first_visible_line && i <= last_visible_line) {
 					App::rerender = true; // this changed a viewport thing, rerender.
 				}else{
 					App::forceWaitTime = false; // we don't force a wait time when we need to highlight
 				}
-
+				
 				line->after_line_colored = ln.lineInfo;
 				line->prev_hash = prev_line_info->contextStack.back().hash;
 				line->tokens = ln.tokens;
 				line->highlightinguptodate = true;
 				highlighted ++;
-
+				
 				if (i < first_visible_line && highlighted > 40) {
 					break;
 				}else if (i >= first_visible_line && highlighted > 10) {
@@ -1716,8 +1717,8 @@ void TextEdit::render() {
 
 		App::DrawRect(x, y, w, TextRenderer::get_text_height(), cs.color);
 
-		if (mode == 'n' && cs.rel_char < draw_text[cs.rel_line].length()) {
-			TextRenderer::draw_text(x, y, draw_text[cs.rel_line].char32At(cs.rel_char), App::theme.darker_background_color, false); // don't draw emojis here because... it doesn't work
+		if (mode == 'n' && cs.charUnder != U'\0' && cs.charUnder != U'\t') {
+			TextRenderer::draw_text(x, y, cs.charUnder, App::theme.darker_background_color, false); // don't draw emojis here because... it doesn't work
 		}
 	}
 	
@@ -1766,6 +1767,71 @@ void TextEdit::executeAction(WidgetActionType typ) {
 		DO_POSITION = true;
 	}
 	Widget::executeAction(typ);
+}
+
+inline bool is_keycap_base_fast(UChar c) {
+	return (c >= '0' && c <= '9') || c == '#' || c == '*';
+}
+
+int32_t TextEdit::get_emoji_sequence_length(const icu::UnicodeString& str, int32_t index) {
+	const int32_t len = str.length();
+	if (index >= len) {
+		return 0;
+	}
+
+	// 1. FAST PATH: Keycap Sequence Detection
+	// Since all keycap components fit into single UTF-16 code units, 
+	// we can use direct array subscripting for O(1) evaluation.
+	const UChar first = str[index];
+	if (is_keycap_base_fast(first)) {
+		if (index + 1 < len) {
+			const UChar second = str[index + 1];
+			// Unqualified keycap (e.g., "3" + Combining Enclosing Keycap)
+			if (second == 0x20E3) {
+				return 2; 
+			}
+			// Fully-qualified keycap (e.g., "3" + VS16 + Combining Enclosing Keycap)
+			if (second == 0xFE0F && index + 2 < len && str[index + 2] == 0x20E3) {
+				return 3;
+			}
+		}
+		return 0; // Valid base character, but doesn't form a keycap emoji sequence
+	}
+
+	// 2. Property Check for General Emojis
+	const UChar32 cp = str.char32At(index);
+	const bool looksLikeEmoji =
+		u_hasBinaryProperty(cp, UCHAR_EXTENDED_PICTOGRAPHIC) ||
+		u_hasBinaryProperty(cp, UCHAR_EMOJI_PRESENTATION)    ||
+		(cp >= 0x1F1E0 && cp <= 0x1F1FF);
+
+	if (!looksLikeEmoji) {
+		return 0;
+	}
+
+	// 3. SLOW PATH: Multi-grapheme Emoji Boundaries (Flags, ZWJ sequences, Modifiers)
+	// We use thread_local to instantiate the BreakIterator EXACTLY ONCE per thread.
+	thread_local std::unique_ptr<icu::BreakIterator> brk = []() {
+		UErrorCode status = U_ZERO_ERROR;
+		auto iterator = std::unique_ptr<icu::BreakIterator>(
+			icu::BreakIterator::createCharacterInstance(icu::Locale::getDefault(), status));
+		return U_SUCCESS(status) ? std::move(iterator) : nullptr;
+	}();
+
+	if (!brk) {
+		return 0; // Safety fallback if ICU fails to initialize the iterator
+	}
+
+	// setText() is lightweight; it points the iterator to the existing buffer without copying
+	brk->setText(str);
+	
+	const int32_t end = brk->following(index);
+	if (end == icu::BreakIterator::DONE || end <= index) {
+		return 0;
+	}
+
+	// Returns the total number of UTF-16 code units spanning the emoji sequence
+	return end - index;
 }
 
 void TextEdit::position(int x, int y, int w, int h) {
@@ -1923,7 +1989,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 			}
 		}
 
-		// selection
+		// selection "✅"
 
 		std::vector<std::vector<int>> selections = {};
 		std::vector<std::vector<int>> draw_selec = {};
@@ -1966,9 +2032,10 @@ void TextEdit::position(int x, int y, int w, int h) {
 
 		// run through
 		
+		int cur_length = 0;
+		int skipping = 0;
+		
 		for (int true_char_indx = 0; true_char_indx < thisLn.length()+1; true_char_indx += 1) {
-			int cur_length = final_line.length();
-			
 			for (int i = 0; i < selections.size(); i++) {
 				auto s = selections[i];
 				if (s[0] <= true_char_indx && draw_selec[i][0] == -1) {
@@ -1990,13 +2057,44 @@ void TextEdit::position(int x, int y, int w, int h) {
 				}
 
 			}
-
+			
+			int newskip = skipping;
+			if (skipping == 0) {
+				newskip = get_emoji_sequence_length(thisLn, true_char_indx);
+			}
+			
+			
 			for (auto c : cursors) {
 				if (App::activeLeafNode == this && c.head_line == ln_num && c.head_char == true_char_indx && cur_char >= char_start) {
 					CursorScreen dc = CursorScreen();
 					dc.rel_line = draw_text.size();
 					dc.rel_char = cur_length;
+					if (newskip == 0) {
+						dc.charUnder = thisLn[true_char_indx];
+					}
 					draw_cursor.push_back(dc);
+				}
+			}
+			
+			if (skipping != 0) {
+				cur_char += 1;
+				skipping -= 1;
+				if (skipping == 0) {
+					cur_length += 2;
+				}
+				continue;
+			}else{
+				skipping = newskip;
+				if (skipping != 0) {
+					for (int i = 0; i < skipping; i++) {
+						final_line.append(thisLn.charAt(i+true_char_indx));
+						final_color.push_back(App::theme.main_text_color);
+					}
+					skipping -= 1;
+					if (skipping == 0) {
+						cur_length += 2;
+					}
+					continue;
 				}
 			}
 			
@@ -2007,7 +2105,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 			}else{
 				chr = thisLn.charAt(true_char_indx);
 			}
-
+			
 			bool finished_line = false;
 
 			std::vector<UChar32> tohandle = {};
@@ -2017,10 +2115,11 @@ void TextEdit::position(int x, int y, int w, int h) {
 			}else{
 				tohandle = {chr};
 			}
-
+			
 			for (auto c : tohandle) {
 				if (cur_char >= char_start) {
 					final_line.append(c);
+					cur_length += 1;
 					
 					if (!highlighter && !alreadyHighlighted) {
 						final_color.push_back(App::theme.main_text_color);
@@ -2082,7 +2181,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 			draw_diagnostics.push_back(diag);
 		}
 
-		if (thisdiag != "") {
+		if (thisdiag != "") { // this contains a "👍🏾" thumbs up emoji
 			final_line += icu::UnicodeString::fromUTF8("  ■ ") + splitByChar(thisdiag, U'\n')[0];
 			for (int i = final_color.size(); i < final_line.length(); i++) {
 				if (thisdiagtype == 0) {

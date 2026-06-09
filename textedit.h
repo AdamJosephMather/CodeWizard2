@@ -41,6 +41,7 @@ struct Cursor {
 struct CursorScreen {
 	int rel_line = 0;
 	int rel_char = 0;
+	UChar32 charUnder = '\0';
 	Color* color = App::theme.main_text_color;
 };
 
@@ -178,6 +179,8 @@ public:
 	void activateRedo();
 	
 	icu::UnicodeString getSelectedText(Cursor c);
+	
+	int32_t get_emoji_sequence_length(const icu::UnicodeString& str, int32_t index);
 	
 	void position(int x, int y, int w, int h);
 	void render();

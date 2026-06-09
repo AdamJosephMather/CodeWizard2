@@ -400,7 +400,7 @@ void TextRenderer::draw_text(float x, float y,
 		icu::UnicodeString emojiSeq;
 		if (try_get_emoji_sequence(unicodeStr, i, emojiSeq)) {
 			int32_t seqLen = emojiSeq.length();   // UTF-16 code units
-			float dist_right = seqLen*TEXT_WIDTH;
+			float dist_right = 2*TEXT_WIDTH;
 			
 			if (renderEmojis) {
 				float emojiSize = std::fmin(dist_right, TEXT_HEIGHT); // Or whatever size mapping you prefer
@@ -423,7 +423,7 @@ void TextRenderer::draw_text(float x, float y,
 		}
 		
 		int idx = lookup_packedchar_index(cp);
-		if (idx < 0 && cp != 0xFFFF) {
+		if (idx < 0 && cp != 0xFFFF && cp != U'\t') {
 			idx = lookup_packedchar_index(0xFFFD);    // unknown non-emoji fallback
 		}
 		
@@ -485,7 +485,7 @@ void TextRenderer::draw_text(float x, float y,
 		icu::UnicodeString emojiSeq;
 		if (try_get_emoji_sequence(unicodeStr, i, emojiSeq)) {
 			int32_t seqLen = emojiSeq.length();   // UTF-16 code units
-			float dist_right = seqLen*TEXT_WIDTH;
+			float dist_right = 2*TEXT_WIDTH;
 			
 			if (renderEmojis) {
 				float emojiSize = std::fmin(dist_right, TEXT_HEIGHT); // Or whatever size mapping you prefer
@@ -498,9 +498,8 @@ void TextRenderer::draw_text(float x, float y,
 				
 				// 3. Restore state and resume the quad batch for the rest of your font
 				glBindTexture(GL_TEXTURE_2D, fontTex);
-				glBegin(GL_QUADS); 
-				
 				glColor4f(color->r, color->g, color->b, 1.0f);
+				glBegin(GL_QUADS); 
 			}
 			
 			cursorX  += dist_right;
@@ -509,7 +508,7 @@ void TextRenderer::draw_text(float x, float y,
 		}
 		
 		int idx = lookup_packedchar_index(cp);
-		if (idx < 0 && cp != 0xFFFF) {
+		if (idx < 0 && cp != 0xFFFF && cp != U'\t') {
 			idx = lookup_packedchar_index(0xFFFD);    // unknown non-emoji fallback
 		}
 		
@@ -569,7 +568,7 @@ void TextRenderer::draw_text(float x, float y,
 		icu::UnicodeString emojiSeq;
 		if (try_get_emoji_sequence(unicodeStr, i, emojiSeq)) {
 			int32_t seqLen = emojiSeq.length();   // UTF-16 code units
-			float dist_right = seqLen*TEXT_WIDTH;
+			float dist_right = 2*TEXT_WIDTH;
 			
 			if (renderEmojis) {
 				float emojiSize = std::fmin(dist_right, TEXT_HEIGHT); // Or whatever size mapping you prefer
@@ -582,9 +581,8 @@ void TextRenderer::draw_text(float x, float y,
 				
 				// 3. Restore state and resume the quad batch for the rest of your font
 				glBindTexture(GL_TEXTURE_2D, fontTex);
-				glBegin(GL_QUADS);
-				
 				glColor4f((float)r/255.0f, (float)g/255.0f, (float)b/255.0f, 1.0f);
+				glBegin(GL_QUADS); 
 			}
 			
 			cursorX  += dist_right;
@@ -593,7 +591,7 @@ void TextRenderer::draw_text(float x, float y,
 		}
 		
 		int idx = lookup_packedchar_index(cp);
-		if (idx < 0 && cp != 0xFFFF) {
+		if (idx < 0 && cp != 0xFFFF && cp != U'\t') {
 			idx = lookup_packedchar_index(0xFFFD);    // unknown non-emoji fallback
 		}
 		

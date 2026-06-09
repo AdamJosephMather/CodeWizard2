@@ -540,7 +540,8 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 			int new_x = c.head_char;
 
 			if (!control) {
-				new_x = c.head_char - 1;
+				int len = std::max(get_emoji_sequence_length_backward(lines[c.head_line].line_text, c.head_char), 1);
+				new_x = c.head_char - len;
 			}else {
 				new_x = _findNextWord(c, -1); // to be addressed
 			}
@@ -566,7 +567,8 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 			int new_x = c.head_char;
 
 			if (!control) {
-				new_x = c.head_char + 1;
+				int len = std::max(get_emoji_sequence_length(lines[c.head_line].line_text, c.head_char), 1);
+				new_x = c.head_char + len;
 			}else {
 				new_x = _findNextWord(c, 1); // to be addressed
 			}
@@ -1875,6 +1877,273 @@ int32_t TextEdit::get_emoji_sequence_length(const icu::UnicodeString& str, int32
 
 	// Returns the total number of UTF-16 code units spanning the emoji sequence
 	return end - index;
+}
+
+inline bool is_emoji_modifier(UChar32 cp) {
+	return cp >= 0x1F3FB && cp <= 0x1F3FF;
+}
+
+inline bool is_regional_indicator(UChar32 cp) {
+	return cp >= 0x1F1E6 && cp <= 0x1F1FF;
+}
+
+inline bool is_tag_char(UChar32 cp) {
+	return cp >= 0xE0020 && cp <= 0xE007E;
+}
+
+inline bool looks_like_emoji_base(UChar32 cp) {
+	return u_hasBinaryProperty(cp, UCHAR_EXTENDED_PICTOGRAPHIC) ||
+		   u_hasBinaryProperty(cp, UCHAR_EMOJI_PRESENTATION)    ||
+		   is_regional_indicator(cp);
+}
+
+inline bool prev_codepoint(
+	const icu::UnicodeString& str,
+	int32_t before,
+	int32_t& cp_start,
+	UChar32& cp
+) {
+	if (before <= 0) {
+		return false;
+	}
+
+	cp_start = before - 1;
+
+	const UChar last = str[cp_start];
+
+	if (U16_IS_TRAIL(last) && cp_start > 0) {
+		const UChar lead = str[cp_start - 1];
+		if (U16_IS_LEAD(lead)) {
+			--cp_start;
+		}
+	}
+
+	cp = str.char32At(cp_start);
+	return true;
+}
+
+// Consumes one emoji "atom" backwards:
+//   base
+//   base + VS16
+//   base + skin-tone modifier
+//   base + VS16 + skin-tone modifier
+//
+// Returns the UTF-16 start offset of that atom, or -1 if not an emoji atom.
+inline int32_t consume_emoji_atom_backward(
+	const icu::UnicodeString& str,
+	int32_t end
+) {
+	int32_t p = end;
+
+	int32_t tail_start;
+	UChar32 tail;
+	if (!prev_codepoint(str, p, tail_start, tail)) {
+		return -1;
+	}
+
+	// Optional skin-tone modifier at the end.
+	if (is_emoji_modifier(tail)) {
+		p = tail_start;
+
+		int32_t maybe_vs_start;
+		UChar32 maybe_vs;
+		if (prev_codepoint(str, p, maybe_vs_start, maybe_vs) && maybe_vs == 0xFE0F) {
+			p = maybe_vs_start;
+		}
+
+		int32_t base_start;
+		UChar32 base;
+		if (!prev_codepoint(str, p, base_start, base)) {
+			return -1;
+		}
+
+		return looks_like_emoji_base(base) ? base_start : -1;
+	}
+
+	// Optional VS16 at the end.
+	if (tail == 0xFE0F) {
+		p = tail_start;
+
+		int32_t base_start;
+		UChar32 base;
+		if (!prev_codepoint(str, p, base_start, base)) {
+			return -1;
+		}
+
+		return looks_like_emoji_base(base) ? base_start : -1;
+	}
+
+	// Plain emoji base.
+	return looks_like_emoji_base(tail) ? tail_start : -1;
+}
+
+int32_t TextEdit::get_emoji_sequence_length_backward(
+	const icu::UnicodeString& str,
+	int32_t index
+) {
+	const int32_t len = str.length();
+
+	// Here, index is the UTF-16 offset immediately after the emoji candidate.
+	if (index <= 0 || index > len) {
+		return 0;
+	}
+
+	// 1. FAST PATH: Keycap sequence ending at index.
+	//
+	//   base + U+20E3
+	//   base + U+FE0F + U+20E3
+	//
+	// Examples:
+	//   3⃣
+	//   3️⃣
+	if (str[index - 1] == 0x20E3) {
+		if (index >= 2 && is_keycap_base_fast(str[index - 2])) {
+			return 2;
+		}
+
+		if (
+			index >= 3 &&
+			str[index - 2] == 0xFE0F &&
+			is_keycap_base_fast(str[index - 3])
+		) {
+			return 3;
+		}
+
+		return 0;
+	}
+
+	// 2. FAST PATH: subdivision/tag flag sequence.
+	//
+	// Usually:
+	//   U+1F3F4 + tag chars + U+E007F
+	//
+	// Example class: England/Scotland/Wales flags.
+	{
+		int32_t cp_start;
+		UChar32 cp;
+
+		if (prev_codepoint(str, index, cp_start, cp) && cp == 0xE007F) {
+			int32_t p = cp_start;
+			bool saw_tag = false;
+
+			while (true) {
+				int32_t tag_start;
+				UChar32 tag_cp;
+
+				if (!prev_codepoint(str, p, tag_start, tag_cp)) {
+					break;
+				}
+
+				if (!is_tag_char(tag_cp)) {
+					break;
+				}
+
+				saw_tag = true;
+				p = tag_start;
+			}
+
+			int32_t base_start;
+			UChar32 base;
+
+			if (
+				saw_tag &&
+				prev_codepoint(str, p, base_start, base) &&
+				base == 0x1F3F4
+			) {
+				return index - base_start;
+			}
+
+			return 0;
+		}
+	}
+
+	// 3. FAST PATH: regional indicator flags.
+	//
+	// Regional indicators are grouped in pairs from the start of the RI run.
+	// For a run of 2 RI code points, return the pair.
+	// For a run of 3 RI code points, the last one is its own cluster.
+	{
+		int32_t last_ri_start;
+		UChar32 last_ri;
+
+		if (
+			prev_codepoint(str, index, last_ri_start, last_ri) &&
+			is_regional_indicator(last_ri)
+		) {
+			int32_t p = index;
+			int32_t count = 0;
+			int32_t starts[2] = { -1, -1 };
+
+			while (true) {
+				int32_t s;
+				UChar32 cp;
+
+				if (!prev_codepoint(str, p, s, cp)) {
+					break;
+				}
+
+				if (!is_regional_indicator(cp)) {
+					break;
+				}
+
+				if (count < 2) {
+					starts[count] = s;
+				}
+
+				++count;
+				p = s;
+			}
+
+			// Unicode grapheme pairing behavior:
+			// even RI run length => final cluster is last 2 RIs
+			// odd RI run length  => final cluster is last 1 RI
+			if (count >= 2 && (count % 2) == 0) {
+				return index - starts[1];
+			}
+
+			return index - starts[0];
+		}
+	}
+
+	// 4. General emoji atom / ZWJ sequence.
+	//
+	// Works backwards over:
+	//   emoji
+	//   emoji + skin tone
+	//   emoji + VS16
+	//   emoji ZWJ emoji
+	//   emoji ZWJ emoji ZWJ emoji ...
+	//
+	// Example:
+	//   👨🏾‍🫯‍👨🏼
+	{
+		int32_t start = consume_emoji_atom_backward(str, index);
+
+		if (start < 0) {
+			return 0;
+		}
+
+		while (start > 0) {
+			int32_t zwj_start;
+			UChar32 zwj;
+
+			if (!prev_codepoint(str, start, zwj_start, zwj) || zwj != 0x200D) {
+				break;
+			}
+
+			const int32_t prev_atom_end = zwj_start;
+			const int32_t prev_atom_start =
+				consume_emoji_atom_backward(str, prev_atom_end);
+
+			if (prev_atom_start < 0) {
+				break;
+			}
+
+			start = prev_atom_start;
+		}
+
+		return index - start;
+	}
 }
 
 void TextEdit::position(int x, int y, int w, int h) {

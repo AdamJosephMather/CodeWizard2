@@ -1,4 +1,5 @@
 #include "codeedit.h"
+#include <chrono>
 #ifdef _WIN32
 #include "languageserverclient.h"
 #include <windows.h>
@@ -183,6 +184,16 @@ bool Process::start(const std::string& program, const std::vector<std::string>& 
 				readyReadCallback();
 			}
 		}
+
+		if (impl->running) {
+			impl->running = false;
+			DWORD exitCode = 0;
+			if (GetExitCodeProcess(impl->piProcInfo.hProcess, &exitCode)) {
+				if (finishedCallback) finishedCallback((int)exitCode, NormalExit);
+			} else {
+				if (finishedCallback) finishedCallback(-1, CrashExit);
+			}
+		}
 	});
 
 	return true;
@@ -249,6 +260,23 @@ bool Process::start(const std::string& program, const std::vector<std::string>& 
 						break; // EOF
 					}
 				}
+			}
+
+			if (impl->running) {
+				impl->running = false;
+				int status;
+				int exitCode = -1;
+				ExitStatus exitStatus = CrashExit;
+				if (waitpid(impl->pid, &status, WNOHANG) >= 0) {
+					if (WIFEXITED(status)) {
+						exitCode = WEXITSTATUS(status);
+						exitStatus = NormalExit;
+					} else if (WIFSIGNALED(status)) {
+						exitCode = WTERMSIG(status);
+						exitStatus = CrashExit;
+					}
+				}
+				if (finishedCallback) finishedCallback(exitCode, exitStatus);
 			}
 		});
 	}
@@ -386,6 +414,7 @@ LanguageServerClient::LanguageServerClient(const std::string &serverPath, std::f
 #endif
 		failedToStart = true;
 		if (logCallback) {
+			App::displayToast(icu::UnicodeString::fromUTF8("Failed to start language server at: " + serverPath + "\nError: " + serverProcess.errorString()));
 			logCallback("Failed to start language server at: " + serverPath + "\nError: " + serverProcess.errorString());
 		}
 	}
@@ -484,17 +513,25 @@ void LanguageServerClient::initialize(const std::string &rootUri)
 	
 	if (failedToStart) {
 		if (logCallback) {
+			App::displayToast(icu::UnicodeString::fromUTF8("Failed to start LSP - Ensure it's accessible via the command given."));
 			logCallback("Failed to start LSP - Ensure it's accessible via the command given.");
 		}
 		return;
 	}
 
-	// Wait for initialization
+	// Wait for initialization (max 10 seconds)
 	std::unique_lock<std::mutex> lock(initializeMutex);
-	initializeCondition.wait(lock, [this] { return initializeComplete.load(); });
+	if (!initializeCondition.wait_for(lock, std::chrono::seconds(10), [this] { return initializeComplete.load(); })) {
+		failedToStart = true;
+		if (logCallback) {
+			App::displayToast(icu::UnicodeString::fromUTF8("LSP initialization timed out."));
+			logCallback("LSP initialization timed out.");
+		}
+	}
 	
 	if (failedToStart) {
 		if (logCallback) {
+			App::displayToast(icu::UnicodeString::fromUTF8("Failed to start LSP - Ensure it's accessible via the command given."));
 			logCallback("Failed to start LSP - Ensure it's accessible via the command given.");
 		}
 		return;

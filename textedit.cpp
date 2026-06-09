@@ -2260,10 +2260,14 @@ void TextEdit::position(int x, int y, int w, int h) {
 	start_x = -fmod(scrolled_to_horz, 1) * TextRenderer::get_text_width(1);
 	start_y = -fmod(scrolled_to_vert, 1) * TextRenderer::get_text_height();
 
-	if (char_start >= 1) {
+	if (char_start == 1) {
 		char_start -= 1;
 		start_x -= TextRenderer::get_text_width(1);
+	}else if (char_start > 1) { // because of emojis we need to make sure they're all the way off screen before we stop rendering them
+		char_start -= 2;
+		start_x -= TextRenderer::get_text_width(2);
 	}
+	
 
 	int end_line = line_start+ceil((float)t_h/(float)TextRenderer::get_text_height()) + 1;
 	int end_char = char_start+ceil((float)t_w/(float)TextRenderer::get_text_width(1)) + 1;
@@ -2345,7 +2349,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 		// run through
 		
 		int cur_length = 0;
-		int skipping = 0;
+		int skipping = 0; // a variable to handle emojis, because they take up multiple codepoints
 		
 		for (int true_char_indx = 0; true_char_indx < thisLn.length()+1; true_char_indx += 1) {
 			for (int i = 0; i < selections.size(); i++) {
@@ -2388,32 +2392,51 @@ void TextEdit::position(int x, int y, int w, int h) {
 				}
 			}
 			
+			// handling emojis
 			if (skipping != 0) {
-				cur_char += 1;
 				skipping -= 1;
 				if (skipping == 0) {
-					cur_length += 2;
+					if (cur_char >= char_start) {
+						cur_length += 2;
+					}else if (cur_char == char_start-1) { // because they're two long
+						cur_length += 1;
+						final_line.append('#');
+						final_color.push_back(App::theme.main_text_color);
+					}
+					cur_char += 2;
 				}
 				continue;
 			}else{
 				skipping = newskip;
 				if (skipping != 0) {
-					for (int i = 0; i < skipping; i++) {
-						final_line.append(thisLn.charAt(i+true_char_indx));
-						final_color.push_back(App::theme.main_text_color);
+					if (cur_char >= char_start) {
+						for (int i = 0; i < skipping; i++) {
+							final_line.append(thisLn.charAt(i+true_char_indx));
+							final_color.push_back(App::theme.main_text_color);
+						}
 					}
+					
 					skipping -= 1;
+					
 					if (skipping == 0) {
-						cur_length += 2;
+						if (cur_char >= char_start) {
+							cur_length += 2;
+						}else if (cur_char == char_start-1) { // because they're two long
+							cur_length += 1;
+							final_line.append('#');
+							final_color.push_back(App::theme.main_text_color);
+						}
+						cur_char += 2;
 					}
 					continue;
 				}
 			}
 			
-			UChar32 chr;
+			// regular text
 			
+			UChar32 chr;
 			if (true_char_indx == thisLn.length()) {
-				chr = U' ';
+				chr = U' '; // need this for selections to look right, inserting a not-real space for... things
 			}else{
 				chr = thisLn.charAt(true_char_indx);
 			}
@@ -2422,7 +2445,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 
 			std::vector<UChar32> tohandle = {};
 
-			if (chr == U'\t') {
+			if (chr == U'\t') { // ensure tabs are not just 1 char wide
 				tohandle = tabReplacementChars;
 			}else{
 				tohandle = {chr};

@@ -180,7 +180,7 @@ public:
 	
 	icu::UnicodeString getSelectedText(Cursor c);
 	
-	int32_t get_emoji_sequence_length(const icu::UnicodeString& str, int32_t index);
+//	int32_t get_emoji_sequence_length(const icu::UnicodeString& str, int32_t index); - now exists in helper_types
 	int32_t get_emoji_sequence_length_backward(const icu::UnicodeString& str, int32_t index);
 	
 	void position(int x, int y, int w, int h);

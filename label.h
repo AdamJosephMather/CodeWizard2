@@ -34,5 +34,4 @@ public:
 	Color* background_color = App::theme.darker_background_color;
 private:
 	std::mutex positioning;
-	int32_t get_emoji_sequence_length(const icu::UnicodeString& str, int32_t index);
 };

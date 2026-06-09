@@ -370,6 +370,8 @@ bool App::Init() {
 	
 	TextRenderer::after_font_change = [&](){
 		text_padding = std::min(TextRenderer::get_text_width(1), TextRenderer::get_text_height()) * 0.5;
+		reclear = 2;
+		rerender = true;
 	};
 	
 	TextRenderer::set_font_size(settings->getValue("font_size", 23.0f));

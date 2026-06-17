@@ -51,7 +51,7 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 		btn->t_y = t_y+App::text_padding;
 	},  [&](Button* btn){
 		// onclick
-		clipBoardText1 = icu::UnicodeString::fromUTF8(GetClipboardText());
+		clipBoardText1 = stripOfChar(icu::UnicodeString::fromUTF8(GetClipboardText()), U'\r');
 		
 		f1 = new FileInfo();
 		f1->filepath = "";
@@ -99,7 +99,7 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 		btn->t_y = t_y+App::text_padding;
 	},  [&](Button* btn){
 		// onclick
-		clipBoardText2 = icu::UnicodeString::fromUTF8(GetClipboardText());
+		clipBoardText2 = stripOfChar(icu::UnicodeString::fromUTF8(GetClipboardText()), U'\r');
 		
 		f2 = new FileInfo();
 		f2->filepath = "";
@@ -182,6 +182,8 @@ void Compare::setOnlyTo(FileInfo* f, int num) {
 }
 
 void Compare::reload() {
+	App::time_till_regular = 2;
+	
 	if (!f1 && !f2) {
 		textedit->setFullText(icu::UnicodeString());
 		return;
@@ -253,6 +255,8 @@ void Compare::reload() {
 		textedit->lines[i].changed = false;
 		textedit->lines[i].highlightinguptodate = true;
 	}
+	
+	textedit->DO_POSITION = true;
 }
 
 void Compare::render() {

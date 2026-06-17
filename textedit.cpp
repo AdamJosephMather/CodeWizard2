@@ -1274,8 +1274,9 @@ void TextEdit::cut() {
 }
 
 void TextEdit::copy(){
+	coppiedText.clear();
+	
 	if (cursors.size() > 1) {
-		coppiedText.clear();
 		for (auto ci = 0; ci < cursors.size(); ci++) {
 			coppiedText.push_back(getSelectedText(cursors[ci]));
 		}

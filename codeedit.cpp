@@ -923,6 +923,10 @@ void CodeEdit::triggerSaveAs() {
 		
 		detectLanguage();
 		
+		App::reclear = 2;
+		textedit->DO_POSITION = true;
+		DO_RENDER = 2;
+		
 		was_in_a_file = false;
 		f->is_opening = false;
 		madeChangeBetweenSaves = true;

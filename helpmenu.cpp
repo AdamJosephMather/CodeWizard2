@@ -15,11 +15,17 @@ HelpMenu::HelpMenu(Widget* parent) : Widget(parent) {
 	closebutton->text_special = 1;
 	closebutton->window_button = true;
 	closebutton->rounded = true;
-	closebutton->background_color = App::theme.del_diff;
+	closebutton->background_color       = App::theme.del_diff;
+	closebutton->background_color_hover = App::theme.del_diff;
+	closebutton->border_color       = nullptr;
+	closebutton->border_color_hover = nullptr;
+
 	
 	tb = new Tabs(this);
 	tb->POSITIONER = [&](Widget* t) {
 		tb->t_y = t_y+closebutton->t_h;
+		tb->t_x = t_x+2;
+		tb->t_w = t_w-2;
 	};
 	
 	tb->tab_clicked_callback = [&](TabInfo info){
@@ -252,8 +258,8 @@ void HelpMenu::render() {
 		label->render();
 	});
 	
-	App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
 	App::DrawRect(t_x, tb->t_y+tb->t_h, t_w, 1, App::theme.border);
+	App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.main_text_color, 5, App::text_padding);
 }
 
 void HelpMenu::position(int x, int y, int w, int h) {

@@ -12,7 +12,6 @@ MathWindow::MathWindow(Widget *parent) : Widget(parent) {
 		mathInput->t_h = t_h;
 	});
 	mathInput->rounded = true;
-	mathInput->border = true;
 	mathInput->scrollbar_horizontal = true;
 	mathInput->scrollbar_vertical = true;
 	mathInput->contextmenu->is_visible_3 = true;

@@ -7,11 +7,15 @@ Button::Button(Widget *parent, icu::UnicodeString text, Positioner positioner, O
 	POSITIONER = positioner;
 	ONCLICK = onclick;
 	
-	transparent = false;
 	window_button = false;
 	rounded = false;
 	
 	background_color = App::theme.darker_background_color;
+	background_color_hover = App::theme.hover_background_color;
+	text_color = App::theme.main_text_color;
+	text_color_hover = App::theme.main_text_color;
+	border_color = App::theme.border;
+	border_color_hover = App::theme.main_text_color;
 	
 	id = icu::UnicodeString::fromUTF8("Button - ") + text;
 }
@@ -64,88 +68,64 @@ void Button::render() {
 	int my = App::mouseY;
 	bool hovered = t_x <= mx && t_x+t_w >= mx && t_y <= my && t_y+t_h >= my;
 	
-	Color* textColor = App::theme.main_text_color;
+	Color* textColor = text_color;
+	Color* backColor = background_color;
+	Color* borderColor = border_color;
 	
-	if (window_button) {
-		if (hovered) {
-			if (rounded) {
-				App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, background_color);
-				
-				if (border){
-					App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
-				}
-			}else{
-				App::DrawRect(t_x, t_y, t_w, t_h, background_color);
-				
-				if (border){
-					App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
-				}
-			}
-		}
-	}else if (isContext){
-		if (hovered) {
-			textColor = App::theme.darker_background_color;
-			if (rounded) {
-				App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, background_color, border);
-				if (border) {
-					App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
-				}
-			}else{
-				App::DrawRect(t_x, t_y, t_w, t_h, background_color);
-				if (border) {
-					App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
-				}
-			}
-		}
-	}else{
-		Color* fillcolor = background_color;
-		if (hovered) {
-			fillcolor = App::theme.hover_background_color;
-		}
-		
+	if (hovered) {
+		textColor = text_color_hover;
+		backColor = background_color_hover;
+		borderColor = border_color_hover;
+	}
+	
+	if (backColor != nullptr) {
 		if (rounded) {
-			App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, fillcolor, border);
-			if (border) {
-				App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
-			}
+			App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, backColor, borderColor != nullptr);
 		}else{
-			App::DrawRect(t_x, t_y, t_w, t_h, fillcolor);
-			if (border) {
-				App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
-			}
+			App::DrawRect(t_x, t_y, t_w, t_h, backColor);
 		}
 	}
 	
-	if (text_special == 0) {
-		int x;
-		if (alignLeft) {
-			x = t_x+App::text_padding;
+	if (borderColor) {
+		if (rounded) {
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderColor, 5, App::text_padding);
 		}else{
-			x = t_x+t_w/2-TextRenderer::get_text_width(BUTTON_LABEL.length())/2;
+			App::DrawBorder(t_x, t_y, t_w, t_h, borderColor);
 		}
-		
-		int y = t_y+t_h/2-TextRenderer::get_text_height()/2;
-		TextRenderer::draw_text(x, y, BUTTON_LABEL, textColor);
-	}else {
-		int wdth = TextRenderer::get_text_height()*.6;
-		
-		int x;
-		if (alignLeft) {
-			x = t_x+App::text_padding;
-		}else{
-			x = t_x+t_w/2-wdth/2;
-		}
-		
-		int y = t_y+t_h/2-wdth/2;
-		
-		if (text_special == 1) {
-			App::DrawX(x, y, wdth, wdth, 2, textColor);
-		}else if (text_special == 2) {
-			App::DrawPlus(x, y, wdth, wdth, 2, textColor);
-		}else if (text_special == 3) {
-			App::DrawMinus(x, y, wdth, wdth, 2, textColor);
-		}else if (text_special == 4) {
-			App::DrawSquare(x, y, wdth, wdth, 2, textColor);
+	}
+	
+	if (textColor != nullptr) {
+		if (text_special == 0) {
+			int x;
+			if (alignLeft) {
+				x = t_x+App::text_padding;
+			}else{
+				x = t_x+t_w/2-TextRenderer::get_text_width(BUTTON_LABEL.length())/2;
+			}
+			
+			int y = t_y+t_h/2-TextRenderer::get_text_height()/2;
+			TextRenderer::draw_text(x, y, BUTTON_LABEL, textColor);
+		}else {
+			int wdth = TextRenderer::get_text_height()*.6;
+			
+			int x;
+			if (alignLeft) {
+				x = t_x+App::text_padding;
+			}else{
+				x = t_x+t_w/2-wdth/2;
+			}
+			
+			int y = t_y+t_h/2-wdth/2;
+			
+			if (text_special == 1) {
+				App::DrawX(x, y, wdth, wdth, 2, textColor);
+			}else if (text_special == 2) {
+				App::DrawPlus(x, y, wdth, wdth, 2, textColor);
+			}else if (text_special == 3) {
+				App::DrawMinus(x, y, wdth, wdth, 2, textColor);
+			}else if (text_special == 4) {
+				App::DrawSquare(x, y, wdth, wdth, 2, textColor);
+			}
 		}
 	}
 	

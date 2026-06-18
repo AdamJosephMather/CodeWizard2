@@ -26,7 +26,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		App::deleteWidget(this);
 	});
 	b1->rounded = true;
-	b1->border = true;
 	
 	auto text2 = icu::UnicodeString::fromUTF8("File Tree");
 	b2 = new Button(this, text2, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -38,7 +37,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		App::deleteWidget(this);
 	});
 	b2->rounded = true;
-	b2->border = true;
 	
 	auto text3 = icu::UnicodeString::fromUTF8("Settings Menu");
 	b3 = new Button(this, text3, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -50,7 +48,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		App::deleteWidget(this);
 	});
 	b3->rounded = true;
-	b3->border = true;
 	
 	auto text4 = icu::UnicodeString::fromUTF8("Compare Two Files");
 	b4 = new Button(this, text4, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -64,7 +61,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		App::deleteWidget(this);
 	});
 	b4->rounded = true;
-	b4->border = true;
 	
 	auto text5 = icu::UnicodeString::fromUTF8("AI Chat");
 	b5 = new Button(this, text5, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -76,7 +72,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		App::deleteWidget(this);
 	});
 	b5->rounded = true;
-	b5->border = true;
 	
 	auto text6 = icu::UnicodeString::fromUTF8("LSP Debugger");
 	b6 = new Button(this, text6, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -88,7 +83,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		App::deleteWidget(this);
 	});
 	b6->rounded = true;
-	b6->border = true;
 	
 	auto text7 = icu::UnicodeString::fromUTF8("Terminal");
 	b7 = new Button(this, text7, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -100,7 +94,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		App::deleteWidget(this);
 	});
 	b7->rounded = true;
-	b7->border = true;
 	
 	auto text8 = icu::UnicodeString::fromUTF8("Math Window");
 	b8 = new Button(this, text8, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -112,7 +105,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		App::deleteWidget(this);
 	});
 	b8->rounded = true;
-	b8->border = true;
 	
 	auto text9 = icu::UnicodeString::fromUTF8("Asteroids");
 	b9 = new Button(this, text9, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -124,7 +116,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		App::deleteWidget(this);
 	});
 	b9->rounded = true;
-	b9->border = true;
 	
 	auto text10 = icu::UnicodeString::fromUTF8("Graph Window");
 	b10 = new Button(this, text10, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -136,7 +127,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		App::deleteWidget(this);
 	});
 	b10->rounded = true;
-	b10->border = true;
 }
 
 void WidgetChooser::render() {

@@ -42,11 +42,9 @@ void ListBox::render() {
 		if (selected_id == indx) {
 			textCol = App::theme.darker_background_color;
 			if (rounded) {
-				App::DrawRoundedRect(t_x, y, t_w, th, App::text_padding, App::theme.main_text_color);
-				App::DrawRoundBorder(t_x, y, t_w, th, App::theme.border, 5, App::text_padding);
+				App::DrawRoundedRect(t_x, y, t_w, th, App::text_padding, App::theme.main_text_color); // no need for border because this is so eye catching
 			}else{
 				App::DrawRect(t_x, y, t_w, th, App::theme.main_text_color);
-				App::DrawBorder(t_x, y, t_w, th, App::theme.border);
 			}
 		}else{
 			textCol = App::theme.main_text_color;
@@ -58,10 +56,15 @@ void ListBox::render() {
 		y += th;
 	}
 	
+	Color* bColor = App::theme.border;
+	if (cursor_in_this) {
+		bColor = App::theme.main_text_color;
+	}
+	
 	if (!rounded) {
-		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+		App::DrawBorder(t_x, t_y, t_w, t_h, bColor);
 	}else{
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+		App::DrawRoundBorder(t_x, t_y, t_w, t_h, bColor, 5, App::text_padding);
 	}
 }
 

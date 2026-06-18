@@ -382,7 +382,6 @@ void Settings::handleChildren() {
 			max_scroll = fmax(0, (t->t_y+t->t_h+scrolled_to)-(t_h-tab_bar->t_h)-(t->t_h)*2);
 		});
 		e->rounded = true;
-		e->border = true;
 		
 		setWithValue(e, el);
 		

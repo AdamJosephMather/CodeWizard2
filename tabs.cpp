@@ -131,15 +131,20 @@ void Tabs::render() {
 			
 			Color* c;
 			Color* tc;
+			Color* bc;
 			if (selected_id == info.id) {
 				c = App::theme.main_text_color;
 				tc = App::theme.darker_background_color;
+				bc = App::theme.main_text_color;
 			}else if (hovering.indx == indx && hovering.body) {
 				c = App::theme.hover_background_color;
 				tc = App::theme.main_text_color;
+				bc = App::theme.main_text_color;
 			}else {
 				c = App::theme.extras_background_color;
+				
 				tc = App::theme.main_text_color;
+				bc = App::theme.border;
 			}
 			
 			if (rounded) {
@@ -165,9 +170,9 @@ void Tabs::render() {
 			}
 			
 			if (rounded) {
-				App::DrawRoundBorder(lc.start, t_y, tab_width+addextra, tabheight, App::theme.border, 5, App::text_padding);
+				App::DrawRoundBorder(lc.start, t_y, tab_width+addextra, tabheight, bc, 5, App::text_padding);
 			}else{
-				App::DrawBorder(lc.start, t_y, tab_width+addextra, tabheight, App::theme.border);
+				App::DrawBorder(lc.start, t_y, tab_width+addextra, tabheight, bc);
 			}
 			
 			TextRenderer::draw_text(lc.start+App::text_padding, t_y+text_height, info.title, tc);
@@ -192,18 +197,22 @@ void Tabs::render() {
 	if (can_add_new) {
 		if (add_loc < t_w+t_x){
 			Color* c;
+			Color* bc;
+			
 			if (hvrngtab) {
 				c = App::theme.hover_background_color;
+				bc = App::theme.main_text_color;
 			}else{
 				c = App::theme.extras_background_color;
+				bc = App::theme.border;
 			}
 			
 			if (rounded) {
 				App::DrawRoundedRect(add_loc, t_y, end_len-2, tabheight, App::text_padding, c);
-				App::DrawRoundBorder(add_loc, t_y, end_len-2, tabheight, App::theme.border, 5, App::text_padding);
+				App::DrawRoundBorder(add_loc, t_y, end_len-2, tabheight, bc, 5, App::text_padding);
 			}else {
 				App::DrawRect(add_loc, t_y, end_len-2, tabheight, c);
-				App::DrawBorder(add_loc, t_y, end_len-2, tabheight, App::theme.border);
+				App::DrawBorder(add_loc, t_y, end_len-2, tabheight, bc);
 			}
 			
 			App::DrawPlus(add_loc+close_offset_x, t_y+close_offset_y, close_size, close_size, 2, App::theme.main_text_color);

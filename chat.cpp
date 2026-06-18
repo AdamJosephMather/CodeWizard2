@@ -14,6 +14,8 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 	
 	querybox = new TextEdit(this, [](Widget*){});
 	querybox->id = icu::UnicodeString::fromUTF8("QueryBox");
+	querybox->borderColor = nullptr;
+	querybox->activeBorderColor = nullptr;
 	
 	filesButton = new Button(this, icu::UnicodeString::fromUTF8("Insert File"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		btn->t_x = t_x + 2;
@@ -34,7 +36,6 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 		filesAddList->is_visible_layered = !filesAddList->is_visible_layered;
 	});
 	filesButton->rounded = true;
-	filesButton->border = true;
 	
 	newChat = new Button(this, icu::UnicodeString::fromUTF8("Reset Chat"), [&](Widget* btn, int x, int y, int _, int _2, int w, int h){
 		btn->t_x = t_x+App::text_padding;
@@ -52,7 +53,6 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 		from_user.clear();
 	});
 	newChat->rounded = true;
-	newChat->border  = true;
 	
 	filesAddList = new ListBox(this, [&](Widget* w){
 		w->t_x = t_x + 2;
@@ -154,14 +154,18 @@ void Chat::render() {
 	});
 	TextRenderer::draw_text(filesButton->t_x+filesButton->t_w+App::text_padding, filesButton->t_y+App::text_padding, icu::UnicodeString::fromUTF8(App::settings->getValue("lm_studio_model_id",std::string("qwen2.5-coder-1.5b-instruct@q4_k_m"))), App::theme.lesser_text_color);
 	
+	Color* bColor = App::theme.border;
+	if (querybox == App::activeLeafNode) {
+		bColor = App::theme.main_text_color;
+	}
 	
 	if (rounded) {
 		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
-	}else{
-		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+		App::DrawRoundBorder(t_x, t_y, t_w, t_h, bColor, 5, App::text_padding);
+	}else {
+		App::DrawBorder(t_x, t_y, t_w, t_h, bColor);
 	}
-	App::DrawRect(t_x, filesButton->t_y-2, t_w, 1, App::theme.border);
+	App::DrawRect(t_x, filesButton->t_y-2, t_w, 1, bColor);
 }
 
 bool Chat::on_scroll_event(double xchange, double ychange) {

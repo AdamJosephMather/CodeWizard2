@@ -34,7 +34,6 @@ Asteroids::Asteroids(Widget* parent) : Widget(parent) {
 		App::setActiveLeafNode(this);
 		resetGame();
 	});
-	startGameButton->border = true;
 	startGameButton->rounded = true;
 }
 

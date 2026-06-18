@@ -45,7 +45,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 4;
-int App::patch_version = 2; // 🚀 (we now support emojis)
+int App::patch_version = 3; // 🚀 (we now support emojis)
 
 
 #ifndef M_PI
@@ -252,6 +252,8 @@ bool App::Init() {
 		STRING_REQUEST_RECTANGLE->position(w->t_x, w->t_y, w->t_w, w->t_h);
 	});
 	STRING_REQUEST_TEXTEDIT->id = icu::UnicodeString::fromUTF8("STRING_REQUEST_TEXTEDIT");
+	STRING_REQUEST_TEXTEDIT->borderColor = nullptr;
+	STRING_REQUEST_TEXTEDIT->activeBorderColor = nullptr;
 	
 	STRING_REQUEST_RECTANGLE = new MyRect(nullptr, [&](Widget* w){
 		int h = TextRenderer::get_text_height()+text_padding*2;
@@ -261,6 +263,7 @@ bool App::Init() {
 		w->t_h = STRING_REQUEST_TEXTEDIT->t_h+h*2;
 	});
 	STRING_REQUEST_RECTANGLE->id = icu::UnicodeString::fromUTF8("STRING_REQUEST_RECTANGLE");
+	STRING_REQUEST_RECTANGLE->border_color = App::theme.main_text_color;
 	
 	STRING_REQUEST_LABEL = new Label(nullptr);
 	STRING_REQUEST_LABEL->POSITIONER = [&](Widget* w) {

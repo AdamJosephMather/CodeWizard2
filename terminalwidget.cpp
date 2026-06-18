@@ -37,7 +37,6 @@ TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 	});
 	ajm_asv3_tm->const_parent = this;
 	ajm_asv3_tm->rounded = true;
-	ajm_asv3_tm->border = true;
 	ajm_asv3_tm->bgcolor = App::theme.hover_background_color; // brighter for black terminal background
 	
 	if (App::settings->getValue("ajm_asv3_tm_url", std::string()) != std::string()) {
@@ -473,11 +472,16 @@ void TerminalWidget::render() {
 		}
 	}
 	
+	Color* bColor = App::theme.border;
+	if (this == App::activeLeafNode) {
+		bColor = App::theme.main_text_color;
+	}
+	
 	if (rounded) {
 		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+		App::DrawRoundBorder(t_x, t_y, t_w, t_h, bColor, 5, App::text_padding);
 	}else{
-		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+		App::DrawBorder(t_x, t_y, t_w, t_h, bColor);
 	}
 	
 	Widget::render();

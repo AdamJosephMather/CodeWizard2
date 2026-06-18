@@ -27,7 +27,6 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 		// onclick
 		recalculateDrawables();
 	});
-	reset->border = true;
 	reset->rounded = true;
 	
 	addCords = new Button(this, icu::UnicodeString::fromUTF8("Add Coords"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
@@ -38,7 +37,6 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 		// onclick
 		addThing(false);
 	});
-	addCords->border = true;
 	addCords->rounded = true;
 	
 	addFile = new Button(this, icu::UnicodeString::fromUTF8("Add File"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
@@ -49,7 +47,6 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 		// onclick
 		addThing(true);
 	});
-	addFile->border = true;
 	addFile->rounded = true;
 	
 	addFolder = new Button(this, icu::UnicodeString::fromUTF8("Add Folder"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
@@ -75,7 +72,6 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 			addThing(true, f.string());
 		}
 	});
-	addFolder->border = true;
 	addFolder->rounded = true;
 	
 	averageText = new TextEdit(this, [=](Widget* t){
@@ -85,7 +81,6 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 		t->t_h = TextRenderer::get_text_height()+2*App::text_padding;
 	});
 	averageText->rounded = true;
-	averageText->border = true;
 	averageText->setFullText(icu::UnicodeString::fromUTF8("1"));
 	
 	Button* addCords;
@@ -265,7 +260,6 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 		
 		recalculateDrawables(false);
 	});
-	remBut->border = true;
 	remBut->rounded = true;
 	
 	scatBut = new Button(this, icu::UnicodeString::fromUTF8("Line"), [=](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
@@ -289,7 +283,6 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 			}
 		}
 	});
-	scatBut->border = true;
 	scatBut->rounded = true;
 	
 	line.removeButton = remBut;
@@ -306,7 +299,6 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 			t->t_h = TextRenderer::get_text_height()+2*App::text_padding;
 		});
 		xed->rounded = true;
-		xed->border = true;
 		yed = new TextEdit(this, [=](Widget* t){
 			t->t_x = xed->t_x;
 			t->t_y = xed->t_y+xed->t_h+App::text_padding;
@@ -314,7 +306,6 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 			t->t_h = xed->t_h;
 		});
 		yed->rounded = true;
-		yed->border = true;
 		
 		xed->onlinechange = [&, thisId](EditType typ, int lineindex){
 			updateInfoFor(thisId);
@@ -701,7 +692,7 @@ void GraphWindow::render() {
 			int x2 = fmax(startX, fmin(App::mouseX, startX+widths));
 			int y2 = fmax(screenStart, fmin(App::mouseY, screenStart+screenHeight));
 			App::DrawRect(squareStartX, squareStartY, x2-squareStartX, y2-squareStartY, App::theme.add_panel);
-			App::DrawBorder(squareStartX, squareStartY, x2-squareStartX, y2-squareStartY, App::theme.border);
+			App::DrawBorder(squareStartX, squareStartY, x2-squareStartX, y2-squareStartY, App::theme.main_text_color);
 		}
 	});
 	

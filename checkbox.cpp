@@ -1,6 +1,5 @@
 #include "checkbox.h"
 #include "application.h"
-#include "text_renderer.h"
 
 CheckBox::CheckBox(Widget *parent, CheckPositioner positioner, CheckOnClick onclick) : Widget(parent) {
 	POSITIONER = positioner;
@@ -8,6 +7,9 @@ CheckBox::CheckBox(Widget *parent, CheckPositioner positioner, CheckOnClick oncl
 	
 	hovered = false;
 	bgcolor = App::theme.darker_background_color;
+	
+	border_color = App::theme.border;
+	border_color_hover = App::theme.main_text_color;
 	
 	id = icu::UnicodeString::fromUTF8("CheckBox");
 }
@@ -68,10 +70,17 @@ void CheckBox::render() {
 	int p = 4;
 	int radius = App::text_padding;
 	
+	Color* borderC = border_color;
+	Color* backC = bgcolor;
+	if (cursor_in_this) {
+		borderC = border_color_hover;
+		backC = App::theme.hover_background_color;
+	}
+	
 	if (rounded) {
-		App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, bgcolor);
+		App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, backC);
 	}else{
-		App::DrawRect(t_x, t_y, t_w, t_h, bgcolor);
+		App::DrawRect(t_x, t_y, t_w, t_h, backC);
 	}
 	
 	if (is_checked) {
@@ -80,11 +89,11 @@ void CheckBox::render() {
 	
 	Widget::render();
 	
-	if (border) {
+	if (borderC) {
 		if (rounded) {
-			App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, radius);
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, radius);
 		}else{
-			App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+			App::DrawBorder(t_x, t_y, t_w, t_h, borderC);
 		}
 	}
 }

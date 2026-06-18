@@ -87,7 +87,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	});
 	renamebox->id = icu::UnicodeString::fromUTF8("renamebox");
 	renamebox->background_color = App::theme.extras_background_color;
-	renamebox->border = true;
 	renamebox->const_parent = this;
 	
 	completionbox = new ListBox(this, [&](Widget* w){
@@ -129,7 +128,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	});
 	hoverbox->const_parent = this;
 	hoverbox->background_color = App::theme.extras_background_color;
-	hoverbox->border = true;
 	hoverbox->rounded = true;
 	hoverbox->contextmenu->is_visible_3 = true;
 	hoverbox->id = icu::UnicodeString::fromUTF8("hoverbox");
@@ -213,14 +211,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	caseSensitivity->rounded = true;
 	caseSensitivity->const_parent = this;
 	
-	allButton->border = true;
-	nextReplButton->border = true;
-	nextButton->border = true;
-	prevButton->border = true;
-	replaceTextEdit->border = true;
-	findTextEdit->border = true;
-	caseSensitivity->border = true;
-	
 	line_numbers = new LineNumbers(this);
 	line_numbers->border = true;
 	
@@ -237,6 +227,8 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	textedit->scrollbar_vertical = true;
 	textedit->scrollbar_horizontal = true;
 	textedit->contextmenu->is_visible_3 = true;
+	textedit->borderColor = nullptr;
+	textedit->activeBorderColor = nullptr;
 	textedit->id = icu::UnicodeString::fromUTF8("code edit text edit");
 	
 	textedit->contextmenu->addSeparaterToMenu();
@@ -282,9 +274,9 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	}, [&](Button* b){
 		showhideerrors();
 	});
-	showErrorsButton->transparent = true;
 	showErrorsButton->rounded = true;
 	showErrorsButton->const_parent = this;
+	showErrorsButton->border_color = nullptr;
 	
 	errorMenu = new ListBox(this, [&](Widget* w){
 		w->t_w = textedit->t_w/3; // height is set by the listbox
@@ -788,6 +780,11 @@ void CodeEdit::render() {
 		DO_RENDER = 3;
 	}
 	
+	Color* borderC = App::theme.border;
+	if (textedit == App::activeLeafNode) {
+		borderC = App::theme.main_text_color;
+	}
+	
 	if (DO_RENDER == 0 && App::reclear == 0) {
 		renderFindBox();
 		renderExtras();
@@ -798,9 +795,9 @@ void CodeEdit::render() {
 		
 		if (rounded) {
 			App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
-			App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, App::text_padding);
 		}else{
-			App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+			App::DrawBorder(t_x, t_y, t_w, t_h, borderC);
 		}
 		return;
 	}
@@ -826,12 +823,11 @@ void CodeEdit::render() {
 		});
 	}
 	
-	
 	if (rounded) {
 		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+		App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, App::text_padding);
 	}else{
-		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+		App::DrawBorder(t_x, t_y, t_w, t_h, borderC);
 	}
 }
 

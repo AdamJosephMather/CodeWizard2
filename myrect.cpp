@@ -4,6 +4,7 @@
 MyRect::MyRect(Widget *parent, App::PosFunction positioner) : Widget(parent) {
 	POSITIONER = positioner;
 	background_color = App::theme.main_background_color;
+	border_color = App::theme.border;
 	id = icu::UnicodeString::fromUTF8("MyRect");
 }
 
@@ -28,11 +29,11 @@ void MyRect::render() {
 	}
 	
 	
-	if (border) {
+	if (border_color != nullptr) {
 		if (rounded) {
-			App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, border_color, 5, App::text_padding);
 		}else{
-			App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+			App::DrawBorder(t_x, t_y, t_w, t_h, border_color);
 		}
 	}
 }

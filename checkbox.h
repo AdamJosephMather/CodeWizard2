@@ -2,10 +2,8 @@
 
 #include <GLFW/glfw3.h>
 #include <functional>
-#include <vector>
 #include "helper_types.h"
 #include "widget.h"
-#include "unicode/unistr.h"
 
 class CheckBox : public Widget {
 public:	
@@ -24,7 +22,8 @@ public:
 	bool on_mouse_move_event();
 	
 	bool is_checked = false;
-	bool border = false;
+	Color* border_color;
+	Color* border_color_hover;
 
 private:
 	CheckPositioner POSITIONER;

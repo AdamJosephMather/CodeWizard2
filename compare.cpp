@@ -111,15 +111,6 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 		reload();
 	});
 	
-	f1Button->border = true;
-	f2Button->border = true;
-	f1Button->rounded = true;
-	f2Button->rounded = true;
-	cb1Button->border = true;
-	cb2Button->border = true;
-	cb1Button->rounded = true;
-	cb2Button->rounded = true;
-	
 	textedit = new TextEdit(this, [&](Widget* t){
 		textedit->t_x = t_x+line_numbers->t_w;
 		textedit->t_y = f1Button->t_h+f1Button->t_y+App::text_padding;

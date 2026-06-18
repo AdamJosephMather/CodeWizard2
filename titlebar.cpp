@@ -10,11 +10,13 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	}, [&](Button* button) {
 		App::ext_button();
 	});
-	ext_b->transparent = true;
 	ext_b->window_button = true;
 	ext_b->execute_on_down = false;
 	ext_b->rounded = true;
-	ext_b->background_color = App::theme.del_diff;
+	ext_b->background_color = nullptr;
+	ext_b->background_color_hover = App::theme.del_diff;
+	ext_b->border_color = nullptr;
+	ext_b->border_color_hover = nullptr;
 	ext_b->text_special = 1;
 	
 	Button* win_b = new Button(this, icu::UnicodeString::fromUTF8("□"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -23,11 +25,13 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	}, [&](Button* button) {
 		App::win_button();
 	});
-	win_b->transparent = true;
 	win_b->window_button = true;
 	win_b->execute_on_down = false;
 	win_b->rounded = true;
-	win_b->background_color = App::theme.hover_background_color;
+	win_b->background_color = nullptr;
+	win_b->background_color_hover = App::theme.hover_background_color;
+	win_b->border_color = nullptr;
+	win_b->border_color_hover = nullptr;
 	win_b->text_special = 4;
 	
 	Button* min_b = new Button(this, icu::UnicodeString::fromUTF8("-"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -36,11 +40,13 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	}, [&](Button* button) {
 		App::min_button();
 	});
-	min_b->transparent = true;
 	min_b->window_button = true;
 	min_b->execute_on_down = false;
 	min_b->rounded = true;
-	min_b->background_color = App::theme.hover_background_color;
+	min_b->background_color = nullptr;
+	min_b->background_color_hover = App::theme.hover_background_color;
+	min_b->border_color = nullptr;
+	min_b->border_color_hover = nullptr;
 	min_b->text_special = 3;
 	
 	hovered = false;

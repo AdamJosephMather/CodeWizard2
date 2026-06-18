@@ -153,26 +153,6 @@ int main(int argc, char* argv[]) {
 		new Editor(mainwidget->children[0]);
 	}
 	
-	Button* add_button = new Button(App::tb, icu::UnicodeString::fromUTF8("+"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
-		button->t_x = 0;
-		button->t_y = 0;
-	}, [&](Button* button) {
-		App::adding_panel();
-	});
-	add_button->rounded = true;
-	add_button->text_special = 2;
-	add_button->background_color = App::theme.add_panel;
-	
-	Button* remove_button = new Button(App::tb, icu::UnicodeString::fromUTF8("-"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
-		button->t_x = add_button->t_w+3;
-		button->t_y = 0;
-	}, [&](Button* button) {
-		App::removing_panel();
-	});
-	remove_button->rounded = true;
-	remove_button->text_special = 3;
-	remove_button->background_color = App::theme.remove_panel ;
-	
 	TextEdit* commandPalette = new TextEdit(App::tb, [&](Widget* w){
 		w->t_x = w->t_w/2 - w->t_w/6;
 		w->t_w /= 3;
@@ -180,7 +160,6 @@ int main(int argc, char* argv[]) {
 		w->t_h = App::tb->children[0]->t_h;
 	});
 	commandPalette->background_color = App::theme.extras_background_color;
-	commandPalette->border = true;
 	commandPalette->rounded = true;
 	commandPalette->id = icu::UnicodeString::fromUTF8("CommandPalette");
 	
@@ -203,6 +182,34 @@ int main(int argc, char* argv[]) {
 		}
 		App::fillCmdBox();
 	};
+	
+	Button* remove_button = new Button(App::tb, icu::UnicodeString::fromUTF8("- "), [&](Button* button, int x, int y, int w, int h, int tw, int th){
+		button->t_x = commandPalette->t_x-tw-App::text_padding;
+		button->t_y = 0;
+	}, [&](Button* button) {
+		App::removing_panel();
+	});
+	remove_button->rounded = true;
+	remove_button->text_special = 3;
+	remove_button->background_color = nullptr;
+	remove_button->background_color_hover = App::theme.remove_panel;
+	remove_button->border_color = nullptr; // transparent
+	remove_button->border_color_hover = nullptr;
+	remove_button->window_button = false;
+	
+	Button* add_button = new Button(App::tb, icu::UnicodeString::fromUTF8("+ "), [&](Button* button, int x, int y, int w, int h, int tw, int th){
+		button->t_x = remove_button->t_x-tw;
+		button->t_y = 0;
+	}, [&](Button* button) {
+		App::adding_panel();
+	});
+	add_button->rounded = true;
+	add_button->text_special = 2;
+	add_button->background_color = nullptr;
+	add_button->background_color_hover = App::theme.add_panel;
+	add_button->border_color = nullptr; // transparent
+	add_button->border_color_hover = nullptr;
+	add_button->window_button = false;
 	
 	ListBox* filesList = new ListBox(nullptr, [&](Widget* w) {
 		w->t_x = App::filesButton->t_x;
@@ -246,7 +253,8 @@ int main(int argc, char* argv[]) {
 	
 	Button* filesButton = new Button(App::tb, icu::UnicodeString::fromUTF8("0 Active"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = commandPalette->t_x+commandPalette->t_w+App::text_padding;
-		button->t_y = 0;
+		button->t_y = App::text_padding/2;
+		button->t_h -= App::text_padding;
 		button->BUTTON_LABEL = icu::UnicodeString::fromUTF8(std::to_string(App::rootelement->getOpenFiles(false).size())+" Active");
 	}, [&](Button* button) {
 		if (filesList->parent) {
@@ -256,14 +264,15 @@ int main(int argc, char* argv[]) {
 		}
 	});
 	filesButton->rounded = true;
-	filesButton->background_color = App::theme.main_background_color;
+	filesButton->background_color = nullptr; // transparent
+	filesButton->border_color = nullptr; // transparent
 	
 	
 	ScrollNotify* displayMessage = new ScrollNotify(App::tb, [&](ScrollNotify* sn, int x, int y, int w, int h){
 		sn->t_w = TextRenderer::get_text_width(20);
 		
-		int x1 = remove_button->t_x+remove_button->t_w+20;
-		int x2 = commandPalette->t_x-20;
+		int x1 = TextRenderer::get_text_width(2);
+		int x2 = add_button->t_x - TextRenderer::get_text_width(2);
 		int allwidth = x2-x1;
 		
 		sn->t_w = std::min(sn->t_w, allwidth);
@@ -279,11 +288,6 @@ int main(int argc, char* argv[]) {
 	App::filesButton = filesButton;
 	App::filesList = filesList;
 	App::scrollNotifyBox = displayMessage;
-	
-	add_button->window_button = true;
-	remove_button->window_button = true;
-	add_button->transparent = true;
-	remove_button->transparent = true;
 	
 	Widget* wdgt = App::rootelement->getFirstEditor();
 	if (auto edtr = dynamic_cast<Editor*>(wdgt)) {

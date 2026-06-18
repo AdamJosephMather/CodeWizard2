@@ -76,11 +76,13 @@ void ContextMenu::addToMenu(icu::UnicodeString name, Button::OnClick onclick) {
 	Button* b = new Button(this, name, [&](Widget *btn, int x, int y, int av_width, int av_height, int w, int h) {
 		maxwidth = std::max(maxwidth, w);
 	}, onclick);
-	b->border = true;
 	b->rounded = true;
 	b->alignLeft = true;
-	b->isContext = true;
-	b->background_color = App::theme.main_text_color;
+	b->text_color_hover = App::theme.darker_background_color;
+	b->background_color = nullptr;
+	b->background_color_hover = App::theme.main_text_color;
+	b->border_color = nullptr;
+	b->border_color_hover = nullptr;
 	
 	buttons.push_back(b);
 }

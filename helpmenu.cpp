@@ -15,7 +15,7 @@ HelpMenu::HelpMenu(Widget* parent) : Widget(parent) {
 	closebutton->text_special = 1;
 	closebutton->window_button = true;
 	closebutton->rounded = true;
-	closebutton->background_color       = App::theme.del_diff;
+	closebutton->background_color       = nullptr;
 	closebutton->background_color_hover = App::theme.del_diff;
 	closebutton->border_color       = nullptr;
 	closebutton->border_color_hover = nullptr;
@@ -63,7 +63,7 @@ Running Programs:
 
 Quirks:
 	
-	● The biggest will be the use of tabs instead of four space increments. Deal with it :) it's better.
+	● The biggest will be the use of tabs instead of four space increments. Deal with it 😉 it's better.
 ):"),
 		},{
 			icu::UnicodeString::fromUTF8("Widgets"),

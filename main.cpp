@@ -252,19 +252,72 @@ int main(int argc, char* argv[]) {
 	}, [&](Button* button) {
 		menu->clearMenu();
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Push\t(Cmd Palette)"), [](Button*){
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Push"), [](Button*){
 			App::closeMenu();
 			App::gitPush();
 		});
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Pull\t(Cmd Palette)"), [](Button*){
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Pull"), [](Button*){
 			App::closeMenu();
 			App::gitPull();
 		});
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Force Pull\t(Cmd Palette)"), [](Button*){
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Force Pull"), [](Button*){
 			App::closeMenu();
 			App::gitForcePull();
+		});
+		
+		menu->addSeparaterToMenu();
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Run FixIt (Spaces->Tabs)"), [](Button*){
+			App::closeMenu();
+			App::fixIt();
+		});
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Undo FixIt (Tabs->Spaces)"), [](Button*){
+			App::closeMenu();
+			App::undoFixIt();
+		});
+		
+		menu->addSeparaterToMenu();
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Restart Language Servers"), [](Button*){
+			App::closeMenu();
+			App::restartLSPs();
+		});
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Open `languages.json` File"), [](Button*){
+			App::closeMenu();
+			App::openLanguagesFile();
+		});
+		
+		menu->addSeparaterToMenu();
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Save Theme To File"), [](Button*){
+			App::closeMenu();
+			App::saveThemeToFile();
+		});
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Load Theme From File"), [](Button*){
+			App::closeMenu();
+			App::loadThemeFromFile();
+		});
+		
+		menu->addSeparaterToMenu();
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Widget Count"), [](Button*){
+			App::closeMenu();
+			App::displayToast(icu::UnicodeString::fromUTF8("There are: " + std::to_string(App::all_widgets.size())+" open widgets."));
+		});
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Test Text Line"), [](Button*){
+			App::closeMenu();
+			App::displayText(icu::UnicodeString::fromUTF8("Example Text Line Message."));
+		});
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Test Toast Box"), [](Button*){
+			App::closeMenu();
+			App::displayToast(icu::UnicodeString::fromUTF8("Example Toast Message."));
 		});
 		
 		if (menu->parent == nullptr || App::currentMenu != 1) {

@@ -168,6 +168,7 @@ public:
 	
 	static LanguageServerClient* readyLSP(std::string lsp_command);
 	static void restartLSPs();
+	static void openLanguagesFile();
 	
 	static FileIndexResult INDEXED_FILES;
 	static std::vector<StoredSearch> storedsearches;
@@ -290,6 +291,10 @@ public:
 	static void gitPush();
 	static void gitPull();
 	static void gitForcePull();
+	static void fixIt();
+	static void undoFixIt();
+	static void loadThemeFromFile();
+	static void saveThemeToFile();
 	
 	static void closeFilesList();
 	static void openFilesList();

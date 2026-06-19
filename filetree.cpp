@@ -109,10 +109,10 @@ void FileTree::render() {
 	for (auto itm : toRender) {
 		if (cursor_in_this && App::mouseX >= itm.x && App::mouseX <= itm.x+itm.w && App::mouseY > itm.y && App::mouseY <= itm.y+itm.h) {
 
-			App::DrawRoundedRect(itm.x, itm.y, itm.w, itm.h, App::text_padding, App::theme.main_text_color);
-			App::DrawRoundBorder(itm.x, itm.y, itm.w, itm.h, App::theme.border, 5, App::text_padding);
-			back_color = App::theme.main_text_color;
-			textCol = App::theme.darker_background_color;
+			App::DrawRoundedRect(itm.x, itm.y, itm.w, itm.h, App::text_padding, App::theme.hover_background_color);
+			App::DrawRoundBorder(itm.x, itm.y, itm.w, itm.h, App::theme.active_color, 5, App::text_padding);
+			back_color = App::theme.hover_background_color;
+			textCol = App::theme.main_text_color;
 		}else{
 			textCol = App::theme.main_text_color;
 			back_color = App::theme.extras_background_color;
@@ -196,7 +196,7 @@ void FileTree::fillOutTree(TreeStructure* el) {
 
 double FileTree::createVisuals(double pos, double depth, TreeStructure* el) {
 	int x = depth+t_x;
-	int y = pos*elHeighto+t_y;
+	int y = pos*elHeighto+t_y+2;
 	
 	icu::UnicodeString str = el->name;
 	
@@ -238,7 +238,7 @@ void FileTree::position(int x, int y, int w, int h) {
 	toRender.clear();
 	
 	max_scroll_horz = 0.0;
-	createVisuals(-scrolled_to_vert, -scrolled_to_horz, root);
+	createVisuals(-scrolled_to_vert, -scrolled_to_horz+2, root);
 	
 	if (scrolled_to_vert > max_scroll_vert) {
 		scrolled_to_vert = max_scroll_vert;

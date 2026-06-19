@@ -541,6 +541,12 @@ LanguageServerClient* App::readyLSP(std::string lsp_command) {
 	return lsp_client_map[lsp_command];
 }
 
+void App::openLanguagesFile() {
+	std::string path = settings->getLocalAppDataPath() + "/CodeWizard/languages.json";
+	openFromCMD(path, "languages.json");
+	displayToast(icu::UnicodeString::fromUTF8("Remember to reopen CodeWizard after making changes."));
+}
+
 void App::restartLSPs() {
 	for (auto itm : lsp_client_map) {
 		if (!itm.second) { continue; }
@@ -1940,7 +1946,105 @@ void App::gitForcePull() {
 #endif
 }
 
+void App::undoFixIt() {
+	if (!activeEditor) {
+		displayToast(icu::UnicodeString::fromUTF8("No editor active."));
+	}else{
+		Editor* edtr = (Editor*)activeEditor;
+		auto wdgt = edtr->editors[edtr->tab_bar->selected_id];
+		if (auto cdet = dynamic_cast<CodeEdit*>(wdgt)) {
+			cdet->undo_fixit();
+			displayToast(icu::UnicodeString::fromUTF8("Reverted to Spaces"));
+		}else{
+			displayToast(icu::UnicodeString::fromUTF8("Active Editor is not a CodeEdit."));
+		}
+	}
+}
 
+void App::fixIt() {
+	if (!activeEditor) {
+		displayToast(icu::UnicodeString::fromUTF8("No editor active."));
+	}else{
+		Editor* edtr = (Editor*)activeEditor;
+		auto wdgt = edtr->editors[edtr->tab_bar->selected_id];
+		if (auto cdet = dynamic_cast<CodeEdit*>(wdgt)) {
+			cdet->run_fixit();
+			displayToast(icu::UnicodeString::fromUTF8("Fix-It Complete"));
+		}else{
+			displayToast(icu::UnicodeString::fromUTF8("Active Editor is not a CodeEdit."));
+		}
+	}
+}
+
+void App::saveThemeToFile() {
+	const char * fp = tinyfd_saveFileDialog(
+		"Save as?", // dialog title
+		"CodeWizard2Theme.json", // default path and filename
+		0, NULL, // filter count and filters
+		0 // allow multiple selections (0 = no)
+	);
+	
+	if (fp) {
+		std::string filePath(fp);
+		
+		std::string tosave = settings->getSubSet({"dark_mode", "c_comments_color", "c_functs_color", "c_keywords_color", "c_literals_color", "c_punctuation_color", "c_strings_color", "c_tint_color", "c_saturation", "c_types_color", "c_vars_color"});
+		std::string err;
+		if (!atomicWriteReplace(filePath, tosave, &err)) {
+			displayToast(icu::UnicodeString::fromUTF8("Failed to write file: "+err));
+		}else{
+			displayToast(icu::UnicodeString::fromUTF8("Saved theme to file!"));
+		}
+	}
+}
+
+void App::loadThemeFromFile() {
+	const char * fp = tinyfd_openFileDialog(
+		"Select theme",    // dialog title
+		"",                 // default path and filename
+		0, NULL, NULL,      // filter count and filters
+		0                   // allow multiple selections (0 = no)
+	);
+	
+	if (fp) {
+		std::string filePath(fp);
+		bool worked = false;
+		icu::UnicodeString text = readFileToUnicodeString(filePath, worked);
+		if (!worked) {
+			displayToast(icu::UnicodeString::fromUTF8("Could not read file. ")+text);
+		}else{
+			std::string str;
+			text.toUTF8String(str);
+			
+			if (!settings->bringInSubset(str)) {
+				displayToast(icu::UnicodeString::fromUTF8("Could not load settings."));
+			}else{
+				std::string cl = App::settings->getValue("c_tint_color", App::empty);
+				if (cl != empty) {
+					bool worked;
+					Color c = stringToColor(cl, worked);
+					if (worked) {
+						theme.tint_color->r = c.r;
+						theme.tint_color->g = c.g;
+						theme.tint_color->b = c.b;
+					}
+				}
+				darkmode = settings->getValue("dark_mode", true);
+				updateFromTintColor(&theme);
+				setSynColor(&theme, "c_strings_color", 1);
+				setSynColor(&theme, "c_comments_color", 2);
+				setSynColor(&theme, "c_vars_color", 3);
+				setSynColor(&theme, "c_types_color", 4);
+				setSynColor(&theme, "c_functs_color", 5);
+				setSynColor(&theme, "c_keywords_color", 6);
+				setSynColor(&theme, "c_punctuation_color", 7);
+				setSynColor(&theme, "c_literals_color", 8);
+				displayToast(icu::UnicodeString::fromUTF8("Done!"));
+				
+				App::rootelement->executeAction(WidgetActionType::SETTINGS_CHANGE);
+			}
+		}
+	}
+}
 
 void App::executeCommandPaletteAction() {
 	auto cmdpl = dynamic_cast<TextEdit*>(commandPalette);
@@ -2025,71 +2129,9 @@ void App::executeCommandPaletteAction() {
 			MoveWidget(helpMenu, rootelement);
 			reclear = 2;
 		}else if (filepath == ":Save Theme Settings To File") {
-			const char * fp = tinyfd_saveFileDialog(
-				"Save as?", // dialog title
-				"CodeWizard2Theme.json", // default path and filename
-				0, NULL, // filter count and filters
-				0 // allow multiple selections (0 = no)
-			);
-			
-			if (fp) {
-				std::string filePath(fp);
-				
-				std::string tosave = settings->getSubSet({"dark_mode", "c_comments_color", "c_functs_color", "c_keywords_color", "c_literals_color", "c_punctuation_color", "c_strings_color", "c_tint_color", "c_types_color", "c_vars_color"});
-				std::string err;
-				if (!atomicWriteReplace(filePath, tosave, &err)) {
-					displayToast(icu::UnicodeString::fromUTF8("Failed to write file: "+err));
-				}else{
-					displayToast(icu::UnicodeString::fromUTF8("Saved theme to file!"));
-				}
-			}
+			saveThemeToFile();
 		}else if (filepath == ":Load Theme Settings From File") {
-			const char * fp = tinyfd_openFileDialog(
-				"Select theme",    // dialog title
-				"",                 // default path and filename
-				0, NULL, NULL,      // filter count and filters
-				0                   // allow multiple selections (0 = no)
-			);
-			
-			if (fp) {
-				std::string filePath(fp);
-				bool worked = false;
-				icu::UnicodeString text = readFileToUnicodeString(filePath, worked);
-				if (!worked) {
-					displayToast(icu::UnicodeString::fromUTF8("Could not read file. ")+text);
-				}else{
-					std::string str;
-					text.toUTF8String(str);
-					
-					if (!settings->bringInSubset(str)) {
-						displayToast(icu::UnicodeString::fromUTF8("Could not load settings."));
-					}else{
-						std::string cl = App::settings->getValue("c_tint_color", App::empty);
-						if (cl != empty) {
-							bool worked;
-							Color c = stringToColor(cl, worked);
-							if (worked) {
-								theme.tint_color->r = c.r;
-								theme.tint_color->g = c.g;
-								theme.tint_color->b = c.b;
-							}
-						}
-						darkmode = settings->getValue("dark_mode", true);
-						updateFromTintColor(&theme);
-						setSynColor(&theme, "c_strings_color", 1);
-						setSynColor(&theme, "c_comments_color", 2);
-						setSynColor(&theme, "c_vars_color", 3);
-						setSynColor(&theme, "c_types_color", 4);
-						setSynColor(&theme, "c_functs_color", 5);
-						setSynColor(&theme, "c_keywords_color", 6);
-						setSynColor(&theme, "c_punctuation_color", 7);
-						setSynColor(&theme, "c_literals_color", 8);
-						displayToast(icu::UnicodeString::fromUTF8("Done!"));
-						
-						App::rootelement->executeAction(WidgetActionType::SETTINGS_CHANGE);
-					}
-				}
-			}
+			loadThemeFromFile();
 		}else if(filepath == ":Test Toast Box"){
 			displayToast(icu::UnicodeString::fromUTF8("Example Toast Message."));
 		}else if(filepath == ":Test Text Line"){
@@ -2097,35 +2139,11 @@ void App::executeCommandPaletteAction() {
 		}else if (filepath == ":Restart Language Servers (LSPs)") {
 			restartLSPs();
 		}else if (filepath == ":Open `languages.json` file") {
-			std::string path = settings->getLocalAppDataPath() + "/CodeWizard/languages.json";
-			openFromCMD(path, "languages.json");
-			displayToast(icu::UnicodeString::fromUTF8("Remember to reopen CodeWizard after making changes."));
+			openLanguagesFile();
 		}else if (filepath == ":Run FixIt (Spaces to Tabs)") {
-			if (!activeEditor) {
-				displayToast(icu::UnicodeString::fromUTF8("No editor active."));
-			}else{
-				Editor* edtr = (Editor*)activeEditor;
-				auto wdgt = edtr->editors[edtr->tab_bar->selected_id];
-				if (auto cdet = dynamic_cast<CodeEdit*>(wdgt)) {
-					cdet->run_fixit();
-					displayToast(icu::UnicodeString::fromUTF8("Fix-It Complete"));
-				}else{
-					displayToast(icu::UnicodeString::fromUTF8("Active Editor is not a CodeEdit."));
-				}
-			}
+			fixIt();
 		}else if (filepath == ":Undo FixIt (Tabs to Spaces)") {
-			if (!activeEditor) {
-				displayToast(icu::UnicodeString::fromUTF8("No editor active."));
-			}else{
-				Editor* edtr = (Editor*)activeEditor;
-				auto wdgt = edtr->editors[edtr->tab_bar->selected_id];
-				if (auto cdet = dynamic_cast<CodeEdit*>(wdgt)) {
-					cdet->undo_fixit();
-					displayToast(icu::UnicodeString::fromUTF8("Reverted to Spaces"));
-				}else{
-					displayToast(icu::UnicodeString::fromUTF8("Active Editor is not a CodeEdit."));
-				}
-			}
+			undoFixIt();
 		}else if (filepath == ":How Many Widgets Currently?") {
 			displayToast(icu::UnicodeString::fromUTF8("There are: " + std::to_string(all_widgets.size())+" open widgets."));
 		}

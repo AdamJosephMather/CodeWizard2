@@ -286,6 +286,11 @@ public:
 	static void openMenu(int x_offset);
 	static void closeMenu();
 	
+	static void openFolderSelector();
+	static void gitPush();
+	static void gitPull();
+	static void gitForcePull();
+	
 	static void closeFilesList();
 	static void openFilesList();
 	

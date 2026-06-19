@@ -1536,6 +1536,18 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 		applyMoveToAllCursors(CODEWIZARD_MATCHING_BRACKET_RIGHT, is_shift_held, false);
 		return true;
 	}
+	
+	if (is_alt_held) {
+		if (App::settings->getValue("use_vim", true)) { // we'll do it in normal or regular mode
+			if (key == GLFW_KEY_K && !is_control_held) {
+				insertNewCursorUp();
+				return true;
+			}else if (key == GLFW_KEY_J && !is_control_held) {
+				insertNewCursorDown();
+				return true;
+			}
+		}
+	}
 
 	if (mode == 'n') {
 		if (key == GLFW_KEY_ESCAPE) {
@@ -1547,19 +1559,11 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 		}else if (key == GLFW_KEY_L && !is_control_held) {
 			applyMoveToAllCursors(GLFW_KEY_RIGHT, is_shift_held, is_control_held);
 			return true;
-		}else if (key == GLFW_KEY_K && !is_control_held) {
-			if (is_alt_held) {
-				insertNewCursorUp();
-			}else{
-				applyMoveToAllCursors(GLFW_KEY_UP, is_shift_held, is_control_held);
-			}
+		}else if (key == GLFW_KEY_K && !is_control_held) { // alt is not held because we handled that earlier
+			applyMoveToAllCursors(GLFW_KEY_UP, is_shift_held, is_control_held);
 			return true;
-		}else if (key == GLFW_KEY_J && !is_control_held) {
-			if (is_alt_held) {
-				insertNewCursorDown();
-			}else{
-				applyMoveToAllCursors(GLFW_KEY_DOWN, is_shift_held, is_control_held);
-			}
+		}else if (key == GLFW_KEY_J && !is_control_held) { // alt is not held because we handled that earlier
+			applyMoveToAllCursors(GLFW_KEY_DOWN, is_shift_held, is_control_held);
 			return true;
 		}else if ((key == GLFW_KEY_W || key == GLFW_KEY_B) && !is_control_held) {
 			applyMoveToAllCursors(GLFW_KEY_LEFT, is_shift_held, true);

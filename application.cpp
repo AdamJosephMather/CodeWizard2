@@ -1569,24 +1569,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		reclear = 2;
 		return;
 	}if (action == GLFW_PRESS && key == GLFW_KEY_O && control && shift) {
-		std::string fldr = settings->getValue("current_folder", std::string());
-		
-		std::cout << "a.\n";
-		std::cout << fldr << "\n";
-		const char * fpr = tinyfd_selectFolderDialog(
-			"Open folder?",
-			fldr.c_str()
-		);
-		std::cout << "b.\n";
-		
-		if (fpr) {
-			std::cout << "c.\n";
-			setFolder(fpr);
-			std::cout << "d.\n";
-		}
-		std::cout << "e.\n";
-		commandUnfocused();
-		std::cout << "f.\n";
+		openFolderSelector();
 		return;
 	}else if (action == GLFW_PRESS && key == GLFW_KEY_S && control && !shift) {
 		displayText(icu::UnicodeString::fromUTF8("Saving..."));
@@ -1684,6 +1667,20 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 	}
 	
 	if (rootelement) { rootelement->on_key_event(key, scancode, action, mods); }
+}
+
+void App::openFolderSelector() {
+	std::string fldr = settings->getValue("current_folder", std::string());
+	
+	const char * fpr = tinyfd_selectFolderDialog(
+		"Open folder?",
+		fldr.c_str()
+	);
+	
+	if (fpr) {
+		setFolder(fpr);
+	}
+	commandUnfocused();
 }
 
 void App::setFolder(std::string fpr) {
@@ -1886,6 +1883,65 @@ void App::openFilesList() {
 	}
 }
 
+void App::gitPush() {
+	ON_STRING_GIVEN = [&](icu::UnicodeString str){
+		if (str.length() == 0) {
+			return;
+		}
+		
+		std::string mes;
+		str.toUTF8String(mes);
+		
+		std::string folder = settings->getValue("current_folder", getExecutableDir());
+#ifdef _WIN32
+		launchCommandNonBlocking("cd /d \""+folder+"\" && git add . && git commit -m \""+mes+"\" && git push");
+#else
+		launchCommandNonBlocking("cd \""+folder+"\" && git add . && git commit -m \""+mes+"\" && git push");
+#endif
+	};
+	
+	REQUESTING_STRING = true;
+	STRING_REQUEST_TEXTEDIT->setFullText(icu::UnicodeString());
+	STRING_REQUEST_TEXTEDIT->mode = 'i';
+	STRING_REQUEST_LABEL->setFullText(icu::UnicodeString::fromUTF8("Git Commit Message?"));
+	MoveWidget(STRING_REQUEST_RECTANGLE, rootelement);
+	MoveWidget(STRING_REQUEST_TEXTEDIT, rootelement);
+	MoveWidget(STRING_REQUEST_LABEL, rootelement);
+	setActiveLeafNode(STRING_REQUEST_TEXTEDIT);
+	reclear = 2;
+}
+
+void App::gitPull() {
+	std::string folder = settings->getValue("current_folder", getExecutableDir());
+#ifdef _WIN32
+		launchCommandNonBlocking("cd /d \""+folder+"\" && git pull");
+#else
+		launchCommandNonBlocking("cd \""+folder+"\" && git pull");
+#endif
+}
+
+void App::gitForcePull() {
+	std::string folder = settings->getValue("current_folder", getExecutableDir());
+#ifdef _WIN32
+	launchCommandNonBlocking(
+		"pushd \"" + folder + "\" && "
+		"git merge --abort 2>nul & git rebase --abort 2>nul & git cherry-pick --abort 2>nul & "
+		"git fetch --prune origin && "
+		"git reset --hard @{u} && "
+		"popd"
+	);
+#else
+	launchCommandNonBlocking(
+		"cd \"" + folder + "\" && "
+		"git merge --abort 2>/dev/null; git rebase --abort 2>/dev/null; git cherry-pick --abort 2>/dev/null; "
+		"git fetch --prune origin && "
+		"git reset --hard @{u}"
+	);
+#endif
+}
+
+
+
 void App::executeCommandPaletteAction() {
 	auto cmdpl = dynamic_cast<TextEdit*>(commandPalette);
 	auto cmdbx = dynamic_cast<ListBox*>(commandBox);
@@ -1960,55 +2016,11 @@ void App::executeCommandPaletteAction() {
 		return;
 	}if (filepath.at(0) == ':') { // it's a command
 		if (filepath == ":Git Push") {
-			ON_STRING_GIVEN = [&](icu::UnicodeString str){
-				if (str.length() == 0) {
-					return;
-				}
-				
-				std::string mes;
-				str.toUTF8String(mes);
-				
-				std::string folder = settings->getValue("current_folder", getExecutableDir());
-#ifdef _WIN32
-				launchCommandNonBlocking("cd /d \""+folder+"\" && git add . && git commit -m \""+mes+"\" && git push");
-#else
-				launchCommandNonBlocking("cd \""+folder+"\" && git add . && git commit -m \""+mes+"\" && git push");
-#endif
-			};
-			REQUESTING_STRING = true;
-			STRING_REQUEST_TEXTEDIT->setFullText(icu::UnicodeString());
-			STRING_REQUEST_TEXTEDIT->mode = 'i';
-			STRING_REQUEST_LABEL->setFullText(icu::UnicodeString::fromUTF8("Git Commit Message?"));
-			MoveWidget(STRING_REQUEST_RECTANGLE, rootelement);
-			MoveWidget(STRING_REQUEST_TEXTEDIT, rootelement);
-			MoveWidget(STRING_REQUEST_LABEL, rootelement);
-			setActiveLeafNode(STRING_REQUEST_TEXTEDIT);
-			reclear = 2;
+			gitPush();
 		}else if (filepath == ":Git Pull") {
-			std::string folder = settings->getValue("current_folder", getExecutableDir());
-#ifdef _WIN32
-			launchCommandNonBlocking("cd /d \""+folder+"\" && git pull");
-#else
-			launchCommandNonBlocking("cd \""+folder+"\" && git pull");
-#endif
+			gitPull();
 		}else if (filepath == ":Git Force Pull") {
-			std::string folder = settings->getValue("current_folder", getExecutableDir());
-#ifdef _WIN32
-			launchCommandNonBlocking(
-				"pushd \"" + folder + "\" && "
-				"git merge --abort 2>nul & git rebase --abort 2>nul & git cherry-pick --abort 2>nul & "
-				"git fetch --prune origin && "
-				"git reset --hard @{u} && "
-				"popd"
-			);
-#else
-			launchCommandNonBlocking(
-				"cd \"" + folder + "\" && "
-				"git merge --abort 2>/dev/null; git rebase --abort 2>/dev/null; git cherry-pick --abort 2>/dev/null; "
-				"git fetch --prune origin && "
-				"git reset --hard @{u}"
-			);
-#endif
+			gitForcePull();
 		}else if (filepath == ":Help") {
 			MoveWidget(helpMenu, rootelement);
 			reclear = 2;

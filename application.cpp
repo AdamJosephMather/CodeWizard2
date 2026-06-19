@@ -2934,7 +2934,7 @@ void App::updateFromTintColor(Theme* t) {
 		setTintedColor(t->tint_color, t->syntax_colors[0],         0.0,      s);
 		setTintedColor(t->tint_color, t->darker_background_color,  1.0,      s);
 		setTintedColor(t->tint_color, t->overlay_background_color, 0.95,     s);
-		setTintedColor(t->tint_color, t->lesser_text_color,        0.4,      s);
+		setTintedColor(t->tint_color, t->lesser_text_color,        0.5,      s);
 	}
 	
 	rootelement->executeAction(WidgetActionType::THEME_CALCULATED);

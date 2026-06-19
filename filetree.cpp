@@ -119,12 +119,12 @@ void FileTree::render() {
 		}
 		
 		if (itm.is_folder) {
-			renderTexture(folderIcon, itm.x+App::text_padding, itm.y+App::text_padding, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol);
+			renderTexture(folderIcon, itm.x+App::text_padding/2, itm.y+App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol);
 		}else {
-			renderTexture(fileIcon, itm.x+App::text_padding, itm.y+App::text_padding, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol);
+			renderTexture(fileIcon, itm.x+App::text_padding/2, itm.y+App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol);
 		}
 		
-		TextRenderer::draw_text(itm.x+TextRenderer::get_text_height()+App::text_padding*2, itm.y+App::text_padding, itm.name, textCol);
+		TextRenderer::draw_text(itm.x+TextRenderer::get_text_height()+App::text_padding, itm.y+(float)App::text_padding/2, itm.name, textCol);
 	}
 	
 	Widget::render();
@@ -234,7 +234,7 @@ void FileTree::position(int x, int y, int w, int h) {
 		fillOutTree(root);
 	}
 	
-	elHeighto = TextRenderer::get_text_height()+App::text_padding*2;
+	elHeighto = TextRenderer::get_text_height()+App::text_padding;
 	toRender.clear();
 	
 	max_scroll_horz = 0.0;

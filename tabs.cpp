@@ -347,7 +347,7 @@ void Tabs::position(int x, int y, int w, int h) {
 		t_h = 0;
 	}else {
 		t_w = w;
-		t_h = TextRenderer::get_text_height()*1.5+1;
+		t_h = TextRenderer::get_text_height()+App::text_padding+1;
 	}
 	
 	t_x = x;

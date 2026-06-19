@@ -2925,15 +2925,15 @@ void App::updateFromTintColor(Theme* t) {
 		setTintedColor(t->tint_color, t->overlay_background_color, 0.12,     s);
 		setTintedColor(t->tint_color, t->lesser_text_color,        0.392157, s);
 	}else{
-		setTintedColor(t->tint_color, t->main_background_color,    0.9,      s);
-		setTintedColor(t->tint_color, t->extras_background_color,  0.8,      s);
-		setTintedColor(t->tint_color, t->hover_background_color,   0.7,      s);
+		setTintedColor(t->tint_color, t->main_background_color,    0.7,      s);
+		setTintedColor(t->tint_color, t->extras_background_color,  0.9,      s);
+		setTintedColor(t->tint_color, t->hover_background_color,   0.8,      s);
 		setTintedColor(t->tint_color, t->main_text_color,          0.0,      s);
-		setTintedColor(t->tint_color, t->active_color,             0.3,      1.0);
+		setTintedColor(t->tint_color, t->active_color,             0.0,      1.0);
 		setTintedColor(t->tint_color, t->border,                   0.6,      s);
 		setTintedColor(t->tint_color, t->syntax_colors[0],         0.0,      s);
-		setTintedColor(t->tint_color, t->darker_background_color,  0.95,     s);
-		setTintedColor(t->tint_color, t->overlay_background_color, 0.8,      s);
+		setTintedColor(t->tint_color, t->darker_background_color,  1.0,      s);
+		setTintedColor(t->tint_color, t->overlay_background_color, 0.95,     s);
 		setTintedColor(t->tint_color, t->lesser_text_color,        0.4,      s);
 	}
 	

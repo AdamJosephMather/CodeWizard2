@@ -83,6 +83,7 @@ int main(int argc, char* argv[]) {
 	theme.hover_background_color = MakeColor(0.2, 0.3, 0.35);
 	theme.lesser_text_color = MakeColor(0.2039215686, 0.3137254902, 0.3843137255);
 	theme.main_text_color = MakeColor(0.5137254902, 0.7960784314, 0.9725490196);
+	theme.active_color = MakeColor(0.356862745, 0.635294118, 0.811764706);
 	theme.darker_background_color = MakeColor(0.0274509804, 0.0470588235, 0.0549019608);
 	theme.overlay_background_color = MakeColor(0.1, 0.15, 0.2);
 	theme.border = MakeColor(0.8, 0.8, 0.8);
@@ -166,7 +167,7 @@ int main(int argc, char* argv[]) {
 	ListBox* commandBox = new ListBox(nullptr, [&](Widget* w){
 		w->t_x = commandPalette->t_x; 
 		w->t_w = commandPalette->t_w;
-		w->t_y = commandPalette->t_y+App::text_padding+commandPalette->t_h;
+		w->t_y = App::tb->t_y+App::tb->t_h+2;
 	});
 	commandBox->rounded = true;
 	commandBox->is_visible_layered = true;
@@ -182,6 +183,105 @@ int main(int argc, char* argv[]) {
 		}
 		App::fillCmdBox();
 	};
+	
+	
+	// Menubar (file/help)
+	
+	ContextMenu* menu = new ContextMenu(nullptr);
+	menu->is_visible_2 = true;
+	menu->is_visible_3 = true;
+	
+	Button* file_button = new Button(App::tb, icu::UnicodeString::fromUTF8("File"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
+		button->t_x = App::text_padding;
+		button->t_y = App::text_padding/2;
+		button->t_h -= App::text_padding;
+		
+		if (menu->parent != nullptr && button->cursor_in_this && App::currentMenu != 0) {
+			button->ONCLICK(button);
+		}
+	}, [&](Button* button) {
+		menu->clearMenu();
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Open File (Ctrl+O)"), [](Button*){
+			App::closeMenu();
+		});
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Open Folder (Ctrl+Shift+O)"), [](Button*){
+			App::closeMenu();
+		});
+		
+		menu->addSeparaterToMenu();
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Save All (Ctrl+S)"), [](Button*){
+			App::closeMenu();
+		});
+		
+		if (menu->parent == nullptr || App::currentMenu != 0) {
+			App::openMenu(button->t_x);
+		}else { // only close the menu if it's open to this tab
+			App::closeMenu();
+		}
+		
+		App::currentMenu = 0;
+	});
+	file_button->border_color = nullptr;
+	file_button->background_color = nullptr;
+	file_button->rounded = true;
+	
+	Button* actions_button = new Button(App::tb, icu::UnicodeString::fromUTF8("Actions"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
+		button->t_x = file_button->t_x+file_button->t_w+App::text_padding;
+		button->t_y = App::text_padding/2;
+		button->t_h -= App::text_padding;
+		
+		if (menu->parent != nullptr && button->cursor_in_this && App::currentMenu != 1) {
+			button->ONCLICK(button);
+		}
+	}, [&](Button* button) {
+		menu->clearMenu();
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Push (Command Palette)"), [](Button*){
+			App::closeMenu();
+		});
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Pull (Command Palette)"), [](Button*){
+			App::closeMenu();
+		});
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Force Pull (Command Palette)"), [](Button*){
+			App::closeMenu();
+		});
+		
+		if (menu->parent == nullptr || App::currentMenu != 1) {
+			App::openMenu(button->t_x);
+		}else { // only close the menu if it's open to this tab
+			App::closeMenu();
+		}
+		
+		App::currentMenu = 1;
+	});
+	actions_button->border_color = nullptr;
+	actions_button->background_color = nullptr;
+	actions_button->rounded = true;
+	
+	Button* help_button = new Button(App::tb, icu::UnicodeString::fromUTF8("Help"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
+		button->t_x = actions_button->t_x+actions_button->t_w+App::text_padding;
+		button->t_y = App::text_padding/2;
+		button->t_h -= App::text_padding;
+	}, [&](Button* button) {
+		if (App::helpMenu->parent == nullptr) {
+			App::MoveWidget(App::helpMenu, App::rootelement);
+		}else{
+			App::RemoveWidgetFromParent(App::helpMenu);
+		}
+		App::closeMenu();
+		App::reclear = 2;
+		App::currentMenu = 2;
+	});
+	help_button->border_color = nullptr;
+	help_button->background_color = nullptr;
+	help_button->rounded = true;
+	
+	// Widget controls
 	
 	Button* remove_button = new Button(App::tb, icu::UnicodeString::fromUTF8("- "), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = commandPalette->t_x-tw-App::text_padding;
@@ -271,7 +371,7 @@ int main(int argc, char* argv[]) {
 	ScrollNotify* displayMessage = new ScrollNotify(App::tb, [&](ScrollNotify* sn, int x, int y, int w, int h){
 		sn->t_w = TextRenderer::get_text_width(20);
 		
-		int x1 = TextRenderer::get_text_width(2);
+		int x1 = help_button->t_x+help_button->t_w+TextRenderer::get_text_width(2);
 		int x2 = add_button->t_x - TextRenderer::get_text_width(2);
 		int allwidth = x2-x1;
 		
@@ -288,6 +388,7 @@ int main(int argc, char* argv[]) {
 	App::filesButton = filesButton;
 	App::filesList = filesList;
 	App::scrollNotifyBox = displayMessage;
+	App::menu = menu;
 	
 	Widget* wdgt = App::rootelement->getFirstEditor();
 	if (auto edtr = dynamic_cast<Editor*>(wdgt)) {

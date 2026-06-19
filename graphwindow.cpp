@@ -692,7 +692,7 @@ void GraphWindow::render() {
 			int x2 = fmax(startX, fmin(App::mouseX, startX+widths));
 			int y2 = fmax(screenStart, fmin(App::mouseY, screenStart+screenHeight));
 			App::DrawRect(squareStartX, squareStartY, x2-squareStartX, y2-squareStartY, App::theme.add_panel);
-			App::DrawBorder(squareStartX, squareStartY, x2-squareStartX, y2-squareStartY, App::theme.main_text_color);
+			App::DrawBorder(squareStartX, squareStartY, x2-squareStartX, y2-squareStartY, App::theme.active_color);
 		}
 	});
 	

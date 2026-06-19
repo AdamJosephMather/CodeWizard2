@@ -10,7 +10,12 @@ void ContextMenu::render() {
 		return;
 	}
 	
-	App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding+sqrt(App::text_padding), App::theme.extras_background_color, true);
+	float rad = App::text_padding+sqrt(App::text_padding);
+	App::DrawRoundedRect(t_x, t_y, t_w, t_h, rad, App::theme.extras_background_color, !cursor_in_this);
+	if (cursor_in_this) { // draw our own border
+		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.active_color, 5, rad);
+	}
+	
 	Widget::render();
 	
 	int yc = t_y+App::text_padding+App::border_width;
@@ -44,6 +49,10 @@ void ContextMenu::position(int x, int y, int width, int height) {
 	int bx = t_x+App::text_padding+App::border_width;
 	int by = t_y+App::text_padding+App::border_width;
 	
+	if (cursor_in_this) {
+		App::expectedCursorType = 0;
+	}
+	
 	for (int bi = 0; bi < buttons.size(); bi++) {
 		Button* b = buttons[bi];
 		
@@ -55,6 +64,7 @@ void ContextMenu::position(int x, int y, int width, int height) {
 		b->t_x = bx;
 		b->t_y = by;
 		b->t_w = maxwidth;
+		b->t_h -= App::text_padding;
 		
 		by += b->t_h+App::text_padding;
 		
@@ -66,10 +76,6 @@ void ContextMenu::position(int x, int y, int width, int height) {
 	
 	t_w = maxwidth+App::text_padding*2+App::border_width*2;
 	t_h = (App::border_width+by)-t_y;
-	
-	if (App::expectedCursorType == -1 && cursor_in_this) {
-		App::expectedCursorType = 0;
-	}
 }
 
 void ContextMenu::addToMenu(icu::UnicodeString name, Button::OnClick onclick) {
@@ -78,11 +84,11 @@ void ContextMenu::addToMenu(icu::UnicodeString name, Button::OnClick onclick) {
 	}, onclick);
 	b->rounded = true;
 	b->alignLeft = true;
-	b->text_color_hover = App::theme.darker_background_color;
+//	b->text_color_hover = App::theme.darker_background_color;
 	b->background_color = nullptr;
-	b->background_color_hover = App::theme.main_text_color;
+	b->background_color_hover = App::theme.hover_background_color;
 	b->border_color = nullptr;
-	b->border_color_hover = nullptr;
+	b->border_color_hover = App::theme.active_color;
 	
 	buttons.push_back(b);
 }

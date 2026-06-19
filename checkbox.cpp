@@ -9,7 +9,7 @@ CheckBox::CheckBox(Widget *parent, CheckPositioner positioner, CheckOnClick oncl
 	bgcolor = App::theme.darker_background_color;
 	
 	border_color = App::theme.border;
-	border_color_hover = App::theme.main_text_color;
+	border_color_hover = App::theme.active_color;
 	
 	id = icu::UnicodeString::fromUTF8("CheckBox");
 }

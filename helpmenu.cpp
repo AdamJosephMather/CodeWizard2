@@ -259,7 +259,7 @@ void HelpMenu::render() {
 	});
 	
 	App::DrawRect(t_x, tb->t_y+tb->t_h, t_w, 1, App::theme.border);
-	App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.main_text_color, 5, App::text_padding);
+	App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.active_color, 5, App::text_padding);
 }
 
 void HelpMenu::position(int x, int y, int w, int h) {

@@ -107,6 +107,7 @@ inline std::vector<Color*> AllOneColor(Color* c, int count){
 
 struct Theme {
 	Color* main_text_color;
+	Color* active_color;
 	Color* lesser_text_color;
 	Color* main_background_color;
 	Color* extras_background_color;

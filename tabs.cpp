@@ -139,10 +139,9 @@ void Tabs::render() {
 			}else if (hovering.indx == indx && hovering.body) {
 				c = App::theme.hover_background_color;
 				tc = App::theme.main_text_color;
-				bc = App::theme.main_text_color;
+				bc = App::theme.active_color;
 			}else {
 				c = App::theme.extras_background_color;
-				
 				tc = App::theme.main_text_color;
 				bc = App::theme.border;
 			}
@@ -201,7 +200,7 @@ void Tabs::render() {
 			
 			if (hvrngtab) {
 				c = App::theme.hover_background_color;
-				bc = App::theme.main_text_color;
+				bc = App::theme.active_color;
 			}else{
 				c = App::theme.extras_background_color;
 				bc = App::theme.border;

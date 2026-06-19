@@ -141,8 +141,11 @@ public:
 	static Widget* filesButton;
 	static Widget* filesList;
 	static Widget* commandBox;
+	static Widget* menu;
 	static Widget* toastBox;
 	static Widget* scrollNotifyBox;
+	
+	static int currentMenu;
 	
 	static std::vector<std::vector<std::string>> files_in_box;
 	
@@ -280,13 +283,16 @@ public:
 	static std::vector<std::string> extractStringWords(std::string word);
 	static SearchResult searchAcrossFiles(const std::string& searchTerm);
 	
+	static void openMenu(int x_offset);
+	static void closeMenu();
+	
 	static void closeFilesList();
 	static void openFilesList();
 	
 	static void openFromCMD(std::string filepath, std::string filename, int line = -1);
 	
 	static void updateFromTintColor(Theme* t);
-	static void setTintedColor(Color* tint_c, Color* c, float b);
+	static void setTintedColor(Color* tint_c, Color* c, float b, float s);
 	static void displayToast(icu::UnicodeString text);
 	static void displayText(icu::UnicodeString text);
 	

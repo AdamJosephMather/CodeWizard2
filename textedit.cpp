@@ -28,7 +28,7 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 	POS_FUNC = fnct;
 	
 	borderColor = App::theme.border;
-	activeBorderColor = App::theme.main_text_color;
+	activeBorderColor = App::theme.active_color;
 	
 	Line ln = Line();
 	ln.line_text = icu::UnicodeString::fromUTF8("");

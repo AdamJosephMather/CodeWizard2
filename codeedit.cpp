@@ -782,7 +782,7 @@ void CodeEdit::render() {
 	
 	Color* borderC = App::theme.border;
 	if (textedit == App::activeLeafNode) {
-		borderC = App::theme.main_text_color;
+		borderC = App::theme.active_color;
 	}
 	
 	if (DO_RENDER == 0 && App::reclear == 0) {

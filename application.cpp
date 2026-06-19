@@ -70,6 +70,7 @@ int App::moveMouseToX = -1;
 int App::moveMouseToY = -1;
 
 Widget* App::helpMenu = nullptr;
+int App::currentMenu = -1;
 
 bool App::recording_macro = false;
 bool App::replaying_macro = false;
@@ -94,6 +95,7 @@ Widget* App::commandPalette = nullptr;
 Widget* App::filesButton = nullptr;
 Widget* App::filesList = nullptr;
 Widget* App::commandBox = nullptr;
+Widget* App::menu = nullptr;
 Widget* App::toastBox = nullptr;
 Widget* App::scrollNotifyBox = nullptr;
 
@@ -263,7 +265,7 @@ bool App::Init() {
 		w->t_h = STRING_REQUEST_TEXTEDIT->t_h+h*2;
 	});
 	STRING_REQUEST_RECTANGLE->id = icu::UnicodeString::fromUTF8("STRING_REQUEST_RECTANGLE");
-	STRING_REQUEST_RECTANGLE->border_color = App::theme.main_text_color;
+	STRING_REQUEST_RECTANGLE->border_color = App::theme.active_color;
 	
 	STRING_REQUEST_LABEL = new Label(nullptr);
 	STRING_REQUEST_LABEL->POSITIONER = [&](Widget* w) {
@@ -1373,6 +1375,15 @@ void App::mouse_button_callback(GLFWwindow* window, int button, int action, int 
 	
 	if (on_mouse_button_event) {
 		if (on_mouse_button_event(button, action, mods)) { return; }
+	}
+	
+	if (menu->parent != nullptr) {
+		if (menu->cursor_in_this) {
+			menu->on_mouse_button_event(button, action, mods);
+			return;
+		}else if (action == GLFW_PRESS && mouseY > tb->t_h){
+			closeMenu(); // don't take the action - let it through, and close the menu
+		}
 	}
 	
 	if (helpMenu->parent != nullptr) {
@@ -2808,7 +2819,7 @@ SearchResult App::searchAcrossFiles(const std::string& searchTerm) {
 	return out;
 }
 
-void App::setTintedColor(Color* tint_c, Color* c, float b) {
+void App::setTintedColor(Color* tint_c, Color* c, float b, float s) {
 	if (tint_c->r == 1 && tint_c->g == 1 && tint_c->b == 1) {
 		c->r = b;
 		c->g = b;
@@ -2816,15 +2827,15 @@ void App::setTintedColor(Color* tint_c, Color* c, float b) {
 		return;
 	}
 	
-	float tcb = tint_c->r*0.299+tint_c->g*0.587+tint_c->b*0.114;
+	float tcb = tint_c->r*0.299+tint_c->g*0.587+tint_c->b*0.114; // tint color brightness
 	
-	if (tcb == 0) {
+	if (tcb == 0) { // fix 0,0,0 breaking things
 		tint_c->r = 0.1;
 		tint_c->g = 0.1;
 		tint_c->b = 0.1;
 		
 		tcb = 0.1;
-	}else if (tcb < 0.1) {
+	}else if (tcb < 0.1) { // raise the brightness to 0.1
 		tint_c->r *= 0.1/tcb;
 		tint_c->g *= 0.1/tcb;
 		tint_c->b *= 0.1/tcb;
@@ -2832,11 +2843,12 @@ void App::setTintedColor(Color* tint_c, Color* c, float b) {
 		tcb = 0.1;
 	}
 	
-	float scale = (b/tcb+b*2)/3;
+	float scale = s*b;
+	float intercept = (1-s)*b;
 	
-	float new_r = fmin(255.0, tint_c->r*scale);
-	float new_g = fmin(255.0, tint_c->g*scale);
-	float new_b = fmin(255.0, tint_c->b*scale);
+	float new_r = fmin(1.0, tint_c->r*scale + intercept);
+	float new_g = fmin(1.0, tint_c->g*scale + intercept);
+	float new_b = fmin(1.0, tint_c->b*scale + intercept);
 	
 	c->r = new_r;
 	c->g = new_g;
@@ -2844,26 +2856,30 @@ void App::setTintedColor(Color* tint_c, Color* c, float b) {
 }
 
 void App::updateFromTintColor(Theme* t) {
+	float s = settings->getValue("c_saturation", 0.7f);
+	
 	if (darkmode) {
-		setTintedColor(t->tint_color, t->main_background_color,    0.098039);
-		setTintedColor(t->tint_color, t->extras_background_color,  0.164706);
-		setTintedColor(t->tint_color, t->hover_background_color,   0.26);
-		setTintedColor(t->tint_color, t->main_text_color,          1.0);
-		setTintedColor(t->tint_color, t->border,                   0.35);
-		setTintedColor(t->tint_color, t->syntax_colors[0],         1.0);
-		setTintedColor(t->tint_color, t->darker_background_color,  0.05);
-		setTintedColor(t->tint_color, t->overlay_background_color, 0.12);
-		setTintedColor(t->tint_color, t->lesser_text_color,        0.392157);
+		setTintedColor(t->tint_color, t->main_background_color,    0.098039, s);
+		setTintedColor(t->tint_color, t->extras_background_color,  0.164706, s);
+		setTintedColor(t->tint_color, t->hover_background_color,   0.26,     s);
+		setTintedColor(t->tint_color, t->main_text_color,          1.0,      s);
+		setTintedColor(t->tint_color, t->active_color,             0.7,      1.0);
+		setTintedColor(t->tint_color, t->border,                   0.35,     s);
+		setTintedColor(t->tint_color, t->syntax_colors[0],         1.0,      s);
+		setTintedColor(t->tint_color, t->darker_background_color,  0.05,     s);
+		setTintedColor(t->tint_color, t->overlay_background_color, 0.12,     s);
+		setTintedColor(t->tint_color, t->lesser_text_color,        0.392157, s);
 	}else{
-		setTintedColor(t->tint_color, t->main_background_color,    0.9);
-		setTintedColor(t->tint_color, t->extras_background_color,  0.8);
-		setTintedColor(t->tint_color, t->hover_background_color,   0.7);
-		setTintedColor(t->tint_color, t->main_text_color,          0.0);
-		setTintedColor(t->tint_color, t->border,                   0.6);
-		setTintedColor(t->tint_color, t->syntax_colors[0],         0.0);
-		setTintedColor(t->tint_color, t->darker_background_color,  0.95);
-		setTintedColor(t->tint_color, t->overlay_background_color, 0.8);
-		setTintedColor(t->tint_color, t->lesser_text_color,        0.4);
+		setTintedColor(t->tint_color, t->main_background_color,    0.9,      s);
+		setTintedColor(t->tint_color, t->extras_background_color,  0.8,      s);
+		setTintedColor(t->tint_color, t->hover_background_color,   0.7,      s);
+		setTintedColor(t->tint_color, t->main_text_color,          0.0,      s);
+		setTintedColor(t->tint_color, t->active_color,             0.3,      1.0);
+		setTintedColor(t->tint_color, t->border,                   0.6,      s);
+		setTintedColor(t->tint_color, t->syntax_colors[0],         0.0,      s);
+		setTintedColor(t->tint_color, t->darker_background_color,  0.95,     s);
+		setTintedColor(t->tint_color, t->overlay_background_color, 0.8,      s);
+		setTintedColor(t->tint_color, t->lesser_text_color,        0.4,      s);
 	}
 	
 	rootelement->executeAction(WidgetActionType::THEME_CALCULATED);
@@ -2881,4 +2897,21 @@ void App::displayText(icu::UnicodeString text) {
 		sn->displayMessage(text);
 	}
 	time_till_regular = 2;
+}
+
+void App::closeMenu() {
+	App::RemoveWidgetFromParent(menu);
+	reclear = 2;
+	App::time_till_regular = 2;
+}
+
+void App::openMenu(int x_offset) {
+	if (auto ctxMenu = dynamic_cast<ContextMenu*>(menu)) {
+		ctxMenu->x_loc = x_offset + 2;
+		ctxMenu->y_loc = rootelement->t_y + 2;
+	}
+	
+	MoveWidget(menu, rootelement);
+	reclear = 2;
+	App::time_till_regular = 2;
 }

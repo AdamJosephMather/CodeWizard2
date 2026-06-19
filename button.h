@@ -33,7 +33,7 @@ public:
 	Color* border_color_hover;
 	icu::UnicodeString BUTTON_LABEL;
 	
-private:
 	Positioner POSITIONER;
 	OnClick ONCLICK;
+private:
 };

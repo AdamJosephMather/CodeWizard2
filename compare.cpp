@@ -111,6 +111,11 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 		reload();
 	});
 	
+	f1Button->rounded = true;
+	f2Button->rounded = true;
+	cb1Button->rounded = true;
+	cb2Button->rounded = true;
+	
 	textedit = new TextEdit(this, [&](Widget* t){
 		textedit->t_x = t_x+line_numbers->t_w;
 		textedit->t_y = f1Button->t_h+f1Button->t_y+App::text_padding;
@@ -174,6 +179,8 @@ void Compare::setOnlyTo(FileInfo* f, int num) {
 
 void Compare::reload() {
 	App::time_till_regular = 2;
+	textedit->DO_POSITION = true;
+	App::rerender = true;
 	
 	if (!f1 && !f2) {
 		textedit->setFullText(icu::UnicodeString());
@@ -246,8 +253,6 @@ void Compare::reload() {
 		textedit->lines[i].changed = false;
 		textedit->lines[i].highlightinguptodate = true;
 	}
-	
-	textedit->DO_POSITION = true;
 }
 
 void Compare::render() {

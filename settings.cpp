@@ -106,6 +106,11 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"c_tint_color",
 			colorToString(App::theme.tint_color)
 		),
+		makeFloat(
+			"Saturation",
+			"c_saturation",
+			0.6
+		),
 		makeString(
 			"Strings Colors",
 			"c_strings_color",
@@ -582,6 +587,12 @@ bool Settings::validate_input(SettingsFloat* el) {
 		}
 		
 		App::reclear = 2;
+	}else if (el->key_name == "c_saturation") {
+		if (el->value < 0 || el->value > 1) {
+			el->value = el->default_value;
+			return false;
+		}
+		return true;
 	}
 	
 	return true;
@@ -713,6 +724,9 @@ void Settings::after_change(SettingsInt* el) {
 }
 
 void Settings::after_change(SettingsFloat* el) {
+	if (el->key_name == "c_saturation") {
+		App::updateFromTintColor(&App::theme);
+	}
 }
 
 void Settings::after_change(SettingsBool* el) {

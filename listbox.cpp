@@ -58,7 +58,7 @@ void ListBox::render() {
 	
 	Color* bColor = App::theme.border;
 	if (cursor_in_this) {
-		bColor = App::theme.main_text_color;
+		bColor = App::theme.active_color;
 	}
 	
 	if (!rounded) {

@@ -15,7 +15,7 @@ Button::Button(Widget *parent, icu::UnicodeString text, Positioner positioner, O
 	text_color = App::theme.main_text_color;
 	text_color_hover = App::theme.main_text_color;
 	border_color = App::theme.border;
-	border_color_hover = App::theme.main_text_color;
+	border_color_hover = App::theme.active_color;
 	
 	id = icu::UnicodeString::fromUTF8("Button - ") + text;
 }
@@ -32,11 +32,11 @@ void Button::position(int x, int y, int width, int height) {
 	int mx = App::mouseX;
 	int my = App::mouseY;
 	
+	POSITIONER(this, x, y, width, height, t_w, t_h);
+	
 	if (t_x <= mx && t_x+t_w >= mx && t_y <= my && t_y+t_h >= my) {
 		App::expectedCursorType = 3;
 	}
-	
-	POSITIONER(this, x, y, width, height, t_w, t_h);
 }
 
 bool Button::on_mouse_button_event(int button, int action, int mods) {

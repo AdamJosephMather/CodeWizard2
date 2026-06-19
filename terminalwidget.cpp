@@ -474,7 +474,7 @@ void TerminalWidget::render() {
 	
 	Color* bColor = App::theme.border;
 	if (this == App::activeLeafNode) {
-		bColor = App::theme.main_text_color;
+		bColor = App::theme.active_color;
 	}
 	
 	if (rounded) {

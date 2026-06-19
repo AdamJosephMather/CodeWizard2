@@ -292,6 +292,7 @@ bool HelpMenu::on_mouse_button_event(int button, int action, int mods) {
 	
 	if (action == GLFW_PRESS && !cursor_in_this) {
 		App::RemoveWidgetFromParent(this);
+		App::reclear = 2;
 		return true;
 	}
 	

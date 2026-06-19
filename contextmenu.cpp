@@ -73,8 +73,6 @@ void ContextMenu::addToMenu(icu::UnicodeString name, Button::OnClick onclick) {
 	
 	buttons.push_back(b);
 	buttonTexts.push_back(name);
-	
-	recalcButtonTexts();
 }
 
 void ContextMenu::recalcButtonTexts() {

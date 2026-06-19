@@ -229,6 +229,8 @@ int main(int argc, char* argv[]) {
 			App::save();
 		});
 		
+		menu->recalcButtonTexts();
+		
 		if (menu->parent == nullptr || App::currentMenu != 0) {
 			App::openMenu(button->t_x);
 		}else { // only close the menu if it's open to this tab
@@ -319,6 +321,8 @@ int main(int argc, char* argv[]) {
 			App::closeMenu();
 			App::displayToast(icu::UnicodeString::fromUTF8("Example Toast Message."));
 		});
+		
+		menu->recalcButtonTexts();
 		
 		if (menu->parent == nullptr || App::currentMenu != 1) {
 			App::openMenu(button->t_x);

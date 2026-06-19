@@ -123,6 +123,8 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 		paste();
 		contextmenu->is_visible_2 = false;
 	});
+	
+	contextmenu->recalcButtonTexts();
 }
 
 int TextEdit::getVisLen(const icu::UnicodeString& line) {

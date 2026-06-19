@@ -63,6 +63,8 @@ TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 		needsRerender = 2;
 	});
 	
+	contextmenu->recalcButtonTexts();
+	
 	reset_client();
 }
 

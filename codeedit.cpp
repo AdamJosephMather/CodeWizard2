@@ -268,6 +268,8 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		textedit->contextmenu->is_visible_2 = false;
 	});
 	
+	textedit->contextmenu->recalcButtonTexts();
+	
 	showErrorsButton = new Button(nullptr, icu::UnicodeString("Show/Hide Errors"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = textedit->t_x+textedit->t_w-App::text_padding*2-tw;
 		b->t_y = textedit->t_y+textedit->t_h-App::text_padding*2-th;

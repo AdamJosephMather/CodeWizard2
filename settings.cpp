@@ -350,6 +350,12 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 	handleChildren();
 }
 
+void Settings::position(int x, int y, int w, int h) {
+	before = nullptr;
+	Widget::position(x, y, w, h);
+	max_scroll = fmax(0, (before->t_y+before->t_h+scrolled_to-t_y) - (t_h-tab_bar->t_h));
+}
+
 void Settings::handleChildren() {
 	edits_to_element.clear();
 	elements_to_edit.clear();
@@ -367,21 +373,12 @@ void Settings::handleChildren() {
 	for (auto el : settings_menus[tab_bar->selected_id]) {
 		TextEdit* e = new TextEdit(this, [&](Widget* t){
 			auto el = edits_to_element[dynamic_cast<TextEdit*>(t)];
-			SettingsElement* before = nullptr;
-			
-			for (auto te : settings_menus[tab_bar->selected_id]) {
-				if (te == el) {
-					break; // this loop finds the element directly prior to this one
-				}
-				before = te;
-			}
 			
 			int y = 0; // we apply the scrolled to on the first element so that it will propegate down to the rest
 			if (before != nullptr) {
-				TextEdit* prior = elements_to_edit[before];
-				y = prior->t_y+prior->t_h; // all that just to get the y location... maybe there's a problem with my system. Oh well, it's too late now y'all
+				y = before->t_y+before->t_h; // all that just to get the y location... maybe there's a problem with my system. Oh well, it's too late now y'all
 			}else{
-				y = t_y+TextRenderer::get_text_height()+App::text_padding*4-scrolled_to;
+				y = tab_bar->t_h+tab_bar->t_y+App::text_padding-scrolled_to;
 			}
 			
 			t->t_y = y+TextRenderer::get_text_height()+App::text_padding;
@@ -389,7 +386,7 @@ void Settings::handleChildren() {
 			t->t_x = t_x+App::text_padding*2;
 			t->t_w = TextRenderer::get_text_width(40);
 			
-			max_scroll = fmax(0, (t->t_y+t->t_h+scrolled_to)-(t_h-tab_bar->t_h)-(t->t_h)*2);
+			before = t;
 		});
 		e->rounded = true;
 		
@@ -428,7 +425,7 @@ void Settings::render() {
 	
 	App::runWithSKIZ(t_x, tab_bar->t_y+tab_bar->t_h, t_w, t_h-tab_bar->t_h, [&](){
 		for (auto it : elements_to_edit) {
-			int y = it.second->t_y-TextRenderer::get_text_height()-App::text_padding;
+			int y = it.second->t_y-TextRenderer::get_text_height()-App::text_padding/2;
 			int x = t_x+App::text_padding*2;
 			icu::UnicodeString text = icu::UnicodeString::fromUTF8(it.first->name);
 			

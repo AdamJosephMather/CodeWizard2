@@ -72,10 +72,12 @@ public:
 	bool validate_input(SettingsString* el, std::string before);
 	
 	void render();
+	void position(int x, int y, int w, int h);
 	
 	void after_change(SettingsString* el);
 	void after_change(SettingsInt* el);
 	void after_change(SettingsFloat* el);
 	void after_change(SettingsBool* el);
 private:
+	Widget* before = nullptr;
 };

@@ -10,7 +10,7 @@ ListBox::ListBox(Widget* parent, App::PosFunction pf) : Widget(parent) {
 void ListBox::fillElementalPositions() {	
 	elementalPositions.clear();
 	
-	int th = TextRenderer::get_text_height()+App::text_padding*2;
+	int th = TextRenderer::get_text_height()+App::text_padding;
 	
 	int y = t_y;
 	for (int indx = scrolled_to; indx < fmin(elements.size(), scrolled_to+toshow); indx++) {
@@ -32,7 +32,7 @@ void ListBox::render() {
 		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
 	}
 	
-	int th = TextRenderer::get_text_height()+App::text_padding*2;
+	int th = TextRenderer::get_text_height()+App::text_padding;
 	
 	int maxlen = floor(t_w/TextRenderer::get_text_width(1));
 	int y = t_y;
@@ -52,7 +52,7 @@ void ListBox::render() {
 		
 		elementalPositions.push_back({t_x, y, t_w, th, indx});
 		
-		TextRenderer::draw_text(t_x+App::text_padding+1, y+App::text_padding, elements[indx].tempSubStringBetween(0, maxlen), textCol);
+		TextRenderer::draw_text(t_x+(float)App::text_padding/2+1, y+(float)App::text_padding/2, elements[indx].tempSubStringBetween(0, maxlen), textCol);
 		y += th;
 	}
 	
@@ -109,7 +109,7 @@ void ListBox::position(int x, int y, int w, int h) {
 	t_x = x;
 	t_y = y;
 	t_w = w;
-	t_h = (TextRenderer::get_text_height()+App::text_padding*2)*toshow;
+	t_h = (TextRenderer::get_text_height()+App::text_padding)*toshow;
 	
 	pFunc(this);
 	
@@ -154,6 +154,7 @@ bool ListBox::on_scroll_event(double xchange, double ychange) {
 		
 		if (mx >= ep[0] && mx <= ep[0]+ep[2] && my >= ep[1] && my <= ep[1]+ep[3]) {
 			selected_id = ep[4];
+			break;
 		}
 	}
 	
@@ -199,6 +200,7 @@ bool ListBox::on_mouse_move_event() {
 		
 		if (mx >= ep[0] && mx <= ep[0]+ep[2] && my >= ep[1] && my <= ep[1]+ep[3]) {
 			selected_id = ep[4];
+			break;
 		}
 	}
 	

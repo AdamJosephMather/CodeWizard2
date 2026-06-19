@@ -130,10 +130,8 @@ void MathWindow::render() {
 			int ix = t_x+t_w-textH-App::text_padding;
 			if (mx >= ix && mx <= ix+textH && my >= cury && my <= cury + textH) {
 				App::DrawRoundedRect(ix, cury, textH, textH, App::text_padding, App::theme.hover_background_color);
-				App::DrawRoundBorder(ix, cury, textH, textH, App::theme.border, 5, App::text_padding);
+				App::DrawRoundBorder(ix, cury, textH, textH, App::theme.active_color, 5, App::text_padding);
 				onMouseClick = results[i];
-			}else {
-				App::DrawRoundedRect(ix, cury, textH, textH, App::text_padding, App::theme.main_background_color); // just so it's legible if the text goes underneath
 			}
 			App::DrawPlus(ix+iconOff, cury+iconOff, iconS, iconS, 2, App::theme.main_text_color);
 		}

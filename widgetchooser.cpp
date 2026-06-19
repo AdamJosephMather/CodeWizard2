@@ -20,6 +20,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	b1 = new Button(this, text, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
 		button->t_y = t_y+App::text_padding*2+TextRenderer::get_text_height();
+		button->t_h = th-App::text_padding;
 	}, [&](Button* button) {
 		std::cout << "Init editor in relacement\n";
 		App::ReplaceWith(this, new Editor(nullptr));
@@ -30,7 +31,8 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	auto text2 = icu::UnicodeString::fromUTF8("File Tree");
 	b2 = new Button(this, text2, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
-		button->t_y = b1->t_y+b1->t_h+App::text_padding;
+		button->t_y = b1->t_y+b1->t_h+App::text_padding/2;
+		button->t_h = th-App::text_padding;
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new FileTree(nullptr));
 		std::cout << "Creating file tree\n";
@@ -41,7 +43,8 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	auto text3 = icu::UnicodeString::fromUTF8("Settings Menu");
 	b3 = new Button(this, text3, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
-		button->t_y = b2->t_y+b2->t_h+App::text_padding;
+		button->t_y = b2->t_y+b2->t_h+App::text_padding/2;
+		button->t_h = th-App::text_padding;
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new Settings(nullptr));
 		std::cout << "Creating settings menu\n";
@@ -52,7 +55,8 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	auto text4 = icu::UnicodeString::fromUTF8("Compare Two Files");
 	b4 = new Button(this, text4, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
-		button->t_y = b3->t_y+b3->t_h+App::text_padding;
+		button->t_y = b3->t_y+b3->t_h+App::text_padding/2;
+		button->t_h = th-App::text_padding;
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new Compare(nullptr, [&](Widget* w){
 			return;
@@ -65,7 +69,8 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	auto text5 = icu::UnicodeString::fromUTF8("AI Chat");
 	b5 = new Button(this, text5, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
-		button->t_y = b4->t_y+b4->t_h+App::text_padding;
+		button->t_y = b4->t_y+b4->t_h+App::text_padding/2;
+		button->t_h = th-App::text_padding;
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new Chat(nullptr));
 		std::cout << "Creating chat menu\n";
@@ -76,7 +81,8 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	auto text6 = icu::UnicodeString::fromUTF8("LSP Debugger");
 	b6 = new Button(this, text6, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
-		button->t_y = b5->t_y+b5->t_h+App::text_padding;
+		button->t_y = b5->t_y+b5->t_h+App::text_padding/2;
+		button->t_h = th-App::text_padding;
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new LspDebug(nullptr));
 		std::cout << "Creating lsp debug menu\n";
@@ -87,7 +93,8 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	auto text7 = icu::UnicodeString::fromUTF8("Terminal");
 	b7 = new Button(this, text7, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
-		button->t_y = b6->t_y+b6->t_h+App::text_padding;
+		button->t_y = b6->t_y+b6->t_h+App::text_padding/2;
+		button->t_h = th-App::text_padding;
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new TerminalWidgetTabbed(nullptr));
 		std::cout << "Creating terminal\n";
@@ -98,7 +105,8 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	auto text8 = icu::UnicodeString::fromUTF8("Math Window");
 	b8 = new Button(this, text8, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
-		button->t_y = b7->t_y+b7->t_h+App::text_padding;
+		button->t_y = b7->t_y+b7->t_h+App::text_padding/2;
+		button->t_h = th-App::text_padding;
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new MathWindow(nullptr));
 		std::cout << "Creating mathwindow\n";
@@ -109,7 +117,8 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	auto text9 = icu::UnicodeString::fromUTF8("Asteroids");
 	b9 = new Button(this, text9, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
-		button->t_y = b8->t_y+b8->t_h+App::text_padding;
+		button->t_y = b8->t_y+b8->t_h+App::text_padding/2;
+		button->t_h = th-App::text_padding;
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new Asteroids(nullptr));
 		std::cout << "Creating asteroids\n";
@@ -120,7 +129,8 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	auto text10 = icu::UnicodeString::fromUTF8("Graph Window");
 	b10 = new Button(this, text10, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
-		button->t_y = b9->t_y+b9->t_h+App::text_padding;
+		button->t_y = b9->t_y+b9->t_h+App::text_padding/2;
+		button->t_h = th-App::text_padding;
 	}, [&](Button* button) {
 		App::ReplaceWith(this, new GraphWindow(nullptr));
 		std::cout << "Creating graphwindow\n";

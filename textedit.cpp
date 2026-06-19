@@ -97,29 +97,29 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 	contextmenu = new ContextMenu(this);
 	contextmenu->is_visible_2 = false;
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Undo (Ctrl+Z)"), [&](Widget* w){
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Undo\t(Ctrl+Z)"), [&](Widget* w){
 		activateUndo();
 		contextmenu->is_visible_2 = false;
 	});
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Redo (Ctrl+Shift+Z)"), [&](Widget* w){
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Redo\t(Ctrl+Shift+Z)"), [&](Widget* w){
 		activateRedo();
 		contextmenu->is_visible_2 = false;
 	});
 	
 	contextmenu->addSeparaterToMenu();
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Cut (Ctrl+X)"),   [&](Widget* w){
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Cut\t(Ctrl+X)"),   [&](Widget* w){
 		cut();
 		contextmenu->is_visible_2 = false;
 	});
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Copy (Ctrl+C)"),  [&](Widget* w){
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Copy\t(Ctrl+C)"),  [&](Widget* w){
 		copy();
 		contextmenu->is_visible_2 = false;
 	});
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Paste (Ctrl+V)"), [&](Widget* w){
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Paste\t(Ctrl+V)"), [&](Widget* w){
 		paste();
 		contextmenu->is_visible_2 = false;
 	});

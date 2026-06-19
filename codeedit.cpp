@@ -238,21 +238,21 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		textedit->contextmenu->is_visible_2 = false;
 	});
 	
-	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Uncomment Lines (Alt+4)"),   [&](Widget* w){
+	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Uncomment Lines\t(Alt+4)"),   [&](Widget* w){
 		removeComments();
 		textedit->contextmenu->is_visible_2 = false;
 	});
 	
 	textedit->contextmenu->addSeparaterToMenu();
 	
-	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Goto Def (LSP)"),   [&](Widget* w){
+	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Goto Def\t(LSP)"),   [&](Widget* w){
 		if (App::lsp_client_map[lsp] && file) {
 			goto_id = App::lsp_client_map[lsp]->requestGotoDefinition(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
 		}
 		textedit->contextmenu->is_visible_2 = false;
 	});
 	
-	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Rename Symbol (LSP)"),   [&](Widget* w){
+	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Rename Symbol\t(LSP)"),   [&](Widget* w){
 		if (App::lsp_client_map[lsp] && file) {
 			renamecursor = textedit->cursors[0];
 			if (renamebox->parent != this){

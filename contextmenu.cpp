@@ -29,8 +29,7 @@ void ContextMenu::render() {
 			});
 			yc = b->t_h+b->t_y+App::text_padding;
 		}else{
-			App::DrawRect(t_x+App::text_padding+App::border_width, yc, maxwidth, App::border_width*2, App::theme.main_text_color);
-			yc += App::text_padding+App::border_width*2;
+			App::DrawRect(t_x+App::text_padding+App::border_width, yc-App::text_padding/2, maxwidth, App::border_width, App::theme.main_text_color);
 		}
 	}
 }
@@ -43,54 +42,74 @@ void ContextMenu::position(int x, int y, int width, int height) {
 	t_x = x_loc;
 	t_y = y_loc;
 	
+	if (cursor_in_this) { App::expectedCursorType = 0; }
+	
 	maxwidth = 0;
+	runningypos = t_y+App::text_padding;
 	Widget::position(t_x, t_y, t_w, t_h);
 	
-	int bx = t_x+App::text_padding+App::border_width;
-	int by = t_y+App::text_padding+App::border_width;
-	
-	if (cursor_in_this) {
-		App::expectedCursorType = 0;
+	if (!buttons.empty()) {
+		t_h = runningypos + App::border_width - t_y;
+		t_w = maxwidth+App::text_padding*2+App::border_width*2;
 	}
-	
-	for (int bi = 0; bi < buttons.size(); bi++) {
-		Button* b = buttons[bi];
-		
-		if (!b) {
-			by += App::border_width*2+App::text_padding;
-			continue;
-		}
-		
-		b->t_x = bx;
-		b->t_y = by;
-		b->t_w = maxwidth;
-		b->t_h -= App::text_padding;
-		
-		by += b->t_h+App::text_padding;
-		
-		// hate to do this a second time but we need to because button isn't sized until it is. So.
-		if (App::mouseX >= b->t_x && App::mouseX <= b->t_x+b->t_w && App::mouseY >= b->t_y && App::mouseY <= b->t_y+b->t_h) {
-			App::expectedCursorType = 3;
-		}
-	}
-	
-	t_w = maxwidth+App::text_padding*2+App::border_width*2;
-	t_h = (App::border_width+by)-t_y;
 }
 
 void ContextMenu::addToMenu(icu::UnicodeString name, Button::OnClick onclick) {
 	Button* b = new Button(this, name, [&](Widget *btn, int x, int y, int av_width, int av_height, int w, int h) {
-		maxwidth = std::max(maxwidth, w);
+		btn->t_x = t_x+App::text_padding+App::border_width;
+		btn->t_y = runningypos;
+		btn->t_w = w;
+		btn->t_h = h;
+		maxwidth = fmax(maxwidth, w);
+		runningypos += h+App::text_padding;
 	}, onclick);
+	
 	b->rounded = true;
 	b->alignLeft = true;
-//	b->text_color_hover = App::theme.darker_background_color;
 	b->background_color = nullptr;
 	b->background_color_hover = App::theme.hover_background_color;
 	b->border_color = nullptr;
 	b->border_color_hover = App::theme.active_color;
 	
 	buttons.push_back(b);
+	buttonTexts.push_back(name);
+	
+	recalcButtonTexts();
+}
+
+void ContextMenu::recalcButtonTexts() {
+	int neededTextLen = 0;
+	for (auto l : buttonTexts) {
+		neededTextLen = fmax(neededTextLen, l.length());
+	}
+	
+	UChar32 spaceChar = U' ';
+	
+	int ti = 0;
+	for (int i = 0; i < buttons.size(); i++) {
+		if (buttons[i] == nullptr) {
+			continue;
+		}
+		
+		auto prts = splitByChar(buttonTexts[ti], U'\t');
+		
+		if (prts.size() != 2) {
+			icu::UnicodeString newStr = buttonTexts[ti];
+			for (int j = buttonTexts[ti].length(); j < neededTextLen; j++) {
+				newStr.append(spaceChar);
+			}
+			buttons[i]->BUTTON_LABEL = newStr;
+		}else{
+			icu::UnicodeString newStr = prts[0];
+			for (int j = buttonTexts[ti].length()-1; j < neededTextLen; j++) {
+				newStr.append(spaceChar);
+			}
+			newStr.append(prts[1]);
+			buttons[i]->BUTTON_LABEL = newStr;
+		}
+		
+		ti += 1;
+	}
 }
 
 void ContextMenu::addSeparaterToMenu() {
@@ -105,6 +124,7 @@ void ContextMenu::clearMenu() {
 		
 		App::deleteWidget(b);
 	}
+	buttonTexts.clear();
 	buttons.clear();
 }
 

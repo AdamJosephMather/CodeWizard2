@@ -47,7 +47,7 @@ TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 	contextmenu->is_visible_2 = false;
 	contextmenu->is_visible_3 = true;
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Copy (Ctrl+C)"),  [&](Widget* w){
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Copy\t(Ctrl+C)"),  [&](Widget* w){
 		std::string txt = selection_text();
 		if (!txt.empty()) {
 			SetClipboardText(txt.c_str());
@@ -57,7 +57,7 @@ TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 		needsRerender = 2;
 	});
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Paste (Ctrl+V)"), [&](Widget* w){
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Paste\t(Ctrl+V)"), [&](Widget* w){
 		term->sendText(GetClipboardText());
 		contextmenu->is_visible_2 = false;
 		needsRerender = 2;

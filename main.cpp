@@ -202,7 +202,7 @@ int main(int argc, char* argv[]) {
 	}, [&](Button* button) {
 		menu->clearMenu();
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Open File (Ctrl+O)"), [](Button*){
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Open File\t(Ctrl+O)"), [](Button*){
 			App::closeMenu();
 			
 			Editor* e = dynamic_cast<Editor*>(App::activeEditor);
@@ -216,15 +216,16 @@ int main(int argc, char* argv[]) {
 			e->fileOpenRequested(nullptr); // triggers a file open
 		});
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Open Folder (Ctrl+Shift+O)"), [](Button*){
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Open Folder\t(Ctrl+Shift+O)"), [](Button*){
 			App::closeMenu();
 			App::openFolderSelector();
 		});
 		
 		menu->addSeparaterToMenu();
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Save All (Ctrl+S)"), [](Button*){
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Save All\t(Ctrl+S)"), [](Button*){
 			App::closeMenu();
+			App::displayText(icu::UnicodeString::fromUTF8("Saving..."));
 			App::save();
 		});
 		
@@ -251,17 +252,17 @@ int main(int argc, char* argv[]) {
 	}, [&](Button* button) {
 		menu->clearMenu();
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Push (Command Palette)"), [](Button*){
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Push\t(Cmd Palette)"), [](Button*){
 			App::closeMenu();
 			App::gitPush();
 		});
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Pull (Command Palette)"), [](Button*){
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Pull\t(Cmd Palette)"), [](Button*){
 			App::closeMenu();
 			App::gitPull();
 		});
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Force Pull (Command Palette)"), [](Button*){
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Force Pull\t(Cmd Palette)"), [](Button*){
 			App::closeMenu();
 			App::gitForcePull();
 		});

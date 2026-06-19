@@ -14,6 +14,7 @@ public:
 	void addToMenu(icu::UnicodeString name, Button::OnClick onclick);
 	void addSeparaterToMenu();
 	void clearMenu();
+	void recalcButtonTexts();
 	
 	int x_loc = 0;
 	int y_loc = 0;
@@ -23,5 +24,7 @@ public:
 	bool on_mouse_button_event(int button, int action, int mods) override;
 private:
 	std::vector<Button*> buttons = {};
+	std::vector<icu::UnicodeString> buttonTexts = {};
 	int maxwidth = 0;
+	int runningypos = 0;
 };

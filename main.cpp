@@ -254,6 +254,14 @@ int main(int argc, char* argv[]) {
 	}, [&](Button* button) {
 		menu->clearMenu();
 		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Run\t(F5)"), [](Button*){
+			App::closeMenu();
+			App::key_callback(App::window, GLFW_KEY_F5, 63, GLFW_PRESS, 0); // just 63, that's all
+			App::key_callback(App::window, GLFW_KEY_F5, 63, GLFW_RELEASE, 0);
+		});
+		
+		menu->addSeparaterToMenu();
+		
 		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Push"), [](Button*){
 			App::closeMenu();
 			App::gitPush();

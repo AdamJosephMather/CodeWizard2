@@ -144,11 +144,16 @@ void ImageView::render() {
 		glPopAttrib();
 	}
 	
+	Color* borderC = App::theme.border;
+	if (this == App::activeLeafNode) {
+		borderC = App::theme.active_color;
+	}
+	
 	if (rounded) {
 		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+		App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, App::text_padding);
 	}else{
-		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+		App::DrawBorder(t_x, t_y, t_w, t_h, borderC);
 	}
 }
 

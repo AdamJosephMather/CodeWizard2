@@ -2856,7 +2856,7 @@ void App::setTintedColor(Color* tint_c, Color* c, float b, float s) {
 }
 
 void App::updateFromTintColor(Theme* t) {
-	float s = settings->getValue("c_saturation", 0.7f);
+	float s = settings->getValue("c_saturation", 0.6f);
 	
 	if (darkmode) {
 		setTintedColor(t->tint_color, t->main_background_color,    0.098039, s);

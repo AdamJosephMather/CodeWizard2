@@ -1,6 +1,7 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
+#include "button.h"
 #include "helper_types.h"
 #include "widget.h"
 
@@ -15,6 +16,10 @@ public:
 	bool on_mouse_move_event();
 	
 	bool is_out_of_child(int x);
+	
+	Button* ext_b;
+	Button* win_b;
+	Button* min_b;
 
 private:
 	bool hovered;

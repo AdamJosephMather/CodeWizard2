@@ -123,6 +123,8 @@ GLFWwindow* App::window = nullptr;
 GLFWwindow* g_main_window = nullptr;
 Widget* App::rootelement = nullptr;
 
+bool App::recheckmenusizing = true;
+
 int App::text_padding = 5;
 int App::border_width = 1;
 
@@ -308,6 +310,8 @@ bool App::Init() {
 	window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE.c_str(), nullptr, nullptr);
 	g_main_window = window;
 	
+	glfwSetWindowSizeLimits(window, 500, 250, GLFW_DONT_CARE, GLFW_DONT_CARE);
+	
 	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 
 	if (!window) {
@@ -375,6 +379,7 @@ bool App::Init() {
 	
 	TextRenderer::after_font_change = [&](){
 		text_padding = std::min(TextRenderer::get_text_width(1), TextRenderer::get_text_height()) * 0.5;
+		recheckmenusizing = true;
 		reclear = 2;
 		rerender = true;
 	};
@@ -681,6 +686,9 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 		
 			mmi->ptMaxSize.x = rcWork.right  - rcWork.left;
 			mmi->ptMaxSize.y = rcWork.bottom - rcWork.top;
+			
+			mmi->ptMinTrackSize.x = 500;
+			mmi->ptMinTrackSize.y = 100;
 		
 			mmi->ptMaxTrackSize = mmi->ptMaxSize;
 			return 0;
@@ -1073,6 +1081,10 @@ void App::DoFullRenderWithoutInput() {
 			glfwSetCursor(window, textCursor);
 		}
 		currentCursorType = expectedCursorType;
+	}
+	
+	if (recheckmenusizing) {
+		checkMenubarVisibility();
 	}
 	
 	//render
@@ -1802,8 +1814,21 @@ void App::resize_callback(GLFWwindow* window, int width, int height) {
 		if (on_resize_event(width, height)) { return; };
 	}
 	
+	recheckmenusizing = true;
+	
 	rerender = true;
-	// forceWaitTime = true;
+}
+
+void App::checkMenubarVisibility() {
+	if (!filesButton) { return; }
+	
+	bool showFiles = settings->getValue("use_files_button", true) && (filesButton->t_x+filesButton->t_w < tb->min_b->t_x);
+	
+	if (showFiles && filesButton->parent == nullptr) {
+		MoveWidget(filesButton, tb);
+	}else if (!showFiles && filesButton->parent != nullptr) {
+		RemoveWidgetFromParent(filesButton);
+	}
 }
 
 void App::setTheme(Theme t) {

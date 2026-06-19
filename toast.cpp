@@ -9,7 +9,7 @@ Toast::Toast(Widget *parent) : Widget(parent) {
 void Toast::position(int x, int y, int width, int height) {
 	const int pad = 10;
 	t_w = width/4;
-	t_h = height/12;
+	t_h = fmax(height/12, TextRenderer::get_text_height()*3);
 	t_x = x+width-t_w-pad;
 	t_y = y+pad;
 	

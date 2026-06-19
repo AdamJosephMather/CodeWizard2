@@ -146,6 +146,7 @@ public:
 	static Widget* scrollNotifyBox;
 	
 	static int currentMenu;
+	static bool recheckmenusizing;
 	
 	static std::vector<std::vector<std::string>> files_in_box;
 	
@@ -298,6 +299,8 @@ public:
 	
 	static void closeFilesList();
 	static void openFilesList();
+	
+	static void checkMenubarVisibility();
 	
 	static void openFromCMD(std::string filepath, std::string filename, int line = -1);
 	

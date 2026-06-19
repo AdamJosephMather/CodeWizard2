@@ -1,10 +1,9 @@
 #include "titlebar.h"
 
-#include "button.h"
 #include "application.h"
 
 TitleBar::TitleBar(Widget *parent) : Widget(parent) {
-	Button* ext_b = new Button(this, icu::UnicodeString::fromUTF8("X"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
+	ext_b = new Button(this, icu::UnicodeString::fromUTF8("X"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_w-tw;
 		button->t_y = 0;
 	}, [&](Button* button) {
@@ -19,7 +18,7 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	ext_b->border_color_hover = nullptr;
 	ext_b->text_special = 1;
 	
-	Button* win_b = new Button(this, icu::UnicodeString::fromUTF8("□"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
+	win_b = new Button(this, icu::UnicodeString::fromUTF8("□"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_w-tw*2;
 		button->t_y = 0;
 	}, [&](Button* button) {
@@ -34,7 +33,7 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	win_b->border_color_hover = nullptr;
 	win_b->text_special = 4;
 	
-	Button* min_b = new Button(this, icu::UnicodeString::fromUTF8("-"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
+	min_b = new Button(this, icu::UnicodeString::fromUTF8("-"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_w-tw*3;
 		button->t_y = 0;
 	}, [&](Button* button) {

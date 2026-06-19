@@ -198,6 +198,11 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"show_fps",
 			false
 		),
+		makeBool(
+			"Show Files Button in titlebar",
+			"use_files_button",
+			true
+		),
 		makeFloat(
 			"Animation Speed",
 			"anim_speed",
@@ -587,6 +592,13 @@ bool Settings::validate_input(SettingsFloat* el) {
 		}
 		
 		App::reclear = 2;
+	}else if (el->key_name == "smooth_scroll") {
+		if (el->value <= 0 || el->value > 1) {
+			el->value = el->default_value;
+			return false;
+		}
+		
+		App::reclear = 2;
 	}else if (el->key_name == "c_saturation") {
 		if (el->value < 0 || el->value > 1) {
 			el->value = el->default_value;
@@ -730,4 +742,7 @@ void Settings::after_change(SettingsFloat* el) {
 }
 
 void Settings::after_change(SettingsBool* el) {
+	if (el->key_name == "use_files_button") {
+		App::checkMenubarVisibility();
+	}
 }

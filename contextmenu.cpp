@@ -45,7 +45,7 @@ void ContextMenu::position(int x, int y, int width, int height) {
 	if (cursor_in_this) { App::expectedCursorType = 0; }
 	
 	maxwidth = 0;
-	runningypos = t_y+App::text_padding;
+	runningypos = t_y+App::text_padding+App::border_width;
 	Widget::position(t_x, t_y, t_w, t_h);
 	
 	if (!buttons.empty()) {
@@ -59,9 +59,9 @@ void ContextMenu::addToMenu(icu::UnicodeString name, Button::OnClick onclick) {
 		btn->t_x = t_x+App::text_padding+App::border_width;
 		btn->t_y = runningypos;
 		btn->t_w = w;
-		btn->t_h = h;
+		btn->t_h = h - App::text_padding;
 		maxwidth = fmax(maxwidth, w);
-		runningypos += h+App::text_padding;
+		runningypos += btn->t_h + App::text_padding;
 	}, onclick);
 	
 	b->rounded = true;

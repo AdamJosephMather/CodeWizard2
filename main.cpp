@@ -256,8 +256,8 @@ int main(int argc, char* argv[]) {
 		
 		menu->addToMenu(icu::UnicodeString::fromUTF8("Run\t(F5)"), [](Button*){
 			App::closeMenu();
-			App::key_callback(App::window, GLFW_KEY_F5, 63, GLFW_PRESS, 0); // just 63, that's all
-			App::key_callback(App::window, GLFW_KEY_F5, 63, GLFW_RELEASE, 0);
+			App::key_callback(App::window, GLFW_KEY_F5, 0, GLFW_PRESS, 0); // no scancode no mods
+			App::key_callback(App::window, GLFW_KEY_F5, 0, GLFW_RELEASE, 0);
 		});
 		
 		menu->addSeparaterToMenu();
@@ -279,14 +279,28 @@ int main(int argc, char* argv[]) {
 		
 		menu->addSeparaterToMenu();
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Run FixIt (Spaces->Tabs)"), [](Button*){
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Run FixIt\t(Spaces->Tabs)"), [](Button*){
 			App::closeMenu();
 			App::fixIt();
 		});
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Undo FixIt (Tabs->Spaces)"), [](Button*){
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Undo FixIt\t(Tabs->Spaces)"), [](Button*){
 			App::closeMenu();
 			App::undoFixIt();
+		});
+		
+		menu->addSeparaterToMenu();
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Toggle Macro Recording\t(F12)"), [](Button*){
+			App::closeMenu();
+			App::key_callback(App::window, GLFW_KEY_F12, 0, GLFW_PRESS, 0); // no scancode no mods
+			App::key_callback(App::window, GLFW_KEY_F12, 0, GLFW_RELEASE, 0);
+		});
+		
+		menu->addToMenu(icu::UnicodeString::fromUTF8("Toggle Macro Replay\t(F11)"), [](Button*){
+			App::closeMenu();
+			App::key_callback(App::window, GLFW_KEY_F11, 0, GLFW_PRESS, 0); // no scancode no mods
+			App::key_callback(App::window, GLFW_KEY_F11, 0, GLFW_RELEASE, 0);
 		});
 		
 		menu->addSeparaterToMenu();

@@ -1525,6 +1525,10 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 			before_reps_request = activeLeafNode;
 			setActiveLeafNode(STRING_REQUEST_TEXTEDIT);
 			reclear = 2;
+		}else{
+			displayToast(icu::UnicodeString::fromUTF8("Stopped Macro Replay"));
+			glfwSwapInterval(1); // Enable vsync
+			replaying_macro = false;
 		}
 		return;
 	}

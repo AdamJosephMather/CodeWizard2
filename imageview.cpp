@@ -158,7 +158,7 @@ void ImageView::render() {
 }
 
 bool ImageView::on_mouse_button_event(int button, int action, int mods) {
-	if (App::mouseX >= t_x && App::mouseX <= t_x+t_w && App::mouseY >= t_y && App::mouseY <= t_y+t_h && this != App::activeLeafNode) {
+	if (cursor_in_this && this != App::activeLeafNode && action == GLFW_PRESS) {
 		App::setActiveLeafNode(this);
 		return true;
 	}

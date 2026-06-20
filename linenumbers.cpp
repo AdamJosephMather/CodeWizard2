@@ -85,7 +85,6 @@ void LineNumbers::render() {
 		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
 		if (border) {
 			App::DrawRect(t_x+t_w-1, t_y, 1, t_h, App::theme.border);
-//			App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
 		}
 	}
 	

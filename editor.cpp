@@ -1,6 +1,7 @@
 #include "editor.h"
 #include "application.h"
 #include "codeedit.h"
+#include "hexeditor.h"
 #include "tinyfiledialogs.h"
 #include "imageview.h"
 
@@ -60,6 +61,8 @@ void Editor::tabinfoclicked(TabInfo info) {
 				App::setActiveLeafNode(ce->textedit);
 			}else if (auto iv = dynamic_cast<ImageView*>(it.second)) {
 				App::setActiveLeafNode(iv);
+			}else if (auto he = dynamic_cast<HexEditor*>(it.second)) {
+				App::setActiveLeafNode(he);
 			}
 		}else if (it.first != info.id && it.second->parent == this) {
 			App::RemoveWidgetFromParent(it.second);
@@ -99,6 +102,9 @@ void Editor::createNew(FileInfo* fn) {
 	if (fn && is_image(fn->filepath)) {
 		ImageView* imgv = new ImageView(this);
 		editors[ti.id] = imgv;
+	}else if (fn && fileExists(fn->filepath) && isBinaryFile(fn->filepath)){
+		HexEditor* hexe = new HexEditor(this);
+		editors[ti.id] = hexe;
 	}else{
 		CodeEdit* edtr = new CodeEdit(this, ti.id, [&](Widget* edtr){
 			if (App::settings->getValue("use_tabs", true)) {
@@ -149,10 +155,12 @@ void Editor::createNew(FileInfo* fn) {
 	}
 	
 	if (fn) {
-		if (auto ce = dynamic_cast<CodeEdit*>(edtr)){
+		if (auto ce = dynamic_cast<CodeEdit*>(edtr)) {
 			ce->openFile(fn);
-		}else if (auto iv = dynamic_cast<ImageView*>(edtr)){
+		}else if (auto iv = dynamic_cast<ImageView*>(edtr)) {
 			iv->openFile(fn);
+		}else if (auto he = dynamic_cast<HexEditor*>(edtr)) {
+			he->openFile(fn);
 		}
 	}
 }
@@ -238,6 +246,14 @@ void Editor::fileOpenRequested(FileInfo* f, int lns, int chrs, int ln, int chr) 
 				App::commandUnfocused();
 				return;
 			}
+		}else if (auto he = dynamic_cast<HexEditor*>(editors[itm.id])) {
+			if (he->file && areSameFile(he->file->filepath, f->filepath)) {
+				tab_bar->selected_id = itm.id;
+				tabinfoclicked(itm);
+				moveto(lns, chrs, ln, chr);
+				App::commandUnfocused();
+				return;
+			}
 		}
 	}
 	
@@ -261,10 +277,6 @@ void Editor::fileOpenRequested(FileInfo* f, int lns, int chrs, int ln, int chr) 
 			}
 		}
 	}
-	
-//	if (auto ce = dynamic_cast<CodeEdit*>(editors[tab_bar->selected_id])) { // we do this cast because not all widgets have FileInfo file; variables.
-//		App::setActiveLeafNode(ce->textedit);
-//	}
 	
 	moveto(lns, chrs, ln, chr);
 	App::commandUnfocused();
@@ -329,6 +341,11 @@ icu::UnicodeString Editor::getPaletteName() {
 			return icu::UnicodeString::fromUTF8("Untitled Image");
 		}
 		return icu::UnicodeString::fromUTF8(iv->file->filename);
+	}else if (auto he = dynamic_cast<HexEditor*>(editors[tab_bar->selected_id])) {
+		if (!he->file || he->file->filename == "") {
+			return icu::UnicodeString::fromUTF8("Untitled Binary File");
+		}
+		return icu::UnicodeString::fromUTF8(he->file->filename);
 	}
 	return icu::UnicodeString::fromUTF8("");
 }
@@ -341,6 +358,10 @@ Widget* Editor::fileOpen(std::string fname) { // this is a widget function to fi
 			}
 		}else if (auto iv = dynamic_cast<ImageView*>(editors[itm.id])) {
 			if (iv->file && areSameFile(iv->file->filepath, fname)) {
+				return this;
+			}
+		}else if (auto he = dynamic_cast<HexEditor*>(editors[itm.id])) {
+			if (he->file && areSameFile(he->file->filepath, fname)) {
 				return this;
 			}
 		}
@@ -378,6 +399,12 @@ std::vector<std::vector<std::string>> Editor::getOpenFiles(bool includeText) {
 			}else{
 				out.push_back({"Untitled Image", "", "IMAGE"});
 			}
+		}else if(auto he = dynamic_cast<HexEditor*>(editors[itm.id])){
+			if (he->file) {
+				out.push_back({he->file->filename, he->file->filepath, "BINARY"});
+			}else{
+				out.push_back({"Untitled Image", "", "BINARY"});
+			}
 		}
 	}
 	
@@ -398,6 +425,16 @@ int Editor::openUnnamedFile(int count) {
 			}
 		}else if(auto te = dynamic_cast<ImageView*>(editors[itm.id])){
 			if (!te->file) {
+				if (count == 0) {
+					tab_bar->selected_id = itm.id;
+					tabinfoclicked(itm);
+					App::commandUnfocused();
+					return count - 1;
+				}
+				count --;
+			}
+		}else if(auto he = dynamic_cast<HexEditor*>(editors[itm.id])){
+			if (!he->file) {
 				if (count == 0) {
 					tab_bar->selected_id = itm.id;
 					tabinfoclicked(itm);

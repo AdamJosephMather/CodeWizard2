@@ -1101,3 +1101,34 @@ static int32_t get_emoji_sequence_length(const icu::UnicodeString& str, int32_t 
 	// Returns the total number of UTF-16 code units spanning the emoji sequence
 	return end - index;
 }
+
+static std::vector<std::uint8_t> loadFileBytes(const std::string& filename, bool& worked) {
+	std::ifstream file(filename, std::ios::binary | std::ios::ate);
+
+	if (!file) {
+		worked = false;
+		return {};
+	}
+
+	std::streamsize size = file.tellg();
+	if (size < 0) {
+		worked = false;
+		return {};
+	}
+
+	file.seekg(0, std::ios::beg);
+
+	std::vector<std::uint8_t> data(static_cast<size_t>(size));
+
+	if (size > 0) {
+		file.read(reinterpret_cast<char*>(data.data()), size);
+
+		if (!file) {
+			worked = false;
+			return {};
+		}
+	}
+
+	worked = true;
+	return data;
+}

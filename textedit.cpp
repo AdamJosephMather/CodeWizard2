@@ -2519,8 +2519,10 @@ Cursor TextEdit::getCursorForMousePosition(int mx, int my, bool* gottoit) {
 	int first_line = floor(scrolled_to_vert);
 	int first_char = floor(scrolled_to_horz);
 
-	if (first_char >= 1) { // this is for some reason correct... (I'm not planning on questioning it.)
+	if (first_char == 1) { // this is for some reason correct... (I'm not planning on questioning it.)
 		first_char -= 1;
+	}else if (first_char > 1) {
+		first_char -= 2;
 	}
 
 	int mouse_line = ((my-start_y-t_y) / TextRenderer::get_text_height())+first_line;

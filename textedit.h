@@ -27,6 +27,8 @@ struct Line {
 	TextMateInfo after_line_colored;
 	
 	std::vector<LineDiagnostic> diagnostics = {};
+	
+	bool isMarked = false;
 };
 
 struct Cursor {
@@ -139,6 +141,7 @@ public:
 	std::vector<icu::UnicodeString>  draw_text;
 	std::vector<std::vector<Color*>> draw_color;
 	std::vector<DiagnosticUnderline> draw_diagnostics;
+	std::vector<bool>                draw_mark;
 	std::vector<CursorScreen>        draw_cursor;
 	std::vector<CursorSelect>        draw_selection;
 	
@@ -163,6 +166,9 @@ public:
 	void insertTextAtCursor(Cursor c, icu::UnicodeString);
 	bool tryingToEnsureCursorPos = false;
 	void ensureCursorVisible(Cursor c);
+	void toggleMark();
+	void gotoPrevMark();
+	void gotoNextMark();
 	
 	void cut();
 	void copy();

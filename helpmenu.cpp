@@ -119,6 +119,11 @@ In these settings, the following are available as variables in your build comman
 	● F5 --------------- Run code (see 'Using CodeWizard')
 	● Ctrl+F ----------- Open the find/replace menu
 	● Ctrl+Shift+Tab --- Next file tab
+	● Alt+Up ----------- Add another cursor up (esc to remove)
+	● Alt+Down --------- Add another cursor down (esc to remove)
+	● Ctrl+M ----------- Toggle mark on selection/current line
+	● Alt+Right -------- Jump to next mark
+	● Alt+Left --------- Jump to prev mark
 
 Macro Recording:
 	● F12 -------------- To start a macro recording
@@ -153,10 +158,13 @@ From Within Normal Mode:
 	● 'v' -------------- Paste at cursor position
 	● 'x' -------------- Cut text in selection
 	● 'r' -------------- Rename variable under cursor (only works with supported LSPs currently pypls does not support this)
+	● Alt+'j' ---------- Adds another cursor down (esc to close)
+	● Alt+'k' ---------- Adds another cursor up (esc to close)
+	● 'm' -------------- Toggles mark on selected section/current line
+	● Alt+'h' ---------- Jumps to prev mark
+	● Alt+'l' ---------- Jumps to next mark
 
-Note that for most movement shortcuts ('h', 'j', 'k', 'l', '<', '>', 'a', 'w', 'e', 'b') you can also hold shift to extend the selected cursor text.
-
-Hold alt while clicking or pressing an arrow (or one of hjkl keys) to add another cursor. When you're done with them press esc.):"),
+Note that for most movement shortcuts ('h', 'j', 'k', 'l', '<', '>', 'a', 'w', 'e', 'b') you can also hold shift to extend the selected cursor text.):"),
 		},{
 			icu::UnicodeString::fromUTF8("AI"),
 			icu::UnicodeString::fromUTF8(R":(	CodeWizard has support for AI. Specifically, after setting an AI provider, model, and key in the settings, press Alt+A to trigger an insertion at your current cursor position. Or you can then open an AI chat widget to chat with your chosen model in a window.

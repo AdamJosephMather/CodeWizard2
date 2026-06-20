@@ -42,6 +42,7 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 	
 	draw_cursor = {};
 	draw_diagnostics = {};
+	draw_mark = {false};
 	
 	scrollbar_v = new Scrollbar(this);
 	scrollbar_v->getScrollInfo = [&](){
@@ -125,7 +126,94 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 	});
 	
 	contextmenu->recalcButtonTexts();
+	
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Toggle Mark\t(Ctrl+M)"), [&](Widget* w){
+		toggleMark();
+		contextmenu->is_visible_2 = false;
+	});
+	
+	contextmenu->addSeparaterToMenu();
 }
+
+void TextEdit::toggleMark() {
+	for (auto c : cursors) {
+		for (int l = fmin(c.head_line, c.anchor_line); l <= fmax(c.head_line, c.anchor_line); l++) {
+			lines[l].isMarked = !lines[l].isMarked;
+		}
+	}
+	DO_POSITION = true;
+}
+
+void TextEdit::gotoNextMark() {
+	for (int ci = 0; ci < cursors.size(); ci++) {
+		auto c = cursors[ci];
+		bool jumpto = !lines[c.head_line].isMarked; // don't jump till we've exited the current marking
+		bool done = false;
+		
+		for (int l = c.head_line+1; l < lines.size(); l++) {
+			if (!jumpto) {
+				if (!lines[l].isMarked) { // now we can jump - we've found a non marked line
+					jumpto = true;
+				}
+			}else if (lines[l].isMarked) {
+				cursors[ci] = {l,0,l,0,0}; // line, char, line, char, preffered col
+				done = true;
+				break;
+			}
+		}
+		
+		if (done) {
+			continue;
+		}
+		
+		for (int l = 0; l < c.head_line; l++) {
+			if (lines[l].isMarked) { // don't care about jumpto, we wrapped
+				cursors[ci] = {l,0,l,0,0}; // line, char, line, char, preffered col
+				done = true;
+				break;
+			}
+		}
+	}
+	
+	tryingToEnsureCursorPos = true;
+	DO_POSITION = true;
+}
+
+void TextEdit::gotoPrevMark() {
+	for (int ci = 0; ci < cursors.size(); ci++) {
+		auto c = cursors[ci];
+		bool jumpto = !lines[c.head_line].isMarked; // don't jump till we've exited the current marking
+		bool done = false;
+		
+		for (int l = c.head_line-1; l >= 0; l--) {
+			if (!jumpto) {
+				if (!lines[l].isMarked) { // now we can jump - we've found a non marked line
+					jumpto = true;
+				}
+			}else if (lines[l].isMarked) {
+				cursors[ci] = {l,0,l,0,0}; // line, char, line, char, preffered col
+				done = true;
+				break;
+			}
+		}
+		
+		if (done) {
+			continue;
+		}
+		
+		for (int l = lines.size()-1; l > c.head_line; l--) {
+			if (lines[l].isMarked) { // don't care about jumpto, we wrapped
+				cursors[ci] = {l,0,l,0,0}; // line, char, line, char, preffered col
+				done = true;
+				break;
+			}
+		}
+	}
+	
+	tryingToEnsureCursorPos = true;
+	DO_POSITION = true;
+}
+
 
 int TextEdit::getVisLen(const icu::UnicodeString& line) {
 	int ln = 0;
@@ -1511,6 +1599,10 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 			insertNewCursorDown();
 		}else if (is_alt_held && key == GLFW_KEY_UP) {
 			insertNewCursorUp();
+		}else if (is_alt_held && key == GLFW_KEY_LEFT) {
+			gotoPrevMark();
+		}else if (is_alt_held && key == GLFW_KEY_RIGHT) {
+			gotoNextMark();
 		}else{
 			applyMoveToAllCursors(key, is_shift_held, is_control_held);
 		}
@@ -1546,6 +1638,12 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 				return true;
 			}else if (key == GLFW_KEY_J && !is_control_held) {
 				insertNewCursorDown();
+				return true;
+			}else if (key == GLFW_KEY_H && !is_control_held) {
+				gotoPrevMark();
+				return true;
+			}else if (key == GLFW_KEY_L && !is_control_held) {
+				gotoNextMark();
 				return true;
 			}
 		}
@@ -1606,7 +1704,8 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 }
 
 bool TextEdit::handleUserKey(int key, int scancode, int action, int mods) {
-	bool is_shift_held = ((mods & GLFW_MOD_SHIFT) != 0);
+	bool is_shift_held   = ((mods & GLFW_MOD_SHIFT) != 0);
+	bool is_control_held = ((mods & GLFW_MOD_CONTROL) != 0);
 	
 	if (mode == 'n') {
 		if (key == GLFW_KEY_I) {
@@ -1614,14 +1713,14 @@ bool TextEdit::handleUserKey(int key, int scancode, int action, int mods) {
 			DO_POSITION = true;
 			vim_repeater = 0;
 			HandleOverlappingCursors();
-	  ignoringChar = 'i';
+			ignoringChar = 'i';
 			return true;
 		}else if (key == GLFW_KEY_N) {
 			mode = 'i';
 			vim_repeater = 0;
 			applyMoveToAllCursors(GLFW_KEY_RIGHT, is_shift_held, false);
 			HandleOverlappingCursors();
-	  ignoringChar = 'n';
+			ignoringChar = 'n';
 			return true;
 		}
 
@@ -1643,6 +1742,13 @@ bool TextEdit::handleUserKey(int key, int scancode, int action, int mods) {
 			mode = 'n';
 			DO_POSITION = true;
 			HandleOverlappingCursors();
+			return true;
+		}
+	}
+	
+	if (mode == 'n' || is_control_held) {
+		if (key == GLFW_KEY_M) {
+			toggleMark();
 			return true;
 		}
 	}
@@ -1725,6 +1831,23 @@ void TextEdit::render() {
 	int curx = start_x+t_x+App::text_padding;
 	int cury = start_y+t_y+App::text_padding;
 	
+	std::vector<int> drawMarkLines = {};
+	
+	for (int ln_ren = 0; ln_ren < draw_text.size(); ln_ren++) {
+		if (draw_mark[ln_ren]) {
+			App::DrawRect(t_x, cury, t_w, TextRenderer::get_text_height(), App::theme.overlay_background_color);
+			if (ln_ren == 0 || !draw_mark[ln_ren-1]) {
+				drawMarkLines.push_back(cury-1);
+			}
+			if (ln_ren == draw_text.size()-1 || !draw_mark[ln_ren+1]) {
+				drawMarkLines.push_back(cury+TextRenderer::get_text_height());
+			}
+		}
+		cury += TextRenderer::get_text_height();
+	}
+	
+	cury = start_y+t_y+App::text_padding; // reset for later use
+	
 	for (auto cs : draw_selection) {
 		int y = TextRenderer::get_text_height()*cs.rel_line+start_y+t_y+App::text_padding;
 		
@@ -1775,6 +1898,10 @@ void TextEdit::render() {
 		if (mode == 'n' && cs.charUnder != U'\0' && cs.charUnder != U'\t') {
 			TextRenderer::draw_text(x, y, cs.charUnder, App::theme.darker_background_color, false); // don't draw emojis here because... it doesn't work
 		}
+	}
+	
+	for (int y : drawMarkLines) {
+		App::DrawRect(t_x, y, t_w, 1, App::theme.active_color);
 	}
 	
 	Widget::render();
@@ -2203,6 +2330,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 	draw_cursor.clear();
 	draw_selection.clear();
 	draw_diagnostics.clear();
+	draw_mark.clear();
 
 	int line_start = floor(scrolled_to_vert);
 	int char_start = floor(scrolled_to_horz);
@@ -2221,6 +2349,11 @@ void TextEdit::position(int x, int y, int w, int h) {
 
 	int end_line = line_start+ceil((float)t_h/(float)TextRenderer::get_text_height()) + 1;
 	int end_char = char_start+ceil((float)t_w/(float)TextRenderer::get_text_width(1)) + 1;
+	
+	if (line_start > 0) {
+		line_start -= 1;
+		start_y -= TextRenderer::get_text_height();
+	}
 
 	int start_highlight = fmax(0, line_start-5);
 	int end_highlight = fmin(lines.size(), end_line+5);
@@ -2480,6 +2613,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 		}
 
 		draw_text.push_back(final_line);
+		draw_mark.push_back(lines[ln_num].isMarked);
 		draw_color.push_back(final_color);
 	}
 	
@@ -2518,11 +2652,15 @@ bool TextEdit::on_scroll_event(double xchange, double ychange) {
 Cursor TextEdit::getCursorForMousePosition(int mx, int my, bool* gottoit) {
 	int first_line = floor(scrolled_to_vert);
 	int first_char = floor(scrolled_to_horz);
-
+	
 	if (first_char == 1) { // this is for some reason correct... (I'm not planning on questioning it.)
 		first_char -= 1;
-	}else if (first_char > 1) {
+	}else if (first_char > 1) { // okay these are because we need to render partial lines/chars - the -= 2 is because of emojis
 		first_char -= 2;
+	}
+	
+	if (first_line > 0) {
+		first_line -= 1;
 	}
 
 	int mouse_line = ((my-start_y-t_y) / TextRenderer::get_text_height())+first_line;

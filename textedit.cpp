@@ -125,14 +125,29 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 		contextmenu->is_visible_2 = false;
 	});
 	
-	contextmenu->recalcButtonTexts();
+	contextmenu->addSeparaterToMenu();
 	
 	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Toggle Mark\t(Ctrl+M)"), [&](Widget* w){
 		toggleMark();
 		contextmenu->is_visible_2 = false;
 	});
 	
-	contextmenu->addSeparaterToMenu();
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Next Mark\t(Ctrl+M)"), [&](Widget* w){
+		gotoNextMark();
+		contextmenu->is_visible_2 = false;
+	});
+	
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Prev Mark\t(Ctrl+M)"), [&](Widget* w){
+		gotoPrevMark();
+		contextmenu->is_visible_2 = false;
+	});
+	
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Clear Marks\t(Ctrl+M)"), [&](Widget* w){
+		clearMarks();
+		contextmenu->is_visible_2 = false;
+	});
+	
+	contextmenu->recalcButtonTexts();
 }
 
 void TextEdit::toggleMark() {
@@ -140,6 +155,13 @@ void TextEdit::toggleMark() {
 		for (int l = fmin(c.head_line, c.anchor_line); l <= fmax(c.head_line, c.anchor_line); l++) {
 			lines[l].isMarked = !lines[l].isMarked;
 		}
+	}
+	DO_POSITION = true;
+}
+
+void TextEdit::clearMarks() {
+	for (int l = 0; l < lines.size(); l++) {
+		lines[l].isMarked = false;
 	}
 	DO_POSITION = true;
 }
@@ -1631,18 +1653,18 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 		return true;
 	}
 	
-	if (is_alt_held) {
+	if (is_alt_held || is_control_held) {
 		if (App::settings->getValue("use_vim", true)) { // we'll do it in normal or regular mode
-			if (key == GLFW_KEY_K && !is_control_held) {
+			if (key == GLFW_KEY_K) {
 				insertNewCursorUp();
 				return true;
-			}else if (key == GLFW_KEY_J && !is_control_held) {
+			}else if (key == GLFW_KEY_J) {
 				insertNewCursorDown();
 				return true;
-			}else if (key == GLFW_KEY_H && !is_control_held) {
+			}else if (key == GLFW_KEY_H) {
 				gotoPrevMark();
 				return true;
-			}else if (key == GLFW_KEY_L && !is_control_held) {
+			}else if (key == GLFW_KEY_L) {
 				gotoNextMark();
 				return true;
 			}

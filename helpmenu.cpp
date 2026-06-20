@@ -163,6 +163,8 @@ From Within Normal Mode:
 	● 'm' -------------- Toggles mark on selected section/current line
 	● Alt+'h' ---------- Jumps to prev mark
 	● Alt+'l' ---------- Jumps to next mark
+	● Ctrl+'h' --------- Jumps to prev mark
+	● Ctrl+'l' --------- Jumps to next mark
 
 Note that for most movement shortcuts ('h', 'j', 'k', 'l', '<', '>', 'a', 'w', 'e', 'b') you can also hold shift to extend the selected cursor text.):"),
 		},{

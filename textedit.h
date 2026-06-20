@@ -167,6 +167,7 @@ public:
 	bool tryingToEnsureCursorPos = false;
 	void ensureCursorVisible(Cursor c);
 	void toggleMark();
+	void clearMarks();
 	void gotoPrevMark();
 	void gotoNextMark();
 	

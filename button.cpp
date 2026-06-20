@@ -34,7 +34,7 @@ void Button::position(int x, int y, int width, int height) {
 	
 	POSITIONER(this, x, y, width, height, t_w, t_h);
 	
-	if (t_x <= mx && t_x+t_w >= mx && t_y <= my && t_y+t_h >= my) {
+	if (t_x <= mx && t_x+t_w >= mx && t_y <= my && t_y+t_h >= my && (!parent || parent->cursor_in_this)) {
 		App::expectedCursorType = 3;
 	}
 }

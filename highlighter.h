@@ -143,7 +143,7 @@ private:
 	
 	std::shared_ptr<Rule> compileRule(const nlohmann::json& r, std::string id="");
 	Capture compileCapture(const nlohmann::json& j);
-	RegexInfo* compileRegex(std::string patternStr);
+	RegexInfo* compileRegex(std::string patternStr, const std::string& debugName);
 	
 	bool alreadyFoundPattern(std::shared_ptr<Rule> pattern);
 	void fetchAllPatterns(const std::vector<std::shared_ptr<Rule>>& patterns);

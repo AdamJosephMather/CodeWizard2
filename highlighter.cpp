@@ -87,6 +87,9 @@ bool Highlighter::loadGrammarFile(const std::string& path) {
 	
 	for (auto p : patterns) {
 		auto compiled_p = compileRule(p);
+		if (!compiled_p) {
+			continue;
+		}
 		root.patterns.push_back(compiled_p);
 		self->patterns.push_back(compiled_p);
 	}
@@ -97,6 +100,9 @@ bool Highlighter::loadGrammarFile(const std::string& path) {
 		auto id = it.key();
 		auto repoRule = it.value();
 		auto compiled_repo_rule = compileRule(repoRule, id);
+		if (!compiled_repo_rule) {
+			continue;
+		}
 		repository[id] = compiled_repo_rule;
 	}
 	
@@ -152,77 +158,84 @@ Match Highlighter::findEarliestPattern(const std::string& line, ContextFrame cur
 	bool skip = false;
 	if (currentContext.closable) {
 		RegexInfo* end_reg = currentContext.endReg;
-		
-		OnigRegion* region = onig_region_new();
-		
-		int r = onig_search(
-			end_reg->regex,
-			str, strEnd,     // entire buffer
-			str+handledUpTo, rangeEnd,     // search from str to end
-			region,
-			ONIG_OPTION_NONE
-		);
-		
-		if (r >= 0 && (on_start || !end_reg->G) && (!on_start || !end_reg->bangG)) {
-			first_index = region->beg[0];
-			length = region->end[0] - region->beg[0];
-			is_end_of_segment = true;
-			OnigRegion* copy = onig_region_new();
-			onig_region_copy(copy, region);
-			thisRegion = copy;
-			
-			captured = {};
-			
-			for (auto it : currentContext.endCaptures) {
-				int itm = it.first;
-				Capture cap = it.second;
-				
-				int indx = region->beg[itm];
-				int len = region->end[itm]-region->beg[itm];
-				
-				if (indx < 0) {
-					continue;
+	
+		if (end_reg && end_reg->regex) {
+			OnigRegion* region = onig_region_new();
+	
+			int r = onig_search(
+				end_reg->regex,
+				str, strEnd,
+				str + handledUpTo, rangeEnd,
+				region,
+				ONIG_OPTION_NONE
+			);
+	
+			if (r >= 0 && (on_start || !end_reg->G) && (!on_start || !end_reg->bangG)) {
+				first_index = region->beg[0];
+				length = region->end[0] - region->beg[0];
+				is_end_of_segment = true;
+	
+				OnigRegion* copy = onig_region_new();
+				onig_region_copy(copy, region);
+				thisRegion = copy;
+	
+				captured = {};
+	
+				for (auto it : currentContext.endCaptures) {
+					int itm = it.first;
+					Capture cap = it.second;
+	
+					int indx = region->beg[itm];
+					int len = region->end[itm] - region->beg[itm];
+	
+					if (indx < 0) {
+						continue;
+					}
+	
+					Captured cptrd = {itm, cap, indx, len};
+					captured.push_back(cptrd);
 				}
-				
-				Captured cptrd = {itm, cap, indx, len};
-				captured.push_back(cptrd);
+	
+				if (first_index == handledUpTo) {
+					skip = true;
+				}
 			}
-			
-			if (first_index == handledUpTo) {
-				skip = true;
-			}
+	
+			onig_region_free(region, 1);
 		}
-		
-		onig_region_free(region, 1);
-		
+	
 		RegexInfo* while_reg = currentContext.whileReg;
-		
-		if (while_reg && checkWhile) {
+	
+		if (while_reg && while_reg->regex && checkWhile) {
 			OnigRegion* region_while = onig_region_new();
-			
-			r = onig_search(
+	
+			int r = onig_search(
 				while_reg->regex,
-				str, strEnd,     // entire buffer
-				str+handledUpTo, rangeEnd,     // search from str to end
+				str, strEnd,
+				str + handledUpTo, rangeEnd,
 				region_while,
 				ONIG_OPTION_NONE
 			);
-			
-			if (!skip && (r < 0 || (!on_start && end_reg->G) || (!on_start && end_reg->bangG))) {
-				first_index        = handledUpTo;     // end right where we are
-				length             = 0;               // zero-length (don’t consume text)
-				first_rule.reset();                   // no explicit rule object
-				is_end_of_segment  = true;            // tell caller to pop the context
-				
-				if (thisRegion)                       // discard any earlier region copy
+	
+			bool whileFailed = r < 0;
+			bool whileDisallowedByG = (!on_start && while_reg->G);
+			bool whileDisallowedByBangG = (on_start && while_reg->bangG);
+	
+			if (!skip && (whileFailed || whileDisallowedByG || whileDisallowedByBangG)) {
+				first_index = handledUpTo;
+				length = 0;
+				first_rule.reset();
+				is_end_of_segment = true;
+	
+				if (thisRegion) {
 					onig_region_free(thisRegion, 1);
+				}
+	
 				thisRegion = nullptr;
-			
-				captured.clear();                     // no capture data
-				skip = true;                          // we’re done evaluating this line
-				
+				captured.clear();
+				skip = true;
 			}
-			
+	
 			onig_region_free(region_while, 1);
 		}
 	}
@@ -410,12 +423,16 @@ std::pair<std::vector<Token>,TextMateInfo> Highlighter::analizeSection(const std
 						}
 					}
 					
-					RegexInfo* reg = compileRegex(new_reg);
+					RegexInfo* reg = compileRegex(new_reg, rule->name);
+					if (!reg) {
+						std::cout << "OH SHIT! FAILED TO COMPILE AT RUNTIME\n";
+					}
 					
 					newFrame.endReg = reg;
 					newFrame.whileReg = rule->whileReg;
 				}else{
 					newFrame.endReg = rule->endReg;
+					newFrame.whileReg = rule->whileReg;
 				}
 				
 				newFrame.endCaptures = rule->endCaptures;
@@ -428,7 +445,21 @@ std::pair<std::vector<Token>,TextMateInfo> Highlighter::analizeSection(const std
 				newFrame.started_here = true;
 				newFrame.start_char = match.index + match.length;
 				
-				currentInfo.contextStack.push_back(newFrame);
+				bool hasEnd = newFrame.endReg && newFrame.endReg->regex;
+				bool hasWhile = newFrame.whileReg && newFrame.whileReg->regex;
+				
+				newFrame.closable = hasEnd || hasWhile;
+				
+				if (!newFrame.closable) {
+					std::cerr << "Not pushing RANGE context with no valid end/while regex. Rule name: "
+							  << rule->name << "\n";
+				
+					// Treat the begin as a simple match only.
+					// Do not push a broken context.
+				} else {
+					currentInfo.contextStack.push_back(newFrame);
+					need_to_find_patterns = true;
+				}
 				need_to_find_patterns = true;
 			}
 			
@@ -559,7 +590,7 @@ TextMateInfo Highlighter::getDefaultLineInfo() {
 	return { {root} };
 }
 
-RegexInfo* Highlighter::compileRegex(std::string patternStr) {
+RegexInfo* Highlighter::compileRegex(std::string patternStr, const std::string& debugName) {
 	bool G = false;
 	bool bangG = false;
 	
@@ -606,9 +637,13 @@ RegexInfo* Highlighter::compileRegex(std::string patternStr) {
 	if (result != ONIG_NORMAL) {
 		OnigUChar errorMessage[ONIG_MAX_ERROR_MESSAGE_LEN];
 		onig_error_code_to_str(errorMessage, result, &errorInfo);
-		fprintf(stderr, "Oniguruma regex compile error: %s\n", errorMessage);
-		
-		return nullptr;	
+	
+		std::cerr << "Oniguruma regex compile error in rule [" << debugName << "]\n";
+		std::cerr << "Error: " << errorMessage << "\n";
+		std::cerr << "Pattern: " << orig << "\n";
+		std::cerr << "Modified pattern: " << patternStr << "\n";
+	
+		return nullptr;
 	}
 	
 	RegexInfo* info = new RegexInfo();
@@ -623,7 +658,11 @@ Capture Highlighter::compileCapture(const nlohmann::json& j) {
 	if (j.contains("name")) cap.name = j["name"];
 	if (j.contains("patterns")) {
 		for (const auto& p : j["patterns"]) {
-			cap.patterns.push_back(compileRule(p));
+			auto compiledPat = compileRule(p);
+			if (!compiledPat) {
+				continue;
+			}
+			cap.patterns.push_back(compiledPat);
 		}
 	}
 	return cap;
@@ -696,8 +735,13 @@ std::shared_ptr<Rule> Highlighter::compileRule(const nlohmann::json& r, std::str
 		&& !r.contains("begin"))
 	{
 		rule->type_of_rule = GROUP;               // new enum case
-		for (const auto& pat : r["patterns"])
-			rule->patterns.push_back(compileRule(pat));
+		for (const auto& pat : r["patterns"]) {
+			auto compiledPat = compileRule(pat);
+			if (!compiledPat) {
+				continue;
+			}
+			rule->patterns.push_back(compiledPat);
+		}
 		return rule;
 	}
 	
@@ -722,7 +766,11 @@ std::shared_ptr<Rule> Highlighter::compileRule(const nlohmann::json& r, std::str
 	// 2) Simple match rule
 	if (r.contains("match")) {
 		rule->type_of_rule = MATCH;
-		rule->matchReg     = compileRegex(r["match"].get<std::string>());
+		rule->matchReg     = compileRegex(r["match"].get<std::string>(), rule->name+"[match]");
+		if (!rule->matchReg) {
+			std::cerr << "Dropping rulematch which failed to compile. Rule name " << rule->name << "\n";
+			return nullptr;
+		}
 		
 		// captures
 		if (r.contains("captures")) {
@@ -747,17 +795,30 @@ std::shared_ptr<Rule> Highlighter::compileRule(const nlohmann::json& r, std::str
 		rule->hash = random_number;
 		
 		// compile the three possible regexes
-		rule->beginReg = compileRegex(r["begin"].get<std::string>());
+		rule->beginReg = compileRegex(r["begin"].get<std::string>(), rule->name+"[begin]");
+		if (!rule->beginReg) {
+			std::cerr << "Dropping rulebegin which failed to compile. Rule name " << rule->name << "\n";
+			return nullptr;
+		}
+		
 		if (r.contains("end")) {
 			if (needsDelimiter(r["end"])) {
 				rule->needsInsertIntoEndRegex = true;
 				rule->uncompiledEndReg = parseRegexSegments(r["end"]);
 			}else{
-				rule->endReg = compileRegex(r["end"].get<std::string>());
+				rule->endReg = compileRegex(r["end"].get<std::string>(), rule->name+"[end]");
+				if (!rule->endReg) {
+					std::cerr << "Dropping ruleend which failed to compile. Rule name " << rule->name << "\n";
+					return nullptr;
+				}
 			}
 		}
 		if (r.contains("while")) {
-			rule->whileReg = compileRegex(r["while"].get<std::string>());
+			rule->whileReg = compileRegex(r["while"].get<std::string>(), rule->name+"[while]");
+			if (!rule->whileReg) {
+				std::cerr << "Dropping rulewhile which failed to compile. Rule name " << rule->name << "\n";
+				return nullptr;
+			}
 		}
 		
 		// contentName (scopes the inner text)
@@ -788,7 +849,11 @@ std::shared_ptr<Rule> Highlighter::compileRule(const nlohmann::json& r, std::str
 		// nested patterns
 		if (r.contains("patterns")) {
 			for (const auto& pat : r["patterns"]) {
-				rule->patterns.push_back(compileRule(pat));
+				auto compiledPat = compileRule(pat);
+				if (!compiledPat) {
+					continue;
+				}
+				rule->patterns.push_back(compiledPat);
 			}
 		}
 		

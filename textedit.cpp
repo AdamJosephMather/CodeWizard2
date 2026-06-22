@@ -132,17 +132,17 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 		contextmenu->is_visible_2 = false;
 	});
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Next Mark\t(Ctrl+M)"), [&](Widget* w){
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Next Mark\t(Alt+Right)"), [&](Widget* w){
 		gotoNextMark();
 		contextmenu->is_visible_2 = false;
 	});
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Prev Mark\t(Ctrl+M)"), [&](Widget* w){
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Prev Mark\t(Alt+Left)"), [&](Widget* w){
 		gotoPrevMark();
 		contextmenu->is_visible_2 = false;
 	});
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Clear Marks\t(Ctrl+M)"), [&](Widget* w){
+	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Clear Marks"), [&](Widget* w){
 		clearMarks();
 		contextmenu->is_visible_2 = false;
 	});

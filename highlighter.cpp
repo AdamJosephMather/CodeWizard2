@@ -11,7 +11,7 @@ std::vector<std::vector<std::string>> matches = {
 	{"type"},
 	{"string"},
 	{"comment"},
-	{"name.function", "function-call.generic", "function-call.generic", "function.builtin", "variable.function", "support.function"},
+	{"name.function", "function-call.generic", "function-call.generic", "function.builtin", "variable.function", "support.function", "invocation-expression"},
 	{"variable", "paramater", "argument"},
 	{"scope", "keyword", "storage", "attribute.rust"},
 	{"punctuation"},
@@ -140,6 +140,24 @@ void Highlighter::fetchAllPatterns(const std::vector<std::shared_ptr<Rule>>& pat
 	}
 }
 
+static bool getCaptureRange(OnigRegion* region, int group, int& start, int& length) {
+	if (!region) return false;
+
+	if (group < 0 || group >= region->num_regs) {
+		return false;
+	}
+
+	start = region->beg[group];
+	int end = region->end[group];
+
+	if (start < 0 || end < 0 || end < start) {
+		return false;
+	}
+
+	length = end - start;
+	return true;
+}
+
 Match Highlighter::findEarliestPattern(const std::string& line, ContextFrame currentContext, int handledUpTo, bool checkWhile, bool on_start) {
 	int first_index = -1;
 	std::shared_ptr<Rule> first_rule;
@@ -185,13 +203,13 @@ Match Highlighter::findEarliestPattern(const std::string& line, ContextFrame cur
 					int itm = it.first;
 					Capture cap = it.second;
 	
-					int indx = region->beg[itm];
-					int len = region->end[itm] - region->beg[itm];
-	
-					if (indx < 0) {
+					int indx = 0;
+					int len = 0;
+					
+					if (!getCaptureRange(region, itm, indx, len)) {
 						continue;
 					}
-	
+					
 					Captured cptrd = {itm, cap, indx, len};
 					captured.push_back(cptrd);
 				}
@@ -321,10 +339,10 @@ Match Highlighter::findEarliestPattern(const std::string& line, ContextFrame cur
 					int itm = it.first;
 					Capture cap = it.second;
 					
-					int indx = region->beg[itm];
-					int len = region->end[itm]-region->beg[itm];
+					int indx = 0;
+					int len = 0;
 					
-					if (indx < 0) {
+					if (!getCaptureRange(region, itm, indx, len)) {
 						continue;
 					}
 					
@@ -413,10 +431,10 @@ std::pair<std::vector<Token>,TextMateInfo> Highlighter::analizeSection(const std
 						if (i.segment != "") {
 							new_reg += i.segment;
 						}else {
-							int start_of_delim = match.region->beg[i.delimiter_number];
-							int length_of_sub = match.region->end[i.delimiter_number]-start_of_delim;
+							int start_of_delim = 0;
+							int length_of_sub = 0;
 							
-							if (start_of_delim >= 0) {
+							if (getCaptureRange(match.region, i.delimiter_number, start_of_delim, length_of_sub)) {
 								std::string delimn = section.substr(start_of_delim, length_of_sub);
 								new_reg += delimn;
 							}
@@ -571,7 +589,11 @@ LineResult Highlighter::highlightLine(icu::UnicodeString input_string, TextMateI
 			continue;
 		}
 		
-//		std::cout << "Token: " << token.name << " text: " << line_string.substr(token.start, token.length) << std::endl;
+//		if (token.start < 0 || token.length+token.start > line_string.length()) {
+//			std::cout << "PREDICT ABOUT TO CRASH!!! " << token.start << " - " << token.length << " in " << line_string.length() << "\n";
+//		}
+//		std::cout << "Token: " << token.name << " len: " << token.length << " text: " << line_string.substr(token.start, token.length) << std::endl;
+		
 		
 		int newcolor = chooseColorByScopes(token.name, variable_color);
 		if (newcolor == -1) {
@@ -582,6 +604,8 @@ LineResult Highlighter::highlightLine(icu::UnicodeString input_string, TextMateI
 	}
 	
 	ln_res.tokens = outTokens;
+	
+//	std::cout << "Done highlight\n";
 	
 	return ln_res;
 }

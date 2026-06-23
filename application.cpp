@@ -2535,6 +2535,7 @@ void App::repeatEveryXSeconds(int intervalSeconds, std::function<void()> task) {
 }
 
 void App::save() {
+	std::cout << "Saving\n";
 	rootelement->save();
 }
 

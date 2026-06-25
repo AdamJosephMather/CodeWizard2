@@ -1,1 +1,1 @@
-D:\Users\adamj\Documents\C\CodeWizard2\third_party\syntect_bridge\target\release\syntect_bridge.lib: D:\Users\adamj\Documents\C\CodeWizard2\third_party\syntect_bridge\src\lib.rs
+C:\Users\adamj\Documents\C\CodeWizard\third_party\syntect_bridge\target\release\syntect_bridge.lib: C:\Users\adamj\Documents\C\CodeWizard\third_party\syntect_bridge\src\lib.rs

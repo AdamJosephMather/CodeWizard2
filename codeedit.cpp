@@ -486,7 +486,7 @@ void CodeEdit::detectLanguage() {
 				0
 			);
 			
-			App::highlighters[language] = highlighter;
+			App::highlighters[extension] = highlighter;
 		}else{
 			highlighter = it->second;
 		}

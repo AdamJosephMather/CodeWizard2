@@ -11,6 +11,7 @@ struct Segment {
 	bool isCode;          // true ⇒ this segment is a code block
 	std::string content;  // the raw text of that segment
 	std::vector<MarkdownSpan> spans;
+	std::string name;
 };
 
 class Chat : public Widget {

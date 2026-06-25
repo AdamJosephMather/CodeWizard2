@@ -110,7 +110,6 @@ int main(int argc, char* argv[]) {
 	theme.syntax_colors[9]  = MakeColor(0.760784314, 0.309803922, 0.250980392);
 	theme.syntax_colors[10] = MakeColor(0.250980392, 0.760784314, 0.470588235);
 	theme.syntax_colors[11] = MakeColor(1, 0, 0);
-	theme.syntax_colors[12] = MakeColor(0.396078431, 0.250980392, 0.760784314);
 	
 	App::theme = theme;
 	

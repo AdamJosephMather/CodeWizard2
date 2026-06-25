@@ -191,9 +191,11 @@ bool Chat::on_mouse_button_event(int button, int action, int mods) {
 }
 
 std::vector<Segment> Chat::splitMarkdown(const std::string& input) {
-	// Regex to match ```[name]\n...``` blocks (as before)
+	// Captures:
+	//   m[1] = optional code block name/language
+	//   m[2] = code contents
 	static const std::regex re(
-		R"(```(?:[^\n`]+\r?\n)?([\s\S]*?)```)"
+		R"(```([^\n`]*)?\r?\n([\s\S]*?)```)"
 	);
 
 	std::vector<Segment> segments;
@@ -202,13 +204,15 @@ std::vector<Segment> Chat::splitMarkdown(const std::string& input) {
 
 	for (; it != end; ++it) {
 		const std::smatch& m = *it;
-		size_t matchPos = m.position(0);
-		size_t matchLen = m.length(0);
-		
-		ProcessedMarkdown processed = MarkdownParser::Process(input.substr(lastPos, matchPos - lastPos));
-		
+
+		size_t matchPos = static_cast<size_t>(m.position(0));
+		size_t matchLen = static_cast<size_t>(m.length(0));
+
 		// 1) Plaintext before this code block
 		if (matchPos > lastPos) {
+			ProcessedMarkdown processed =
+				MarkdownParser::Process(input.substr(lastPos, matchPos - lastPos));
+
 			segments.push_back({
 				/*isCode=*/false,
 				processed.cleanText,
@@ -216,10 +220,15 @@ std::vector<Segment> Chat::splitMarkdown(const std::string& input) {
 			});
 		}
 
-		// 2) This code block (including fences)
+		std::string codeName = m[1].matched ? m[1].str() : "";
+		std::string codeText = m[2].str();
+
+		// 2) This code block
 		segments.push_back({
 			/*isCode=*/true,
-			m[1].str()
+			codeText,
+			/*spans=*/{},
+			/*codeName=*/codeName
 		});
 
 		lastPos = matchPos + matchLen;
@@ -228,7 +237,7 @@ std::vector<Segment> Chat::splitMarkdown(const std::string& input) {
 	// 3) Any trailing plaintext after the last code block
 	if (lastPos < input.size()) {
 		ProcessedMarkdown processed = MarkdownParser::Process(input.substr(lastPos));
-		
+
 		segments.push_back({
 			/*isCode=*/false,
 			processed.cleanText,
@@ -301,6 +310,27 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 						auto te = new TextEdit(this, [](Widget*){});
 						te->setFullText(icu::UnicodeString::fromUTF8(trim(segment.content)));
 						te->DONT_SCROLL_VERT_CURS = true;
+						
+						auto name = segment.name;
+						if (!name.empty()) {
+							auto it = App::highlighters.find(name);
+							if (it == App::highlighters.end()) {
+								te->highlighter = cw_syntect_setup(
+									name.c_str(),
+									nullptr,
+									0
+								);
+								
+								App::highlighters[name] = te->highlighter;
+							}else{
+								te->highlighter = it->second;
+							}
+							
+							if (te->highlighter != nullptr) {
+								te->highlighter_initial_state.reset(cw_syntect_initial_state(te->highlighter));
+							}
+						}
+						
 						message_te.push_back(te);
 					}else{
 						auto la = new Label(this);

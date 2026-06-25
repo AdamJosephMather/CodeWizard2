@@ -7,6 +7,9 @@
 #include "helper_types.h"
 #include <unicode/brkiter.h>
 #include <unicode/uchar.h>
+#include "syntect_bridge.h"
+
+//#define DEBUG
 
 #define CODEWIZARD_WORD_WRAP 10000
 #define CODEWIZARD_MATCHING_BRACKET_LEFT 10001
@@ -35,7 +38,8 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 	ln.tokens = {};
 	changed_during_update = true;
 	
-	lines = {ln}; // one empty line.
+	lines.clear();
+	lines.push_back(std::move(ln)); // one empty line.
 	cursors = {Cursor()}; // we have to set these two before we init the undo history.
 	coppiedText = {};
 	historyThisUpdate = createHistory();
@@ -236,7 +240,6 @@ void TextEdit::gotoPrevMark() {
 	DO_POSITION = true;
 }
 
-
 int TextEdit::getVisLen(const icu::UnicodeString& line) {
 	int ln = 0;
 	
@@ -255,14 +258,14 @@ int TextEdit::getVisLen(const icu::UnicodeString& line) {
 void TextEdit::setFullText(icu::UnicodeString text) {
 	auto lns = splitByChar(text, U'\n');
 
-	lines = {};
+	lines.clear();
 
 	for (auto l : lns) {
 		Line line;
 		line.line_text = l;
 		line.tokens = {};
 		line.changed = true;
-		lines.push_back(line);
+		lines.push_back(std::move(line));
 	}
 
 	undo_stack.clear();
@@ -289,14 +292,14 @@ History TextEdit::createHistory() {
 	hs.millis = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	hs.cursors_before = cursors;
 	hs.cursors_after = {};
-	hs.edits = {};
+	hs.edits.clear();
 	return hs;
 }
 
 void TextEdit::Highlight(int first_visible_line, int last_visible_line) {
 	max_line_len = 0;
 	
-	for (int i = first_visible_line; i < last_visible_line; i ++) {
+	for (int i = first_visible_line; i < last_visible_line && i < lines.size(); i++) {
 		Line* line = &lines[i];
 		
 		if (line->changed) {
@@ -308,105 +311,157 @@ void TextEdit::Highlight(int first_visible_line, int last_visible_line) {
 		}
 	}
 	
-	if (highlighter) {
-		auto first_info = getblankhighlighting();
-		
-		int highlighted = 0;
-		
-		for (int i = 0; i < lines.size(); i ++) {
-			Line* line = &lines[i];
+	if (!highlighter || !highlighter_initial_state) {
+		return;
+	}
+
+	int highlighted = 0;
+
+	for (int i = 0; i < lines.size(); i++) {
+		Line* line = &lines[i];
+
+		if (line->changed) {
+			line->changed = false;
+			line->highlightinguptodate = false;
+
+			int ln = 0;
+
+			for (int c_indx = 0; c_indx < line->line_text.length(); c_indx++) {
+				UChar32 c = line->line_text.char32At(c_indx);
+				
+				if (c == U'\t') {
+					ln += tabWidth;
+				} else {
+					ln++;
+				}
+			}
 			
-			if (line->changed) {
-				int ln = 0;
-				line->changed = false;
+			line->visual_length = ln;
+		}
+
+		CW_SyntaxState* prev_state = nullptr;
+		uint64_t prev_hash = 0;
+
+		if (i == 0) {
+			prev_state = highlighter_initial_state.get();
+			prev_hash = cw_syntect_state_hash(highlighter_initial_state.get());
+		} else {
+			Line* prev_line = &lines[i - 1];
+
+			if (!prev_line->after_line_state) {
+				// Previous line has not been highlighted yet.
+				// We cannot correctly highlight this line until the previous state exists.
 				line->highlightinguptodate = false;
-				
-				for (int c_indx = 0; c_indx < line->line_text.length(); c_indx++) {
-					UChar32 c = line->line_text.char32At(c_indx);
-					
-					if (c == U'\t') {
-						ln += tabWidth;
-					}else{
-						ln ++;
-					}
-				}
-				
-				line->visual_length = ln;
+				continue;
 			}
 			
-			TextMateInfo* prev_line_info;
-			
-			if (i == 0) {
-				prev_line_info = &first_info;
-			}else{
-				prev_line_info = &lines[i-1].after_line_colored;
-			}
-			
-			if (!line->highlightinguptodate || prev_line_info->contextStack.back().hash != line->prev_hash) {
-				DO_POSITION = true;
-				
-				auto ln = highlighter(line->line_text, *prev_line_info);
-				
-				if (i >= first_visible_line && i <= last_visible_line) {
-					App::rerender = true; // this changed a viewport thing, rerender.
-				}else{
-					App::forceWaitTime = false; // we don't force a wait time when we need to highlight
-				}
-				
-				line->after_line_colored = ln.lineInfo;
-				line->prev_hash = prev_line_info->contextStack.back().hash;
-				line->tokens = ln.tokens;
-				line->highlightinguptodate = true;
-				highlighted ++;
-				
-				if (i < first_visible_line && highlighted > 40) {
-					break;
-				}else if (i >= first_visible_line && highlighted > 10) {
-					break; // we'll break faster if we're past the first visible line. (because it's slow.)
-				}
-			}
+			prev_state = lines[i - 1].after_line_state.get();
+			prev_hash = prev_line->after_line_hash;
+		}
+
+		bool input_state_changed = line->prev_hash != prev_hash;
+		bool needs_highlight =
+			!line->highlightinguptodate ||
+			input_state_changed ||
+			!line->after_line_state;
+
+		if (!needs_highlight) {
+			continue;
+		}
+		
+		DO_POSITION = true;
+
+		std::string utf8_line = to_ascii_replacing_non_ascii(line->line_text);
+
+		CW_LineResult result = cw_syntect_highlight_line(
+			highlighter,
+			prev_state,
+			utf8_line.c_str()
+		);
+
+		if (result.status != 0) {
+			cw_syntect_destroy_tokens(result.tokens, result.token_count);
+			line->highlightinguptodate = false;
+			continue;
+		}
+
+		if (i >= first_visible_line && i <= last_visible_line) {
+			App::rerender = true;
+		} else {
+			App::forceWaitTime = false;
+		}
+
+		// Replace old after-line state.
+		if (line->after_line_state) {
+			line->after_line_state = nullptr;
+		}
+		
+		line->after_line_state.reset(result.next_state);
+		line->after_line_hash = result.state_hash;
+		line->prev_hash = prev_hash;
+		
+		
+		line->tokens.assign(result.tokens, result.tokens + result.token_count);
+		cw_syntect_destroy_tokens(result.tokens, result.token_count);
+		
+		line->highlightinguptodate = true;
+		
+//		for (int i = 0; i < line->token_count; i++) {
+//			std::cout << "Token: " << line->tokens[i].start_byte << " - " << line->tokens[i].end_byte << " : " << line->tokens[i].role << "\n";
+//		}
+
+		highlighted++;
+
+		if (i < first_visible_line && highlighted > 40) {
+			break;
+		} else if (i >= first_visible_line && highlighted > 10) {
+			break;
 		}
 	}
 }
 
 void TextEdit::updateUndoHistory() {
 	historyThisUpdate.cursors_after = cursors;
-
+	
 	if (historyThisUpdate.edits.size() == 0) {
 		historyThisUpdate = createHistory();
 		return;
 	}
-
+	
+	// Any real document edit invalidates redo.
+	// This must happen before every push/merge return path.
+	redo_stack.clear();
+	
 	if (undo_stack.empty()) {
-		undo_stack.push_back(historyThisUpdate);
+		undo_stack.push_back(std::move(historyThisUpdate));
 		historyThisUpdate = createHistory();
 		return;
 	}
-
+	
 	auto last_millis = undo_stack.back().millis;
-
+	
 	if (historyThisUpdate.millis-last_millis > 300) { // save every ___ millis
-		undo_stack.push_back(historyThisUpdate);
+		undo_stack.push_back(std::move(historyThisUpdate));
 	}else{
-		for (auto i : historyThisUpdate.edits) {
-			undo_stack.back().edits.push_back(i);
+		for (auto& i : historyThisUpdate.edits) {
+			undo_stack.back().edits.push_back(std::move(i));
 		}
 		undo_stack.back().millis = historyThisUpdate.millis;
 		undo_stack.back().cursors_after = historyThisUpdate.cursors_after;
 	}
-
-	redo_stack.clear();
-
+	
 	historyThisUpdate = createHistory();
 }
 
 void TextEdit::activateUndo() {
+	updateUndoHistory();
+	
 	if (undo_stack.empty()) {
 		std::cout << "No undo stack\n";
 		return;
 	}
 
-	auto hs = undo_stack.back();
+	auto hs = std::move(undo_stack.back());
 
 	History redoHistory;
 	redoHistory.millis = historyThisUpdate.millis;
@@ -416,22 +471,22 @@ void TextEdit::activateUndo() {
 	undo_stack.pop_back();
 
 	for (int i = hs.edits.size()-1; i >= 0; i--) {
-		auto e = hs.edits[i];
+		auto& e = hs.edits[i];
 
 		if (e.type == EditType::ChangeLine) {
-			redoHistory.edits.push_back( { EditType::ChangeLine, lines[e.index], e.index } );
+			redoHistory.edits.push_back( { EditType::ChangeLine, std::move(lines[e.index]), e.index } );
 
-			lines[e.index] = e.line;
+			lines[e.index] = std::move(e.line);
 			
 			if (onlinechange) { onlinechange(EditType::ChangeLine, e.index); }
-		}else if (e.type == EditType::DeleteLine) { // we need to reinsert it
-			redoHistory.edits.push_back( { EditType::InsertLine, e.line, e.index } );
-
-			lines.insert(lines.begin()+e.index, e.line);
+		} else if (e.type == EditType::DeleteLine) {
+			redoHistory.edits.push_back( { EditType::InsertLine, e.line.clone(), e.index } ); // clone, not move
+			
+			lines.insert(lines.begin()+e.index, std::move(e.line));                           // move into vector
 			
 			if (onlinechange) { onlinechange(EditType::InsertLine, e.index); }
 		}else if (e.type == EditType::InsertLine) { // let's go ahead and delete that sucker
-			redoHistory.edits.push_back( { EditType::DeleteLine, lines[e.index], e.index } );
+			redoHistory.edits.push_back( { EditType::DeleteLine, std::move(lines[e.index]), e.index } );
 
 			lines.erase(lines.begin()+e.index);
 			
@@ -439,11 +494,14 @@ void TextEdit::activateUndo() {
 		}
 	}
 
-	redo_stack.push_back(redoHistory);
+	redo_stack.push_back(std::move(redoHistory));
 
 	cursors = hs.cursors_before;
 
 	tryingToEnsureCursorPos = true;
+	DO_POSITION = true;
+	
+	historyThisUpdate = createHistory();
 
 	if (!largereditblock && ontextchange) {
 		ontextchange(this);
@@ -451,12 +509,14 @@ void TextEdit::activateUndo() {
 }
 
 void TextEdit::activateRedo() {
+	updateUndoHistory();
+	
 	if (redo_stack.empty()) {
 		std::cout << "No redo stack\n";
 		return;
 	}
 
-	auto hs = redo_stack.back();
+	auto hs = std::move(redo_stack.back());
 
 	History undoHistory;
 	undoHistory.millis = historyThisUpdate.millis;
@@ -466,22 +526,20 @@ void TextEdit::activateRedo() {
 	redo_stack.pop_back();
 
 	for (int i = hs.edits.size()-1; i >= 0; i--) {
-		auto e = hs.edits[i];
+		auto& e = hs.edits[i];
 
 		if (e.type == EditType::ChangeLine) {
-			undoHistory.edits.push_back( { EditType::ChangeLine, lines[e.index], e.index } );
-
-			lines[e.index] = e.line;
+			undoHistory.edits.push_back( { EditType::ChangeLine, std::move(lines[e.index]), e.index } );
+			
+			lines[e.index] = std::move(e.line);
 			
 			if (onlinechange) { onlinechange(EditType::ChangeLine, e.index); }
-		}else if (e.type == EditType::DeleteLine) { // we need to reinsert it
-			undoHistory.edits.push_back( { EditType::InsertLine, e.line, e.index } );
-
-			lines.insert(lines.begin()+e.index, e.line);
-			
+		} else if (e.type == EditType::DeleteLine) {
+			undoHistory.edits.push_back( { EditType::InsertLine, e.line.clone(), e.index } ); // clone, not move
+			lines.insert(lines.begin()+e.index, std::move(e.line));
 			if (onlinechange) { onlinechange(EditType::InsertLine, e.index); }
 		}else if (e.type == EditType::InsertLine) { // let's go ahead and delete that sucker
-			undoHistory.edits.push_back( { EditType::DeleteLine, lines[e.index], e.index } );
+			undoHistory.edits.push_back( { EditType::DeleteLine, std::move(lines[e.index]), e.index } );
 
 			lines.erase(lines.begin()+e.index);
 			
@@ -489,11 +547,14 @@ void TextEdit::activateRedo() {
 		}
 	}
 
-	undo_stack.push_back(undoHistory);
+	undo_stack.push_back(std::move(undoHistory));
 
 	cursors = hs.cursors_after;
 
 	tryingToEnsureCursorPos = true;
+	DO_POSITION = true;
+	
+	historyThisUpdate = createHistory();
 
 	if (!largereditblock && ontextchange) {
 		ontextchange(this);
@@ -801,10 +862,9 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 		}
 
 		if (end_right_l >= lines.size()) {
-			end_right_l = lines.size();
-		}
-
-		if (end_right_c > lines[end_right_l].line_text.length()) {
+			end_right_l = lines.size()-1;
+			end_right_c = lines[end_right_l].line_text.length();
+		}else if (end_right_c > lines[end_right_l].line_text.length()) {
 			end_right_c = lines[end_right_l].line_text.length();
 		}
 
@@ -1160,8 +1220,8 @@ void TextEdit::deleteTextAtCursor(Cursor c, int key, bool control) {
 	changed_during_update = true;
 	DO_POSITION = true;
 
-	Edit e = { EditType::ChangeLine, lines[sl], sl };
-	historyThisUpdate.edits.push_back(e);
+	Edit e = { EditType::ChangeLine, std::move(lines[sl]), sl };
+	historyThisUpdate.edits.push_back(std::move(e));
 	
 	lines[sl].line_text = start+end;
 	lines[sl].changed = true;
@@ -1170,8 +1230,8 @@ void TextEdit::deleteTextAtCursor(Cursor c, int key, bool control) {
 
 	if (sl != el) {
 		for (int j = el; j >= sl+1; j--) {
-			Edit e = { EditType::DeleteLine, lines[j], j };
-			historyThisUpdate.edits.push_back(e);
+			Edit e = { EditType::DeleteLine, std::move(lines[j]), j };
+			historyThisUpdate.edits.push_back(std::move(e));
 			if (onlinechange) { onlinechange(EditType::DeleteLine, j); }
 		}
 
@@ -1548,16 +1608,16 @@ void TextEdit::insertTextAtCursor(Cursor c, icu::UnicodeString insert_text) {
 	DO_POSITION = true;
 
 	if (nl == 0) {
-		Edit e = { EditType::ChangeLine, lines[sl], sl };
-		historyThisUpdate.edits.push_back(e);
+		Edit e = { EditType::ChangeLine, std::move(lines[sl]), sl };
+		historyThisUpdate.edits.push_back(std::move(e));
 
 		lines[sl].line_text = start+insert_lines[0]+end;
 		lines[sl].changed = true;
 		
 		if (onlinechange) { onlinechange(EditType::ChangeLine, sl); }
 	}else{
-		Edit e = { EditType::ChangeLine, lines[sl], sl };
-		historyThisUpdate.edits.push_back(e);
+		Edit e = { EditType::ChangeLine, std::move(lines[sl]), sl };
+		historyThisUpdate.edits.push_back(std::move(e));
 
 		lines[sl].line_text = start+insert_lines[0];
 		
@@ -1574,10 +1634,11 @@ void TextEdit::insertTextAtCursor(Cursor c, icu::UnicodeString insert_text) {
 				new_line.line_text += end;
 			}
 			new_line.changed = true;
-			lines.insert(lines.begin()+sl+i, new_line);
-
-			Edit e = { EditType::InsertLine, lines[sl+i], sl+i };
-			historyThisUpdate.edits.push_back(e);
+			
+			Edit e = { EditType::InsertLine, new_line.clone(), sl+i };
+			historyThisUpdate.edits.push_back(std::move(e));
+			
+			lines.insert(lines.begin()+sl+i, std::move(new_line));
 			
 			if (onlinechange) { onlinechange(EditType::InsertLine, sl+i); }
 		}
@@ -1795,6 +1856,16 @@ bool TextEdit::handleUserKey(int key, int scancode, int action, int mods) {
 }
 
 bool TextEdit::on_char_event(unsigned int codepoint) {
+#ifdef DEBUG
+	if (cursors[0].head_line >= lines.size() || cursors[0].head_char > lines[cursors[0].head_line].line_text.length()) {
+		std::cout << "NO BUENO\n";
+	}if (cursors[0].head_line < 0) {
+		std::cout << "LESS THAN 0???\n";
+	}
+
+	std::cout << "Char: " << codepoint << "\n";
+#endif	
+	
 	if (App::activeLeafNode != this) {
 		return false;
 	}
@@ -1811,7 +1882,10 @@ bool TextEdit::on_char_event(unsigned int codepoint) {
 		}
 
 		if ((char)std::tolower(ch) == ignoringChar || wasmode == 'n') {
-	  ignoringChar = '\0';
+			ignoringChar = '\0';
+#ifdef DEBUG
+			std::cout << "Ignoring character\n";
+#endif
 			return true;
 		}
 
@@ -1825,11 +1899,25 @@ bool TextEdit::on_char_event(unsigned int codepoint) {
 			ontextchange(this);
 		}
 	}
-
+	
 	return true;
 }
 
 bool TextEdit::on_key_event(int key, int scancode, int action, int mods) {
+#ifdef DEBUG
+	if (cursors[0].head_line >= lines.size() || cursors[0].head_char > lines[cursors[0].head_line].line_text.length()) {
+		std::cout << "NO BUENO\n";
+	}if (cursors[0].head_line < 0) {
+		std::cout << "LESS THAN 0???\n";
+	}
+
+	const char* keyName = glfwGetKeyName(key, 0);
+	if (keyName) {
+		std::cout << "Key: " << keyName << " press: " << (action==GLFW_PRESS) << "\n";
+	}else{
+		std::cout << "Key: " << key << " press: " << (action==GLFW_PRESS) << "\n";
+	}
+#endif
 	if (App::activeLeafNode == this) {
 		if (action == GLFW_RELEASE) {
 			return true;
@@ -1844,6 +1932,10 @@ bool TextEdit::on_key_event(int key, int scancode, int action, int mods) {
 }
 
 void TextEdit::render() {
+//#ifdef DEBUG
+//		std::cout << "Render\n";
+//#endif
+	
 	if (rounded) {
 		App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, background_color);
 	}else {
@@ -1942,29 +2034,27 @@ void TextEdit::render() {
 	}
 }
 
-Color* TextEdit::getColorFromTokens(int indx, std::vector<ColoredTokens> tokens, bool* aragne) {
+Color* TextEdit::getColorFromTokens(int indx, const std::vector<CW_HighlightToken>& tokens, bool* aragne) {
 	Color* retcol = App::theme.main_text_color;
 	
 	for (int i = tokens.size()-1; i >= 0; i--) {
 		auto t = tokens[i];
-		if (t.start <= indx && indx < t.end) {
-			if (t.color == 3) {
-				retcol = App::theme.syntax_colors[3];
-			}else if (t.color < 0) {
+		if (t.start_byte <= indx && indx < t.end_byte) {
+			if (t.role < 0) {
 				// it's a difference token
-				if (t.color == -1) {
+				if (t.role == -1) {
 					return App::theme.add_diff;
-				}else if (t.color == -2) {
+				}else if (t.role == -2) {
 					return App::theme.del_diff;
 				}else {
 					return App::theme.equal_diff;
 				}
 			}else{
-				if (t.color == 1 || t.color == 2) {
+				if (t.role == 1 || t.role == 2) {
 					*aragne = true;
 				}
-
-				return App::theme.syntax_colors[t.color];
+				
+				return App::theme.syntax_colors[t.role];
 			}
 		}
 	}
@@ -2246,6 +2336,10 @@ int32_t TextEdit::get_emoji_sequence_length_backward(
 }
 
 void TextEdit::position(int x, int y, int w, int h) {
+//#ifdef DEBUG
+//	std::cout << "Position\n";
+//#endif
+	
 	tabWidth = App::settings->getValue("tab_width", 4);
 	
 	int old_x = t_x;
@@ -2567,9 +2661,9 @@ void TextEdit::position(int x, int y, int w, int h) {
 						bool arange = false;
 						Color* col = getColorFromTokens(true_char_indx, lines[ln_num].tokens, &arange);
 	
-						if (!arange && punctuationset.count(chr)) {
-							col = App::theme.syntax_colors[7];
-						}
+//						if (!arange && punctuationset.count(chr)) {
+//							col = App::theme.syntax_colors[7];
+//						}
 	
 						final_color.push_back(col);
 					}

@@ -129,7 +129,7 @@ struct Theme {
 	Color* warning_color;
 	Color* suggestion_color;
 	
-	Color* syntax_colors[9];
+	Color* syntax_colors[13];
 	
 	Color* add_panel;
 	Color* remove_panel;

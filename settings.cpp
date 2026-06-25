@@ -151,6 +151,26 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"c_literals_color",
 			colorToString(App::theme.syntax_colors[8])
 		),
+		makeString(
+			"Operator Color",
+			"c_operator_color",
+			colorToString(App::theme.syntax_colors[9])
+		),
+		makeString(
+			"Preprocessor Color",
+			"c_preproc_color",
+			colorToString(App::theme.syntax_colors[10])
+		),
+		makeString(
+			"Invalid Color",
+			"c_invalid_color",
+			colorToString(App::theme.syntax_colors[11])
+		),
+		makeString(
+			"Count Color",
+			"c_count_color",
+			colorToString(App::theme.syntax_colors[12])
+		),
 	};
 	
 	settings_menus[1] = {
@@ -689,6 +709,14 @@ bool Settings::validate_input(SettingsString* el, std::string before) {
 		return handleColor(true, el, 7, before);
 	}else if (el->key_name == "c_literals_color") {
 		return handleColor(true, el, 8, before);
+	}else if (el->key_name == "c_operator_color") {
+		return handleColor(true, el, 9, before);
+	}else if (el->key_name == "c_preproc_color") {
+		return handleColor(true, el, 10, before);
+	}else if (el->key_name == "c_invalid_color") {
+		return handleColor(true, el, 11, before);
+	}else if (el->key_name == "c_count_color") {
+		return handleColor(true, el, 12, before);
 	}else if (el->key_name == "c_tint_color") {
 		bool worked = handleColor(false, el, -1, before);
 		App::updateFromTintColor(&App::theme);

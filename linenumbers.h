@@ -3,7 +3,6 @@
 #include "textedit.h"
 #include "widget.h"
 #include <GLFW/glfw3.h>
-#include "application.h"
 
 class LineNumbers : public Widget {
 public:

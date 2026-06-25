@@ -56,7 +56,7 @@ public:
 	TextEdit* textedit;
 	LineNumbers* line_numbers;
 	
-	Highlighter* highlighter = nullptr;
+	CW_SyntaxEngine* highlighter = nullptr;
 	
 	std::thread hoverthread;
 //	std::thread chauffeurthread;
@@ -104,8 +104,6 @@ public:
 	
 	TextEdit* hoverbox = nullptr;
 	Cursor hoverCrsr = Cursor();
-	
-	LineResult highlightline(icu::UnicodeString line, TextMateInfo info);
 	
 	void position(int x, int y, int w, int h);
 	void render();

@@ -73,6 +73,31 @@ FetchContent_MakeAvailable(sioclient)
 # )
 # FetchContent_MakeAvailable(tokenizers_cpp)
 
+set(SYNTECT_BRIDGE_DIR ${CMAKE_SOURCE_DIR}/third_party/syntect_bridge)
+
+if(WIN32)
+	set(SYNTECT_LIB ${SYNTECT_BRIDGE_DIR}/target/release/syntect_bridge.lib)
+else()
+	set(SYNTECT_LIB ${SYNTECT_BRIDGE_DIR}/target/release/libsyntect_bridge.a)
+endif()
+
+add_custom_command(
+	OUTPUT ${SYNTECT_LIB}
+	COMMAND cargo build --release
+	WORKING_DIRECTORY ${SYNTECT_BRIDGE_DIR}
+	COMMENT "Building syntect_bridge with Cargo"
+)
+
+add_custom_target(syntect_bridge_build DEPENDS ${SYNTECT_LIB})
+
+add_library(syntect_bridge STATIC IMPORTED GLOBAL)
+set_target_properties(syntect_bridge PROPERTIES
+	IMPORTED_LOCATION ${SYNTECT_LIB}
+	INTERFACE_INCLUDE_DIRECTORIES ${SYNTECT_BRIDGE_DIR}/include
+)
+
+add_dependencies(syntect_bridge syntect_bridge_build)
+
 set(LIBVTERM_DIR ${libvterm_src_SOURCE_DIR})
 add_library(libvterm STATIC
 	${LIBVTERM_DIR}/src/encoding.c
@@ -99,7 +124,7 @@ if(WIN32)
 endif()
 
 
-add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_renderer.cpp application.cpp widget.cpp button.cpp titlebar.cpp panel_holder.cpp widgetchooser.cpp editor.cpp filetree.cpp tabs.cpp settings.cpp codeedit.cpp linenumbers.cpp textedit.cpp highlighter.cpp tinyfiledialogs.c brokenstatemenu.cpp checkbox.cpp settingsmanager.cpp languageserverclient.cpp listbox.cpp imageview.cpp compare.cpp curler.cpp toast.cpp chat.cpp label.cpp myrect.cpp lspdebug.cpp terminal.cpp terminalwidget.cpp terminalwidgettabbed.cpp helpmenu.cpp scrollbar.cpp updatechecker.cpp contextmenu.cpp scrollnotify.cpp mathwindow.cpp asteroids.cpp graphwindow.cpp md4c.c EmojiRenderer.cpp hexeditor.cpp )
+add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_renderer.cpp application.cpp widget.cpp button.cpp titlebar.cpp panel_holder.cpp widgetchooser.cpp editor.cpp filetree.cpp tabs.cpp settings.cpp codeedit.cpp linenumbers.cpp textedit.cpp tinyfiledialogs.c brokenstatemenu.cpp checkbox.cpp settingsmanager.cpp languageserverclient.cpp listbox.cpp imageview.cpp compare.cpp curler.cpp toast.cpp chat.cpp label.cpp myrect.cpp lspdebug.cpp terminal.cpp terminalwidget.cpp terminalwidgettabbed.cpp helpmenu.cpp scrollbar.cpp updatechecker.cpp contextmenu.cpp scrollnotify.cpp mathwindow.cpp asteroids.cpp graphwindow.cpp md4c.c EmojiRenderer.cpp hexeditor.cpp )
 # modelxrunner.cpp 
 
 
@@ -114,7 +139,6 @@ find_package(ICU   REQUIRED COMPONENTS uc i18n data)  # must list each component
 find_package(Freetype REQUIRED)
 find_package(CURL CONFIG REQUIRED)
 # find_package(Torch REQUIRED)
-find_package(oniguruma CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 
 target_link_libraries(${PROJECT_NAME}
@@ -127,9 +151,9 @@ target_link_libraries(${PROJECT_NAME}
 	Freetype::Freetype
 	CURL::libcurl
 	libvterm
-	oniguruma::onig
 	sioclient
 	OpenSSL::Crypto
+	syntect_bridge
 )
 
 if(WIN32)
@@ -143,6 +167,8 @@ if(WIN32)
 		shell32
 		strsafe
 		dwmapi
+		userenv
+		ntdll
 	)
 endif()
 

@@ -1,6 +1,7 @@
 #include "application.h"
 #include <GLFW/glfw3.h>
 #include <queue>
+#include <syntect_bridge.h>
 #include <unicode/unistr.h>
 #include <unicode/ustream.h>
 #include <iostream>
@@ -9,6 +10,8 @@
 #include "editor.h"
 #include "helper_types.h"
 #include <vector>
+#include <regex>
+#include <set>
 #include "panel_holder.h"
 //#include "modelxrunner.h"
 #include "terminalwidget.h"
@@ -44,8 +47,8 @@
 
 
 int App::major_version = 2;
-int App::minor_version = 4;
-int App::patch_version = 5; // 🚀 (we now support emojis)
+int App::minor_version = 5;
+int App::patch_version = 0; // 🚀 (we now support emojis)
 
 
 #ifndef M_PI
@@ -98,6 +101,8 @@ Widget* App::commandBox = nullptr;
 Widget* App::menu = nullptr;
 Widget* App::toastBox = nullptr;
 Widget* App::scrollNotifyBox = nullptr;
+
+std::unordered_map<std::string, CW_SyntaxEngine*> App::highlighters = {};
 
 std::vector<std::vector<std::string>> App::files_in_box = {};
 
@@ -2016,7 +2021,7 @@ void App::saveThemeToFile() {
 	if (fp) {
 		std::string filePath(fp);
 		
-		std::string tosave = settings->getSubSet({"dark_mode", "c_comments_color", "c_functs_color", "c_keywords_color", "c_literals_color", "c_punctuation_color", "c_strings_color", "c_tint_color", "c_saturation", "c_types_color", "c_vars_color"});
+		std::string tosave = settings->getSubSet({"dark_mode", "c_comments_color", "c_functs_color", "c_keywords_color", "c_literals_color", "c_punctuation_color", "c_strings_color", "c_tint_color", "c_saturation", "c_types_color", "c_vars_color", "c_operator_color", "c_preproc_color", "c_invalid_color", "c_count_color"});
 		std::string err;
 		if (!atomicWriteReplace(filePath, tosave, &err)) {
 			displayToast(icu::UnicodeString::fromUTF8("Failed to write file: "+err));
@@ -2067,6 +2072,10 @@ void App::loadThemeFromFile() {
 				setSynColor(&theme, "c_keywords_color", 6);
 				setSynColor(&theme, "c_punctuation_color", 7);
 				setSynColor(&theme, "c_literals_color", 8);
+				setSynColor(&theme, "c_operator_color", 9);
+				setSynColor(&theme, "c_preproc_color", 10);
+				setSynColor(&theme, "c_invalid_color", 11);
+				setSynColor(&theme, "c_count_color", 12);
 				displayToast(icu::UnicodeString::fromUTF8("Done!"));
 				
 				App::rootelement->executeAction(WidgetActionType::SETTINGS_CHANGE);
@@ -2887,7 +2896,7 @@ void App::setTintedColor(Color* tint_c, Color* c, float b, float s) {
 		return;
 	}
 	
-	float tcb = tint_c->r*0.299+tint_c->g*0.587+tint_c->b*0.114; // tint color brightness
+	float tcb = tint_c->r*0.299+tint_c->g*0.587+tint_c->b*0.114; // tint color brightness 
 	
 	if (tcb == 0) { // fix 0,0,0 breaking things
 		tint_c->r = 0.1;

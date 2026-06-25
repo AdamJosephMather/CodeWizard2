@@ -4,6 +4,7 @@
 #include "text_renderer.h"
 #include "curler.h"
 #include "markdown_utils.h"
+#include <regex>
 
 Chat::Chat(Widget *parent) : Widget(parent) {
 	id = icu::UnicodeString::fromUTF8("Chat");

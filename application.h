@@ -4,6 +4,7 @@
 #include "settingsmanager.h"
 #include <atomic>
 #include <functional>
+#include <syntect_bridge.h>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -101,6 +102,8 @@ public:
 #ifdef _WIN32
 	static HWND window_handle;
 #endif
+	
+	static std::unordered_map<std::string, CW_SyntaxEngine*> highlighters;
 	
 	static int major_version;
 	static int minor_version;

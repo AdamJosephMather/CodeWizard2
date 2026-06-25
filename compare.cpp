@@ -126,8 +126,6 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 	textedit->highlighter = nullptr;
 	textedit->scrollbar_vertical = true;
 	textedit->scrollbar_horizontal = true;
-	textedit->getblankhighlighting = nullptr;
-	textedit->highlighterNotEqual = nullptr;
 	textedit->alreadyHighlighted = true;
 	
 	line_numbers->setTextedit(textedit);
@@ -165,10 +163,10 @@ void Compare::setOnlyTo(FileInfo* f, int num) {
 	textedit->position(t_x, t_y, t_w, t_h);
 	
 	for (int i = 0; i < textedit->lines.size(); i++) {
-		ColoredTokens col;
-		col.start = 0;
-		col.end = textedit->lines[i].line_text.length()+1;
-		col.color = 1;
+		CW_HighlightToken col;
+		col.start_byte = 0;
+		col.end_byte = textedit->lines[i].line_text.length()+1;
+		col.role = 1;
 		
 		textedit->lines[i].visual_length = textedit->getVisLen(textedit->lines[i].line_text);
 		textedit->lines[i].tokens = {col};
@@ -242,11 +240,10 @@ void Compare::reload() {
 	
 	for (int i = 0; i < textedit->lines.size(); i++) {
 		auto c = calcDiff[i];
-		ColoredTokens col;
-		col.start = 0;
-		col.end = textedit->lines[i].line_text.length()+1;
-		
-		col.color = (-c.first)-1;
+		CW_HighlightToken col;
+		col.start_byte = 0;
+		col.end_byte = textedit->lines[i].line_text.length()+1;
+		col.role = (-c.first)-1;
 		
 		textedit->lines[i].visual_length = textedit->getVisLen(textedit->lines[i].line_text);
 		textedit->lines[i].tokens = {col};

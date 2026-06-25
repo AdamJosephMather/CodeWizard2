@@ -24,7 +24,7 @@ MathWindow::MathWindow(Widget *parent) : Widget(parent) {
 		std::unordered_map<std::string, icu::UnicodeString> vars;
 		icu::UnicodeString alphabet = icu::UnicodeString::fromUTF8("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
 		
-		for (auto line : mathInput->lines) {
+		for (auto& line : mathInput->lines) {
 			std::string varname = "";
 			icu::UnicodeString expression = "";
 			

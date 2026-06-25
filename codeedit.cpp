@@ -7,6 +7,7 @@
 #include "tinyfiledialogs.h"
 
 #include <fstream>
+#include <set>
 #include <unicode/regex.h>
 #include <unicode/stringoptions.h>
 #include "editor.h"
@@ -18,8 +19,6 @@ std::set<UChar32> whitespace_before_comment = {U'\t', U' '};
 CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::UpdateFInfoFunction fupdater) : Widget(parent) {
 	before_self_close = [&]() {
 		save();
-		
-		if (highlighter) delete highlighter;
 		
 		closing = true;
 		if (hoverthread.joinable()) {
@@ -296,9 +295,8 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	
 	
 	textedit->highlighter = nullptr;
-	textedit->getblankhighlighting = nullptr;
-	textedit->highlighterNotEqual = nullptr;
-
+	textedit->highlighter_initial_state.reset(cw_syntect_initial_state(highlighter));
+	
 	textedit->onlinechange = [&](EditType typ, int lineindex){
 		madeChangeBetweenSaves = true;
 		
@@ -323,7 +321,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		else if (typ == EditType::ChangeLine) t = LineEditType::ChangeLine;
 		else if (typ == EditType::DeleteLine) t = LineEditType::DeleteLine;
 		
-		Line l = textedit->lines[lineindex];
+		Line& l = textedit->lines[lineindex];
 		std::string text;
 		l.line_text.toUTF8String(text);
 		
@@ -460,11 +458,9 @@ void CodeEdit::detectLanguage() {
 	}
 	
 	textedit->highlighter = nullptr;
-	textedit->getblankhighlighting = nullptr;
-	textedit->highlighterNotEqual = nullptr;
+	textedit->highlighter_initial_state = nullptr;
 	
-	if (highlighter) {
-		delete highlighter;
+	if (highlighter) { // don't delete highlighter - may be used by other codeedits
 		highlighter = nullptr;
 	}
 	
@@ -500,7 +496,6 @@ void CodeEdit::detectLanguage() {
 		return;
 	}
 	
-	auto textmatefile = App::languagemap[language].textmatefile;
 	lsp = App::languagemap[language].lsp;
 	
 	std::cout << "Initial LSP offerings: " << lsp << "\n";
@@ -529,26 +524,25 @@ void CodeEdit::detectLanguage() {
 		}
 	}
 	
-	if (textmatefile == "") {
+	auto it = App::highlighters.find(language);
+	if (it == App::highlighters.end()) {
+		highlighter = cw_syntect_setup(
+			language.c_str(),
+			nullptr,
+			0
+		);
+		
+		App::highlighters[language] = highlighter;
+	}else{
+		highlighter = it->second;
+	}
+	
+	if (highlighter == nullptr) {
 		return;
 	}
 	
-	highlighter = new Highlighter();
-	bool success = highlighter->loadGrammarFile(App::languagemap[language].textmatefile);
-	
-	if (!success) {
-		return;
-	}
-	
-	textedit->highlighter = [&](icu::UnicodeString line, TextMateInfo info) {
-		return highlighter->highlightLine(line, info);
-	};
-	textedit->getblankhighlighting = [&](){
-		return highlighter->getDefaultLineInfo();
-	};
-	textedit->highlighterNotEqual = [&](TextMateInfo* one, TextMateInfo* two){
-		return one->contextStack.back().hash != two->contextStack.back().hash;
-	};
+	textedit->highlighter = highlighter;
+	textedit->highlighter_initial_state.reset(cw_syntect_initial_state(highlighter));
 }
 
 void CodeEdit::executeAction(WidgetActionType typ) {
@@ -583,7 +577,7 @@ void CodeEdit::executeAction(WidgetActionType typ) {
 
 void CodeEdit::run_fixit() {
 	std::vector<icu::UnicodeString> lns;
-	for (auto l : textedit->lines) {
+	for (auto& l : textedit->lines) {
 		lns.push_back(l.line_text);
 	}
 	
@@ -593,7 +587,7 @@ void CodeEdit::run_fixit() {
 
 void CodeEdit::undo_fixit() {
 	std::vector<icu::UnicodeString> lns;
-	for (auto l : textedit->lines) {
+	for (auto& l : textedit->lines) {
 		lns.push_back(l.line_text);
 	}
 	
@@ -604,7 +598,7 @@ void CodeEdit::undo_fixit() {
 int CodeEdit::analyzeForFixit_on_lines(const std::vector<Line>& lines) {
 	std::vector<icu::UnicodeString> lines_new;
 	
-	for (auto l : lines) {
+	for (auto& l : lines) {
 		lines_new.push_back(l.line_text);
 	}
 	
@@ -676,10 +670,6 @@ void CodeEdit::openFile(FileInfo* f) {
 	}
 	
 	file->is_opening = false;
-}
-
-LineResult CodeEdit::highlightline(icu::UnicodeString line, TextMateInfo info) {
-	return highlighter->highlightLine(line, info);
 }
 
 int CodeEdit::indentIdentifierAfterLine(icu::UnicodeString line, icu::UnicodeString nextline) {
@@ -1155,25 +1145,32 @@ void CodeEdit::activateFind(bool forwards, icu::UnicodeString tofind, bool case_
 					}
 				}
 				if (matches) {
-					int idx = cur_line + lines.size() - 1;
-					
-					auto t2 = textedit->lines[idx].line_text;
+					int final_idx = cur_line + (int)lines.size() - 1;
+				
+					if (final_idx >= textedit->lines.size()) {
+						continue;
+					}
+				
+					auto final_text = textedit->lines[final_idx].line_text;
+				
 					if (!case_sensitive) {
-						t2 = t2.toLower();
+						final_text = final_text.toLower();
 					}
-					
-					if (t2.startsWith(lines[lines.size()-1])) {
-						// we've found a full match
-						Cursor c;
-						c.anchor_line = cur_line;
-						c.anchor_char = text.length()-lines[0].length();
-						c.head_line = idx;
-						c.head_char = lines[lines.size()-1].length();
-						c.preffered_collumn = c.head_char;
-						textedit->cursors = {c};
-						textedit->ensureCursorVisible(textedit->cursors[0]);
-						return;
+				
+					if (!final_text.startsWith(lines[lines.size() - 1])) {
+						continue;
 					}
+				
+					Cursor c;
+					c.anchor_line = cur_line;
+					c.anchor_char = text.length() - lines[0].length();
+					c.head_line = final_idx;
+					c.head_char = lines[lines.size() - 1].length();
+					c.preffered_collumn = c.head_char;
+				
+					textedit->cursors = { c };
+					textedit->ensureCursorVisible(textedit->cursors[0]);
+					return;
 				}
 			}
 		}

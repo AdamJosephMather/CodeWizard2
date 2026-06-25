@@ -10,7 +10,7 @@
 	  "name": "default",
 	  "hidden": true,
 	  "generator": "Ninja",
-	  "toolchainFile": "C:/Users/adamj/vcpkg/scripts/buildsystems/vcpkg.cmake"
+	  "toolchainFile": "D:/Users/adamj/Documents/C/vcpkg/scripts/buildsystems/vcpkg.cmake"
 	},
 	{
 	  "name": "windows-release",
@@ -19,14 +19,30 @@
 	  "binaryDir": "${sourceDir}/build/windows-release",
 	  "cacheVariables": {
 		"CMAKE_BUILD_TYPE": "Release",
-		"CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+		"CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+		"VCPKG_TARGET_TRIPLET": "x64-windows"
 	  }
+	},
+	{
+		"name": "windows-asan",
+		"inherits": "default",
+		"description": "ASan build using vcpkg on Windows",
+		"binaryDir": "${sourceDir}/build/windows-asan",
+		"cacheVariables": {
+			"CMAKE_BUILD_TYPE": "RelWithDebInfo",
+			"CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+			"VCPKG_TARGET_TRIPLET": "x64-windows"
+		}
 	}
   ],
   "buildPresets": [
 	{
 	  "name": "windows-release",
 	  "configurePreset": "windows-release"
+	},
+	{
+		"name": "windows-asan",
+		"configurePreset": "windows-asan"
 	}
   ]
 }

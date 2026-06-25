@@ -22,7 +22,6 @@
 #include <delayimp.h>
 #endif
 
-
 //static FARPROC WINAPI DelayHook(unsigned dliNotify, PDelayLoadInfo info) {
 //	if (dliNotify == dliNotePreLoadLibrary && info && info->szDll) {
 //		char buf[512];
@@ -99,15 +98,19 @@ int main(int argc, char* argv[]) {
 	theme.white = MakeColor(1.0, 1.0, 1.0);
 	theme.black = MakeColor(0.0, 0.0, 0.0);
 	
-	theme.syntax_colors[0] = theme.main_text_color;
-	theme.syntax_colors[1] = MakeColor(0.4980392156862745, 0.6784313725490196, 0.3686274509803922);
-	theme.syntax_colors[2] = MakeColor(0.4980392156862745, 0.5176470588235295, 0.5568627450980392);
-	theme.syntax_colors[3] = MakeColor(0.9607843137254902, 0.3568627450980392, 0.4);
-	theme.syntax_colors[4] = MakeColor(0.3333333333333333, 0.6627450980392157, 0.9294117647058824);
-	theme.syntax_colors[5] = MakeColor(0.7803921568627451, 0.615686274509804, 0.3058823529411765);
-	theme.syntax_colors[6] = MakeColor(0.6901960784313725, 0.37254901960784315, 0.7803921568627451);
-	theme.syntax_colors[7] = MakeColor(0.4980392156862745, 0.5176470588235295, 0.5568627450980392);
-	theme.syntax_colors[8] = MakeColor(0.7607843137254902, 0.4980392156862745, 0.25098039215686274);
+	theme.syntax_colors[0]  = theme.main_text_color;
+	theme.syntax_colors[1]  = MakeColor(0.4980392156862745, 0.6784313725490196, 0.3686274509803922);
+	theme.syntax_colors[2]  = MakeColor(0.4980392156862745, 0.5176470588235295, 0.5568627450980392);
+	theme.syntax_colors[3]  = MakeColor(0.9607843137254902, 0.3568627450980392, 0.4);
+	theme.syntax_colors[4]  = MakeColor(0.3333333333333333, 0.6627450980392157, 0.9294117647058824);
+	theme.syntax_colors[5]  = MakeColor(0.7803921568627451, 0.615686274509804, 0.3058823529411765);
+	theme.syntax_colors[6]  = MakeColor(0.6901960784313725, 0.37254901960784315, 0.7803921568627451);
+	theme.syntax_colors[7]  = MakeColor(0.4980392156862745, 0.5176470588235295, 0.5568627450980392);
+	theme.syntax_colors[8]  = MakeColor(0.7607843137254902, 0.4980392156862745, 0.25098039215686274);
+	theme.syntax_colors[9]  = MakeColor(0.760784314, 0.309803922, 0.250980392);
+	theme.syntax_colors[10] = MakeColor(0.250980392, 0.760784314, 0.470588235);
+	theme.syntax_colors[11] = MakeColor(1, 0, 0);
+	theme.syntax_colors[12] = MakeColor(0.396078431, 0.250980392, 0.760784314);
 	
 	App::theme = theme;
 	
@@ -121,6 +124,10 @@ int main(int argc, char* argv[]) {
 	App::setSynColor(&theme, "c_keywords_color", 6);
 	App::setSynColor(&theme, "c_punctuation_color", 7);
 	App::setSynColor(&theme, "c_literals_color", 8);
+	App::setSynColor(&theme, "c_operator_color", 9);
+	App::setSynColor(&theme, "c_preproc_color", 10);
+	App::setSynColor(&theme, "c_invalid_color", 11);
+	App::setSynColor(&theme, "c_count_color", 12);
 	
 	std::string cl = App::settings->getValue("c_tint_color", App::empty);
 	if (cl != App::empty) {

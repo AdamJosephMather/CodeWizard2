@@ -4,9 +4,7 @@
 #include "scrollbar.h"
 #include "widget.h"
 #include <GLFW/glfw3.h>
-#include <map>
 #include "application.h"
-#include "highlighter.h"
 
 struct LineDiagnostic {
 	icu::UnicodeString message;
@@ -15,20 +13,56 @@ struct LineDiagnostic {
 	int type;
 };
 
+struct SyntectStateDeleter {
+	void operator()(CW_SyntaxState* ptr) const noexcept {
+		if (ptr) {
+			cw_syntect_destroy_state(ptr);
+		}
+	}
+};
+
+using SyntectStatePtr = std::unique_ptr<CW_SyntaxState, SyntectStateDeleter>;
+
 struct Line {
 	icu::UnicodeString line_text;
-	std::vector<ColoredTokens> tokens;
+
+	// Own tokens on the C++ side.
+	// No Rust token pointer stored here.
+	std::vector<CW_HighlightToken> tokens = {};
 	
 	int visual_length = 0;
 	bool changed = true;
 	bool highlightinguptodate = false;
 	
-	int64_t prev_hash;
-	TextMateInfo after_line_colored;
+	// Hash of the state that was used as input to highlight this line.
+	uint64_t prev_hash = 0;
+
+	// State after this line has been parsed/highlighted.
+	SyntectStatePtr after_line_state = nullptr;
+	uint64_t after_line_hash = 0;
 	
 	std::vector<LineDiagnostic> diagnostics = {};
-	
 	bool isMarked = false;
+
+	Line() = default;
+	~Line() = default;
+
+	// Do not allow accidental shallow copies.
+	Line(const Line&) = delete;
+	Line& operator=(const Line&) = delete;
+
+	// Allow vector erase/reallocation/move assignment.
+	Line(Line&&) noexcept = default;
+	Line& operator=(Line&&) noexcept = default;
+	
+	Line clone() const {
+		Line l;
+		l.line_text    = line_text;
+		l.isMarked     = isMarked;
+		l.diagnostics  = diagnostics;
+		l.changed      = true;   // force rehighlight after restore
+		return l;
+	}
 };
 
 struct Cursor {
@@ -70,6 +104,12 @@ struct Edit {
 	EditType type;
 	Line line;
 	int index;
+
+	Edit() = default;
+	Edit(Edit&&) noexcept = default;
+	Edit& operator=(Edit&&) noexcept = default;
+	Edit(const Edit&) = delete;
+	Edit& operator=(const Edit&) = delete;
 };
 
 struct History {
@@ -77,13 +117,16 @@ struct History {
 	std::vector<Cursor> cursors_before;
 	std::vector<Cursor> cursors_after;
 	long long millis;
+
+	History() = default;
+	History(History&&) noexcept = default;
+	History& operator=(History&&) noexcept = default;
+	History(const History&) = delete;
+	History& operator=(const History&) = delete;
 };
 
 class TextEdit : public Widget {
 public:
-	using HighlightFunct = std::function<LineResult(icu::UnicodeString line, TextMateInfo info)>;
-	using HighlightBeginFunct = std::function<TextMateInfo()>;
-	using CompareHighlightInfo = std::function<bool(TextMateInfo*, TextMateInfo*)>;
 	using LineChange = std::function<void(EditType,int)>;
 	
 	TextEdit(Widget* parent, App::PosFunction fnct);
@@ -99,10 +142,9 @@ public:
 	Color* activeBorderColor;
 	bool rounded = false;
 	
-	HighlightFunct highlighter = nullptr;
+	CW_SyntaxEngine* highlighter = nullptr;
+	SyntectStatePtr highlighter_initial_state = nullptr;
 	bool alreadyHighlighted = false;
-	HighlightBeginFunct getblankhighlighting = nullptr;
-	CompareHighlightInfo highlighterNotEqual = nullptr;
 	
 	using IndentIdentifier = std::function<int(icu::UnicodeString line, icu::UnicodeString nextline)>;
 	
@@ -197,7 +239,7 @@ public:
 	void Highlight(int first_line, int last_line);
 	History createHistory();
 	
-	Color* getColorFromTokens(int indx, std::vector<ColoredTokens> tokens, bool* arange);
+	Color* getColorFromTokens(int indx, const std::vector<CW_HighlightToken>& tokens, bool* arange);
 	
 	void setFullText(icu::UnicodeString text);
 	icu::UnicodeString getFullText();

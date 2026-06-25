@@ -7,7 +7,7 @@ A rewrite of CodeWizard. CodeWizard2 is *probably not* a useful project to anybo
 ## What's Special?
 
 1. CodeWizard2 now has custom rendering *without* a UI framework like Qt. CodeWizard2 uses OpenGL, and GLFW.
-2. CodeWizard2 has a custom written remake of the TextMate highlighting engine (with several known issues) that works pretty well.
+2. CodeWizard2 makes use of the Syntect project for fast highlighting. (With a lot of my signature glue keeping it attached)
 3. It contains a custom LSP implementation originally written for CodeWizard.
 4. CodeWizard2 is *not* for the average person, there are a lot of undocumented features and key bindings. Which I am *not* changing right now.
 5. We use a 'panel' such that you can have whatever arrangement of elements you want.
@@ -53,14 +53,13 @@ CodeWizard2 is only available on Windows. There is a modal option (which I quite
 
 ## Out Of The Box
 
-Out of the box, CodeWizard comes with a beautiful UI, Cascadia Code font, TextMate files for a bunch of languages, and `pypls`. Pypls is my LSP originally designed for python, but does pretty well in general.
+Out of the box, CodeWizard comes with a beautiful UI, Cascadia Code font, highlighting for almost any language, and `pypls`. Pypls is my LSP originally designed for python, but does pretty well in general.
 
 ## To install:
 
 1. Download and run installer (in the releases section)
 2. To add new languages for CodeWizard, open the file `C:\Users\<username>\AppData\Local\CodeWizard\languages.json` (an example file is below), or inside of CodeWizard's command palette type ```":Open `languages.json` file"``` and it will open it in CodeWizard (remember to restart CodeWizard after making changes).
-3. For every language, you will likely want a TextMate file which you can point to in the languages.json (note `%INSTALL_DIR%` will be replaced with `C:\Users\<username>\AppData\Local\CodeWizard`) - the TextMate language files can be found here: https://github.com/microsoft/vscode/tree/main/extensions (look for .tmLanguage.json)
-4. Project specific settings can be created via opening the settings panel and pressing 'Project Specific' which will create a json file and give you the path. This can be used to set specific LSPs and the project build command.
+3. Project specific settings can be created via opening the settings panel and pressing 'Project Specific' which will create a json file and give you the path. This can be used to set specific LSPs and the project build command.
 
 Example languages.json
 ```json
@@ -69,7 +68,6 @@ Example languages.json
 	{
 		"name": "c++",
 		"line_comment": "//",
-		"textmatefile": "%INSTALL_DIR%\\highlightingfiles\\cpp.tmLanguage.json",
 		"filetypes": ["cpp", "h", "hpp", "c"],
 		"lsp_command": "C:\\Users\\adamj\\Documents\\LanguageServers\\clangd_19.1.2\\bin\\clangd.exe",
 		"build_command": "cd /d %FILE_LOCATION% && call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat\" x64 && cl.exe %FILE_NAME% && %FILE_NAME_NO_EXT%.exe"
@@ -77,7 +75,6 @@ Example languages.json
 	{
 		"name": "python",
 		"line_comment": "#",
-		"textmatefile": "%INSTALL_DIR%\\highlightingfiles\\MagicPython.tmLanguage.json",
 		"filetypes": ["py", "pyw"],
 		"lsp_command": "jedi-language-server",
 		"build_command": "cd /d %FILE_LOCATION% && python %FILE_NAME%"
@@ -85,7 +82,6 @@ Example languages.json
 	{
 		"name": "go",
 		"line_comment": "//",
-		"textmatefile": "%INSTALL_DIR%\\highlightingfiles\\go.tmLanguage.json",
 		"filetypes": ["go"],
 		"lsp_command": "gopls",
 		"build_command": "cd /d %FILE_LOCATION% && go run ."
@@ -93,7 +89,6 @@ Example languages.json
 	{
 		"name": "r",
 		"line_comment": "#",
-		"textmatefile": "%INSTALL_DIR%\\highlightingfiles\\r.tmLanguage.json",
 		"filetypes": ["R", "R~"],
 		"lsp_command": "%INSTALL_DIR%\\pypls.exe",
 		"build_command": ""

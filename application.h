@@ -135,6 +135,7 @@ public:
 	static std::vector<std::vector<KeyboardEvent>> keyboard_events;
 	
 	static void checkForUpdates();
+	static bool isNewer(std::vector<int> check, std::vector<int> current);
 	static void setFolder(std::string fpr);
 	
 	static bool REQUESTING_STRING;
@@ -199,6 +200,8 @@ public:
 	static Widget* activeLeafNode;
 	static Widget* activeEditor;
 	static Widget* beforeCommandLeafNode;
+	
+	static void fixUpLanguages();
 	
 	static void DoFullRenderWithoutInput();
 	static bool Init();

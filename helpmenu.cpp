@@ -40,7 +40,7 @@ HelpMenu::HelpMenu(Widget* parent) : Widget(parent) {
 			icu::UnicodeString::fromUTF8("General"),
 			icu::UnicodeString::fromUTF8(R":(CodeWizard2 V):" + App::vnumstr + R":(
 
-	CodeWizard2 is a performant code editor/ide written in C++. CodeWizard is designed to be extendable to a number of languages and configurations. Highlighting is provided using the same syntax highlighting system that VSCode uses (but written completely in C++ by yours truly,) and supports the Language Server Protocol. Note that the LSP support is not perfect, and doesn't support everything available. But, it's been tested with gopls, rust analyzer, clangd, and of course pypls (my multi-purpose LSP.)
+	CodeWizard2 is a performant code editor/ide written in C++. CodeWizard is designed to be extendable to a number of languages and configurations. Highlighting is provided using Syntect, and CodeWizard supports the Language Server Protocol. Note that the LSP support is not perfect, and doesn't support everything available. But, it's been tested with gopls, rust analyzer, clangd, and of course pypls (my multi-purpose LSP.)
 
 CodeWizard was created by Adam Mather.):"),
 		},{
@@ -77,7 +77,7 @@ Quirks:
 			icu::UnicodeString::fromUTF8("Settings"),
 			icu::UnicodeString::fromUTF8(R":(	The majority of settings are accessible via the settings widget (see 'Widgets'.) This includes editor appearance, toggling features (file tabs, etc,) and AI settings (see AI).
 
-	However, CodeWizard also stores language settings in a json file located in C:\Users\<username>\AppData\Local\CodeWizard\languages.json. This file is where you can add syntax highlighting and language servers for specific languages. By default CodeWizard comes setup for some languages, including Python, C++, Go, R, Java, JavaScript, HTML, and Rust.
+	However, CodeWizard also stores language settings in a json file located in C:\Users\<username>\AppData\Local\CodeWizard\languages.json. This file is where you can add syntax highlighting and language servers for specific languages. By default CodeWizard comes setup for some languages, including Python, CSharp, C++, Go, R, Java, JavaScript, HTML, and Rust.
 	
 	Project specific settings are described in 'Using CodeWizard', under 'Running Programs'.
 ):"),

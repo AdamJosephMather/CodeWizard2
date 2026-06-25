@@ -243,13 +243,7 @@ std::vector<Language> SettingsManager::loadLanguages() {
 		
 		language.line_comment = icu::UnicodeString::fromUTF8(com);
 		
-		std::string tmf = lang["textmatefile"];
 		std::string replace_dir = "%INSTALL_DIR%";
-		int indx = tmf.find(replace_dir);
-		if (indx != std::string::npos) {
-			tmf = tmf.replace(indx, replace_dir.size(), getLocalAppDataPath()+"/CodeWizard");
-		}
-		language.textmatefile = tmf;
 		
 		std::string lsp = lang["lsp_command"];
 		int indx2 = lsp.find(replace_dir);
@@ -265,6 +259,54 @@ std::vector<Language> SettingsManager::loadLanguages() {
 	}
 	
 	return out;
+}
+
+void SettingsManager::saveLanguages(const std::vector<Language>& languages) {
+	nlohmann::json root;
+	nlohmann::json langArray = nlohmann::json::array();
+	
+	std::string installDir = getLocalAppDataPath() + "/CodeWizard";
+	std::string replace_dir = "%INSTALL_DIR%";
+
+	for (const auto& lang : languages) {
+		nlohmann::json langObj;
+		
+		langObj["name"] = lang.name;
+		
+		// Save filetypes
+		langObj["filetypes"] = nlohmann::json::array();
+		for (const auto& ft : lang.filetypes) {
+			langObj["filetypes"].push_back(ft);
+		}
+		
+		// Convert UnicodeString back to UTF8 string
+		std::string line_comment_utf8;
+		lang.line_comment.toUTF8String(line_comment_utf8);
+		langObj["line_comment"] = line_comment_utf8;
+		
+		// Reverse path replacement for lsp_command
+		std::string lsp = lang.lsp;
+		size_t pos2 = lsp.find(installDir);
+		if (pos2 != std::string::npos) {
+			lsp.replace(pos2, installDir.size(), replace_dir);
+		}
+		langObj["lsp_command"] = lsp;
+		
+		langObj["build_command"] = lang.build_command;
+		
+		langArray.push_back(langObj);
+	}
+	
+	root["languages"] = langArray;
+	
+	// Write to file
+	std::string path = installDir + "/languages.json";
+	std::ofstream file(path);
+	if (file.is_open()) {
+		file << root.dump(4); // Indent with 4 spaces for readability
+	} else {
+		std::cerr << "Failed to save settings: Could not open file for writing at " << path << std::endl;
+	}
 }
 
 std::string SettingsManager::getProjectSettingsPath() {

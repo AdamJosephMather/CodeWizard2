@@ -387,8 +387,8 @@ void TextEdit::Highlight(int first_visible_line, int last_visible_line) {
 
 		if (i >= first_visible_line && i <= last_visible_line) {
 			App::rerender = true;
-		} else {
-			App::forceWaitTime = false;
+		}else {
+			App::forceWaitTime = false; // we have like twenty ways to do the same goddamn thing
 		}
 
 		// Replace old after-line state.

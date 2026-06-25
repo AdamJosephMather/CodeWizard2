@@ -59,7 +59,6 @@ struct Language {
 	std::string name = "";
 	icu::UnicodeString line_comment = "";
 	std::vector<std::string> filetypes = {};
-	std::string textmatefile = "";
 	std::string lsp = "";
 	std::string build_command = "";
 };

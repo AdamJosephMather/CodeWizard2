@@ -26,6 +26,7 @@ public:
 	void setValue(std::string key, std::string val);
 	
 	std::vector<Language> loadLanguages();
+	void saveLanguages(const std::vector<Language>& languages);
 	
 	std::string getProjectLSP(std::string langname);
 	std::string makeUUID();

@@ -245,6 +245,11 @@ void restoreWindowPosAndSize(GLFWwindow* window, SettingsManager* settings, int 
 	glfwSetWindowPos(window, x, y);
 }
 
+void App::fixUpLanguages() {
+//	auto langs = settings->loadLanguages(); // just goes ahead and has it reload them, ignoring unneeded things
+//	settings->saveLanguages(langs);
+}
+
 bool App::Init() {
 	std::cout << "Init...\n";
 	
@@ -488,6 +493,13 @@ bool App::Init() {
 	// 	starter.detach();
 	// }
 	
+	if (isNewer({major_version, minor_version, patch_version}, {settings->getValue("version_major", 0), settings->getValue("version_minor", 0), settings->getValue("version_patch", 0)})) {
+		fixUpLanguages();
+		settings->setValue("version_major", major_version);
+		settings->setValue("version_minor", minor_version);
+		settings->setValue("version_patch", patch_version);
+	}
+	
 	return true;
 }
 
@@ -509,12 +521,20 @@ void App::updateTransparency(bool transparent) {
 	}
 
 	WINDOWCOMPOSITIONATTRIBDATA data = {};
-	data.Attribute = WCA_ACCENT_POLICY;
-	data.Data      = &accent;
-	data.SizeOfData= sizeof(accent);
+	data.Attribute  = WCA_ACCENT_POLICY;
+	data.Data       = &accent;
+	data.SizeOfData = sizeof(accent);
 
 	setWCA(window_handle, &data);
 #endif
+}
+
+bool App::isNewer(std::vector<int> check, std::vector<int> current) { // checks if provided vector is newer than current
+	int f1 = check[0]-current[0];
+	int f2 = check[1]-current[1];
+	int f3 = check[2]-current[2];
+	
+	return (f1 > 0 || (f1 == 0 && f2 > 0) || (f1 == 0 && f2 == 0 && f3 > 0));
 }
 
 void App::checkForUpdates() {
@@ -527,9 +547,9 @@ void App::checkForUpdates() {
 	int f2 = latest[1]-minor_version;
 	int f3 = latest[2]-patch_version;
 	
-	if (f1 > 0 || (f1 == 0 && f2 > 0) || (f1 == 0 && f2 == 0 && f3 > 0)) {
+	if (isNewer(latest, {major_version, minor_version, patch_version})) {
 		displayToast(icu::UnicodeString::fromUTF8("There is a new version of CodeWizard available!"));
-	}else if (f1 < 0 || (f1 == 0 && f2 < 0) || (f1 == 0 && f2 == 0 && f3 < 0)) {
+	}else if (isNewer({major_version, minor_version, patch_version}, latest)) {
 		displayToast(icu::UnicodeString::fromUTF8("This CodeWizard is ahead of the latest release!"));
 	}else{
 //		displayToast(icu::UnicodeString::fromUTF8("This is the latest release!"));
@@ -1366,7 +1386,6 @@ void App::Run() {
 		settings->setValue("window_height", h);
 	}
 	
-
 	glfwDestroyWindow(window);
 	glfwTerminate();
 }

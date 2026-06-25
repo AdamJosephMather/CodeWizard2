@@ -477,6 +477,26 @@ void CodeEdit::detectLanguage() {
 		extension = extension.substr(1);
 	}
 	
+	if (!extension.empty()) {
+		auto it = App::highlighters.find(extension);
+		if (it == App::highlighters.end()) {
+			highlighter = cw_syntect_setup(
+				extension.c_str(),
+				nullptr,
+				0
+			);
+			
+			App::highlighters[language] = highlighter;
+		}else{
+			highlighter = it->second;
+		}
+		
+		if (highlighter != nullptr) {
+			textedit->highlighter = highlighter;
+			textedit->highlighter_initial_state.reset(cw_syntect_initial_state(highlighter));
+		}
+	}
+	
 	language = "";
 	lsp = "";
 	
@@ -523,26 +543,6 @@ void CodeEdit::detectLanguage() {
 			}
 		}
 	}
-	
-	auto it = App::highlighters.find(language);
-	if (it == App::highlighters.end()) {
-		highlighter = cw_syntect_setup(
-			language.c_str(),
-			nullptr,
-			0
-		);
-		
-		App::highlighters[language] = highlighter;
-	}else{
-		highlighter = it->second;
-	}
-	
-	if (highlighter == nullptr) {
-		return;
-	}
-	
-	textedit->highlighter = highlighter;
-	textedit->highlighter_initial_state.reset(cw_syntect_initial_state(highlighter));
 }
 
 void CodeEdit::executeAction(WidgetActionType typ) {

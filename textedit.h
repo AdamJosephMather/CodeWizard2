@@ -239,7 +239,7 @@ public:
 	void Highlight(int first_line, int last_line);
 	History createHistory();
 	
-	Color* getColorFromTokens(int indx, const std::vector<CW_HighlightToken>& tokens, bool* arange);
+	Color* getColorFromTokens(int indx, const std::vector<CW_HighlightToken>& tokens);
 	
 	void setFullText(icu::UnicodeString text);
 	icu::UnicodeString getFullText();

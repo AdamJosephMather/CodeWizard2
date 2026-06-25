@@ -167,7 +167,7 @@ impl CW_Selectors {
 				"entity.name.type, entity.name.class, entity.name.struct, entity.name.enum, support.type, storage.type",
 			),
 			function: selectors(
-				"entity.name.function, support.function, variable.function",
+				"entity.name.function, variable.function"
 			),
 			keyword: selectors("keyword, storage.modifier"),
 			operator: selectors("keyword.operator"),
@@ -226,10 +226,10 @@ fn classify_scope_stack(selectors: &CW_Selectors, stack: &ScopeStack) -> u32 {
 		CW_ROLE_TYPE
 	} else if selectors.function.does_match(scopes).is_some() {
 		CW_ROLE_FUNCTION
-	} else if selectors.keyword.does_match(scopes).is_some() {
-		CW_ROLE_KEYWORD
 	} else if selectors.operator.does_match(scopes).is_some() {
 		CW_ROLE_OPERATOR
+	} else if selectors.keyword.does_match(scopes).is_some() {
+		CW_ROLE_KEYWORD
 	} else if selectors.variable.does_match(scopes).is_some() {
 		CW_ROLE_VARIABLE
 	} else if selectors.punctuation.does_match(scopes).is_some() {

@@ -166,11 +166,6 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"c_invalid_color",
 			colorToString(App::theme.syntax_colors[11])
 		),
-		makeString(
-			"Count Color",
-			"c_count_color",
-			colorToString(App::theme.syntax_colors[12])
-		),
 	};
 	
 	settings_menus[1] = {
@@ -715,8 +710,6 @@ bool Settings::validate_input(SettingsString* el, std::string before) {
 		return handleColor(true, el, 10, before);
 	}else if (el->key_name == "c_invalid_color") {
 		return handleColor(true, el, 11, before);
-	}else if (el->key_name == "c_count_color") {
-		return handleColor(true, el, 12, before);
 	}else if (el->key_name == "c_tint_color") {
 		bool worked = handleColor(false, el, -1, before);
 		App::updateFromTintColor(&App::theme);

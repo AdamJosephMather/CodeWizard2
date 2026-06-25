@@ -2034,7 +2034,7 @@ void TextEdit::render() {
 	}
 }
 
-Color* TextEdit::getColorFromTokens(int indx, const std::vector<CW_HighlightToken>& tokens, bool* aragne) {
+Color* TextEdit::getColorFromTokens(int indx, const std::vector<CW_HighlightToken>& tokens) {
 	Color* retcol = App::theme.main_text_color;
 	
 	for (int i = tokens.size()-1; i >= 0; i--) {
@@ -2050,10 +2050,6 @@ Color* TextEdit::getColorFromTokens(int indx, const std::vector<CW_HighlightToke
 					return App::theme.equal_diff;
 				}
 			}else{
-				if (t.role == 1 || t.role == 2) {
-					*aragne = true;
-				}
-				
 				return App::theme.syntax_colors[t.role];
 			}
 		}
@@ -2658,13 +2654,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 					if (!highlighter && !alreadyHighlighted) {
 						final_color.push_back(App::theme.main_text_color);
 					}else{
-						bool arange = false;
-						Color* col = getColorFromTokens(true_char_indx, lines[ln_num].tokens, &arange);
-	
-//						if (!arange && punctuationset.count(chr)) {
-//							col = App::theme.syntax_colors[7];
-//						}
-	
+						Color* col = getColorFromTokens(true_char_indx, lines[ln_num].tokens);
 						final_color.push_back(col);
 					}
 				}

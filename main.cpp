@@ -127,7 +127,6 @@ int main(int argc, char* argv[]) {
 	App::setSynColor(&theme, "c_operator_color", 9);
 	App::setSynColor(&theme, "c_preproc_color", 10);
 	App::setSynColor(&theme, "c_invalid_color", 11);
-	App::setSynColor(&theme, "c_count_color", 12);
 	
 	std::string cl = App::settings->getValue("c_tint_color", App::empty);
 	if (cl != App::empty) {

@@ -2040,7 +2040,7 @@ void App::saveThemeToFile() {
 	if (fp) {
 		std::string filePath(fp);
 		
-		std::string tosave = settings->getSubSet({"dark_mode", "c_comments_color", "c_functs_color", "c_keywords_color", "c_literals_color", "c_punctuation_color", "c_strings_color", "c_tint_color", "c_saturation", "c_types_color", "c_vars_color", "c_operator_color", "c_preproc_color", "c_invalid_color", "c_count_color"});
+		std::string tosave = settings->getSubSet({"dark_mode", "c_comments_color", "c_functs_color", "c_keywords_color", "c_literals_color", "c_punctuation_color", "c_strings_color", "c_tint_color", "c_saturation", "c_types_color", "c_vars_color", "c_operator_color", "c_preproc_color", "c_invalid_color"});
 		std::string err;
 		if (!atomicWriteReplace(filePath, tosave, &err)) {
 			displayToast(icu::UnicodeString::fromUTF8("Failed to write file: "+err));
@@ -2094,7 +2094,6 @@ void App::loadThemeFromFile() {
 				setSynColor(&theme, "c_operator_color", 9);
 				setSynColor(&theme, "c_preproc_color", 10);
 				setSynColor(&theme, "c_invalid_color", 11);
-				setSynColor(&theme, "c_count_color", 12);
 				displayToast(icu::UnicodeString::fromUTF8("Done!"));
 				
 				App::rootelement->executeAction(WidgetActionType::SETTINGS_CHANGE);

@@ -477,25 +477,7 @@ void CodeEdit::detectLanguage() {
 		extension = extension.substr(1);
 	}
 	
-	if (!extension.empty()) {
-		auto it = App::highlighters.find(extension);
-		if (it == App::highlighters.end()) {
-			highlighter = cw_syntect_setup(
-				extension.c_str(),
-				nullptr,
-				0
-			);
-			
-			App::highlighters[extension] = highlighter;
-		}else{
-			highlighter = it->second;
-		}
-		
-		if (highlighter != nullptr) {
-			textedit->highlighter = highlighter;
-			textedit->highlighter_initial_state.reset(cw_syntect_initial_state(highlighter));
-		}
-	}
+	App::setTextEditHighlighter(textedit, extension);
 	
 	language = "";
 	lsp = "";

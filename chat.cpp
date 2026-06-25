@@ -311,25 +311,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 						te->setFullText(icu::UnicodeString::fromUTF8(trim(segment.content)));
 						te->DONT_SCROLL_VERT_CURS = true;
 						
-						auto name = segment.name;
-						if (!name.empty()) {
-							auto it = App::highlighters.find(name);
-							if (it == App::highlighters.end()) {
-								te->highlighter = cw_syntect_setup(
-									name.c_str(),
-									nullptr,
-									0
-								);
-								
-								App::highlighters[name] = te->highlighter;
-							}else{
-								te->highlighter = it->second;
-							}
-							
-							if (te->highlighter != nullptr) {
-								te->highlighter_initial_state.reset(cw_syntect_initial_state(te->highlighter));
-							}
-						}
+						App::setTextEditHighlighter(te, segment.name);
 						
 						message_te.push_back(te);
 					}else{

@@ -167,7 +167,7 @@ impl CW_Selectors {
 				"entity.name.type, entity.name.class, entity.name.struct, entity.name.enum, support.type, storage.type",
 			),
 			function: selectors(
-				"entity.name.function, variable.function"
+				"entity.name.function, support.function, variable.function"
 			),
 			keyword: selectors("keyword, storage.modifier"),
 			operator: selectors("keyword.operator"),

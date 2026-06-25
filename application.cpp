@@ -1197,6 +1197,32 @@ void App::DoFullRenderWithoutInput() {
 	glfwSwapBuffers(window);
 }
 
+void App::setTextEditHighlighter(Widget* w, std::string name) {
+	auto te = dynamic_cast<TextEdit*>(w);
+	if (!te) {
+		return;
+	}
+	
+	if (!name.empty()) {
+		auto it = App::highlighters.find(name);
+		if (it == App::highlighters.end()) {
+			te->highlighter = cw_syntect_setup(
+				name.c_str(),
+				nullptr,
+				0
+			);
+			
+			App::highlighters[name] = te->highlighter;
+		}else{
+			te->highlighter = it->second;
+		}
+		
+		if (te->highlighter != nullptr) {
+			te->highlighter_initial_state.reset(cw_syntect_initial_state(te->highlighter));
+		}
+	}
+}
+
 void App::MoveWidget(Widget* w, Widget* new_parent) {
 	rerender = true;
 	

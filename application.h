@@ -138,6 +138,8 @@ public:
 	static bool isNewer(std::vector<int> check, std::vector<int> current);
 	static void setFolder(std::string fpr);
 	
+	static void setTextEditHighlighter(Widget* te, std::string name);
+	
 	static bool REQUESTING_STRING;
 	static StringGivenFunc ON_STRING_GIVEN;
 		

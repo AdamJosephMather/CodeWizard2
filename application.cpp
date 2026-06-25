@@ -50,6 +50,7 @@ int App::major_version = 2;
 int App::minor_version = 5;
 int App::patch_version = 0; // 🚀 (we now support emojis)
 
+const std::vector<int> version = {App::major_version, App::minor_version, App::patch_version};
 
 #ifndef M_PI
 const float M_PI = 3.141592653589793238f; // nice
@@ -246,8 +247,8 @@ void restoreWindowPosAndSize(GLFWwindow* window, SettingsManager* settings, int 
 }
 
 void App::fixUpLanguages() {
-//	auto langs = settings->loadLanguages(); // just goes ahead and has it reload them, ignoring unneeded things
-//	settings->saveLanguages(langs);
+	auto langs = settings->loadLanguages(); // just goes ahead and has it reload them, ignoring unneeded things
+	settings->saveLanguages(langs);
 }
 
 bool App::Init() {
@@ -493,7 +494,7 @@ bool App::Init() {
 	// 	starter.detach();
 	// }
 	
-	if (isNewer({major_version, minor_version, patch_version}, {settings->getValue("version_major", 0), settings->getValue("version_minor", 0), settings->getValue("version_patch", 0)})) {
+	if (isNewer(version, {settings->getValue("version_major", 0), settings->getValue("version_minor", 0), settings->getValue("version_patch", 0)})) {
 		fixUpLanguages();
 		settings->setValue("version_major", major_version);
 		settings->setValue("version_minor", minor_version);
@@ -547,9 +548,9 @@ void App::checkForUpdates() {
 	int f2 = latest[1]-minor_version;
 	int f3 = latest[2]-patch_version;
 	
-	if (isNewer(latest, {major_version, minor_version, patch_version})) {
+	if (isNewer(latest, version)) {
 		displayToast(icu::UnicodeString::fromUTF8("There is a new version of CodeWizard available!"));
-	}else if (isNewer({major_version, minor_version, patch_version}, latest)) {
+	}else if (isNewer(version, latest)) {
 		displayToast(icu::UnicodeString::fromUTF8("This CodeWizard is ahead of the latest release!"));
 	}else{
 //		displayToast(icu::UnicodeString::fromUTF8("This is the latest release!"));

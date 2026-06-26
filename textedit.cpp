@@ -2034,27 +2034,23 @@ void TextEdit::render() {
 	}
 }
 
-Color* TextEdit::getColorFromTokens(int indx, const std::vector<CW_HighlightToken>& tokens) {
-	Color* retcol = App::theme.main_text_color;
-	
-	for (int i = tokens.size()-1; i >= 0; i--) {
-		auto t = tokens[i];
-		if (t.start_byte <= indx && indx < t.end_byte) {
-			if (t.role < 0) {
-				// it's a difference token
-				if (t.role == -1) {
-					return App::theme.add_diff;
-				}else if (t.role == -2) {
-					return App::theme.del_diff;
-				}else {
-					return App::theme.equal_diff;
-				}
-			}else{
-				return App::theme.syntax_colors[t.role];
-			}
-		}
+Color* TextEdit::getColorFromToken(int idx, const CW_HighlightToken& token) { // because syntect now returns tokens that are non-overlapping and in order, we'll do binary search
+	if (idx < token.start_byte || idx >= token.end_byte) {
+		return App::theme.main_text_color;
 	}
-	return retcol;
+	
+	if (token.role < 0) {
+		// it's a difference token
+		if (token.role == -1) {
+			return App::theme.add_diff;
+		}else if (token.role == -2) {
+			return App::theme.del_diff;
+		}else {
+			return App::theme.equal_diff;
+		}
+	}else{
+		return App::theme.syntax_colors[token.role];
+	}
 }
 
 void TextEdit::executeAction(WidgetActionType typ) {
@@ -2476,9 +2472,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 			continue;
 		}
 
-		icu::UnicodeString thisLn = lines[ln_num].line_text;
-
-		int cur_char = 0;
+		icu::UnicodeString& lineText = lines[ln_num].line_text;
 
 		icu::UnicodeString final_line = icu::UnicodeString();
 		std::vector<Color*> final_color = {};
@@ -2526,7 +2520,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 			if (start_line == ln_num) {
 				start_sec = start_char;
 			}
-			int end_sec = thisLn.length();
+			int end_sec = lineText.length();
 			if (end_line == ln_num) {
 				end_sec = end_char;
 			}
@@ -2543,10 +2537,25 @@ void TextEdit::position(int x, int y, int w, int h) {
 
 		// run through
 		
+		int cur_char = 0;
 		int cur_length = 0;
 		int skipping = 0; // a variable to handle emojis, because they take up multiple codepoints
+		int cur_token_idx = 0;
+		if (lines[ln_num].tokens.empty()) {
+			cur_token_idx = -1;
+		}
 		
-		for (int true_char_indx = 0; true_char_indx < thisLn.length()+1; true_char_indx += 1) {
+		for (int true_char_indx = 0; true_char_indx < lineText.length()+1; true_char_indx += 1) {
+			if (cur_token_idx != -1 && lines[ln_num].tokens[cur_token_idx].end_byte <= true_char_indx) {
+				cur_token_idx = -1;
+				for (auto t = cur_token_idx+1; t < lines[ln_num].tokens.size(); t++) {
+					if (lines[ln_num].tokens[t].end_byte > true_char_indx && lines[ln_num].tokens[t].start_byte <= true_char_indx) {
+						cur_token_idx = t;
+						break;
+					}
+				}
+			}
+			
 			for (int i = 0; i < selections.size(); i++) {
 				auto s = selections[i];
 				if (s[0] <= true_char_indx && draw_selec[i][0] == -1) {
@@ -2571,7 +2580,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 			
 			int newskip = skipping;
 			if (skipping == 0) {
-				newskip = get_emoji_sequence_length(thisLn, true_char_indx);
+				newskip = get_emoji_sequence_length(lineText, true_char_indx);
 			}
 			
 			
@@ -2581,7 +2590,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 					dc.rel_line = draw_text.size();
 					dc.rel_char = cur_length;
 					if (newskip == 0) {
-						dc.charUnder = thisLn[true_char_indx];
+						dc.charUnder = lineText[true_char_indx];
 					}
 					draw_cursor.push_back(dc);
 				}
@@ -2606,7 +2615,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 				if (skipping != 0) {
 					if (cur_char >= char_start) {
 						for (int i = 0; i < skipping; i++) {
-							final_line.append(thisLn.charAt(i+true_char_indx));
+							final_line.append(lineText.charAt(i+true_char_indx));
 							final_color.push_back(App::theme.main_text_color);
 						}
 					}
@@ -2630,10 +2639,10 @@ void TextEdit::position(int x, int y, int w, int h) {
 			// regular text
 			
 			UChar32 chr;
-			if (true_char_indx == thisLn.length()) {
+			if (true_char_indx == lineText.length()) {
 				chr = U' '; // need this for selections to look right, inserting a not-real space for... things
 			}else{
-				chr = thisLn.charAt(true_char_indx);
+				chr = lineText.charAt(true_char_indx);
 			}
 			
 			bool finished_line = false;
@@ -2654,7 +2663,10 @@ void TextEdit::position(int x, int y, int w, int h) {
 					if (!highlighter && !alreadyHighlighted) {
 						final_color.push_back(App::theme.main_text_color);
 					}else{
-						Color* col = getColorFromTokens(true_char_indx, lines[ln_num].tokens);
+						Color* col = App::theme.main_text_color;
+						if (cur_token_idx != -1){
+							col = getColorFromToken(true_char_indx, lines[ln_num].tokens[cur_token_idx]);
+						}
 						final_color.push_back(col);
 					}
 				}

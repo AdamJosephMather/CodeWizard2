@@ -2294,9 +2294,6 @@ int32_t TextEdit::get_emoji_sequence_length_backward(
 	//   emoji + VS16
 	//   emoji ZWJ emoji
 	//   emoji ZWJ emoji ZWJ emoji ...
-	//
-	// Example:
-	//   👨🏾‍🫯‍👨🏼
 	{
 		int32_t start = consume_emoji_atom_backward(str, index);
 

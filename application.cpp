@@ -293,6 +293,8 @@ bool App::Init() {
 	
 	settings->loadSettings();
 	
+	MST::setTabWidth(settings->getValue("tab_width", 4));
+	
 	std::string password = settings->getValue("ajm_asv3_password", (std::string)"devpassword"); // must happen after settings setup.
 	
 	Verify::setup(password);

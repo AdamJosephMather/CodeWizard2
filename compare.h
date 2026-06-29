@@ -23,7 +23,7 @@ public:
 	FileInfo* file1 = nullptr;
 	FileInfo* file2 = nullptr;
 	
-	std::vector<std::pair<int,icu::UnicodeString>> calculateDifferences(const std::vector<icu::UnicodeString>& t1, const std::vector<icu::UnicodeString>& t2);
+	std::vector<std::pair<int,MST::MonoString>> calculateDifferences(const std::vector<MST::MonoString>& t1, const std::vector<MST::MonoString>& t2);
 	
 	void position(int x, int y, int w, int h);
 	void render();
@@ -36,8 +36,8 @@ private:
 	FileInfo* f1 = nullptr;
 	FileInfo* f2 = nullptr;
 	
-	icu::UnicodeString clipBoardText1;
-	icu::UnicodeString clipBoardText2;
+	MST::MonoString clipBoardText1;
+	MST::MonoString clipBoardText2;
 	
 	Button* f1Button = nullptr;
 	Button* f2Button = nullptr;

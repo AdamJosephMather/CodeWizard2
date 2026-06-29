@@ -7,28 +7,28 @@
 #include <regex>
 
 Chat::Chat(Widget *parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("Chat");
+	id = MST::toMonoString("Chat");
 	
 	before_self_close = [&](){
 		while (running) { std::this_thread::sleep_for(std::chrono::milliseconds(50)); }
 	};
 	
 	querybox = new TextEdit(this, [](Widget*){});
-	querybox->id = icu::UnicodeString::fromUTF8("QueryBox");
+	querybox->id = MST::toMonoString("QueryBox");
 	querybox->borderColor = nullptr;
 	querybox->activeBorderColor = nullptr;
 	
-	filesButton = new Button(this, icu::UnicodeString::fromUTF8("Insert File"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+	filesButton = new Button(this, MST::toMonoString("Insert File"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		btn->t_x = t_x + 2;
 		btn->t_y = querybox->t_y - 1 - h;
 	}, [&](Button* btn){
 		auto files = App::rootelement->getOpenFiles(true); // get's the file text(s)
 		
 		textstoadd.clear();
-		std::vector<icu::UnicodeString> els;
+		std::vector<MST::MonoString> els;
 		for (auto f : files) {
 			if (f[2] == "TEXT") {
-				els.push_back(icu::UnicodeString::fromUTF8(f[0]));
+				els.push_back(MST::toMonoString(f[0]));
 				textstoadd.push_back("File: " + f[0] + "\n\n```" + f[3] + "```"); // full text
 			}
 		}
@@ -38,7 +38,7 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 	});
 	filesButton->rounded = true;
 	
-	newChat = new Button(this, icu::UnicodeString::fromUTF8("Reset Chat"), [&](Widget* btn, int x, int y, int _, int _2, int w, int h){
+	newChat = new Button(this, MST::toMonoString("Reset Chat"), [&](Widget* btn, int x, int y, int _, int _2, int w, int h){
 		btn->t_x = t_x+App::text_padding;
 		btn->t_y = t_y+App::text_padding;
 	}, [&](Widget*){
@@ -66,7 +66,7 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 		std::string message = textstoadd[idx];
 		Label* te = new Label(this);
 		te->background_color = App::theme.extras_background_color;
-		te->setFullText(icu::UnicodeString::fromUTF8(message));
+		te->setFullText(MST::toMonoString(message));
 		message_te.push_back(te);
 		from_user.push_back(true);
 		filesAddList->is_visible_layered = false;
@@ -153,7 +153,7 @@ void Chat::render() {
 	App::runWithSKIZ(newChat->t_x, newChat->t_y, newChat->t_w, newChat->t_h, [&](){
 		newChat->render();
 	});
-	TextRenderer::draw_text(filesButton->t_x+filesButton->t_w+App::text_padding, filesButton->t_y+App::text_padding, icu::UnicodeString::fromUTF8(App::settings->getValue("lm_studio_model_id",std::string("qwen2.5-coder-1.5b-instruct@q4_k_m"))), App::theme.lesser_text_color);
+	TextRenderer::draw_text(filesButton->t_x+filesButton->t_w+App::text_padding, filesButton->t_y+App::text_padding, MST::toMonoString(App::settings->getValue("lm_studio_model_id",std::string("qwen2.5-coder-1.5b-instruct@q4_k_m"))), App::theme.lesser_text_color);
 	
 	Color* bColor = App::theme.border;
 	if (querybox == App::activeLeafNode) {
@@ -190,60 +190,149 @@ bool Chat::on_mouse_button_event(int button, int action, int mods) {
 	return Widget::on_mouse_button_event(button, action, mods);
 }
 
-std::vector<Segment> Chat::splitMarkdown(const std::string& input) {
-	// Captures:
-	//   m[1] = optional code block name/language
-	//   m[2] = code contents
+static MST::MonoString buildMarkdownTextFromRuns(
+	const MST::MonoString& original,
+	const ProcessedMarkdown& processed
+) {
+	MST::MonoString out;
+
+	for (const auto& run : processed.runs) {
+		if (run.synthetic) {
+			out += MST::toMonoString(run.syntheticText);
+		} else {
+			size_t s = std::min(run.sourceStart, original.length);
+			size_t e = std::min(run.sourceEnd, original.length);
+
+			if (s < e) {
+				out += MST::substring(original, s, e);
+			}
+		}
+	}
+
+	return out;
+}
+
+static std::string trimAsciiString(const std::string& s) {
+	size_t a = 0;
+	size_t b = s.size();
+
+	while (a < b && std::isspace(static_cast<unsigned char>(s[a]))) {
+		a++;
+	}
+
+	while (b > a && std::isspace(static_cast<unsigned char>(s[b - 1]))) {
+		b--;
+	}
+
+	return s.substr(a, b - a);
+}
+
+static MST::MonoString trimMonoAscii(const MST::MonoString& s) {
+	size_t a = 0;
+	size_t b = s.length;
+
+	auto isWs = [](MST::u32 ch) {
+		return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r';
+	};
+
+	while (a < b && isWs(s.data[a])) {
+		a++;
+	}
+
+	while (b > a && isWs(s.data[b - 1])) {
+		b--;
+	}
+
+	return MST::substring(s, a, b);
+}
+
+std::vector<Segment> Chat::splitMarkdown(const MST::MonoString& original) {
+	std::string input = MST::toBastardizedStringUtf8Aligned(original);
+
+#ifdef DEBUG
+	if (input.size() != original.length) {
+		std::cerr << "toBastardizedStringUtf8Aligned broke alignment: "
+		          << input.size() << " vs " << original.length << "\n";
+	}
+#endif
+
 	static const std::regex re(
 		R"(```([^\n`]*)?\r?\n([\s\S]*?)```)"
 	);
 
 	std::vector<Segment> segments;
 	std::sregex_iterator it(input.begin(), input.end(), re), end;
+
 	size_t lastPos = 0;
+
+	auto addPlainText = [&](size_t start, size_t endPos) {
+		if (endPos <= start) {
+			return;
+		}
+
+		ProcessedMarkdown processed =
+			MarkdownParser::ProcessRanges(input, start, endPos - start);
+
+		MST::MonoString clean =
+			buildMarkdownTextFromRuns(original, processed);
+
+		if (clean.length == 0) {
+			return;
+		}
+
+		Segment seg;
+		seg.isCode = false;
+		seg.content = std::move(clean);
+		seg.spans = std::move(processed.spans);
+		segments.push_back(std::move(seg));
+	};
 
 	for (; it != end; ++it) {
 		const std::smatch& m = *it;
 
-		size_t matchPos = static_cast<size_t>(m.position(0));
-		size_t matchLen = static_cast<size_t>(m.length(0));
+		size_t matchStart = static_cast<size_t>(
+			std::distance(input.cbegin(), m[0].first)
+		);
 
-		// 1) Plaintext before this code block
-		if (matchPos > lastPos) {
-			ProcessedMarkdown processed =
-				MarkdownParser::Process(input.substr(lastPos, matchPos - lastPos));
+		size_t matchEnd = static_cast<size_t>(
+			std::distance(input.cbegin(), m[0].second)
+		);
 
-			segments.push_back({
-				/*isCode=*/false,
-				processed.cleanText,
-				processed.spans
-			});
+		addPlainText(lastPos, matchStart);
+
+		size_t nameStart = static_cast<size_t>(
+			std::distance(input.cbegin(), m[1].first)
+		);
+
+		size_t nameEnd = static_cast<size_t>(
+			std::distance(input.cbegin(), m[1].second)
+		);
+
+		size_t codeStart = static_cast<size_t>(
+			std::distance(input.cbegin(), m[2].first)
+		);
+
+		size_t codeEnd = static_cast<size_t>(
+			std::distance(input.cbegin(), m[2].second)
+		);
+
+		std::string codeName;
+
+		if (m[1].matched && nameEnd > nameStart) {
+			MST::MonoString nameMono = MST::substring(original, nameStart, nameEnd);
+			codeName = trimAsciiString(MST::toString(nameMono));
 		}
 
-		std::string codeName = m[1].matched ? m[1].str() : "";
-		std::string codeText = m[2].str();
+		Segment codeSeg;
+		codeSeg.isCode = true;
+		codeSeg.content = MST::substring(original, codeStart, codeEnd);
+		codeSeg.name = codeName;
+		segments.push_back(std::move(codeSeg));
 
-		// 2) This code block
-		segments.push_back({
-			/*isCode=*/true,
-			codeText,
-			/*spans=*/{},
-			/*codeName=*/codeName
-		});
-
-		lastPos = matchPos + matchLen;
+		lastPos = matchEnd;
 	}
 
-	// 3) Any trailing plaintext after the last code block
-	if (lastPos < input.size()) {
-		ProcessedMarkdown processed = MarkdownParser::Process(input.substr(lastPos));
-
-		segments.push_back({
-			/*isCode=*/false,
-			processed.cleanText,
-			processed.spans
-		});
-	}
+	addPlainText(lastPos, input.size());
 
 	return segments;
 }
@@ -260,7 +349,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 			message_te.push_back(te);
 			from_user.push_back(true);
 			
-			querybox->setFullText(icu::UnicodeString::fromUTF8(""));
+			querybox->setFullText(MST::toMonoString(""));
 			
 			
 			
@@ -270,9 +359,9 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 			for (int mi = 0; mi < message_te.size(); mi++) {
 				std::string msgstr;
 				if (auto te = dynamic_cast<TextEdit*>(message_te[mi])) {
-					te->getFullText().toUTF8String(msgstr);
+					msgstr = MST::toString(te->getFullText());
 				}else if (auto te = dynamic_cast<Label*>(message_te[mi])){
-					te->getFullText().toUTF8String(msgstr);
+					msgstr = MST::toString(te->getFullText());
 				}
 				
 				if (from_user[mi] && lastwasuser) {
@@ -296,7 +385,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 			new std::thread([messages,te2, this](){
 				std::string full;
 				full = Curler::StreamChatResponse(messages, [&](const std::string& part){
-					te2->setFullText(te2->getFullText()+icu::UnicodeString::fromUTF8(part));
+					te2->setFullText(te2->getFullText()+MST::toMonoString(part));
 					App::time_till_regular = 2;
 				}, SYSTEM_PROMPT);
 				
@@ -305,10 +394,10 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 				from_user.erase(from_user.begin()+from_user.size()-1);
 				App::deleteWidget(te2);
 				
-				for (auto segment : splitMarkdown(full)) {
+				for (auto segment : splitMarkdown(MST::toMonoString(full))) {
 					if (segment.isCode) {
 						auto te = new TextEdit(this, [](Widget*){});
-						te->setFullText(icu::UnicodeString::fromUTF8(trim(segment.content)));
+						te->setFullText(trimMonoAscii(segment.content));
 						te->DONT_SCROLL_VERT_CURS = true;
 						
 						App::setTextEditHighlighter(te, segment.name);
@@ -316,7 +405,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 						message_te.push_back(te);
 					}else{
 						auto la = new Label(this);
-						la->setFullText(icu::UnicodeString::fromUTF8(segment.content), segment.spans);
+						la->setFullText(segment.content, segment.spans);
 						la->background_color = App::theme.main_background_color;
 						la->border = false;
 						message_te.push_back(la);

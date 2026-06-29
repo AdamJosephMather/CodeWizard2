@@ -5,7 +5,7 @@
 #include <stb_image.h>
 
 ImageView::ImageView(Widget* parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("ImageView");
+	id = MST::toMonoString("ImageView");
 }
 
 void ImageView::position(int x, int y, int width, int height) {
@@ -39,7 +39,7 @@ void ImageView::openFile(FileInfo* f) {
 	);
 
 	if (!data) {
-		auto text = icu::UnicodeString::fromUTF8("Failed to load: " + file->filename);
+		auto text = MST::toMonoString("Failed to load: " + file->filename);
 		TextRenderer::draw_text(
 			t_x, t_y,
 			text,

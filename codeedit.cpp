@@ -14,7 +14,7 @@
 #include "curler.h"
 //#include "modelxrunner.h"
 
-std::set<UChar32> whitespace_before_comment = {U'\t', U' '};
+std::set<MST::u32> whitespace_before_comment = {U'\t', U' '};
 
 CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::UpdateFInfoFunction fupdater) : Widget(parent) {
 	before_self_close = [&]() {
@@ -38,7 +38,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	POS_FUNC = positioner;
 	FUPDATER = fupdater;
 	
-	id = icu::UnicodeString::fromUTF8("CodeEdit");
+	id = MST::toMonoString("CodeEdit");
 	
 	broken_state_menu = new BrokenStateMenu(nullptr, "Reload", "Overwrite", "File changed on disk.");
 	broken_state_menu->first_callback = [&](){
@@ -74,7 +74,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 			return;
 		}
 		
-		int col = textedit->_mapFromRealToVisual(renamecursor.head_line, renamecursor.head_char);
+		int col = renamecursor.head_char;
 		
 		int x = (col-textedit->scrolled_to_horz)*TextRenderer::get_text_width(1)+textedit->t_x+App::text_padding;
 		int y = (renamecursor.head_line+1-textedit->scrolled_to_vert)*TextRenderer::get_text_height()+textedit->t_y+App::text_padding;
@@ -84,13 +84,13 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		w->t_w = textedit->t_w/3;
 		w->t_h = App::text_padding*2+TextRenderer::get_text_height();
 	});
-	renamebox->id = icu::UnicodeString::fromUTF8("renamebox");
+	renamebox->id = MST::toMonoString("renamebox");
 	renamebox->background_color = App::theme.extras_background_color;
 	renamebox->const_parent = this;
 	
 	completionbox = new ListBox(this, [&](Widget* w){
 		Cursor c = textedit->cursors[0];
-		int col = textedit->_mapFromRealToVisual(c.head_line, c.head_char);
+		int col = c.head_char;
 		
 		int x = (col-textedit->scrolled_to_horz)*TextRenderer::get_text_width(1)+textedit->t_x+App::text_padding;
 		int y = (c.head_line+1-textedit->scrolled_to_vert)*TextRenderer::get_text_height()+textedit->t_y+App::text_padding;
@@ -104,11 +104,11 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	};
 	completionbox->is_visible_layered = false;
 	completionbox->rounded = true;
-	completionbox->id = icu::UnicodeString::fromUTF8("completionbox");
+	completionbox->id = MST::toMonoString("completionbox");
 	completionbox->const_parent = this;
 	
 	hoverbox = new TextEdit(nullptr, [&](Widget* w){
-		int col = textedit->_mapFromRealToVisual(hoverCrsr.head_line, hoverCrsr.head_char);
+		int col = hoverCrsr.head_char;
 		
 		int x = (col-textedit->scrolled_to_horz)*TextRenderer::get_text_width(1)+textedit->t_x+App::text_padding;
 		int y = (hoverCrsr.head_line+1-textedit->scrolled_to_vert)*TextRenderer::get_text_height()+textedit->t_y+App::text_padding;
@@ -129,11 +129,11 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	hoverbox->background_color = App::theme.extras_background_color;
 	hoverbox->rounded = true;
 	hoverbox->contextmenu->is_visible_3 = true;
-	hoverbox->id = icu::UnicodeString::fromUTF8("hoverbox");
+	hoverbox->id = MST::toMonoString("hoverbox");
 	
 	find_menu_open = false;
 	
-	allButton = new Button(nullptr, icu::UnicodeString("All"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
+	allButton = new Button(nullptr, MST::toMonoString("All"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = t_x+t_w-App::text_padding-tw;
 		b->t_y = t_y+t_h-replaceTextEdit->t_h-App::text_padding;
 	}, [&](Button* b){
@@ -142,7 +142,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	allButton->rounded = true;
 	allButton->const_parent = this;
 	
-	nextReplButton = new Button(nullptr, icu::UnicodeString::fromUTF8("-→"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
+	nextReplButton = new Button(nullptr, MST::toMonoString("-→"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = allButton->t_x-App::text_padding-tw;
 		b->t_y = t_y+t_h-replaceTextEdit->t_h-App::text_padding;
 	}, [&](Button* b){
@@ -151,7 +151,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	nextReplButton->rounded = true;
 	nextReplButton->const_parent = this;
 	
-	nextButton = new Button(nullptr, icu::UnicodeString::fromUTF8("-→"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
+	nextButton = new Button(nullptr, MST::toMonoString("-→"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = t_x+t_w-App::text_padding-tw;
 		b->t_y = t_y+t_h-replaceTextEdit->t_h-findTextEdit->t_h-App::text_padding*2;
 	}, [&](Button* b){
@@ -160,7 +160,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	nextButton->rounded = true;
 	nextButton->const_parent = this;
 	
-	prevButton = new Button(nullptr, icu::UnicodeString::fromUTF8("←-"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
+	prevButton = new Button(nullptr, MST::toMonoString("←-"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = nextButton->t_x-App::text_padding-tw;
 		b->t_y = t_y+t_h-replaceTextEdit->t_h-findTextEdit->t_h-App::text_padding*2;
 	}, [&](Button* b){
@@ -228,30 +228,30 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	textedit->contextmenu->is_visible_3 = true;
 	textedit->borderColor = nullptr;
 	textedit->activeBorderColor = nullptr;
-	textedit->id = icu::UnicodeString::fromUTF8("code edit text edit");
+	textedit->id = MST::toMonoString("code edit text edit");
 	
 	textedit->contextmenu->addSeparaterToMenu();
 	
-	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Comment Out Lines (Alt+3)"),   [&](Widget* w){
+	textedit->contextmenu->addToMenu(MST::toMonoString("Comment Out Lines (Alt+3)"),   [&](Widget* w){
 		setComments();
 		textedit->contextmenu->is_visible_2 = false;
 	});
 	
-	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Uncomment Lines\t(Alt+4)"),   [&](Widget* w){
+	textedit->contextmenu->addToMenu(MST::toMonoString("Uncomment Lines\t(Alt+4)"),   [&](Widget* w){
 		removeComments();
 		textedit->contextmenu->is_visible_2 = false;
 	});
 	
 	textedit->contextmenu->addSeparaterToMenu();
 	
-	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Goto Def\t(LSP)"),   [&](Widget* w){
+	textedit->contextmenu->addToMenu(MST::toMonoString("Goto Def\t(LSP)"),   [&](Widget* w){
 		if (App::lsp_client_map[lsp] && file) {
 			goto_id = App::lsp_client_map[lsp]->requestGotoDefinition(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
 		}
 		textedit->contextmenu->is_visible_2 = false;
 	});
 	
-	textedit->contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Rename Symbol\t(LSP)"),   [&](Widget* w){
+	textedit->contextmenu->addToMenu(MST::toMonoString("Rename Symbol\t(LSP)"),   [&](Widget* w){
 		if (App::lsp_client_map[lsp] && file) {
 			renamecursor = textedit->cursors[0];
 			if (renamebox->parent != this){
@@ -261,7 +261,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 			}
 			renamebox->wasmode = 'n';
 			renamebox->mode = 'i';
-			renamebox->setFullText(icu::UnicodeString());
+			renamebox->setFullText(MST::MonoString());
 		}
 		
 		textedit->contextmenu->is_visible_2 = false;
@@ -269,7 +269,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	
 	textedit->contextmenu->recalcButtonTexts();
 	
-	showErrorsButton = new Button(nullptr, icu::UnicodeString("Show/Hide Errors"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
+	showErrorsButton = new Button(nullptr, MST::toMonoString("Show/Hide Errors"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
 		b->t_x = textedit->t_x+textedit->t_w-App::text_padding*2-tw;
 		b->t_y = textedit->t_y+textedit->t_h-App::text_padding*2-th;
 	}, [&](Button* b){
@@ -322,8 +322,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		else if (typ == EditType::DeleteLine) t = LineEditType::DeleteLine;
 		
 		Line& l = textedit->lines[lineindex];
-		std::string text;
-		l.line_text.toUTF8String(text);
+		std::string text = MST::toBastardizedStringUtf16Aligned(l.line_text);
 		
 		App::lsp_client_map[lsp]->applyDocumentEdit(file->filepath, t, text, lineindex);
 	};
@@ -396,8 +395,8 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 //					std::string prefix_s;
 //					std::string suffix_s;
 //					
-//					icu::UnicodeString prefix = textedit->getSelectedText(prefix_c);
-//					icu::UnicodeString suffix = textedit->getSelectedText(suffix_c);
+//					MST::MonoString prefix = textedit->getSelectedText(prefix_c);
+//					MST::MonoString suffix = textedit->getSelectedText(suffix_c);
 //					
 //					prefix.toUTF8String(prefix_s);
 //					suffix.toUTF8String(suffix_s);
@@ -414,7 +413,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 //						continue;
 //					}
 //					
-//					std::vector<icu::UnicodeString> compld = {icu::UnicodeString::fromUTF8(insertion)};
+//					std::vector<MST::MonoString> compld = {MST::toMonoString(insertion)};
 //					
 //					completionbox->is_visible_layered = true;
 //					completionbox->setElements(compld);
@@ -546,8 +545,7 @@ void CodeEdit::executeAction(WidgetActionType typ) {
 				}
 				
 				if (file) {
-					std::string str;
-					textedit->getFullText().toUTF8String(str);
+					std::string str = MST::toBastardizedStringUtf16Aligned(textedit->getFullText());
 					App::lsp_client_map[lsp]->openDocument(file->filepath, App::languagemap[language].name, str);
 				}
 			}
@@ -558,7 +556,7 @@ void CodeEdit::executeAction(WidgetActionType typ) {
 }
 
 void CodeEdit::run_fixit() {
-	std::vector<icu::UnicodeString> lns;
+	std::vector<MST::MonoString> lns;
 	for (auto& l : textedit->lines) {
 		lns.push_back(l.line_text);
 	}
@@ -568,7 +566,7 @@ void CodeEdit::run_fixit() {
 }
 
 void CodeEdit::undo_fixit() {
-	std::vector<icu::UnicodeString> lns;
+	std::vector<MST::MonoString> lns;
 	for (auto& l : textedit->lines) {
 		lns.push_back(l.line_text);
 	}
@@ -578,7 +576,7 @@ void CodeEdit::undo_fixit() {
 }
 
 int CodeEdit::analyzeForFixit_on_lines(const std::vector<Line>& lines) {
-	std::vector<icu::UnicodeString> lines_new;
+	std::vector<MST::MonoString> lines_new;
 	
 	for (auto& l : lines) {
 		lines_new.push_back(l.line_text);
@@ -607,7 +605,7 @@ void CodeEdit::openFile(FileInfo* f) {
 	
 	if (!fileExists(path)) {
 		file = nullptr;
-		textedit->setFullText(icu::UnicodeString::fromUTF8("File does not exist: "+path));
+		textedit->setFullText(MST::toMonoString("File does not exist: "+path));
 		onTextChanged(textedit);
 		last_file_mod_time = {};
 		return;
@@ -615,14 +613,14 @@ void CodeEdit::openFile(FileInfo* f) {
 	
 	if (isBinaryFile(path)){
 		file = nullptr;
-		textedit->setFullText(icu::UnicodeString::fromUTF8("File detected as binary file: "+path+"\nDID NOT OPEN"));
+		textedit->setFullText(MST::toMonoString("File detected as binary file: "+path+"\nDID NOT OPEN"));
 		onTextChanged(textedit);
 		last_file_mod_time = {};
 		return;
 	}
 	
 	bool worked = true;
-	icu::UnicodeString text = App::readFileToUnicodeString(path, worked);
+	MST::MonoString text = App::readFileToMonoString(path, worked);
 	
 	if (worked) {
 		last_file_mod_time = std::filesystem::last_write_time(path);
@@ -640,13 +638,12 @@ void CodeEdit::openFile(FileInfo* f) {
 		}
 		
 		if (App::lsp_client_map[lsp]) {
-			std::string str;
-			text.toUTF8String(str);
+			std::string str = MST::toBastardizedStringUtf16Aligned(text);
 			App::lsp_client_map[lsp]->openDocument(file->filepath, App::languagemap[language].name, str);
 		}
 	}else {
 		file = nullptr;
-		textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: "+path+"\n\n")+text);
+		textedit->setFullText(MST::toMonoString("Failed to open file: "+path+"\n\n")+text);
 		onTextChanged(textedit);
 		last_file_mod_time = {};
 	}
@@ -654,14 +651,18 @@ void CodeEdit::openFile(FileInfo* f) {
 	file->is_opening = false;
 }
 
-int CodeEdit::indentIdentifierAfterLine(icu::UnicodeString line, icu::UnicodeString nextline) {
+int CodeEdit::indentIdentifierAfterLine(MST::MonoString line, MST::MonoString nextline) {
 	bool in_meat = false;
 	int indent_levels = 0;
 	int openers = 0;
-	UChar32 lastChar = U' ';
+	MST::u32 lastChar = U' ';
 	
-	for (int i = 0; i < line.length(); i++) {
-		UChar32 c = line.char32At(i);
+	for (int i = 0; i < line.length; i++) {
+		if (MST::skipIdx(line, i)) {
+			continue;
+		}
+		
+		MST::u32 c = MST::char32At(line, i);
 		
 		if (!in_meat) {
 			if (c == U'\t') {
@@ -903,8 +904,7 @@ void CodeEdit::triggerSaveAs() {
 		save();
 		
 		if (App::lsp_client_map[lsp]){
-			std::string str;
-			textedit->getFullText().toUTF8String(str);
+			std::string str = MST::toBastardizedStringUtf16Aligned(textedit->getFullText());
 			App::lsp_client_map[lsp]->openDocument(file->filepath, App::languagemap[language].name, str);
 		}
 	}
@@ -971,9 +971,8 @@ void CodeEdit::save() {
 			App::RemoveWidgetFromParent(broken_state_menu);
 		}
 		
-		icu::UnicodeString content = textedit->getFullText();
-		std::string str;
-		content.toUTF8String(str);
+		MST::MonoString content = textedit->getFullText();
+		std::string str = MST::toString(content);
 		
 		{
 			std::string err;
@@ -991,69 +990,47 @@ void CodeEdit::save() {
 		
 		
 		if (App::lsp_client_map[lsp]) {
-			App::lsp_client_map[lsp]->documentSaved(file->filepath, str);
+			std::string str_lsp = MST::toBastardizedStringUtf16Aligned(content);
+			App::lsp_client_map[lsp]->documentSaved(file->filepath, str_lsp);
 		}
 	}
 	
 	Widget::save();
 }
 
-void CodeEdit::replaceAll(icu::UnicodeString tofind, icu::UnicodeString toreplace, bool case_sensitive) {
-	if (tofind == "") {
+void CodeEdit::replaceAll(const MST::MonoString& tofind, const MST::MonoString& toreplace, bool case_sensitive) {
+	if (tofind.length == 0) {
 		return;
 	}
 	
-	if (!case_sensitive) {
-		tofind = tofind.toLower();
-	}
-	
 	for (int l = 0; l < textedit->lines.size(); l ++) {
-		auto line_searcher = textedit->lines[l].line_text;
-		auto true_line = textedit->lines[l].line_text;
+		const MST::MonoString& true_line = textedit->lines[l].line_text;
+		int initiallen = true_line.length;
 		
-		int intitiallen = true_line.length();
+		size_t index = MST::index(true_line, 0, tofind, !case_sensitive);
 		
-		int start = line_searcher.length();
-		
-		if (!case_sensitive) {
-			line_searcher = line_searcher.toLower();
-		}
-		
-		bool changed = false;
-		while (true) {
-			int index = line_searcher.lastIndexOf(tofind, 0, start);
+		if (index != MST::NOT_FOUND) {
+			const MST::MonoString newline = MST::replaceAll(true_line, tofind, toreplace, !case_sensitive);
 			
-			if (index == -1) {
-				break;
-			}
-			changed = true;
-			
-			line_searcher.replaceBetween(index, index+tofind.length(), toreplace); // we must keep them in sync
-			true_line.replaceBetween(index, index+tofind.length(), toreplace);
-			
-			start = index;
-		}
-		
-		if (changed) {
 			Cursor c = Cursor();
 			c.head_char = 0;
 			c.head_line = l;
-			c.anchor_char = intitiallen;
+			c.anchor_char = initiallen;
 			c.anchor_line = l;
-			textedit->insertTextAtCursor(c, true_line);
+			textedit->insertTextAtCursor(c, newline);
 		}
 	}
 }
 
-void CodeEdit::activateReplace(bool forwards, icu::UnicodeString tofind, icu::UnicodeString toreplace, bool case_sensitive) {
-	if (tofind == "") {
+void CodeEdit::activateReplace(bool forwards, MST::MonoString tofind, const MST::MonoString& toreplace, bool case_sensitive) {
+	if (tofind.length == 0) {
 		return;
 	}
 	
 	auto has = textedit->getSelectedText(textedit->cursors[0]);
 	if (!case_sensitive){
-		tofind = tofind.toLower();
-		has = has.toLower();
+		tofind = MST::toLower(tofind);
+		has = MST::toLower(has);
 	}
 	
 	if (has == tofind) {
@@ -1064,7 +1041,6 @@ void CodeEdit::activateReplace(bool forwards, icu::UnicodeString tofind, icu::Un
 		textedit->cursors = {textedit->cursors[0]}; // eliminate all other cursors
 		textedit->applyInsertToAllCursors(toreplace);
 		
-		
 		textedit->cursors[0].anchor_char = start_char;
 		textedit->cursors[0].anchor_line = start_line;
 	}
@@ -1072,147 +1048,171 @@ void CodeEdit::activateReplace(bool forwards, icu::UnicodeString tofind, icu::Un
 	activateFind(forwards, tofind, case_sensitive);
 }
 
-void CodeEdit::activateFind(bool forwards, icu::UnicodeString tofind, bool case_sensitive) {
-	if (tofind == "") {
+void CodeEdit::activateFind(bool forwards, const MST::MonoString& tofind, bool case_sensitive) {
+	if (!tofind.data || tofind.length == 0) {
 		return;
 	}
-	
-	if (!case_sensitive) {
-		tofind = tofind.toLower();
+
+	if (textedit->lines.empty()) {
+		return;
 	}
-	
+
+	const bool ignoreCase = !case_sensitive;
+
+	const int lineCount = static_cast<int>(textedit->lines.size());
+
 	int cur_line;
 	auto slelscec = textedit->_getCursSelec(textedit->cursors[0]);
-	
-	auto lines = splitByChar(tofind, '\n');
-	
+
+	std::vector<MST::MonoString> lines = MST::split(tofind, U'\n');
+
 	if (lines.size() > 1) {
 		cur_line = slelscec.first.first;
-		
-		for (int _ = 0; _ < textedit->lines.size()+1; _++) {
+
+		for (int attempt = 0; attempt < lineCount + 1; attempt++) {
 			if (forwards) {
 				cur_line++;
-				if (cur_line >= textedit->lines.size()) {
+				if (cur_line >= lineCount) {
 					cur_line = 0;
 				}
-			}else{
+			} else {
 				cur_line--;
 				if (cur_line < 0) {
-					cur_line = textedit->lines.size()-1;
+					cur_line = lineCount - 1;
 				}
 			}
-			
-			auto text = textedit->lines[cur_line].line_text;
-			if (!case_sensitive) {
-				text = text.toLower();
+
+			const MST::MonoString& text = textedit->lines[cur_line].line_text;
+
+			if (!MST::endsWith(text, lines[0], ignoreCase)) {
+				continue;
 			}
-			
-			if (text.endsWith(lines[0])) {
-				bool matches = true;
-				for (int li = 1; li < lines.size()-1; li++) {
-					int idx = cur_line+li;
-					if (idx >= textedit->lines.size()) {
-						matches = false;
-						break;
-					}
-					
-					auto t2 = textedit->lines[idx].line_text;
-					if (!case_sensitive) {
-						t2 = t2.toLower();
-					}
-					
-					if (t2 != lines[li]) {
-						matches = false;
-						break;
-					}
+
+			bool matches = true;
+
+			for (size_t li = 1; li < lines.size() - 1; li++) {
+				int idx = cur_line + static_cast<int>(li);
+
+				if (idx >= lineCount) {
+					matches = false;
+					break;
 				}
-				if (matches) {
-					int final_idx = cur_line + (int)lines.size() - 1;
-				
-					if (final_idx >= textedit->lines.size()) {
-						continue;
-					}
-				
-					auto final_text = textedit->lines[final_idx].line_text;
-				
-					if (!case_sensitive) {
-						final_text = final_text.toLower();
-					}
-				
-					if (!final_text.startsWith(lines[lines.size() - 1])) {
-						continue;
-					}
-				
-					Cursor c;
-					c.anchor_line = cur_line;
-					c.anchor_char = text.length() - lines[0].length();
-					c.head_line = final_idx;
-					c.head_char = lines[lines.size() - 1].length();
-					c.preffered_collumn = c.head_char;
-				
-					textedit->cursors = { c };
-					textedit->ensureCursorVisible(textedit->cursors[0]);
-					return;
+
+				const MST::MonoString& t2 = textedit->lines[idx].line_text;
+
+				// Full-line match, case-sensitive or insensitive.
+				if (t2.length != lines[li].length ||
+					!MST::startsWith(t2, lines[li], ignoreCase)) {
+					matches = false;
+					break;
 				}
 			}
+
+			if (!matches) {
+				continue;
+			}
+
+			int final_idx = cur_line + static_cast<int>(lines.size()) - 1;
+
+			if (final_idx >= lineCount) {
+				continue;
+			}
+
+			const MST::MonoString& final_text = textedit->lines[final_idx].line_text;
+
+			if (!MST::startsWith(final_text, lines[lines.size() - 1], ignoreCase)) {
+				continue;
+			}
+
+			Cursor c;
+			c.anchor_line = cur_line;
+			c.anchor_char = static_cast<int>(text.length - lines[0].length);
+			c.head_line = final_idx;
+			c.head_char = static_cast<int>(lines[lines.size() - 1].length);
+			c.preffered_collumn = c.head_char;
+
+			textedit->cursors = { c };
+			textedit->ensureCursorVisible(textedit->cursors[0]);
+			return;
 		}
-	}else{
+	} else {
 		int start_char;
-		
-		if (forwards){
+
+		if (forwards) {
 			cur_line = slelscec.first.second;
 			start_char = slelscec.second.second;
-		}else{
+		} else {
 			cur_line = slelscec.first.first;
 			start_char = slelscec.second.first;
 		}
-		
-		for (int _ = 0; _ < textedit->lines.size()+1; _++) {
-			int index;
-			
-			auto text = textedit->lines[cur_line].line_text;
-			if (!case_sensitive) {
-				text = text.toLower();
-			}
-			
+
+		for (int attempt = 0; attempt < lineCount + 1; attempt++) {
+			const MST::MonoString& text = textedit->lines[cur_line].line_text;
+
+			size_t index = MST::NOT_FOUND;
+
 			if (forwards) {
-				index = text.indexOf(tofind, start_char);
-			}else{
-				index = text.lastIndexOf(tofind, 0, start_char);
+				size_t start = 0;
+
+				if (start_char > 0) {
+					start = static_cast<size_t>(start_char);
+				}
+
+				index = MST::index(text, start, tofind, ignoreCase);
+			} else {
+				size_t boundedStartChar = 0;
+
+				if (start_char > 0) {
+					boundedStartChar = static_cast<size_t>(start_char);
+				}
+
+				if (boundedStartChar > text.length) {
+					boundedStartChar = text.length;
+				}
+
+				// Match must fit entirely before start_char, matching old:
+				// lastIndexOf(tofind, 0, start_char)
+				if (boundedStartChar >= tofind.length) {
+					size_t startCandidate = boundedStartChar - tofind.length;
+					index = MST::indexBackwards(text, startCandidate, tofind, ignoreCase);
+				}
 			}
-			
-			if ( index != -1 ) {
+
+			if (index != MST::NOT_FOUND) {
 				Cursor c;
 				c.anchor_line = cur_line;
-				c.anchor_char = index;
+				c.anchor_char = static_cast<int>(index);
 				c.head_line = cur_line;
-				c.head_char = index+tofind.length();
+				c.head_char = static_cast<int>(index + tofind.length);
 				c.preffered_collumn = c.head_char;
-				textedit->cursors = {c};
+
+				textedit->cursors = { c };
 				textedit->ensureCursorVisible(textedit->cursors[0]);
 				return;
 			}
-			
+
 			if (forwards) {
 				start_char = 0;
-				
+
 				cur_line++;
-				if (cur_line >= textedit->lines.size()) {
+				if (cur_line >= lineCount) {
 					cur_line = 0;
 				}
-			}else{
+			} else {
 				cur_line--;
 				if (cur_line < 0) {
-					cur_line = textedit->lines.size()-1;
+					cur_line = lineCount - 1;
 				}
-				
-				start_char = textedit->lines[cur_line].line_text.length();
+
+				start_char = static_cast<int>(textedit->lines[cur_line].line_text.length);
 			}
 		}
 	}
 }
 
 bool CodeEdit::on_char_event(unsigned int keycode) {
+	std::lock_guard<std::mutex> lock(saving_lock);
+	
 	if (!is_visible) {
 		return false;
 	}
@@ -1277,6 +1277,8 @@ std::string CodeEdit::augmentBuildCommand(std::string inital) {
 }
 
 bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
+	std::lock_guard<std::mutex> lock(saving_lock);
+	
 	if (FILE_BROKEN_STATE) { return broken_state_menu->on_key_event(key, scancode, action, mods); }
 	
 	bool shift_held = (mods & GLFW_MOD_SHIFT) != 0;
@@ -1318,22 +1320,20 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 				start.head_line = std::max(0, cur.head_line-contextsize);
 				auto t1 = textedit->getSelectedText(start);
 				
-				std::string befr;
-				t1.toUTF8String(befr);
+				std::string befr = MST::toString(t1);
 				
 				Cursor end = Cursor();
 				end.anchor_char = cur.head_char;
 				end.anchor_line = cur.head_line;
 				end.head_line = std::min((int)textedit->lines.size()-1, cur.head_line+contextsize);
-				end.head_char = textedit->lines[end.head_line].line_text.length();
+				end.head_char = textedit->lines[end.head_line].line_text.length;
 				auto t2 = textedit->getSelectedText(end);
 				
-				std::string aftr;
-				t2.toUTF8String(aftr);
+				std::string aftr = MST::toString(t2);
 				
-				App::displayToast(icu::UnicodeString::fromUTF8("Contacting AI Provider"));
+				App::displayToast(MST::toMonoString("Contacting AI Provider"));
 				std::string insertion = Curler::StreamInsertion(befr, aftr, [this](std::string s){
-					textedit->insertTextAtCursor(textedit->cursors[0], icu::UnicodeString::fromUTF8(s));
+					textedit->insertTextAtCursor(textedit->cursors[0], MST::toMonoString(s));
 					App::time_till_regular = 2;
 				});
 			});
@@ -1350,8 +1350,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 				App::RemoveWidgetFromParent(renamebox);
 				DO_RENDER = 3;
 				if (App::lsp_client_map[lsp]) {
-					std::string rename;
-					renamebox->getFullText().toUTF8String(rename);
+					std::string rename = MST::toBastardizedStringUtf16Aligned(renamebox->getFullText());
 					rename_id = App::lsp_client_map[lsp]->requestRename(file->filepath, renamecursor.head_line, renamecursor.head_char, rename);
 				}
 				App::setActiveLeafNode(textedit);
@@ -1390,7 +1389,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 					}
 					renamebox->wasmode = 'n';
 					renamebox->mode = 'i';
-					renamebox->setFullText(icu::UnicodeString());
+					renamebox->setFullText(MST::MonoString());
 				}
 				return true;
 			}
@@ -1422,27 +1421,27 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 					should_move_mouse_hover = true;
 					hover_id = App::lsp_client_map[lsp]->requestHover(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
 				}
-			}if (key == GLFW_KEY_3 && alt_held && is_press && language != "" && App::languagemap[language].line_comment != "") {
+			}if (key == GLFW_KEY_3 && alt_held && is_press && language != "" && App::languagemap[language].line_comment.length != 0) {
 				setComments();
 				return true;
-			}else if (key == GLFW_KEY_4 && alt_held && is_press && language != "" && App::languagemap[language].line_comment != "") {
+			}else if (key == GLFW_KEY_4 && alt_held && is_press && language != "" && App::languagemap[language].line_comment.length != 0) {
 				removeComments();
 				return true;
-			}else if (key == GLFW_KEY_SLASH && control_held && is_press && language != "" && App::languagemap[language].line_comment != "") {
+			}else if (key == GLFW_KEY_SLASH && control_held && is_press && language != "" && App::languagemap[language].line_comment.length != 0) {
 				auto find = App::languagemap[language].line_comment;
 	
 				Cursor c = textedit->cursors[0];
 				auto slelscec = textedit->_getCursSelec(c);
 				int l = slelscec.first.first;
 				auto line_text = textedit->lines[l].line_text;
-				int indx = line_text.indexOf(find);
+				int indx = MST::index(line_text, 0, find);
 				if (indx == -1) {
 					setComments();
 					return true;
 				}
 				
 				for (int z = 0; z < indx; z++) {
-					if (!whitespace_before_comment.count(line_text.char32At(z))){
+					if (!whitespace_before_comment.count(MST::char32At(line_text, z))){
 						setComments();
 						return true;
 					}
@@ -1473,7 +1472,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 			App::MoveWidget(allButton, this);
 			
 			auto t = textedit->getSelectedText(textedit->cursors[0]);
-			if (t != "") {
+			if (t.length != 0) {
 				findTextEdit->setFullText(t);
 			}
 			
@@ -1481,7 +1480,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 			newcursor.anchor_char = 0;
 			newcursor.anchor_line = 0;
 			newcursor.head_line = findTextEdit->lines.size()-1;
-			newcursor.head_char = findTextEdit->lines[newcursor.head_line].line_text.length();
+			newcursor.head_char = findTextEdit->lines[newcursor.head_line].line_text.length;
 			newcursor.preffered_collumn = newcursor.head_char;
 			
 			findTextEdit->cursors = { newcursor };
@@ -1566,7 +1565,7 @@ void CodeEdit::setComments() {
 			comc.anchor_char = 0;
 			comc.head_line = l;
 			comc.anchor_line = l;
-			textedit->insertTextAtCursor(comc, icu::UnicodeString( App::languagemap[language].line_comment ));
+			textedit->insertTextAtCursor(comc, MST::MonoString( App::languagemap[language].line_comment ));
 		}
 	}
 	textedit->tryingToEnsureCursorPos = true;
@@ -1581,7 +1580,7 @@ void CodeEdit::removeComments() {
 		for (auto l = slelscec.first.first; l < slelscec.first.second+1; l++) {
 			auto line_text = textedit->lines[l].line_text;
 			
-			int indx = line_text.indexOf(remove);
+			int indx = MST::index(line_text, 0, remove);
 			if (indx == -1) {
 				continue;
 			}
@@ -1589,7 +1588,7 @@ void CodeEdit::removeComments() {
 			bool works = true;
 			
 			for (int z = 0; z < indx; z++) {
-				if (!whitespace_before_comment.count(line_text.char32At(z))){
+				if (!whitespace_before_comment.count(MST::char32At(line_text, z))){
 					works = false;
 					break;
 				}
@@ -1601,10 +1600,10 @@ void CodeEdit::removeComments() {
 			
 			Cursor comc = Cursor();
 			comc.head_char = indx;
-			comc.anchor_char = indx+remove.length();
+			comc.anchor_char = indx+remove.length;
 			
-			if (indx+remove.length() < line_text.length()) {
-				if (line_text.char32At(indx+remove.length()) == U' ') {
+			if (indx+remove.length < line_text.length) {
+				if (MST::char32At(line_text, indx+remove.length) == U' ') {
 					comc.anchor_char ++;
 				}
 			}
@@ -1618,6 +1617,8 @@ void CodeEdit::removeComments() {
 }
 
 bool CodeEdit::on_mouse_button_event(int button, int action, int mods) {
+	std::lock_guard<std::mutex> lock(saving_lock);
+	
 	if (FILE_BROKEN_STATE) {
 		return broken_state_menu->on_mouse_button_event(button, action, mods);
 	}else if (REQUESTING_FIXIT) {
@@ -1751,11 +1752,11 @@ void CodeEdit::actionsReceived(int id, json resp) {
 	
 	code_actions = resp;
 	
-	std::vector<icu::UnicodeString> els;
+	std::vector<MST::MonoString> els;
 	
 	for (auto j : code_actions) {
 		std::string tstr = j["title"];
-		icu::UnicodeString title = icu::UnicodeString::fromUTF8(tstr);
+		MST::MonoString title = MST::toMonoString(tstr);
 		els.push_back(title);
 	}
 	
@@ -1789,16 +1790,14 @@ void CodeEdit::completionRecieved(std::vector<std::string> completions, int rec_
 		return;
 	}
 	
-	icu::UnicodeString wrd = textedit->getCurrentWord(textedit->lines[textedit->cursors[0].head_line].line_text, textedit->cursors[0].head_char);
-	wrd.toLower();
+	MST::MonoString wrd = textedit->getCurrentWord(textedit->lines[textedit->cursors[0].head_line].line_text, textedit->cursors[0].head_char);
 	
-	std::vector<icu::UnicodeString> compld;
+	std::vector<MST::MonoString> compld;
 	for (auto c : completions) {
-		auto icustr = icu::UnicodeString::fromUTF8(c);
+		auto icustr = MST::toMonoString(c);
 		auto lwrd = icustr;
-		lwrd.toLower();
 		
-		if (lwrd.startsWith(wrd)){
+		if (MST::startsWith(lwrd, wrd, true)){
 			compld.push_back(icustr);
 		}
 	}
@@ -1849,17 +1848,17 @@ void CodeEdit::renameReceived(int id, json resp) {
 		
 		std::cout << "Replacing [" << s.startLine << ":" << s.startChar << " → " << s.endLine   << ":" << s.endChar << "] with: " << s.newText << "\n";
 		
-		textedit->insertTextAtCursor(c, icu::UnicodeString::fromUTF8(s.newText));
+		textedit->insertTextAtCursor(c, MST::toMonoString(s.newText));
 	}
 	
 	Cursor c = textedit->cursors[0];
 	if (c.head_line >= textedit->lines.size()) {
 		c.head_line = textedit->lines.size()-1;
 	}
-	if (c.head_char > textedit->lines[c.head_line].line_text.length()) {
-		c.head_char = textedit->lines[c.head_line].line_text.length();
+	if (c.head_char > textedit->lines[c.head_line].line_text.length) {
+		c.head_char = textedit->lines[c.head_line].line_text.length;
 	}
-	c.preffered_collumn = textedit->_mapFromRealToVisual(c.head_line, c.head_char);
+	c.preffered_collumn = c.head_char;
 	c.anchor_char = c.head_char;
 	c.anchor_line = c.head_line;
 	
@@ -1872,91 +1871,75 @@ void CodeEdit::activateCompletion() {
 	if (completionbox->elements.size() == 0 || textedit->cursors.size() > 1) {
 		return;
 	}
-	
-	icu::UnicodeString selected = completionbox->elements[completionbox->selected_id];
-	
+
+	MST::MonoString selected = completionbox->elements[completionbox->selected_id];
+
 	if (are_code_actions) {
 		auto edits = parseCodeAction(code_actions[completionbox->selected_id]);
-		
+
 		applyOtherFileEdits(edits, file->filepath);
-		
+
 		auto sections = gatherCurrentFileSections(edits, file->filepath);
-		
+
 		for (auto& s : sections) {
 			Cursor c = Cursor();
 			c.anchor_char = s.startChar;
 			c.anchor_line = s.startLine;
 			c.head_char = s.endChar;
 			c.head_line = s.endLine;
-			
-			std::cerr << "Replacing [" << s.startLine << ":" << s.startChar << " → " << s.endLine   << ":" << s.endChar << "] with: " << s.newText << "\n";
-			
-			textedit->insertTextAtCursor(c, icu::UnicodeString::fromUTF8(s.newText));
+
+			std::cerr
+				<< "Replacing ["
+				<< s.startLine << ":" << s.startChar
+				<< " -> "
+				<< s.endLine << ":" << s.endChar
+				<< "] with: "
+				<< s.newText
+				<< "\n";
+
+			textedit->insertTextAtCursor(c, MST::toMonoString(s.newText));
 		}
-		
+
 		Cursor c = textedit->cursors[0];
+
 		if (c.head_line >= textedit->lines.size()) {
-			c.head_line = textedit->lines.size()-1;
+			c.head_line = static_cast<int>(textedit->lines.size()) - 1;
 		}
-		if (c.head_char > textedit->lines[c.head_line].line_text.length()) {
-			c.head_char = textedit->lines[c.head_line].line_text.length();
+
+		if (c.head_char > textedit->lines[c.head_line].line_text.length) {
+			c.head_char = static_cast<int>(textedit->lines[c.head_line].line_text.length);
 		}
-		c.preffered_collumn = textedit->_mapFromRealToVisual(c.head_line, c.head_char);
+
+		c.preffered_collumn = c.head_char;
 		c.anchor_char = c.head_char;
 		c.anchor_line = c.head_line;
-		
-		textedit->cursors = {c};
-		
+
+		textedit->cursors = { c };
+
 		return;
 	}
-//	else if (is_chauffeur) {
-//		textedit->applyInsertToAllCursors(selected);
-//		timeuntilchauffeur = 1; // triggers a new chauffeur run
-//		return;
-//	}
-	
-	auto wrd = textedit->getCurrentWord(textedit->lines[textedit->cursors[0].head_line].line_text, textedit->cursors[0].head_char);
-	
-	textedit->cursors[0].anchor_char = textedit->cursors[0].head_char-wrd.length();
+
+	MST::MonoString wrd = textedit->getCurrentWord(
+		textedit->lines[textedit->cursors[0].head_line].line_text,
+		textedit->cursors[0].head_char
+	);
+
+	textedit->cursors[0].anchor_char =
+		textedit->cursors[0].head_char - static_cast<int>(wrd.length);
+
 	textedit->cursors[0].anchor_line = textedit->cursors[0].head_line;
-	
+
 	int startchar = textedit->cursors[0].anchor_char;
-	
-	UErrorCode status = U_ZERO_ERROR;
-	icu::RegexPattern* pattern = icu::RegexPattern::compile(uR"(\$(?:\d+|\{\d+:[^}]*\}))", 0, status);
-	if (U_FAILURE(status)) {
-		std::cerr << "Pattern compilation failed: " << u_errorName(status) << std::endl;
-		return;
-	}
 
-	// Create a matcher
-	icu::RegexMatcher* matcher = pattern->matcher(selected, status);
-	if (U_FAILURE(status)) {
-		std::cerr << "Matcher creation failed: " << u_errorName(status) << std::endl;
-		delete pattern;
-	}
-	
-	 // Try to find the first match
-	int32_t firstIndex = -1;
-	if (matcher->find()) {
-		firstIndex = matcher->start(status);
-		if (U_FAILURE(status)) {
-			std::cerr << "Error getting match start: " << u_errorName(status) << std::endl;
-			firstIndex = -1;
-		}
-	}
+	int firstIndex = -1;
+	selected = MST::removeSnippetPlaceholders(selected, firstIndex);
 
-	// Reset matcher to start again from the beginning
-	matcher->reset();
-	
-	selected = matcher->replaceAll(u"", status);
-	
 	textedit->applyInsertToAllCursors(selected);
-	
+
 	if (firstIndex != -1) {
-		textedit->cursors[0].head_char = startchar+firstIndex;
-		textedit->cursors[0].anchor_char = startchar+firstIndex;
-		textedit->cursors[0].preffered_collumn = startchar+firstIndex;
+		textedit->cursors[0].head_char = startchar + firstIndex;
+		textedit->cursors[0].anchor_char = startchar + firstIndex;
+		textedit->cursors[0].preffered_collumn = startchar + firstIndex;
 	}
 }
 
@@ -1974,7 +1957,7 @@ void CodeEdit::publishDiagnostics(std::string filename, std::vector<std::string>
 		textedit->lines[i].diagnostics.clear();
 	}
 	
-	std::vector<icu::UnicodeString> errorsAsUnicode;
+	std::vector<MST::MonoString> errorsAsUnicode;
 	errorlines.clear();
 	
 	double max_line = textedit->lines.size() + textedit->t_h / TextRenderer::get_text_height();
@@ -2007,8 +1990,8 @@ void CodeEdit::publishDiagnostics(std::string filename, std::vector<std::string>
 			blue.push_back(sl/max_line);
 		}
 		
-		icu::UnicodeString mes = icu::UnicodeString::fromUTF8(messages[i]);
-		errorsAsUnicode.push_back(icu::UnicodeString::fromUTF8(std::to_string(sl+1)+" - ")+mes);
+		MST::MonoString mes = MST::toMonoString(messages[i]);
+		errorsAsUnicode.push_back(MST::toMonoString(std::to_string(sl+1)+" - ")+mes);
 		errorlines.push_back(sl);
 		
 		for (int l = sl; l < el+1; l++){
@@ -2017,7 +2000,7 @@ void CodeEdit::publishDiagnostics(std::string filename, std::vector<std::string>
 			}
 			
 			int srt = 0;
-			int end = textedit->lines[l].line_text.length()-1;
+			int end = textedit->lines[l].line_text.length-1;
 			
 			if (l == sl) {
 				srt = sc;
@@ -2073,7 +2056,7 @@ void CodeEdit::gotoDef(int id, int line1, int character1, int line, int characte
 			return;
 		}
 		
-		if (textedit->lines[line].line_text.length() < character || textedit->lines[line1].line_text.length() < character1) {
+		if (textedit->lines[line].line_text.length < character || textedit->lines[line1].line_text.length < character1) {
 			return;
 		}
 		
@@ -2107,7 +2090,7 @@ void CodeEdit::hoverRecieved(std::string content, std::string type, int id) {
 		DO_RENDER = 3;
 	}
 	
-	hoverbox->setFullText(icu::UnicodeString::fromUTF8(content));
+	hoverbox->setFullText(MST::toMonoString(content));
 	hoverbox->scrolled_to_vert = 0;
 	hoverbox->scrolled_to_horz = 0;
 	
@@ -2135,9 +2118,7 @@ void CodeEdit::onTextChanged(Widget* w) {
 		return;
 	}
 	
-	std::string text;
-	te->getFullText().toUTF8String(text);
-	
+	std::string text = MST::toBastardizedStringUtf16Aligned(te->getFullText());
 	App::lsp_client_map[lsp]->updateDocument(file->filepath, text);
 }
 

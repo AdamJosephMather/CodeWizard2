@@ -11,7 +11,7 @@ CheckBox::CheckBox(Widget *parent, CheckPositioner positioner, CheckOnClick oncl
 	border_color = App::theme.border;
 	border_color_hover = App::theme.active_color;
 	
-	id = icu::UnicodeString::fromUTF8("CheckBox");
+	id = MST::toMonoString("CheckBox");
 }
 
 void CheckBox::position(int x, int y, int width, int height) {

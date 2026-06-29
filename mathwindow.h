@@ -13,6 +13,6 @@ public:
 	bool on_mouse_button_event(int button, int action, int mods) override;
 private:
 	TextEdit* mathInput = nullptr;
-	std::vector<icu::UnicodeString> results = {};
-	icu::UnicodeString onMouseClick = icu::UnicodeString();
+	std::vector<MST::MonoString> results = {};
+	MST::MonoString onMouseClick = {};
 };

@@ -9,7 +9,7 @@
 
 struct Segment {
 	bool isCode;          // true ⇒ this segment is a code block
-	std::string content;  // the raw text of that segment
+	MST::MonoString content;  // the raw text of that segment
 	std::vector<MarkdownSpan> spans;
 	std::string name;
 };
@@ -41,5 +41,5 @@ private:
 	
 	const std::string SYSTEM_PROMPT = "You are an AI model, running inside of the CodeWizard code editor created by Adam Mather.";
 	
-	std::vector<Segment> splitMarkdown(const std::string& input);
+	std::vector<Segment> splitMarkdown(const MST::MonoString& input);
 };

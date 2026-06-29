@@ -5,7 +5,7 @@
 #include <stb_image.h>
 
 FileTree::FileTree(Widget* parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("FileTree");
+	id = MST::toMonoString("FileTree");
 	
 	before_self_close = [&](){
 		deleteTree(root);
@@ -29,7 +29,7 @@ GLuint FileTree::prepareTexture(std::string imagepath) {
 	);
 	
 	if (!data) {
-		App::displayToast(icu::UnicodeString::fromUTF8("Failed to load image: "+imagepath));
+		App::displayToast(MST::toMonoString("Failed to load image: "+imagepath));
 		return -1;
 	}
 	
@@ -166,7 +166,7 @@ void FileTree::fillOutTree(TreeStructure* el) {
 					
 					auto ts = new TreeStructure();
 					ts->path = entry.path().string();
-					ts->name = icu::UnicodeString::fromUTF8(entry.path().filename().string());
+					ts->name = MST::toMonoString(entry.path().filename().string());
 					el->childrenFolders.push_back(ts);
 					fillOutTree(ts);
 				}
@@ -178,14 +178,14 @@ void FileTree::fillOutTree(TreeStructure* el) {
 					
 					auto ts = new TreeStructure();
 					ts->path = entry.path().string();
-					ts->name = icu::UnicodeString::fromUTF8(entry.path().filename().string());
+					ts->name = MST::toMonoString(entry.path().filename().string());
 					el->childrenFiles.push_back(ts);
 					fillOutTree(ts);
 				}
 			}
 		}else {
 			el->is_folder = false;
-			el->name = icu::UnicodeString::fromUTF8(itm.filename().string());
+			el->name = MST::toMonoString(itm.filename().string());
 		}
 	} catch(const std::filesystem::filesystem_error& e){
 		
@@ -198,9 +198,9 @@ double FileTree::createVisuals(double pos, double depth, TreeStructure* el) {
 	int x = depth+t_x;
 	int y = pos*elHeighto+t_y+2;
 	
-	icu::UnicodeString str = el->name;
+	MST::MonoString str = el->name;
 	
-	int w = TextRenderer::get_text_width(str.length())+App::text_padding*3+TextRenderer::get_text_height();
+	int w = TextRenderer::get_text_width(str.length)+App::text_padding*3+TextRenderer::get_text_height();
 	
 	toRender.push_back( { x, y, w, elHeighto, str, el, el->is_folder } );
 	
@@ -230,7 +230,7 @@ void FileTree::position(int x, int y, int w, int h) {
 	if (!root) {
 		root = new TreeStructure();
 		root->path = App::settings->getValue("current_folder", getExecutableDir());
-		root->name = icu::UnicodeString::fromUTF8(std::filesystem::path(root->path).filename().string());
+		root->name = MST::toMonoString(std::filesystem::path(root->path).filename().string());
 		fillOutTree(root);
 	}
 	
@@ -279,7 +279,7 @@ bool FileTree::on_mouse_button_event(int button, int action, int mods) {
 				deleteTree(root);
 				root = new TreeStructure();
 				root->path = App::settings->getValue("current_folder", getExecutableDir());
-				root->name = icu::UnicodeString::fromUTF8(std::filesystem::path(root->path).filename().string());
+				root->name = MST::toMonoString(std::filesystem::path(root->path).filename().string());
 				fillOutTree(root);
 			}else{
 				std::filesystem::path p(vs.ts->path);
@@ -295,7 +295,7 @@ bool FileTree::on_mouse_button_event(int button, int action, int mods) {
 void FileTree::save() {
 	TreeStructure* newRoot = new TreeStructure();
 	newRoot->path = App::settings->getValue("current_folder", getExecutableDir());
-	newRoot->name = icu::UnicodeString::fromUTF8(std::filesystem::path(newRoot->path).filename().string());
+	newRoot->name = MST::toMonoString(std::filesystem::path(newRoot->path).filename().string());
 	
 	fillOutTree(newRoot);
 

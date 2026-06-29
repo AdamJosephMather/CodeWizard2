@@ -1,9 +1,7 @@
 #pragma once
 
-#include <unicode/unistr.h>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -27,11 +25,11 @@ public:
 	~EmojiRenderer();
 
 	// Renders the emoji at the specified coordinates
-	void draw_emoji(const icu::UnicodeString& emojiSeq, float x, float y, float size);
+	void draw_emoji(const std::string& emojiSeq, float x, float y, float size);
 
 private:
 	// Fetches from cache, or asks the OS to render it
-	EmojiTexture get_or_create_texture(const icu::UnicodeString& emojiSeq, float size);
+	EmojiTexture get_or_create_texture(std::string emojiSeq, float size);
 	
 	std::unordered_map<std::string, EmojiTexture> texture_cache;
 

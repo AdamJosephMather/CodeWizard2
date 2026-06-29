@@ -2,9 +2,18 @@
 name = "syntect_bridge"
 version = "0.1.0"
 edition = "2024"
+build = "build.rs"
 
 [lib]
 crate-type = ["staticlib"]
 
 [dependencies]
 syntect = "5.3"
+
+[build-dependencies]
+syntect = { version = "5.3", features = [
+	"default-onig",
+	"dump-load",
+	"dump-create",
+	"yaml-load"
+] }

@@ -21,22 +21,18 @@ static void SetClipboardText(const std::string& text) {
 }
 #endif
 
+#include "MonoString.cpp"
 #include <cstdlib>
 #include <cmath>
 #include <functional>
 #include <iostream>
 #include <iomanip>
 #include <vector>
-#include "unicode/unistr.h"
-#include <unicode/unum.h>
-#include <unicode/brkiter.h>
-#include <unicode/uchar.h>
 #include <filesystem>
 #include <sstream>
 #include <fstream>
 #include <map>
 #include <array>
-#include <locale>
 #include <string>
 #include <cstdio>
 #include <system_error>
@@ -49,7 +45,7 @@ using SearchResult   = std::map<SearchFileKey, SearchMatchVec>;
 
 struct FileIndexResult {
 	std::vector<std::string> indexedNames;       // just the file names
-	std::vector<icu::UnicodeString> displayPaths;       // cropped, relative display paths
+	std::vector<MST::MonoString> displayPaths;       // cropped, relative display paths
 	std::vector<std::string> fullPaths;          // full absolute paths (including “:Command” entries)
 	std::vector<int> currentlyshowing;
 	std::vector<int> currentlyshowingtype;
@@ -57,7 +53,7 @@ struct FileIndexResult {
 
 struct Language {
 	std::string name = "";
-	icu::UnicodeString line_comment = "";
+	MST::MonoString line_comment = {};
 	std::vector<std::string> filetypes = {};
 	std::string lsp = "";
 	std::string build_command = "";
@@ -134,58 +130,6 @@ struct Theme {
 	Color* remove_panel;
 };
 
-static std::vector<icu::UnicodeString> splitByChar(const icu::UnicodeString& input, UChar delimiter) {
-	std::vector<icu::UnicodeString> result;
-	int32_t start = 0;
-	int32_t pos;
-	
-	while ((pos = input.indexOf(delimiter, start)) != -1) {
-		icu::UnicodeString substr;
-		input.extractBetween(start, pos, substr);
-		result.push_back(substr);
-		start = pos + 1;
-	}
-	
-	// Add the last part
-	icu::UnicodeString substr;
-	input.extractBetween(start, input.length(), substr);
-	result.push_back(substr);
-	return result;
-}
-
-static icu::UnicodeString joinByString(const std::vector<icu::UnicodeString> items, const icu::UnicodeString joiner) {
-	icu::UnicodeString out = items[0];
-	
-	for (int l = 1; l < items.size(); l ++) {
-		out += joiner;
-		out += items[l];
-	}
-	
-	return out;
-}
-
-static icu::UnicodeString stripOfChar(const icu::UnicodeString string, const UChar32 to_strip) {
-	icu::UnicodeString result = string;
-	int32_t pos = result.indexOf(to_strip);
-	while (pos != -1) {
-		result.remove(pos, 1);
-		pos = result.indexOf(to_strip);
-	}
-	return result;
-}
-
-static icu::UnicodeString replaceWith(const icu::UnicodeString base, const icu::UnicodeString before, const icu::UnicodeString replacewith) {
-	icu::UnicodeString result = base;
-	int32_t pos = result.indexOf(before);
-	while (pos != -1) {
-		// replace 'before' at pos with 'replacewith'
-		result.replace(pos, before.length(), replacewith);
-		// advance past the newly-inserted text to avoid re-matching
-		pos = result.indexOf(before, pos + replacewith.length());
-	}
-	return result;
-}
-
 #ifdef _WIN32
 static std::string GetClipboardText() {
 	if (!OpenClipboard(nullptr)) return "";
@@ -256,7 +200,7 @@ static std::string getExecutableDir() {
 	return std::filesystem::path(exePath).parent_path().string();
 }
 
-static int analyzeForFixit(const std::vector<icu::UnicodeString>& lines) {
+static int analyzeForFixit(const std::vector<MST::MonoString>& lines) {
 	int two = 0;
 	int four = 0;
 	
@@ -265,13 +209,13 @@ static int analyzeForFixit(const std::vector<icu::UnicodeString>& lines) {
 	bool anyspaces = false;
 	
 	for (auto l : lines) {
-		if (l.length() == 0) {
+		if (l.length == 0) {
 			continue;
 		}
 		
 		int this_l = 0;
-		for (int c = 0; c < l.length(); c++) {
-			UChar32 uc = l.char32At(c);
+		for (size_t c = 0; c < l.length; c++) {
+			MST::u32 uc = MST::char32At(l, c);
 			if (uc != U' ') {
 				break;
 			}
@@ -306,32 +250,31 @@ static int analyzeForFixit(const std::vector<icu::UnicodeString>& lines) {
 	}
 }
 
-static icu::UnicodeString run_fixit_on_lines(std::vector<icu::UnicodeString> lines) {
+static MST::MonoString run_fixit_on_lines(const std::vector<MST::MonoString>& lines) {
 	int indent = analyzeForFixit(lines);
-	if (indent == 0) return joinByString(lines, "\n");
+	if (indent == 0) return MST::join(lines, MST::toMonoString(U'\n'));
 	
-	icu::UnicodeString tabUnit("\t");
-	UChar32 newline = U'\n';
+	const MST::MonoString tabUnit = MST::toMonoString(U'\t');
+	const MST::MonoString newline = MST::toMonoString(U'\n');
 	
-	icu::UnicodeString newText;
+	MST::MonoString newText;
 	for (int i = 0; i < lines.size(); i++) {
 		const auto& origLine = lines[i];
 		
-		int32_t origSpaces = 0;
-		for (int32_t c = 0; c < origLine.length(); ++c) {
-			if (origLine.char32At(c) == U' ') ++origSpaces;
-			else break;
+		size_t origSpaces = 0;
+		for (size_t c = 0; c < origLine.length; c++) {
+			if (MST::char32At(origLine, c) == U' ') ++origSpaces;
+			else if (!MST::skipIdx(origLine, c)) break;
 		}
 		
 		int levels = origSpaces / indent;
 		
-		icu::UnicodeString fixedPrefix;
-		fixedPrefix.remove();  // ensure empty
+		MST::MonoString fixedPrefix;
 		for (int i = 0; i < levels; ++i) {
 			fixedPrefix += tabUnit;
 		}
 		
-		icu::UnicodeString rest = origLine.tempSubString(levels*indent);
+		MST::MonoString rest = MST::substring(origLine, levels*indent, origLine.length);
 		
 		newText += fixedPrefix;
 		newText += rest;
@@ -343,27 +286,26 @@ static icu::UnicodeString run_fixit_on_lines(std::vector<icu::UnicodeString> lin
 	return newText;
 }
 
-static icu::UnicodeString undo_fixit_on_lines(std::vector<icu::UnicodeString> lines) {
-	icu::UnicodeString spaceUnit("    ");
-	UChar32 newline = U'\n';
+static MST::MonoString undo_fixit_on_lines(std::vector<MST::MonoString> lines) {
+	const MST::MonoString spaceUnit = MST::toMonoString("    ");
+	const MST::MonoString newline = MST::toMonoString(U'\n');
 	
-	icu::UnicodeString newText;
+	MST::MonoString newText;
 	for (int i = 0; i < lines.size(); i++) {
 		const auto& origLine = lines[i];
 		
-		int32_t origTabs = 0;
-		for (int32_t c = 0; c < origLine.length(); ++c) {
-			if (origLine.char32At(c) == U'\t') ++origTabs;
-			else break;
+		size_t origTabs = 0;
+		for (size_t c = 0; c < origLine.length; c++) {
+			if (MST::char32At(origLine, c) == U'\t') ++origTabs;
+			else if (!MST::skipIdx(origLine, c)) break;
 		}
 		
-		icu::UnicodeString fixedPrefix;
-		fixedPrefix.remove();  // ensure empty
+		MST::MonoString fixedPrefix;
 		for (int i = 0; i < origTabs; ++i) {
 			fixedPrefix += spaceUnit;
 		}
 		
-		icu::UnicodeString rest = origLine.tempSubString(origTabs);
+		MST::MonoString rest = MST::substring(origLine, origTabs, origLine.length);
 		
 		newText += fixedPrefix;
 		newText += rest;
@@ -375,8 +317,8 @@ static icu::UnicodeString undo_fixit_on_lines(std::vector<icu::UnicodeString> li
 	return newText;
 }
 
-static icu::UnicodeString run_fixit_on_text(icu::UnicodeString text) {
-	return run_fixit_on_lines( splitByChar(text, U'\n') );
+static MST::MonoString run_fixit_on_text(MST::MonoString text) {
+	return run_fixit_on_lines( MST::split(text, U'\n') );
 }
 
 static bool areSameFile(const std::string& path1, const std::string& path2) {
@@ -428,10 +370,10 @@ static void trim_decimal(std::string& s) {
 	if (!s.empty() && s.back() == '.') s.pop_back();
 }
 
-static icu::UnicodeString doubleToUnicodeString_pretty(double value) {
-	if (std::isnan(value))  return icu::UnicodeString::fromUTF8("nan");
-	if (std::isinf(value))  return icu::UnicodeString::fromUTF8(value < 0 ? "-inf" : "inf");
-	if (value == 0.0)       return icu::UnicodeString::fromUTF8("0"); // avoid "-0"
+static MST::MonoString doubleToMonoString_pretty(double value) {
+	if (std::isnan(value))  return MST::toMonoString("nan");
+	if (std::isinf(value))  return MST::toMonoString(value < 0 ? "-inf" : "inf");
+	if (value == 0.0)       return MST::toMonoString(U'0'); // avoid "-0"
 
 	const double av = std::fabs(value);
 
@@ -460,7 +402,7 @@ static icu::UnicodeString doubleToUnicodeString_pretty(double value) {
 		}
 		trim_decimal(s);
 		if (s == "-0") s = "0";
-		return icu::UnicodeString::fromUTF8(s);
+		return MST::toMonoString(s);
 	}
 
 	// Compute base-10 exponent and mantissa.
@@ -485,19 +427,19 @@ static icu::UnicodeString doubleToUnicodeString_pretty(double value) {
 
 	// If exponent is 0, just return mantissa.
 	if (exp10 == 0) {
-		return icu::UnicodeString::fromUTF8(m);
+		return MST::toMonoString(m);
 	}
 
 	// Emit parseable form for your evaluator: "<mantissa>*10^<exp>"
 	std::string out = m + "*10^" + std::to_string(exp10);
-	return icu::UnicodeString::fromUTF8(out);
+	return MST::toMonoString(out);
 }
 
-static icu::UnicodeString doubleToUnicodeString(double value) {
+static MST::MonoString doubleToMonoString(double value) {
 	// Handle special cases explicitly (optional, but avoids weird outputs).
-	if (std::isnan(value))  return icu::UnicodeString::fromUTF8("nan");
-	if (std::isinf(value))  return icu::UnicodeString::fromUTF8(value < 0 ? "-inf" : "inf");
-	if (value == 0.0)       return icu::UnicodeString::fromUTF8("0"); // avoids "-0"
+	if (std::isnan(value))  return MST::toMonoString("nan");
+	if (std::isinf(value))  return MST::toMonoString(value < 0 ? "-inf" : "inf");
+	if (value == 0.0)       return MST::toMonoString(U'0'); // avoids "-0"
 
 	const double av = std::fabs(value);
 
@@ -537,12 +479,11 @@ static icu::UnicodeString doubleToUnicodeString(double value) {
 	// If we trimmed down to "-0", normalize to "0".
 	if (s == "-0") s = "0";
 
-	return icu::UnicodeString::fromUTF8(s);
+	return MST::toMonoString(s);
 }
 
-static double unicodeStringToDouble_quick(const icu::UnicodeString& str, bool& worked) {
-	std::string ascii;
-	str.toUTF8String(ascii);        // UTF-8 → ASCII (for digits & . it's a no-op)
+static double monoStringToDouble_quick(const MST::MonoString& str, bool& worked) {
+	std::string ascii = MST::toString(str);
 	try {
 		worked = true;
 		return std::stod(ascii);
@@ -552,77 +493,77 @@ static double unicodeStringToDouble_quick(const icu::UnicodeString& str, bool& w
 	}
 }
 
-static std::pair<bool, icu::UnicodeString> checkForAndEliminate(icu::UnicodeString expr, UChar32 symbol, std::function<double(double,double)> run){
-	icu::UnicodeString val1;
-	icu::UnicodeString val2;
+static std::pair<bool, MST::MonoString> checkForAndEliminate(MST::MonoString expr, MST::u32 symbol, std::function<double(double,double)> run){
+	MST::MonoString val1;
+	MST::MonoString val2;
 
-	icu::UnicodeString afterItterationExpression = "";
+	MST::MonoString afterItterationExpression;
 
-	icu::UnicodeString partsOfDigit = "0987654321";
+	MST::MonoString partsOfDigit = MST::toMonoString("0987654321");
 
-	while (expr.indexOf(symbol) != -1) {
-		auto parts = splitByChar(expr, symbol);
+	while (MST::index(expr, 0, symbol) != -1) {
+		auto parts = MST::split(expr, symbol);
 		auto p1 = parts[0];
 		auto p2 = parts[1];
 
-		icu::UnicodeString trueDig1 = "";
-		icu::UnicodeString trueDig2 = "";
+		MST::MonoString trueDig1;
+		MST::MonoString trueDig2;
 		
 		bool seenDot = false;
-		for (int i = p1.length()-1; i >= 0; i--) {
-			auto c = p1.char32At(i);
+		for (int i = p1.length-1; i >= 0; i--) {
+			auto c = MST::char32At(p1, i);
 			if (c == U'.') {
-				if (seenDot) return {false, icu::UnicodeString()};
+				if (seenDot) return {false, MST::MonoString()};
 				seenDot = true;
 			}else if (c == U'-') {
-				trueDig1 = c + trueDig1;
+				trueDig1 = MST::toMonoString(c) + trueDig1;
 				break;
-			}else if (partsOfDigit.indexOf(c) == -1) break;
+			}else if (MST::index(partsOfDigit, 0, c) == MST::NOT_FOUND) break;
 
-			trueDig1 = c + trueDig1;
+			trueDig1 = MST::toMonoString(c) + trueDig1;
 		}
 
 		seenDot = false;
 		bool added = false;
-		for (int i = 0; i < p2.length(); i++) {
-			auto c = p2.char32At(i);
+		for (int i = 0; i < p2.length; i++) {
+			auto c = MST::char32At(p2, i);
 			if (c == U'.') {
-				if (seenDot) return {false, icu::UnicodeString()};
+				if (seenDot) return {false, MST::MonoString()};
 				seenDot = true;
 			}else if (c == U'-' && !added) {
-			}else if (partsOfDigit.indexOf(c) == -1) break;
+			}else if (MST::index(partsOfDigit, 0, c) == MST::NOT_FOUND) break;
 
-			trueDig2 += c;
+			trueDig2 += MST::toMonoString(c);
 			if (c != U'-') {
 				added = true;
 			}
 		}
 
 		bool ok;
-		double v1 = unicodeStringToDouble_quick(trueDig1, ok);
-		if (!ok) return {false, icu::UnicodeString()};
-		double v2 = unicodeStringToDouble_quick(trueDig2, ok);
-		if (!ok) return {false, icu::UnicodeString()};
+		double v1 = monoStringToDouble_quick(trueDig1, ok);
+		if (!ok) return {false, MST::MonoString()};
+		double v2 = monoStringToDouble_quick(trueDig2, ok);
+		if (!ok) return {false, MST::MonoString()};
 
 		double res = run(v1, v2);
 
-		icu::UnicodeString startedWith = trueDig1+symbol+trueDig2;
+		MST::MonoString startedWith = trueDig1+MST::toMonoString(symbol)+trueDig2;
 
-		int index = expr.indexOf(startedWith);
+		int index = MST::index(expr, 0, startedWith);
 		if (index != -1) {
-			expr = expr.tempSubStringBetween(0, index) + doubleToUnicodeString(res) + expr.tempSubString(index + startedWith.length());
+			expr = MST::substring(expr, 0, index) + doubleToMonoString(res) + MST::substring(expr, index + startedWith.length, expr.length);
 		}
 	}
 	return {true, expr};
 }
 
-static int getLengthLeft(icu::UnicodeString str) {
+static int getLengthLeft(const MST::MonoString& str) {
 	int openBrackets = 0;
-	icu::UnicodeString allowed = icu::UnicodeString::fromUTF8("0987654321.");
+	const MST::MonoString allowed = MST::toMonoString("0987654321.");
 	
-	int length = str.length();
-	for (int i = 0; i < str.length(); i++) {
-		UChar32 c = str.char32At(str.length()-i-1);
+	size_t length = str.length;
+	for (size_t i = 0; i < length; i++) {
+		MST::u32 c = MST::char32At(str, length-i-1);
 		
 		if (c == ')') {
 			openBrackets += 1;
@@ -636,7 +577,7 @@ static int getLengthLeft(icu::UnicodeString str) {
 				break;
 			}
 		}else if (openBrackets == 0) {
-			if (allowed.indexOf(c) == -1) {
+			if (MST::index(allowed, 0, c) == MST::NOT_FOUND) {
 				length = i;
 				break;
 			}
@@ -646,13 +587,13 @@ static int getLengthLeft(icu::UnicodeString str) {
 	return length;
 }
 
-static int getLengthRight(icu::UnicodeString str) {
+static int getLengthRight(const MST::MonoString& str) {
 	int openBrackets = 0;
-	icu::UnicodeString allowed = icu::UnicodeString::fromUTF8("0987654321.");
+	MST::MonoString allowed = MST::toMonoString("0987654321.");
 	
-	int length = str.length();
-	for (int i = 0; i < str.length(); i++) {
-		UChar32 c = str.char32At(i);
+	size_t length = str.length;
+	for (size_t i = 0; i < length; i++) {
+		MST::u32 c = MST::char32At(str, i);
 		
 		if (i == 0 && (c == '-' || c == '+')) { // only on the first char
 			continue;
@@ -668,7 +609,7 @@ static int getLengthRight(icu::UnicodeString str) {
 				break;
 			}
 		}else if (openBrackets == 0) {
-			if (allowed.indexOf(c) == -1) {
+			if (MST::index(allowed, 0, c) == MST::NOT_FOUND) {
 				length = i;
 				break;
 			}
@@ -678,8 +619,8 @@ static int getLengthRight(icu::UnicodeString str) {
 	return length;
 }
 
-static icu::UnicodeString fixExponents(icu::UnicodeString exp) {
-	int curIdx = exp.length();
+static MST::MonoString fixExponents(MST::MonoString exp) {
+	int32_t curIdx = exp.length;
 	
 	while (true) {
 		curIdx -= 1;
@@ -688,35 +629,36 @@ static icu::UnicodeString fixExponents(icu::UnicodeString exp) {
 			break;
 		}
 		
-		if (exp.char32At(curIdx) != U'^') {
+		if (MST::char32At(exp, curIdx) != U'^') {
 			continue;
 		}
 		
-		int rightLen = getLengthRight(exp.tempSubStringBetween(curIdx+1, exp.length()));
-		int leftLen = getLengthLeft(exp.tempSubStringBetween(0, curIdx));
+		int rightLen = getLengthRight(MST::substring(exp, curIdx+1, exp.length));
+		int leftLen = getLengthLeft(MST::substring(exp, 0, curIdx));
 		
-		exp.insert(curIdx+rightLen+1, UChar32(U')'));
-		exp.insert(curIdx-leftLen,  UChar32(U'('));
+		exp = MST::insertAt(exp, curIdx+rightLen+1, MST::toMonoString(U')'));
+		exp = MST::insertAt(exp, curIdx-leftLen,  MST::toMonoString(U'('));
 		curIdx += 1;
 	}
 	
 	return exp;
 }
 
-static std::pair<bool, double> calcExpression(icu::UnicodeString expression, bool doneExpFix = false) { // we are going to recurse on brackets...
-	if (expression == "") return {false, 0.0};
+static std::pair<bool, double> calcExpression(MST::MonoString expression, bool doneExpFix = false) { // we are going to recurse on brackets...
+	if (expression.length == 0) return {false, 0.0};
 	
-	expression = stripOfChar(expression, UChar32(' '));
-	expression = stripOfChar(expression, UChar32(','));
-	expression = stripOfChar(expression, UChar32('	'));
-	expression = replaceWith(expression, icu::UnicodeString::fromUTF8(")("), icu::UnicodeString::fromUTF8(")*("));
+	expression = MST::stripOfChar(expression, U' ');
+	expression = MST::stripOfChar(expression, U',');
+	expression = MST::stripOfChar(expression, U'\t');
+	expression = MST::stripOfChar(expression, MST::CONT);
+	expression = MST::replaceAll(expression, MST::toMonoString(")("), MST::toMonoString(")*("));
 	
-	icu::UnicodeString allowed = icu::UnicodeString::fromUTF8("0987654321+-/*()%^.");
-
-	icu::UnicodeString newExpression = "";
-
+	const MST::MonoString allowed = MST::toMonoString("0987654321+-/*()%^.");
+	
+	MST::MonoString newExpression;
+	
 	int openedBrackets = 0;
-	icu::UnicodeString subExpression = "";
+	MST::MonoString subExpression;
 	
 	// we need to go through our expression and get all exponents into this form: (a^b) because cases like this: -1^2 needs to be -(1^2) not (-1)^2
 	
@@ -724,17 +666,16 @@ static std::pair<bool, double> calcExpression(icu::UnicodeString expression, boo
 		expression = fixExponents(expression);
 	}
 	
-	
-	for (int char_indx = 0; char_indx < expression.length(); char_indx++) {
-		auto c = expression.char32At(char_indx);
-		if (allowed.indexOf(c) == -1) return {false, 0.0};
+	for (size_t char_indx = 0; char_indx < expression.length; char_indx++) {
+		auto c = MST::char32At(expression, char_indx);
+		if (MST::index(allowed, 0, c) == MST::NOT_FOUND) return {false, 0.0};
 		
 		if (c == U'(') {
 			openedBrackets += 1;
 			if (openedBrackets == 1) {
-				subExpression = icu::UnicodeString();
+				subExpression = MST::MonoString();
 			}else{
-				subExpression.append(c);
+				subExpression += MST::toMonoString(c);
 			}
 		}else if (c == U')') {
 			openedBrackets -= 1;
@@ -744,14 +685,14 @@ static std::pair<bool, double> calcExpression(icu::UnicodeString expression, boo
 				auto [isValid, result] = calcExpression(subExpression, true);
 				if (!isValid) return {false, 0.0};
 
-				newExpression += doubleToUnicodeString(result);
+				newExpression += doubleToMonoString(result);
 			}else{
-				subExpression.append(c);
+				subExpression += MST::toMonoString(c);
 			}
 		}else if (openedBrackets != 0) {
-			subExpression.append(c);
+			subExpression += MST::toMonoString(c);
 		}else {
-			newExpression.append(c);
+			newExpression += MST::toMonoString(c);
 		}
 	}
 	
@@ -781,57 +722,57 @@ static std::pair<bool, double> calcExpression(icu::UnicodeString expression, boo
 	
 	newExpression = afterExp.second;
 	
-	icu::UnicodeString mm = icu::UnicodeString::fromUTF8("--");
-	icu::UnicodeString pp = icu::UnicodeString::fromUTF8("++");
-	icu::UnicodeString pm = icu::UnicodeString::fromUTF8("+-");
-	icu::UnicodeString mp = icu::UnicodeString::fromUTF8("-+");
-	icu::UnicodeString p = icu::UnicodeString::fromUTF8("+");
-	icu::UnicodeString m = icu::UnicodeString::fromUTF8("-");
+	MST::MonoString mm = MST::toMonoString("--");
+	MST::MonoString pp = MST::toMonoString("++");
+	MST::MonoString pm = MST::toMonoString("+-");
+	MST::MonoString mp = MST::toMonoString("-+");
+	MST::MonoString p = MST::toMonoString(U'+');
+	MST::MonoString m = MST::toMonoString(U'-');
 	
 	
-	while (newExpression.indexOf(mm) != -1 || newExpression.indexOf(pp) != -1 || newExpression.indexOf(pm) != -1 || newExpression.indexOf(mp) != -1) {
-		if (newExpression.indexOf(mm) != -1) newExpression = replaceWith(newExpression, mm, p);
-		if (newExpression.indexOf(pp) != -1) newExpression = replaceWith(newExpression, pp, p);
-		if (newExpression.indexOf(pm) != -1) newExpression = replaceWith(newExpression, pm, m);
-		if (newExpression.indexOf(mp) != -1) newExpression = replaceWith(newExpression, mp, m);
+	while (MST::index(newExpression, 0, mm) != -1 || MST::index(newExpression, 0, pp) != -1 || MST::index(newExpression, 0, pm) != -1 || MST::index(newExpression, 0, mp) != -1) {
+		if (MST::index(newExpression, 0, mm) != -1) newExpression = MST::replaceAll(newExpression, mm, p);
+		if (MST::index(newExpression, 0, pp) != -1) newExpression = MST::replaceAll(newExpression, pp, p);
+		if (MST::index(newExpression, 0, pm) != -1) newExpression = MST::replaceAll(newExpression, pm, m);
+		if (MST::index(newExpression, 0, mp) != -1) newExpression = MST::replaceAll(newExpression, mp, m);
 	}
-
-	double runningTotal = 0.0;
-	icu::UnicodeString next;
-	icu::UnicodeString op;
 	
-	icu::UnicodeString partsOfDigit = "0987654321";
+	double runningTotal = 0.0;
+	MST::MonoString next;
+	MST::MonoString op;
+	
+	const MST::MonoString partsOfDigit = MST::toMonoString("0987654321");
+	
+	for (size_t i = 0; i < newExpression.length; i++) {
+		auto c = MST::char32At(newExpression, i);
 
-	for (int i = 0; i < newExpression.length(); i++) {
-		auto c = newExpression.char32At(i);
-
-		if (partsOfDigit.indexOf(c) != -1 || c == U'.') {
-			next += c;
+		if (MST::index(partsOfDigit, 0, c) != -1 || c == U'.') {
+			next += MST::toMonoString(c);
 		}
-		if (c == U'+' || c == U'-' || i == newExpression.length()-1) {
+		if (c == U'+' || c == U'-' || i == newExpression.length-1) {
 			bool ok;
-			double nextDub = unicodeStringToDouble_quick(next, ok);
-			if (next.length() == 0) {
+			double nextDub = monoStringToDouble_quick(next, ok);
+			if (next.length == 0) {
 				nextDub = 0;
 			}else if (!ok) return {false, 0.0};
 			
-			if (op.length() == 0) {
+			if (op.length == 0) {
 				runningTotal = nextDub;
-				next = "";
+				next = MST::MonoString{};
 			}else {
-				if (op == icu::UnicodeString::fromUTF8("+")) {
+				if (op == MST::toMonoString(U'+')) {
 					runningTotal += nextDub;
 				}else {
 					runningTotal -= nextDub;
 				}
 
-				next = icu::UnicodeString();
+				next = MST::MonoString();
 			}
 
-			op = c;
+			op = MST::toMonoString(c);
 		}
 	}
-
+	
 	return {true, runningTotal};
 }
 
@@ -1017,88 +958,6 @@ inline bool atomicWriteReplace(const std::filesystem::path& target,
 #endif
 	
 	return true;
-}
-
-static std::string to_ascii_replacing_non_ascii(const icu::UnicodeString& ustr, char replacement='?') {
-	std::string out;
-	out.reserve(ustr.length());
-	
-	for (int32_t i = 0; i < ustr.length(); i++) {
-		UChar32 cp = ustr.char32At(i);
-		
-		if (cp >= 0 && cp <= 0x7F) {
-			out.push_back(static_cast<char>(cp));
-		} else {
-			out.push_back(replacement);
-		}
-	}
-
-	return out;
-}
-
-inline bool is_keycap_base_fast(UChar c) {
-	return (c >= '0' && c <= '9') || c == '#' || c == '*';
-}
-
-static int32_t get_emoji_sequence_length(const icu::UnicodeString& str, int32_t index) {
-	const int32_t len = str.length();
-	if (index >= len) {
-		return 0;
-	}
-
-	// 1. FAST PATH: Keycap Sequence Detection
-	// Since all keycap components fit into single UTF-16 code units, 
-	// we can use direct array subscripting for O(1) evaluation.
-	const UChar first = str[index];
-	if (is_keycap_base_fast(first)) {
-		if (index + 1 < len) {
-			const UChar second = str[index + 1];
-			// Unqualified keycap (e.g., "3" + Combining Enclosing Keycap)
-			if (second == 0x20E3) {
-				return 2; 
-			}
-			// Fully-qualified keycap (e.g., "3" + VS16 + Combining Enclosing Keycap)
-			if (second == 0xFE0F && index + 2 < len && str[index + 2] == 0x20E3) {
-				return 3;
-			}
-		}
-		return 0; // Valid base character, but doesn't form a keycap emoji sequence
-	}
-
-	// 2. Property Check for General Emojis
-	const UChar32 cp = str.char32At(index);
-	const bool looksLikeEmoji =
-		u_hasBinaryProperty(cp, UCHAR_EXTENDED_PICTOGRAPHIC) ||
-		u_hasBinaryProperty(cp, UCHAR_EMOJI_PRESENTATION)    ||
-		(cp >= 0x1F1E0 && cp <= 0x1F1FF);
-
-	if (!looksLikeEmoji) {
-		return 0;
-	}
-
-	// 3. SLOW PATH: Multi-grapheme Emoji Boundaries (Flags, ZWJ sequences, Modifiers)
-	// We use thread_local to instantiate the BreakIterator EXACTLY ONCE per thread.
-	thread_local std::unique_ptr<icu::BreakIterator> brk = []() {
-		UErrorCode status = U_ZERO_ERROR;
-		auto iterator = std::unique_ptr<icu::BreakIterator>(
-			icu::BreakIterator::createCharacterInstance(icu::Locale::getDefault(), status));
-		return U_SUCCESS(status) ? std::move(iterator) : nullptr;
-	}();
-
-	if (!brk) {
-		return 0; // Safety fallback if ICU fails to initialize the iterator
-	}
-
-	// setText() is lightweight; it points the iterator to the existing buffer without copying
-	brk->setText(str);
-	
-	const int32_t end = brk->following(index);
-	if (end == icu::BreakIterator::DONE || end <= index) {
-		return 0;
-	}
-
-	// Returns the total number of UTF-16 code units spanning the emoji sequence
-	return end - index;
 }
 
 static std::vector<std::uint8_t> loadFileBytes(const std::string& filename, bool& worked) {

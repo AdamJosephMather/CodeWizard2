@@ -37,7 +37,7 @@ public:
 	
 	void render() override;
 	
-	icu::UnicodeString getPaletteName();
+	MST::MonoString getPaletteName();
 	
 	Widget* getFirstEditor() override;
 	std::vector<std::vector<std::string>> getOpenFiles(bool includeText) override;

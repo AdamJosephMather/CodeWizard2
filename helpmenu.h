@@ -21,7 +21,7 @@ public:
 	
 	void setToIndex(int index);
 	
-	std::vector<std::vector<icu::UnicodeString>> helpInformation = {};
+	std::vector<std::vector<MST::MonoString>> helpInformation = {};
 private:
 	Label* label;
 	Button* closebutton;

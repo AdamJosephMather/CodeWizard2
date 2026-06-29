@@ -7,7 +7,7 @@
 #include "application.h"
 
 struct LineDiagnostic {
-	icu::UnicodeString message;
+	MST::MonoString message;
 	int sc;
 	int ec;
 	int type;
@@ -24,7 +24,7 @@ struct SyntectStateDeleter {
 using SyntectStatePtr = std::unique_ptr<CW_SyntaxState, SyntectStateDeleter>;
 
 struct Line {
-	icu::UnicodeString line_text;
+	MST::MonoString line_text;
 
 	// Own tokens on the C++ side.
 	// No Rust token pointer stored here.
@@ -77,7 +77,7 @@ struct Cursor {
 struct CursorScreen {
 	int rel_line = 0;
 	int rel_char = 0;
-	UChar32 charUnder = '\0';
+	MST::u32 charUnder = '\0';
 	Color* color = App::theme.main_text_color;
 };
 
@@ -146,9 +146,9 @@ public:
 	SyntectStatePtr highlighter_initial_state = nullptr;
 	bool alreadyHighlighted = false;
 	
-	using IndentIdentifier = std::function<int(icu::UnicodeString line, icu::UnicodeString nextline)>;
+	using IndentIdentifier = std::function<int(MST::MonoString line, MST::MonoString nextline)>;
 	
-	int getVisLen(const icu::UnicodeString& line);
+	int getVisLen(const MST::MonoString& line);
 	
 	App::PosFunction POS_FUNC = nullptr;
 	IndentIdentifier getIndentationLevelAfterLine = nullptr;
@@ -158,7 +158,7 @@ public:
 	bool changed_during_update = true;
 	
 	std::vector<Cursor> cursors;
-	std::vector<icu::UnicodeString> coppiedText;
+	std::vector<MST::MonoString> coppiedText;
 	
 	double scrolled_to_horz = 0.0;
 	double scrolled_to_vert = 0.0;
@@ -180,7 +180,7 @@ public:
 	char wasmode = 'i';
 	char ignoringChar = '\0';
 	
-	std::vector<icu::UnicodeString>  draw_text;
+	std::vector<MST::MonoString>  draw_text;
 	std::vector<std::vector<Color*>> draw_color;
 	std::vector<DiagnosticUnderline> draw_diagnostics;
 	std::vector<bool>                draw_mark;
@@ -204,8 +204,8 @@ public:
 	void applyIndentChangeToAllCursors(int change_by);
 	void deleteTextAtCursor(Cursor c, int key, bool control);
 	void applyIndentChangeToCursor(Cursor c, int change_by);
-	void applyInsertToAllCursors(icu::UnicodeString);
-	void insertTextAtCursor(Cursor c, icu::UnicodeString);
+	void applyInsertToAllCursors(MST::MonoString);
+	void insertTextAtCursor(Cursor c, MST::MonoString);
 	bool tryingToEnsureCursorPos = false;
 	void ensureCursorVisible(Cursor c);
 	void toggleMark();
@@ -228,10 +228,11 @@ public:
 	void activateUndo();
 	void activateRedo();
 	
-	icu::UnicodeString getSelectedText(Cursor c);
+	void insertPendingCharInput();
+	void flushPendingCharInput();
+	bool shouldHoldCharInput(const std::u32string& s);
 	
-//	int32_t get_emoji_sequence_length(const icu::UnicodeString& str, int32_t index); - now exists in helper_types
-	int32_t get_emoji_sequence_length_backward(const icu::UnicodeString& str, int32_t index);
+	MST::MonoString getSelectedText(Cursor c);
 	
 	void position(int x, int y, int w, int h);
 	void render();
@@ -239,10 +240,10 @@ public:
 	void Highlight(int first_line, int last_line);
 	History createHistory();
 	
-	Color* getColorFromToken(int idx, const CW_HighlightToken& token);
+	Color* getColorFromToken(const CW_HighlightToken& token);
 	
-	void setFullText(icu::UnicodeString text);
-	icu::UnicodeString getFullText();
+	void setFullText(MST::MonoString text);
+	MST::MonoString getFullText();
 	
 	Cursor getCursorForMousePosition(int mx, int my, bool* gottoit = nullptr);
 	bool is_selecting_text_with_mouse = false;
@@ -256,9 +257,8 @@ public:
 	bool largereditblock = false;
 	
 	int _mapFromVisualToReal(int line, int c);
-	int _mapFromRealToVisual(int line, int c);
 	
-	icu::UnicodeString getCurrentWord(const icu::UnicodeString& blockText, int blockPos);
+	MST::MonoString getCurrentWord(const MST::MonoString& blockText, int blockPos);
 	
 	Color* background_color = App::theme.darker_background_color;
 	
@@ -272,6 +272,9 @@ private:
 	std::pair<int,int> _handleSectionRemoved(int l, int c, int sl, int el, int sc, int ec);
 	std::pair<int,int> _handleSectionAdded(int l, int c, int sl, int sc, int nl, int nc);
 	int _findNextWord(Cursor c, int dir);
-	int charType(UChar32 c);
+	int charType(MST::u32 c);
+	
+	std::u32string pendingCharInput;
+	bool hasPendingCharInput = false;
 	
 };

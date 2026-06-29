@@ -15,16 +15,16 @@
 #define CODEWIZARD_MATCHING_BRACKET_LEFT 10001
 #define CODEWIZARD_MATCHING_BRACKET_RIGHT 10002
 
-std::set<UChar32> whitespace = {0x20, 0x09, 0x0A, 0x0D, 0x00A0, 0x2028, 0x2029};
-std::set<UChar32> allowed_in_var_names = {0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x5F};
+std::set<MST::u32> whitespace = {0x20, 0x09, 0x0A, 0x0D, 0x00A0, 0x2028, 0x2029};
+std::set<MST::u32> allowed_in_var_names = {0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x5F};
 
-icu::UnicodeString openers = icu::UnicodeString("({[<");
-icu::UnicodeString closers = icu::UnicodeString(")}]>");
+MST::MonoString openers = MST::toMonoString("({[<");
+MST::MonoString closers = MST::toMonoString(")}]>");
 
 std::vector<int> DIGITS_KEYS = {GLFW_KEY_0, GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5, GLFW_KEY_6, GLFW_KEY_7, GLFW_KEY_8, GLFW_KEY_9};
 
 TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("TextEdit");
+	id = MST::toMonoString("TextEdit");
 	
 	POS_FUNC = fnct;
 	
@@ -32,7 +32,7 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 	activeBorderColor = App::theme.active_color;
 	
 	Line ln = Line();
-	ln.line_text = icu::UnicodeString::fromUTF8("");
+	ln.line_text = MST::toMonoString("");
 	ln.tokens = {};
 	changed_during_update = true;
 	
@@ -100,51 +100,51 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 	contextmenu = new ContextMenu(this);
 	contextmenu->is_visible_2 = false;
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Undo\t(Ctrl+Z)"), [&](Widget* w){
+	contextmenu->addToMenu(MST::toMonoString("Undo\t(Ctrl+Z)"), [&](Widget* w){
 		activateUndo();
 		contextmenu->is_visible_2 = false;
 	});
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Redo\t(Ctrl+Shift+Z)"), [&](Widget* w){
+	contextmenu->addToMenu(MST::toMonoString("Redo\t(Ctrl+Shift+Z)"), [&](Widget* w){
 		activateRedo();
 		contextmenu->is_visible_2 = false;
 	});
 	
 	contextmenu->addSeparaterToMenu();
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Cut\t(Ctrl+X)"),   [&](Widget* w){
+	contextmenu->addToMenu(MST::toMonoString("Cut\t(Ctrl+X)"),   [&](Widget* w){
 		cut();
 		contextmenu->is_visible_2 = false;
 	});
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Copy\t(Ctrl+C)"),  [&](Widget* w){
+	contextmenu->addToMenu(MST::toMonoString("Copy\t(Ctrl+C)"),  [&](Widget* w){
 		copy();
 		contextmenu->is_visible_2 = false;
 	});
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Paste\t(Ctrl+V)"), [&](Widget* w){
+	contextmenu->addToMenu(MST::toMonoString("Paste\t(Ctrl+V)"), [&](Widget* w){
 		paste();
 		contextmenu->is_visible_2 = false;
 	});
 	
 	contextmenu->addSeparaterToMenu();
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Toggle Mark\t(Ctrl+M)"), [&](Widget* w){
+	contextmenu->addToMenu(MST::toMonoString("Toggle Mark\t(Ctrl+M)"), [&](Widget* w){
 		toggleMark();
 		contextmenu->is_visible_2 = false;
 	});
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Next Mark\t(Alt+Right)"), [&](Widget* w){
+	contextmenu->addToMenu(MST::toMonoString("Next Mark\t(Alt+Right)"), [&](Widget* w){
 		gotoNextMark();
 		contextmenu->is_visible_2 = false;
 	});
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Prev Mark\t(Alt+Left)"), [&](Widget* w){
+	contextmenu->addToMenu(MST::toMonoString("Prev Mark\t(Alt+Left)"), [&](Widget* w){
 		gotoPrevMark();
 		contextmenu->is_visible_2 = false;
 	});
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Clear Marks"), [&](Widget* w){
+	contextmenu->addToMenu(MST::toMonoString("Clear Marks"), [&](Widget* w){
 		clearMarks();
 		contextmenu->is_visible_2 = false;
 	});
@@ -238,11 +238,11 @@ void TextEdit::gotoPrevMark() {
 	DO_POSITION = true;
 }
 
-int TextEdit::getVisLen(const icu::UnicodeString& line) {
+int TextEdit::getVisLen(const MST::MonoString& line) {
 	int ln = 0;
 	
-	for (int c_indx = 0; c_indx < line.length(); c_indx++) {
-		UChar32 c = line.char32At(c_indx);
+	for (size_t c_indx = 0; c_indx < line.length; c_indx++) {
+		MST::u32 c = MST::char32At(line, c_indx);
 
 		if (c == U'\t') {
 			ln += tabWidth;
@@ -253,11 +253,11 @@ int TextEdit::getVisLen(const icu::UnicodeString& line) {
 	return ln;
 }
 
-void TextEdit::setFullText(icu::UnicodeString text) {
-	auto lns = splitByChar(text, U'\n');
-
+void TextEdit::setFullText(MST::MonoString text) {
+	auto lns = MST::split(text, U'\n');
+	
 	lines.clear();
-
+	
 	for (auto l : lns) {
 		Line line;
 		line.line_text = l;
@@ -265,7 +265,7 @@ void TextEdit::setFullText(icu::UnicodeString text) {
 		line.changed = true;
 		lines.push_back(std::move(line));
 	}
-
+	
 	undo_stack.clear();
 	redo_stack.clear();
 	historyThisUpdate = createHistory();
@@ -324,8 +324,8 @@ void TextEdit::Highlight(int first_visible_line, int last_visible_line) {
 
 			int ln = 0;
 
-			for (int c_indx = 0; c_indx < line->line_text.length(); c_indx++) {
-				UChar32 c = line->line_text.char32At(c_indx);
+			for (size_t c_indx = 0; c_indx < line->line_text.length; c_indx++) {
+				MST::u32 c = MST::char32At(line->line_text, c_indx);
 				
 				if (c == U'\t') {
 					ln += tabWidth;
@@ -369,7 +369,7 @@ void TextEdit::Highlight(int first_visible_line, int last_visible_line) {
 		
 		DO_POSITION = true;
 
-		std::string utf8_line = to_ascii_replacing_non_ascii(line->line_text);
+		std::string utf8_line = MST::toBastardizedStringUtf8Aligned(line->line_text);
 
 		CW_LineResult result = cw_syntect_highlight_line(
 			highlighter,
@@ -559,7 +559,7 @@ void TextEdit::activateRedo() {
 	}
 }
 
-int TextEdit::charType(UChar32 c) {
+int TextEdit::charType(MST::u32 c) {
 	if (whitespace.count(c)) {return 0;}
 	if (allowed_in_var_names.count(c)) {return 1;}
 	return 2;
@@ -572,47 +572,52 @@ int TextEdit::_findNextWord(Cursor c, int dir){
 
 	if (dir == -1) {
 		location --;
-		int toc = charType(line.char32At(location));
+		
+		auto info = MST::getCharInfo(line, location);
+		location = info.first;
+		
+		int toc = charType(MST::char32At(line, location));
 		bool notseenwhite = (toc != 0);
 
 		while (true) {
-			location --;
-
-			if (location < 0) {
-				location = 0;
+			if (location == 0) {
 				break;
 			}
-
-			auto ntoc = charType(line.char32At(location));
-
+			
+			auto info = MST::getCharInfo(line, location-1);
+			location = info.first;
+			
+			auto ntoc = charType(MST::char32At(line, location));
+			
 			if (!notseenwhite && ntoc != 0) {
 				notseenwhite = true;
 				toc = ntoc;
 			}
-
+			
 			if (ntoc != toc) {
-				location ++;
+				location = info.second;
 				break;
 			}
 		}
 	}else{
-		int toc = charType(line.char32At(location));
+		int toc = charType(MST::char32At(line, location));
 		bool seenwhite = (toc == 0);
 
 		while (true) {
-			location ++;
+			auto info = MST::getCharInfo(line, location);
+			location = info.second;
 
-			if (location >= line.length()) {
+			if (location >= line.length) {
 				break;
 			}
-
-			auto ntoc = charType(line.char32At(location));
-
+			
+			auto ntoc = charType(MST::char32At(line, location));
+			
 			if (!seenwhite && ntoc == 0) {
 				seenwhite = true;
 				toc = ntoc;
 			}
-
+			
 			if (ntoc != toc) {
 				break;
 			}
@@ -643,18 +648,18 @@ std::pair<int,int> TextEdit::findMatchingBracket(int type, int direction, int li
 	int count = 0;
 
 	while (true) {
-		UChar32 c = lines[line].line_text.char32At(col);
+		MST::u32 c = MST::char32At(lines[line].line_text, col);
 
 		if (direction == 1) {
-			if (openers.indexOf(c) == type) {
+			if (MST::index(openers, 0, c) == type) {
 				count ++;
-			}else if (closers.indexOf(c) == type) {
+			}else if (MST::index(closers, 0, c) == type) {
 				count --;
 			}
 		}else{
-			if (openers.indexOf(c) == type) {
+			if (MST::index(openers, 0, c) == type) {
 				count --;
-			}else if (closers.indexOf(c) == type) {
+			}else if (MST::index(closers, 0, c) == type) {
 				count ++;
 			}
 		}
@@ -669,8 +674,8 @@ std::pair<int,int> TextEdit::findMatchingBracket(int type, int direction, int li
 			if (line < 0) {
 				break;
 			}
-			col = lines[line].line_text.length()-1;
-		}else if (col >= lines[line].line_text.length()) {
+			col = lines[line].line_text.length-1;
+		}else if (col >= lines[line].line_text.length) {
 			line ++;
 			if (line >= lines.size()) {
 				break;
@@ -705,17 +710,17 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 			c.anchor_char = start_char;
 		}else if (c.head_char == 0) {
 			if (c.head_line == 0) {
-				c.preffered_collumn = _mapFromRealToVisual(c.head_line, c.head_char);
+				c.preffered_collumn = c.head_char;
 				return c;
 			}
 			c.head_line -= 1;
-			c.head_char = lines[c.head_line].line_text.length();
+			c.head_char = lines[c.head_line].line_text.length;
 		}else{
 			int new_x = c.head_char;
 
 			if (!control) {
-				int len = std::max(get_emoji_sequence_length_backward(lines[c.head_line].line_text, c.head_char), 1);
-				new_x = c.head_char - len;
+				auto info = MST::getCharInfo(lines[c.head_line].line_text, c.head_char-1);
+				new_x = info.first;
 			}else {
 				new_x = _findNextWord(c, -1); // to be addressed
 			}
@@ -723,34 +728,34 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 			c.head_char = new_x;
 		}
 
-		c.preffered_collumn = _mapFromRealToVisual(c.head_line, c.head_char);
+		c.preffered_collumn = c.head_char;
 	}else if (key == GLFW_KEY_RIGHT) {
 		if (cursor_has_selection && !shift) {
 			c.head_line = end_line;
 			c.head_char = end_char;
 			c.anchor_line = end_line;
 			c.anchor_char = end_char;
-		}else if (c.head_char == lines[c.head_line].line_text.length()) {
+		}else if (c.head_char == lines[c.head_line].line_text.length) {
 			if (c.head_line == lines.size()-1) {
-				c.preffered_collumn = _mapFromRealToVisual(c.head_line, c.head_char);
+				c.preffered_collumn = c.head_char;
 				return c;
 			}
 			c.head_line += 1;
 			c.head_char = 0;
 		}else{
 			int new_x = c.head_char;
-
+			
 			if (!control) {
-				int len = std::max(get_emoji_sequence_length(lines[c.head_line].line_text, c.head_char), 1);
-				new_x = c.head_char + len;
+				auto info = MST::getCharInfo(lines[c.head_line].line_text, c.head_char); // get current info for thing...
+				new_x = info.second; // end of the current char is the next location
 			}else {
-				new_x = _findNextWord(c, 1); // to be addressed
+				new_x = _findNextWord(c, 1);
 			}
-
+			
 			c.head_char = new_x;
 		}
 
-		c.preffered_collumn = _mapFromRealToVisual(c.head_line, c.head_char);
+		c.preffered_collumn = c.head_char;
 	}else if (key == GLFW_KEY_DOWN) {
 		if (c.head_line == lines.size()-1) {
 			c = applyMoveToCursor(c, GLFW_KEY_END, shift, control);
@@ -775,16 +780,16 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 		c.head_char = 0;
 		c.preffered_collumn = c.head_char;
 	}else if (key == GLFW_KEY_END) {
-		c.head_char = lines[c.head_line].line_text.length();
-		c.preffered_collumn = _mapFromRealToVisual(c.head_line, c.head_char);
+		c.head_char = lines[c.head_line].line_text.length;
+		c.preffered_collumn = c.head_char;
 	}else if (key == CODEWIZARD_WORD_WRAP) {
 		special_exceptions = true;
 
-		UChar32 start_char;
-		if (c.head_char == lines[c.head_line].line_text.length()) {
+		MST::u32 start_char;
+		if (c.head_char == lines[c.head_line].line_text.length) {
 			start_char = U'\n';
 		}else{
-			start_char = lines[c.head_line].line_text.char32At(c.head_char);
+			start_char = MST::char32At(lines[c.head_line].line_text, c.head_char);
 		}
 
 		int matching_type = charType(start_char);
@@ -805,52 +810,58 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 					break;
 				}
 
-				eval_c = lines[eval_l].line_text.length();
+				eval_c = lines[eval_l].line_text.length;
 			}
 
-			UChar32 thischar;
-			if (eval_c == lines[eval_l].line_text.length()) {
-				thischar = U'\n';
+			MST::MonoString thischar;
+			if (eval_c == lines[eval_l].line_text.length) {
+				thischar = MST::toMonoString(U'\n');
 			}else{
-				thischar = lines[eval_l].line_text.char32At(eval_c);
+				auto info = MST::getCharInfo(lines[eval_l].line_text, eval_c);
+				thischar = MST::substring(lines[eval_l].line_text, info.first, info.second);
+				eval_c = info.first;
 			}
 
-			int type = charType(thischar);
-
+			int type = charType(MST::char32At(thischar, 0));
+			
 			if (type != matching_type) {
 				break;
 			}
-
+			
 			end_left_c = eval_c;
 			end_left_l = eval_l;
 		}
-
+		
 		int end_right_c = c.head_char;
 		int end_right_l = c.head_line;
+		
 		while (true) {
 			int eval_c = end_right_c;
 			int eval_l = end_right_l;
-
-			eval_c ++;
-			if (eval_c > lines[eval_l].line_text.length()) {
+			
+			auto info = MST::getCharInfo(lines[eval_l].line_text, eval_c);
+			
+			eval_c = info.second;
+			
+			if (eval_c > lines[eval_l].line_text.length) {
 				eval_l ++;
-
+				
 				if (eval_l >= lines.size()) {
 					break;
 				}
-
+				
 				eval_c = 0;
 			}
 
-			UChar32 thischar;
-			if (eval_c == lines[eval_l].line_text.length()) {
+			MST::u32 thischar;
+			if (eval_c == lines[eval_l].line_text.length) {
 				thischar = U'\n';
 			}else{
-				thischar = lines[eval_l].line_text.char32At(eval_c);
+				thischar = MST::char32At(lines[eval_l].line_text, eval_c);
 			}
-
+			
 			int type = charType(thischar);
-
+			
 			end_right_c = eval_c;
 			end_right_l = eval_l;
 
@@ -861,14 +872,14 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 
 		if (end_right_l >= lines.size()) {
 			end_right_l = lines.size()-1;
-			end_right_c = lines[end_right_l].line_text.length();
-		}else if (end_right_c > lines[end_right_l].line_text.length()) {
-			end_right_c = lines[end_right_l].line_text.length();
+			end_right_c = lines[end_right_l].line_text.length;
+		}else if (end_right_c > lines[end_right_l].line_text.length) {
+			end_right_c = lines[end_right_l].line_text.length;
 		}
 
 		c.head_char = end_right_c;
 		c.head_line = end_right_l;
-		c.preffered_collumn = _mapFromRealToVisual(c.head_line, c.head_char);
+		c.preffered_collumn = c.head_char;
 
 		if (shift && (slelscec.first.first < end_left_l || (slelscec.first.first == end_left_l && slelscec.second.first < end_left_c))) {
 			// we started farther left and we're shifting
@@ -879,19 +890,19 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 			c.anchor_char = end_left_c;
 		}
 	}else if (key == CODEWIZARD_MATCHING_BRACKET_LEFT) {
-		UChar32 left_of = U' ';
+		MST::u32 left_of = U' ';
 		if (c.head_char-1 >= 0){
-			left_of = lines[c.head_line].line_text.char32At(c.head_char-1);
+			left_of = MST::char32At(lines[c.head_line].line_text, c.head_char-1);
 		}
-		UChar32 right_of = U' ';
-		if (c.head_char < lines[c.head_line].line_text.length()){
-			right_of = lines[c.head_line].line_text.char32At(c.head_char);
+		MST::u32 right_of = U' ';
+		if (c.head_char < lines[c.head_line].line_text.length){
+			right_of = MST::char32At(lines[c.head_line].line_text, c.head_char);
 		}
 
 		std::pair<int,int> res = {-1, -1};
 
-		auto indx_r = closers.indexOf(right_of);
-		auto indx_l = closers.indexOf(left_of);
+		auto indx_r = MST::index(closers, 0, right_of);
+		auto indx_l = MST::index(closers, 0, left_of);
 
 		if (indx_r != -1) {
 			res = findMatchingBracket(indx_r, -1, c.head_line, c.head_char);
@@ -902,22 +913,22 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 		if (res.first != -1 && res.second != -1) {
 			c.head_line = res.first;
 			c.head_char = res.second+1;
-			c.preffered_collumn = _mapFromRealToVisual(c.head_line, c.head_char);
+			c.preffered_collumn = c.head_char;
 		}
 	}else if (key == CODEWIZARD_MATCHING_BRACKET_RIGHT) {
-		UChar32 left_of = U' ';
+		MST::u32 left_of = U' ';
 		if (c.head_char-1 >= 0){
-			left_of = lines[c.head_line].line_text.char32At(c.head_char-1);
+			left_of = MST::char32At(lines[c.head_line].line_text, c.head_char-1);
 		}
-		UChar32 right_of = U' ';
-		if (c.head_char < lines[c.head_line].line_text.length()){
-			right_of = lines[c.head_line].line_text.char32At(c.head_char);
+		MST::u32 right_of = U' ';
+		if (c.head_char < lines[c.head_line].line_text.length){
+			right_of = MST::char32At(lines[c.head_line].line_text, c.head_char);
 		}
 
 		std::pair<int,int> res = {-1, -1};
 
-		auto indx_r = openers.indexOf(right_of);
-		auto indx_l = openers.indexOf(left_of);
+		auto indx_r = MST::index(openers, 0, right_of);
+		auto indx_l = MST::index(openers, 0, left_of);
 
 		if (indx_l != -1) {
 			res = findMatchingBracket(indx_l, 1, c.head_line, c.head_char-1);
@@ -928,7 +939,7 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 		if (res.first != -1 && res.second != -1) {
 			c.head_line = res.first;
 			c.head_char = res.second;
-			c.preffered_collumn = _mapFromRealToVisual(c.head_line, c.head_char);
+			c.preffered_collumn = c.head_char;
 		}
 	}
 
@@ -940,116 +951,23 @@ Cursor TextEdit::applyMoveToCursor(Cursor c, int key, bool shift, bool control) 
 	return c;
 }
 
-int TextEdit::_mapFromRealToVisual(int line, int c) {
-	const icu::UnicodeString& str = lines[line].line_text;
-	const int32_t len = str.length();
-
-	if (c <= 0) {
-		return 0;
-	}
-
-	if (c > len) {
-		c = len;
-	}
-
-	int visual_loc = 0;
-
-	for (int32_t i = 0; i < len; ) {
-		const int32_t real_start = i;
-
-		int32_t emoji_len = get_emoji_sequence_length(str, i);
-
-		int32_t real_advance;
-		int visual_advance;
-
-		if (emoji_len > 0) {
-			real_advance = emoji_len;
-			visual_advance = 2;
-		} else {
-			UChar32 chr = str.char32At(i);
-			real_advance = U16_LENGTH(chr);
-
-			if (chr == U'\t') {
-				visual_advance = tabWidth;
-			} else {
-				visual_advance = 1;
-			}
-		}
-
-		const int32_t real_end = real_start + real_advance;
-
-		// If c lands anywhere inside this visual unit, map it to the visual
-		// position after that unit. This keeps emoji/surrogate pairs indivisible.
-		if (c <= real_end) {
-			return visual_loc + visual_advance;
-		}
-
-		visual_loc += visual_advance;
-		i = real_end;
-	}
-
-	return visual_loc;
-}
-
 int TextEdit::_mapFromVisualToReal(int line, int c) {
-	const icu::UnicodeString& str = lines[line].line_text;
-	const int32_t len = str.length();
-
+	const MST::MonoString& str = lines[line].line_text;
+	const size_t len = str.length;
+	
 	if (c <= 0 || len == 0) {
 		return 0;
 	}
-
-	int visual_loc = 0;
-
-	for (int32_t i = 0; i < len; ) {
-		const int32_t real_start = i;
-
-		int32_t emoji_len = get_emoji_sequence_length(str, i);
-
-		int32_t real_advance;
-		int visual_advance;
-
-		if (emoji_len > 0) {
-			real_advance = emoji_len;
-			visual_advance = 2;
-		} else {
-			UChar32 chr = str.char32At(i);
-			real_advance = U16_LENGTH(chr);
-
-			if (chr == U'\t') {
-				visual_advance = tabWidth;
-			} else {
-				visual_advance = 1;
-			}
-		}
-
-		const int visual_end = visual_loc + visual_advance;
-		const int32_t real_end = real_start + real_advance;
-
-		if (visual_end == c) {
-			return real_end;
-		}
-
-		if (visual_end > c) {
-			const int d1 = c - visual_loc;
-			const int d2 = visual_end - c;
-
-			// Snap to whichever side is visually closer.
-			// For emoji width 2:
-			//   clicking/locating at first half => before emoji
-			//   second half or exact middle => after emoji
-			if (d1 < d2) {
-				return real_start;
-			}
-
-			return real_end;
-		}
-
-		visual_loc = visual_end;
-		i = real_end;
+	if (c >= len) {
+		return len;
 	}
-
-	return len;
+	
+	if (MST::skipIdx(str, c)) {
+		auto info = MST::getCharInfo(str, c);
+		return info.first;
+	}
+	
+	return c;
 }
 
 void TextEdit::applyMoveToAllCursors(int key, bool shift, bool control) {
@@ -1211,10 +1129,9 @@ void TextEdit::deleteTextAtCursor(Cursor c, int key, bool control) {
 	}
 
 	// delete text
-	icu::UnicodeString start = lines[sl].line_text.tempSubStringBetween(0, sc);
-	icu::UnicodeString end;
-	lines[el].line_text.extractBetween(ec, lines[el].line_text.length(), end);
-
+	MST::MonoString start = MST::substring(lines[sl].line_text, 0, sc);
+	MST::MonoString end = MST::substring(lines[el].line_text, ec, lines[el].line_text.length);
+	
 	changed_during_update = true;
 	DO_POSITION = true;
 
@@ -1263,7 +1180,7 @@ void TextEdit::applyDeleteToAllCursors(int key, bool control) {
 	vim_repeater = 0;
 
 	for (int i = 0; i < cursors.size(); i++) {
-		cursors[i].preffered_collumn = _mapFromRealToVisual(cursors[i].head_line, cursors[i].head_char);
+		cursors[i].preffered_collumn = cursors[i].head_char;
 	}
 
 	if (needtocall) {
@@ -1280,12 +1197,13 @@ void TextEdit::applyIndentChangeToCursor(Cursor c, int change_by) {
 	int sl = sel.first.first;
 	int el = sel.first.second;
 
-	UChar32 tab_char = U'\t';
+	MST::u32 tab_char = U'\t';
+	MST::MonoString tab_string = MST::toMonoString(tab_char);
 
-	icu::UnicodeString new_text;
+	MST::MonoString new_text;
 	if (change_by > 0) {
 		for (int i = 0; i < change_by; i++) {
-			new_text.append(tab_char);
+			new_text += tab_string;
 		}
 	}
 
@@ -1300,12 +1218,17 @@ void TextEdit::applyIndentChangeToCursor(Cursor c, int change_by) {
 			insertTextAtCursor(c, new_text);
 		}else{
 			auto line_text = lines[line].line_text;
-			for (int c_indx = 0; c_indx < line_text.length(); c_indx++){
-				if (c_indx >= -change_by) {
+			for (int c_indx = 0; c_indx < line_text.length; c_indx++){
+				if (c_indx >= -change_by*tabWidth) {
 					break;
 				}
-
-				auto ch = line_text.char32At(c_indx);
+				
+				if (MST::skipIdx(line_text, c_indx)) {
+					c.head_char ++;
+					continue;
+				}
+				
+				auto ch = MST::char32At(line_text, c_indx);
 				if (ch != tab_char) {
 					break;
 				}
@@ -1349,13 +1272,13 @@ void TextEdit::applyIndentChangeToAllCursors(int change_by) {
 	}
 }
 
-icu::UnicodeString TextEdit::getFullText() {
-	icu::UnicodeString text;
+MST::MonoString TextEdit::getFullText() {
+	MST::MonoString text;
 	
 	for (int i = 0; i < lines.size(); i++) {
 		text += lines[i].line_text;
 		if (i != lines.size()-1) {
-			text += icu::UnicodeString::fromUTF8("\n");
+			text += MST::toMonoString("\n");
 		}
 	}
 	
@@ -1374,21 +1297,21 @@ bool TextEdit::handleInsertKey(int key, int scancode, int action, int mods) {
 		if (cursors.size() == 1) {
 			if (is_shift_held) {
 				applyIndentChangeToAllCursors(-1);
-			}else if (getSelectedText(cursors[0]).length() == 0) {
-				applyInsertToAllCursors(icu::UnicodeString::fromUTF8("\t"));
+			}else if (getSelectedText(cursors[0]).length == 0) {
+				applyInsertToAllCursors(MST::toMonoString("\t"));
 			}else{
 				applyIndentChangeToAllCursors(1);
 			}
 		}else{
-			applyInsertToAllCursors(icu::UnicodeString::fromUTF8("\t"));
+			applyInsertToAllCursors(MST::toMonoString("\t"));
 		}
 		
 		donesomthing = true;
 	}else if (key == GLFW_KEY_SPACE) {
-		applyInsertToAllCursors(icu::UnicodeString::fromUTF8(" "));
+		applyInsertToAllCursors(MST::toMonoString(" "));
 		donesomthing = true;
 	}else if (key == GLFW_KEY_ENTER) {
-		applyInsertToAllCursors(icu::UnicodeString::fromUTF8("\n"));
+		applyInsertToAllCursors(MST::toMonoString("\n"));
 		donesomthing = true;
 	}
 
@@ -1435,10 +1358,9 @@ void TextEdit::cut() {
 			coppiedText.push_back(getSelectedText(cursors[ci]));
 		}
 	}else{
-		auto icutext = getSelectedText(cursors[0]);
-		if (icutext.length() != 0) {
-			std::string text;
-			icutext.toUTF8String(text);
+		auto monotext = getSelectedText(cursors[0]);
+		if (monotext.length != 0) {
+			std::string text = MST::toString(monotext);
 			SetClipboardText(text);
 		}
 	}
@@ -1454,10 +1376,9 @@ void TextEdit::copy(){
 			coppiedText.push_back(getSelectedText(cursors[ci]));
 		}
 	}else{
-		auto icutext = getSelectedText(cursors[0]);
-		if (icutext.length() != 0) {
-			std::string text;
-			icutext.toUTF8String(text);
+		auto monotext = getSelectedText(cursors[0]);
+		if (monotext.length != 0) {
+			std::string text = MST::toString(monotext);
 			SetClipboardText(text);
 		}
 	}
@@ -1470,12 +1391,12 @@ void TextEdit::paste(){
 		}
 	}else{
 		std::string clipboard_text = GetClipboardText();
-		applyInsertToAllCursors(run_fixit_on_text(icu::UnicodeString::fromUTF8(clipboard_text)));
+		applyInsertToAllCursors(run_fixit_on_text(MST::toMonoString(clipboard_text)));
 	}
 	tryingToEnsureCursorPos = true;
 }
 
-icu::UnicodeString TextEdit::getSelectedText(Cursor c) {
+MST::MonoString TextEdit::getSelectedText(Cursor c) {
 	auto sel = _getCursSelec(c);
 
 	int sl = sel.first.first;
@@ -1483,26 +1404,25 @@ icu::UnicodeString TextEdit::getSelectedText(Cursor c) {
 	int sc = sel.second.first;
 	int ec = sel.second.second;
 
-	icu::UnicodeString start;
-	icu::UnicodeString end;
-
 	if (sl == el) {
-		lines[sl].line_text.extractBetween(sc, ec, start);
-		return start;
+		return MST::substring(lines[sl].line_text, sc, ec);;
 	}
-
-	lines[sl].line_text.extractBetween(sc, lines[sl].line_text.length(), start);
-	lines[el].line_text.extractBetween(0, ec, end);
-
-	std::vector<icu::UnicodeString> ourlines = {start};
-
+	
+	MST::MonoString start;
+	MST::MonoString end;
+	
+	start = MST::substring(lines[sl].line_text, sc, lines[sl].line_text.length);
+	end = MST::substring(lines[el].line_text, 0, ec);
+	
+	std::vector<MST::MonoString> ourlines = {start};
+	
 	for (int line = sl + 1; line < el; line++) {
 		ourlines.push_back(lines[line].line_text);
 	}
-
+	
 	ourlines.push_back(end);
-
-	return joinByString(ourlines, icu::UnicodeString::fromUTF8("\n"));
+	
+	return MST::join(ourlines, MST::toMonoString("\n"));
 }
 
 void TextEdit::ensureCursorVisible(Cursor c) {
@@ -1526,7 +1446,7 @@ void TextEdit::ensureCursorVisible(Cursor c) {
 		}
 	}
 
-	int c1 = _mapFromRealToVisual(c.head_line, c.head_char);
+	int c1 = c.head_char;
 
 	if (c1-4 < char_start) {
 		scroll_horizontal_change = c1-4-char_start;
@@ -1537,8 +1457,9 @@ void TextEdit::ensureCursorVisible(Cursor c) {
 	DO_POSITION = true;
 }
 
-void TextEdit::applyInsertToAllCursors(icu::UnicodeString to_insert) {
-	to_insert = stripOfChar(to_insert, U'\r');
+void TextEdit::applyInsertToAllCursors(MST::MonoString to_insert) {
+	to_insert = MST::replaceAll(to_insert, MST::toMonoString("\r\n"), MST::toMonoString("\n"));
+	
 
 	for (int i = 0; i < cursors.size(); i++) {
 		insertTextAtCursor(cursors[i], to_insert);
@@ -1547,7 +1468,7 @@ void TextEdit::applyInsertToAllCursors(icu::UnicodeString to_insert) {
 	tryingToEnsureCursorPos = true;
 
 	for (int i = 0; i < cursors.size(); i++) {
-		cursors[i].preffered_collumn = _mapFromRealToVisual(cursors[i].head_line, cursors[i].head_char);
+		cursors[i].preffered_collumn = cursors[i].head_char;
 	}
 
 	if (!largereditblock && ontextchange) {
@@ -1555,7 +1476,7 @@ void TextEdit::applyInsertToAllCursors(icu::UnicodeString to_insert) {
 	}
 }
 
-void TextEdit::insertTextAtCursor(Cursor c, icu::UnicodeString insert_text) {
+void TextEdit::insertTextAtCursor(Cursor c, MST::MonoString insert_text) {
 	auto sel = _getCursSelec(c);
 
 	if (sel.first.first != sel.first.second || sel.second.first != sel.second.second) {
@@ -1565,21 +1486,21 @@ void TextEdit::insertTextAtCursor(Cursor c, icu::UnicodeString insert_text) {
 	int sl = sel.first.first;
 	int sc = sel.second.first;
 
-	if (getIndentationLevelAfterLine && insert_text == icu::UnicodeString::fromUTF8("\n")) {
-		icu::UnicodeString line = lines[sl].line_text.tempSubStringBetween(0, sc);
-		icu::UnicodeString nextline = lines[sl].line_text.tempSubString(sc);
+	if (getIndentationLevelAfterLine && insert_text == MST::toMonoString("\n")) {
+		MST::MonoString line = MST::substring(lines[sl].line_text, 0, sc);
+		MST::MonoString nextline = MST::substring(lines[sl].line_text, sc, lines[sl].line_text.length);
 
 		int indentation_level = getIndentationLevelAfterLine(line, nextline);
 
 		for (int i = 0; i < indentation_level; i++) {
-			insert_text += "\t";
+			insert_text += MST::toMonoString(U'\t');
 		}
 	}
 
-	auto insert_lines = splitByChar(insert_text, u'\n');
+	auto insert_lines = MST::split(insert_text, u'\n');
 
 	int nl = insert_lines.size()-1;
-	int nc = insert_lines[insert_lines.size()-1].length();
+	int nc = insert_lines[insert_lines.size()-1].length;
 
 	// move cursors
 	for (int i = 0; i < cursors.size(); i ++) {
@@ -1595,13 +1516,11 @@ void TextEdit::insertTextAtCursor(Cursor c, icu::UnicodeString insert_text) {
 		cursors[i] = curs;
 	}
 
-	auto start = lines[sl].line_text.tempSubStringBetween(0, sc);
-	icu::UnicodeString end;
-	lines[sl].line_text.extractBetween(sc, lines[sl].line_text.length(), end);
-
-	std::string endthing;
-	end.toUTF8String(endthing);
-
+	auto start = MST::substring(lines[sl].line_text, 0, sc);
+	MST::MonoString end = MST::substring(lines[sl].line_text, sc, lines[sl].line_text.length);
+	
+	std::string endthing = MST::toString(end);
+	
 	changed_during_update = true;
 	DO_POSITION = true;
 
@@ -1625,9 +1544,8 @@ void TextEdit::insertTextAtCursor(Cursor c, icu::UnicodeString insert_text) {
 			auto new_line = Line();
 			new_line.line_text = insert_lines[i];
 
-			std::string endthing;
-			end.toUTF8String(endthing);
-
+			std::string endthing = MST::toString(end);
+			
 			if (i == insert_lines.size()-1) {
 				new_line.line_text += end;
 			}
@@ -1697,8 +1615,8 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 		cursors[0].anchor_char = 0;
 		cursors[0].anchor_line = 0;
 		cursors[0].head_line = lines.size()-1;
-		cursors[0].head_char = lines[cursors[0].head_line].line_text.length();
-		cursors[0].preffered_collumn = _mapFromRealToVisual(cursors[0].head_line, cursors[0].head_char);
+		cursors[0].head_char = lines[cursors[0].head_line].line_text.length;
+		cursors[0].preffered_collumn = cursors[0].head_char;
 		return true;
 	}
 
@@ -1759,7 +1677,7 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 		}else if (key == GLFW_KEY_O && !is_control_held) {
 			vim_repeater = 0;
 			applyMoveToAllCursors(GLFW_KEY_END, is_shift_held, false);
-			applyInsertToAllCursors(icu::UnicodeString::fromUTF8("\n"));
+			applyInsertToAllCursors(MST::toMonoString("\n"));
 			return true;
 		}else if (key == GLFW_KEY_S && !is_control_held) {
 			vim_repeater = 0;
@@ -1855,55 +1773,49 @@ bool TextEdit::handleUserKey(int key, int scancode, int action, int mods) {
 
 bool TextEdit::on_char_event(unsigned int codepoint) {
 #ifdef DEBUG
-	if (cursors[0].head_line >= lines.size() || cursors[0].head_char > lines[cursors[0].head_line].line_text.length()) {
+	if (cursors[0].head_line >= lines.size() || cursors[0].head_char > lines[cursors[0].head_line].line_text.length) {
 		std::cout << "NO BUENO\n";
-	}if (cursors[0].head_line < 0) {
+	}
+	if (cursors[0].head_line < 0) {
 		std::cout << "LESS THAN 0???\n";
 	}
 
 	std::cout << "Char: " << codepoint << "\n";
 #endif	
-	
+
 	if (App::activeLeafNode != this) {
 		return false;
 	}
 
-	UChar32 ch = static_cast<UChar32>(codepoint);
+	MST::u32 ch = static_cast<MST::u32>(codepoint);
 
-	char utf8[5] = {};
-	int len = std::snprintf(utf8, sizeof(utf8), "%c", codepoint);
-	if (len > 0) { // there is something printable
-		// this doesn't detect newlines, tabs,
-		// we're going to handle all whitespace in the key down
-		if (ch == U'\t' || ch == U' ' || ch == '\n') {
-			return true;
-		}
-
-		if ((char)std::tolower(ch) == ignoringChar || wasmode == 'n') {
-			ignoringChar = '\0';
-#ifdef DEBUG
-			std::cout << "Ignoring character\n";
-#endif
-			return true;
-		}
-
-		icu::UnicodeString to_insert;
-		to_insert.append(ch);
-
-		largereditblock = true;
-		applyInsertToAllCursors(to_insert);
-		largereditblock = false;
-		if (ontextchange) {
-			ontextchange(this);
-		}
+	// Whitespace is handled in key-down.
+	if (ch == U'\t' || ch == U' ' || ch == U'\n') {
+		return true;
 	}
-	
+
+	if ((ch <= 0x7F && (char)std::tolower((unsigned char)ch) == ignoringChar) || wasmode == 'n') {
+		ignoringChar = '\0';
+#ifdef DEBUG
+		std::cout << "Ignoring character\n";
+#endif
+		return true;
+	}
+
+	pendingCharInput.push_back(static_cast<char32_t>(ch));
+	hasPendingCharInput = true;
+
+	if (shouldHoldCharInput(pendingCharInput)) {
+		return true;
+	}
+
+	insertPendingCharInput();
 	return true;
 }
 
 bool TextEdit::on_key_event(int key, int scancode, int action, int mods) {
 #ifdef DEBUG
-	if (cursors[0].head_line >= lines.size() || cursors[0].head_char > lines[cursors[0].head_line].line_text.length()) {
+	if (cursors[0].head_line >= lines.size() || cursors[0].head_char > lines[cursors[0].head_line].line_text.length) {
 		std::cout << "NO BUENO\n";
 	}if (cursors[0].head_line < 0) {
 		std::cout << "LESS THAN 0???\n";
@@ -2008,7 +1920,7 @@ void TextEdit::render() {
 		App::DrawRect(x, y, w, TextRenderer::get_text_height(), cs.color);
 
 		if (mode == 'n' && cs.charUnder != U'\0' && cs.charUnder != U'\t') {
-			TextRenderer::draw_text(x, y, cs.charUnder, App::theme.darker_background_color, false); // don't draw emojis here because... it doesn't work
+			TextRenderer::draw_text(x, y, MST::toMonoString(cs.charUnder), App::theme.darker_background_color, false); // don't draw emojis here because... it doesn't work
 		}
 	}
 	
@@ -2032,10 +1944,7 @@ void TextEdit::render() {
 	}
 }
 
-Color* TextEdit::getColorFromToken(int idx, const CW_HighlightToken& token) { // because syntect now returns tokens that are non-overlapping and in order, we'll do binary search
-	if (idx < token.start_byte || idx >= token.end_byte) {
-		return App::theme.main_text_color;
-	}
+Color* TextEdit::getColorFromToken(const CW_HighlightToken& token) {
 	
 	if (token.role < 0) {
 		// it's a difference token
@@ -2058,274 +1967,30 @@ void TextEdit::executeAction(WidgetActionType typ) {
 	Widget::executeAction(typ);
 }
 
-inline bool is_emoji_modifier(UChar32 cp) {
+inline bool is_emoji_modifier(MST::u32 cp) {
 	return cp >= 0x1F3FB && cp <= 0x1F3FF;
 }
 
-inline bool is_regional_indicator(UChar32 cp) {
+inline bool is_regional_indicator(MST::u32 cp) {
 	return cp >= 0x1F1E6 && cp <= 0x1F1FF;
 }
 
-inline bool is_tag_char(UChar32 cp) {
+inline bool is_tag_char(MST::u32 cp) {
 	return cp >= 0xE0020 && cp <= 0xE007E;
 }
 
-inline bool looks_like_emoji_base(UChar32 cp) {
+inline bool looks_like_emoji_base(MST::u32 cp) {
 	return u_hasBinaryProperty(cp, UCHAR_EXTENDED_PICTOGRAPHIC) ||
 		   u_hasBinaryProperty(cp, UCHAR_EMOJI_PRESENTATION)    ||
 		   is_regional_indicator(cp);
-}
-
-inline bool prev_codepoint(
-	const icu::UnicodeString& str,
-	int32_t before,
-	int32_t& cp_start,
-	UChar32& cp
-) {
-	if (before <= 0) {
-		return false;
-	}
-
-	cp_start = before - 1;
-
-	const UChar last = str[cp_start];
-
-	if (U16_IS_TRAIL(last) && cp_start > 0) {
-		const UChar lead = str[cp_start - 1];
-		if (U16_IS_LEAD(lead)) {
-			--cp_start;
-		}
-	}
-
-	cp = str.char32At(cp_start);
-	return true;
-}
-
-// Consumes one emoji "atom" backwards:
-//   base
-//   base + VS16
-//   base + skin-tone modifier
-//   base + VS16 + skin-tone modifier
-//
-// Returns the UTF-16 start offset of that atom, or -1 if not an emoji atom.
-inline int32_t consume_emoji_atom_backward(
-	const icu::UnicodeString& str,
-	int32_t end
-) {
-	int32_t p = end;
-
-	int32_t tail_start;
-	UChar32 tail;
-	if (!prev_codepoint(str, p, tail_start, tail)) {
-		return -1;
-	}
-
-	// Optional skin-tone modifier at the end.
-	if (is_emoji_modifier(tail)) {
-		p = tail_start;
-
-		int32_t maybe_vs_start;
-		UChar32 maybe_vs;
-		if (prev_codepoint(str, p, maybe_vs_start, maybe_vs) && maybe_vs == 0xFE0F) {
-			p = maybe_vs_start;
-		}
-
-		int32_t base_start;
-		UChar32 base;
-		if (!prev_codepoint(str, p, base_start, base)) {
-			return -1;
-		}
-
-		return looks_like_emoji_base(base) ? base_start : -1;
-	}
-
-	// Optional VS16 at the end.
-	if (tail == 0xFE0F) {
-		p = tail_start;
-
-		int32_t base_start;
-		UChar32 base;
-		if (!prev_codepoint(str, p, base_start, base)) {
-			return -1;
-		}
-
-		return looks_like_emoji_base(base) ? base_start : -1;
-	}
-
-	// Plain emoji base.
-	return looks_like_emoji_base(tail) ? tail_start : -1;
-}
-
-int32_t TextEdit::get_emoji_sequence_length_backward(
-	const icu::UnicodeString& str,
-	int32_t index
-) {
-	const int32_t len = str.length();
-
-	// Here, index is the UTF-16 offset immediately after the emoji candidate.
-	if (index <= 0 || index > len) {
-		return 0;
-	}
-
-	// 1. FAST PATH: Keycap sequence ending at index.
-	//
-	//   base + U+20E3
-	//   base + U+FE0F + U+20E3
-	//
-	// Examples:
-	//   3⃣
-	//   3️⃣
-	if (str[index - 1] == 0x20E3) {
-		if (index >= 2 && is_keycap_base_fast(str[index - 2])) {
-			return 2;
-		}
-
-		if (
-			index >= 3 &&
-			str[index - 2] == 0xFE0F &&
-			is_keycap_base_fast(str[index - 3])
-		) {
-			return 3;
-		}
-
-		return 0;
-	}
-
-	// 2. FAST PATH: subdivision/tag flag sequence.
-	//
-	// Usually:
-	//   U+1F3F4 + tag chars + U+E007F
-	//
-	// Example class: England/Scotland/Wales flags.
-	{
-		int32_t cp_start;
-		UChar32 cp;
-
-		if (prev_codepoint(str, index, cp_start, cp) && cp == 0xE007F) {
-			int32_t p = cp_start;
-			bool saw_tag = false;
-
-			while (true) {
-				int32_t tag_start;
-				UChar32 tag_cp;
-
-				if (!prev_codepoint(str, p, tag_start, tag_cp)) {
-					break;
-				}
-
-				if (!is_tag_char(tag_cp)) {
-					break;
-				}
-
-				saw_tag = true;
-				p = tag_start;
-			}
-
-			int32_t base_start;
-			UChar32 base;
-
-			if (
-				saw_tag &&
-				prev_codepoint(str, p, base_start, base) &&
-				base == 0x1F3F4
-			) {
-				return index - base_start;
-			}
-
-			return 0;
-		}
-	}
-
-	// 3. FAST PATH: regional indicator flags.
-	//
-	// Regional indicators are grouped in pairs from the start of the RI run.
-	// For a run of 2 RI code points, return the pair.
-	// For a run of 3 RI code points, the last one is its own cluster.
-	{
-		int32_t last_ri_start;
-		UChar32 last_ri;
-
-		if (
-			prev_codepoint(str, index, last_ri_start, last_ri) &&
-			is_regional_indicator(last_ri)
-		) {
-			int32_t p = index;
-			int32_t count = 0;
-			int32_t starts[2] = { -1, -1 };
-
-			while (true) {
-				int32_t s;
-				UChar32 cp;
-
-				if (!prev_codepoint(str, p, s, cp)) {
-					break;
-				}
-
-				if (!is_regional_indicator(cp)) {
-					break;
-				}
-
-				if (count < 2) {
-					starts[count] = s;
-				}
-
-				++count;
-				p = s;
-			}
-
-			// Unicode grapheme pairing behavior:
-			// even RI run length => final cluster is last 2 RIs
-			// odd RI run length  => final cluster is last 1 RI
-			if (count >= 2 && (count % 2) == 0) {
-				return index - starts[1];
-			}
-
-			return index - starts[0];
-		}
-	}
-
-	// 4. General emoji atom / ZWJ sequence.
-	//
-	// Works backwards over:
-	//   emoji
-	//   emoji + skin tone
-	//   emoji + VS16
-	//   emoji ZWJ emoji
-	//   emoji ZWJ emoji ZWJ emoji ...
-	{
-		int32_t start = consume_emoji_atom_backward(str, index);
-
-		if (start < 0) {
-			return 0;
-		}
-
-		while (start > 0) {
-			int32_t zwj_start;
-			UChar32 zwj;
-
-			if (!prev_codepoint(str, start, zwj_start, zwj) || zwj != 0x200D) {
-				break;
-			}
-
-			const int32_t prev_atom_end = zwj_start;
-			const int32_t prev_atom_start =
-				consume_emoji_atom_backward(str, prev_atom_end);
-
-			if (prev_atom_start < 0) {
-				break;
-			}
-
-			start = prev_atom_start;
-		}
-
-		return index - start;
-	}
 }
 
 void TextEdit::position(int x, int y, int w, int h) {
 //#ifdef DEBUG
 //	std::cout << "Position\n";
 //#endif
+	
+	flushPendingCharInput();
 	
 	tabWidth = App::settings->getValue("tab_width", 4);
 	
@@ -2349,7 +2014,10 @@ void TextEdit::position(int x, int y, int w, int h) {
 	}
 	
 	max_scroll_vert = lines.size()-1;
-	max_scroll_horz = max_line_len-1;
+	max_scroll_horz = max_line_len-3;
+	if (max_scroll_horz < 0.0) {
+		max_scroll_horz = 0;
+	}
 	
 	if (tryingToEnsureCursorPos) {
 		tryingToEnsureCursorPos = false;
@@ -2423,7 +2091,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 	DID_POSITION = true;
 	DO_POSITION = false;
 	
-	std::vector<UChar32> tabReplacementChars = {};
+	std::vector<MST::u32> tabReplacementChars = {};
 	for (int i = 0; i < tabWidth; i++) {
 		tabReplacementChars.push_back(U' ');
 	}
@@ -2437,7 +2105,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 
 	int line_start = floor(scrolled_to_vert);
 	int char_start = floor(scrolled_to_horz);
-
+	
 	start_x = -fmod(scrolled_to_horz, 1) * TextRenderer::get_text_width(1);
 	start_y = -fmod(scrolled_to_vert, 1) * TextRenderer::get_text_height();
 
@@ -2449,7 +2117,6 @@ void TextEdit::position(int x, int y, int w, int h) {
 		start_x -= TextRenderer::get_text_width(2);
 	}
 	
-
 	int end_line = line_start+ceil((float)t_h/(float)TextRenderer::get_text_height()) + 1;
 	int end_char = char_start+ceil((float)t_w/(float)TextRenderer::get_text_width(1)) + 1;
 	
@@ -2461,273 +2128,191 @@ void TextEdit::position(int x, int y, int w, int h) {
 	int start_highlight = fmax(0, line_start-5);
 	int end_highlight = fmin(lines.size(), end_line+5);
 	Highlight(start_highlight, end_highlight);
-
+	
 	for (int ln_num = line_start; ln_num < end_line; ln_num ++) {
 		if (ln_num < 0 || ln_num >= lines.size()) {
 			continue;
 		}
 
-		icu::UnicodeString& lineText = lines[ln_num].line_text;
-
-		icu::UnicodeString final_line = icu::UnicodeString();
-		std::vector<Color*> final_color = {};
-
-		// diagnostics
-
-		std::vector<std::vector<int>> draw_diag = {};
+		MST::MonoString& lineText = lines[ln_num].line_text;
+		
 		auto diagnostics = lines[ln_num].diagnostics;
 
 		int thisdiagtype = 10;
-		icu::UnicodeString thisdiag;
-
+		MST::MonoString thisdiag;
+		
+		// diagnostics
+		
 		for (auto d : diagnostics) {
-			draw_diag.push_back({-1, -1});
-
 			if (d.type < thisdiagtype) {
 				thisdiagtype = d.type;
 				thisdiag = d.message;
 			}
+			
+			int s = d.sc;
+			
+			if (s > end_char) {
+				continue;
+			}else if (s < char_start) {
+				s = char_start;
+			}
+			
+			s -= char_start;
+			
+			int e = d.ec;
+			if (e < char_start) {
+				continue;
+			}else if (e > end_char) {
+				e = end_char;
+			}
+			e -= char_start;
+			
+			draw_diagnostics.push_back({ln_num-line_start, s, e, d.type});
 		}
-
+		
 		// selection "✅"
-
-		std::vector<std::vector<int>> selections = {};
-		std::vector<std::vector<int>> draw_selec = {};
-
+		
 		for (auto c : cursors) {
 			auto slelscec = _getCursSelec(c);
 
-			int start_line = slelscec.first.first;
-			int end_line = slelscec.first.second;
+			int c_start_line = slelscec.first.first;
+			int c_end_line = slelscec.first.second;
 
-			int start_char = slelscec.second.first;
-			int end_char = slelscec.second.second;
+			int c_start_char = slelscec.second.first;
+			int c_end_char = slelscec.second.second;
 
-			if (start_char == end_char && start_line == end_line) {
+			if (c_start_char == c_end_char && c_start_line == c_end_line) {
 				continue;
 			}
 
-			if (start_line > ln_num || end_line < ln_num) {
+			if (c_start_line > ln_num || c_end_line < ln_num) {
 				continue;
 			}
 
 			int start_sec = 0;
-			if (start_line == ln_num) {
-				start_sec = start_char;
+			if (c_start_line == ln_num) {
+				start_sec = c_start_char;
 			}
-			int end_sec = lineText.length();
-			if (end_line == ln_num) {
-				end_sec = end_char;
-			}
-			
-			bool add_one_to_last_char = false;
-			
-			if (end_line > ln_num) {
-				add_one_to_last_char = true;
+			int end_sec = lineText.length+1;
+			if (c_end_line == ln_num) {
+				end_sec = c_end_char;
+				if (c_end_char == lineText.length) {
+					c_end_char += 1;
+				}
 			}
 			
-			selections.push_back({start_sec, end_sec, add_one_to_last_char});
-			draw_selec.push_back({-1, -1});
-		}
-
-		// run through
-		
-		int cur_char = 0;
-		int cur_length = 0;
-		int skipping = 0; // a variable to handle emojis, because they take up multiple codepoints
-		int cur_token_idx = 0;
-		if (lines[ln_num].tokens.empty()) {
-			cur_token_idx = -1;
+			if (start_sec <= end_char && end_sec >= char_start) {
+				draw_selection.push_back({ln_num-line_start, start_sec-char_start, end_sec-char_start});
+			}
 		}
 		
-		for (int true_char_indx = 0; true_char_indx < lineText.length()+1; true_char_indx += 1) {
-			if (cur_token_idx != -1 && lines[ln_num].tokens[cur_token_idx].end_byte <= true_char_indx) {
-				cur_token_idx = -1;
-				for (auto t = cur_token_idx+1; t < lines[ln_num].tokens.size(); t++) {
-					if (lines[ln_num].tokens[t].end_byte > true_char_indx && lines[ln_num].tokens[t].start_byte <= true_char_indx) {
-						cur_token_idx = t;
-						break;
-					}
-				}
-			}
-			
-			for (int i = 0; i < selections.size(); i++) {
-				auto s = selections[i];
-				if (s[0] <= true_char_indx && draw_selec[i][0] == -1) {
-					draw_selec[i][0] = cur_length; // if there's no stated start, and we are now >= to the start position, record the start in relative characters.
-				}
-				
-				if (s[0] <= true_char_indx && s[1] >= true_char_indx) {
-					draw_selec[i][1] = cur_length; // if we're in the selection (start is left of here and end is right of here) then record the end to be here
-				}
-			}
-
-			for (int i = 0; i < diagnostics.size(); i++) {
-				auto d = diagnostics[i];
-				if (d.sc <= true_char_indx && draw_diag[i][0] == -1) {
-					draw_diag[i][0] = final_line.length();
-				}
-				if (d.sc <= true_char_indx && d.ec >= true_char_indx) {
-					draw_diag[i][1] = final_line.length();
-				}
-
-			}
-			
-			int newskip = skipping;
-			if (skipping == 0) {
-				newskip = get_emoji_sequence_length(lineText, true_char_indx);
-			}
-			
-			
-			for (auto c : cursors) {
-				if (App::activeLeafNode == this && c.head_line == ln_num && c.head_char == true_char_indx && cur_char >= char_start) {
-					CursorScreen dc = CursorScreen();
-					dc.rel_line = draw_text.size();
-					dc.rel_char = cur_length;
-					if (newskip == 0) {
-						dc.charUnder = lineText[true_char_indx];
-					}
-					draw_cursor.push_back(dc);
-				}
-			}
-			
-			// handling emojis
-			if (skipping != 0) {
-				skipping -= 1;
-				if (skipping == 0) {
-					if (cur_char >= char_start) {
-						cur_length += 2;
-					}else if (cur_char == char_start-1) { // because they're two long
-						cur_length += 1;
-						final_line.append('#');
-						final_color.push_back(App::theme.main_text_color);
-					}
-					cur_char += 2;
-				}
-				continue;
-			}else{
-				skipping = newskip;
-				if (skipping != 0) {
-					if (cur_char >= char_start) {
-						for (int i = 0; i < skipping; i++) {
-							final_line.append(lineText.charAt(i+true_char_indx));
-							final_color.push_back(App::theme.main_text_color);
-						}
-					}
-					
-					skipping -= 1;
-					
-					if (skipping == 0) {
-						if (cur_char >= char_start) {
-							cur_length += 2;
-						}else if (cur_char == char_start-1) { // because they're two long
-							cur_length += 1;
-							final_line.append('#');
-							final_color.push_back(App::theme.main_text_color);
-						}
-						cur_char += 2;
-					}
-					continue;
-				}
-			}
-			
-			// regular text
-			
-			UChar32 chr;
-			if (true_char_indx == lineText.length()) {
-				chr = U' '; // need this for selections to look right, inserting a not-real space for... things
-			}else{
-				chr = lineText.charAt(true_char_indx);
-			}
-			
-			bool finished_line = false;
-
-			std::vector<UChar32> tohandle = {};
-
-			if (chr == U'\t') { // ensure tabs are not just 1 char wide
-				tohandle = tabReplacementChars;
-			}else{
-				tohandle = {chr};
-			}
-			
-			for (auto c : tohandle) {
-				if (cur_char >= char_start) {
-					final_line.append(c);
-					cur_length += 1;
-					
-					if (!highlighter && !alreadyHighlighted) {
-						final_color.push_back(App::theme.main_text_color);
-					}else{
-						Color* col = App::theme.main_text_color;
-						if (cur_token_idx != -1){
-							col = getColorFromToken(true_char_indx, lines[ln_num].tokens[cur_token_idx]);
-						}
-						final_color.push_back(col);
-					}
-				}
-				
-				cur_char ++;
-
-				if (cur_char > end_char) {
-					finished_line = true;
+		// text
+		
+		std::vector<Color*> draw_color_thisline = {};
+		
+		MST::MonoString text = MST::substring(lineText, char_start, end_char);
+		
+		if (thisdiag.length != 0) {
+			text += MST::toMonoString("  ● ") + thisdiag;
+		}
+		
+		draw_text.push_back(text);
+		
+		const auto& tokens = lines[ln_num].tokens;
+		size_t idx = MST::NOT_FOUND;
+		
+		if (!tokens.empty()) {
+			// Find token containing char_start:
+			// token.start_byte <= char_start < token.end_byte
+			size_t lo = 0;
+			size_t hi = tokens.size();
+		
+			while (lo < hi) {
+				size_t mid = lo + (hi - lo) / 2;
+		
+				if (char_start < tokens[mid].start_byte) {
+					hi = mid;
+				} else if (char_start >= tokens[mid].end_byte) {
+					lo = mid + 1;
+				} else {
+					idx = mid;
 					break;
 				}
 			}
-
-			if (finished_line) {
-				break;
-			}
 		}
-
-		for (int i = 0; i < selections.size(); i++) {
-			if (draw_selec[i][0] == -1) { // sometimes a selection on a given line isn't in visible range (ie to the left or right), so we don't want to render anything for those cases. To be clear
-				continue;
-			}
-			
-			if (draw_selec[i][1] == 0 && final_line.length() == 0) {
-				continue;
-			}
-			
-			if (selections[i][2] == 1) { // it's the little things like this that make me wonder what I was smoking when I made this (spoiler: I wasn't smoking anything. I'm just this creative)
-				draw_selec[i][1] ++;     // oh wait I figured it out. It's so that if we wrap a line on the right, we draw a little thing on it, to clarify that we are selecting the newline. Clever me.
-			}
-
-			auto selec = CursorSelect();
-			
-			selec.rel_line = draw_text.size();
-			selec.rel_char_start = draw_selec[i][0];
-			selec.rel_char_end = draw_selec[i][1];
-			
-			draw_selection.push_back(selec);
-		}
-
-		for (int i = 0; i < diagnostics.size(); i++) {
-			auto diag = DiagnosticUnderline();
-
-			diag.rel_line = draw_text.size();
-			diag.rel_char_start = draw_diag[i][0];
-			diag.rel_char_end = draw_diag[i][1];
-			diag.type = diagnostics[i].type;
-
-			draw_diagnostics.push_back(diag);
-		}
-
-		if (thisdiag != "") { // this contains a "👍🏾" thumbs up emoji
-			final_line += icu::UnicodeString::fromUTF8("  ■ ") + splitByChar(thisdiag, U'\n')[0];
-			for (int i = final_color.size(); i < final_line.length(); i++) {
-				if (thisdiagtype == 0) {
-					final_color.push_back(App::theme.error_color);
-				}else if (thisdiagtype == 1) {
-					final_color.push_back(App::theme.warning_color);
-				}else {
-					final_color.push_back(App::theme.suggestion_color);
+		
+		if (idx == MST::NOT_FOUND) {
+			for (size_t i = char_start; i < end_char; i++) {
+				if (i >= lineText.length) {
+					continue;
 				}
+		
+				draw_color_thisline.push_back(App::theme.main_text_color);
+			}
+		} else {
+			size_t token_idx = idx;
+		
+			for (size_t i = char_start; i < end_char; i++) {
+				if (i >= lineText.length) {
+					continue;
+				}
+				
+				for (int j = token_idx; j < tokens.size(); j++) {
+					if (i >= tokens[j].start_byte && i < tokens[j].end_byte) {
+						token_idx = j;
+						break;
+					}
+				}
+				
+				Color* clr = App::theme.main_text_color;
+				
+				if (
+					token_idx < tokens.size() &&
+					i >= tokens[token_idx].start_byte &&
+					i < tokens[token_idx].end_byte
+				) {
+					clr = getColorFromToken(tokens[token_idx]);
+				}
+		
+				draw_color_thisline.push_back(clr);
 			}
 		}
-
-		draw_text.push_back(final_line);
+		
+		if (thisdiag.length != 0) {
+			Color* c = App::theme.error_color;
+			if (thisdiagtype == 1) {
+				c = App::theme.warning_color;
+			}else if (thisdiagtype == 2) {
+				c = App::theme.suggestion_color;
+			}
+			
+			for (int i = 0; i < 4+thisdiag.length; i++) {
+				draw_color_thisline.push_back(c);
+			}
+		}
+		
+		draw_color.push_back(draw_color_thisline);
 		draw_mark.push_back(lines[ln_num].isMarked);
-		draw_color.push_back(final_color);
+	}
+	
+	// cursors
+	
+	if (this == App::activeLeafNode) {
+		for (auto c : cursors) {
+			if (c.head_line < line_start || c.head_line > end_line || c.head_char < char_start || c.head_char > end_char) {
+				continue;
+			}
+			
+			int rel_line = c.head_line-line_start;
+			int rel_char = c.head_char-char_start;
+			MST::u32 charUnder = MST::char32At(lines[c.head_line].line_text, c.head_char);
+			
+			draw_cursor.push_back({
+				rel_line, 
+				rel_char,
+				charUnder
+			});
+		}
 	}
 	
 	wasmode = mode;
@@ -2789,9 +2374,7 @@ Cursor TextEdit::getCursorForMousePosition(int mx, int my, bool* gottoit) {
 	int mouse_char = _mapFromVisualToReal(mouse_line, mouse_visual_char);
 
 	if (gottoit) {
-		int checkby = _mapFromRealToVisual(mouse_line, mouse_char);
-
-		*gottoit = (mouse_visual_char == checkby);
+		*gottoit = (mouse_visual_char == mouse_char);
 	}
 
 	Cursor c;
@@ -2911,29 +2494,184 @@ bool TextEdit::on_mouse_move_event() {
 	return Widget::on_mouse_move_event();
 }
 
-icu::UnicodeString TextEdit::getCurrentWord(const icu::UnicodeString& blockText, int blockPos) {
-	icu::UnicodeString word;
+MST::MonoString TextEdit::getCurrentWord(const MST::MonoString& blockText, int blockPos) {
+	MST::MonoString word;
 
 	int start = blockPos - 1;
 	while (start >= 0) {
-		UChar32 ch = blockText.char32At(start);
+		MST::u32 ch = MST::char32At(blockText, start);
 		if (u_isalnum(ch) || ch == U'_') {
-			// If current character is part of the word, move left
-			// Handle surrogate pairs (if any) by decrementing by character length
-			start -= U16_LENGTH(ch);
+			start -= 1;
 		} else {
 			break;
 		}
 	}
 
-	// Compute actual start index after exiting loop
 	int wordStart = start + 1;
 	int wordLength = blockPos - wordStart;
-
-	// Extract substring if length is valid
+	
 	if (wordLength > 0) {
-		blockText.extractBetween(wordStart, blockPos, word);
+		word = MST::substring(blockText, wordStart, blockPos);
+	}
+	
+	return word;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+static bool isVariationSelector(MST::u32 ch) {
+	return (ch >= 0xFE00 && ch <= 0xFE0F) ||
+		   (ch >= 0xE0100 && ch <= 0xE01EF);
+}
+
+static bool isCombiningMark(MST::u32 ch) {
+	return (ch >= 0x0300 && ch <= 0x036F) ||
+		   (ch >= 0x1AB0 && ch <= 0x1AFF) ||
+		   (ch >= 0x1DC0 && ch <= 0x1DFF) ||
+		   (ch >= 0x20D0 && ch <= 0x20FF) ||
+		   (ch >= 0xFE20 && ch <= 0xFE2F);
+}
+
+static bool isEmojiModifier(MST::u32 ch) {
+	// Fitzpatrick skin tone modifiers
+	return ch >= 0x1F3FB && ch <= 0x1F3FF;
+}
+
+static bool isRegionalIndicator(MST::u32 ch) {
+	// Flag pairs
+	return ch >= 0x1F1E6 && ch <= 0x1F1FF;
+}
+
+static bool isTagChar(MST::u32 ch) {
+	// Subdivision flags, e.g. England/Scotland/Wales
+	return ch >= 0xE0020 && ch <= 0xE007F;
+}
+
+static bool isKeycapBase(MST::u32 ch) {
+	return (ch >= U'0' && ch <= U'9') || ch == U'#' || ch == U'*';
+}
+
+static bool isEmojiLikeBase(MST::u32 ch) {
+	// Not exhaustive, but covers the ranges that matter for buffering.
+	return
+		(ch >= 0x1F000 && ch <= 0x1FAFF) || // most emoji blocks
+		(ch >= 0x2600  && ch <= 0x27BF)  || // misc symbols / dingbats
+		isRegionalIndicator(ch) ||
+		isKeycapBase(ch);
+}
+
+bool TextEdit::shouldHoldCharInput(const std::u32string& s) {
+	if (s.empty()) {
+		return false;
 	}
 
-	return word;
+	MST::u32 last = static_cast<MST::u32>(s.back());
+
+	// These always attach to something before them.
+	// If they just arrived, the sequence is not conceptually standalone.
+	if (isVariationSelector(last) ||
+		isCombiningMark(last) ||
+		isEmojiModifier(last) ||
+		isTagChar(last)) {
+		return true;
+	}
+
+	// ZWJ means the next codepoint is part of the same grapheme.
+	if (last == 0x200D) {
+		return true;
+	}
+
+	// A normal emoji base may be followed by VS16, skin tone, ZWJ, etc.
+	if (isEmojiLikeBase(last)) {
+		return true;
+	}
+
+	// Regional indicators form flags in pairs.
+	// Hold a single RI until frame end in case the second arrives.
+	if (s.size() == 1 && isRegionalIndicator(last)) {
+		return true;
+	}
+
+	// Keycap sequences:
+	//   3 U+FE0F U+20E3
+	//   3 U+20E3
+	// Hold keycap bases briefly so they can combine.
+	if (s.size() == 1 && isKeycapBase(last)) {
+		return true;
+	}
+
+	return false;
+}
+
+static std::string utf32ToUtf8(const std::u32string& input) {
+	std::string out;
+
+	for (char32_t cp : input) {
+		if (cp <= 0x7F) {
+			out.push_back(static_cast<char>(cp));
+		}
+		else if (cp <= 0x7FF) {
+			out.push_back(static_cast<char>(0xC0 | ((cp >> 6) & 0x1F)));
+			out.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+		}
+		else if (cp <= 0xFFFF) {
+			// Reject UTF-16 surrogate codepoints. GLFW char callbacks should not
+			// normally give these, but do not encode invalid UTF-8 if they appear.
+			if (cp >= 0xD800 && cp <= 0xDFFF) {
+				continue;
+			}
+
+			out.push_back(static_cast<char>(0xE0 | ((cp >> 12) & 0x0F)));
+			out.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+			out.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+		}
+		else if (cp <= 0x10FFFF) {
+			out.push_back(static_cast<char>(0xF0 | ((cp >> 18) & 0x07)));
+			out.push_back(static_cast<char>(0x80 | ((cp >> 12) & 0x3F)));
+			out.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+			out.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+		}
+	}
+
+	return out;
+}
+
+void TextEdit::insertPendingCharInput() {
+	if (pendingCharInput.empty()) {
+		return;
+	}
+
+	std::string utf8 = utf32ToUtf8(pendingCharInput);
+
+	pendingCharInput.clear();
+	hasPendingCharInput = false;
+
+	if (utf8.empty()) {
+		return;
+	}
+
+	MST::MonoString to_insert = MST::toMonoString(utf8);
+
+	largereditblock = true;
+	applyInsertToAllCursors(to_insert);
+	largereditblock = false;
+
+	if (ontextchange) {
+		ontextchange(this);
+	}
+}
+
+void TextEdit::flushPendingCharInput() {
+	if (!pendingCharInput.empty()) {
+		insertPendingCharInput();
+	}
 }

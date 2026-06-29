@@ -414,7 +414,7 @@ LanguageServerClient::LanguageServerClient(const std::string &serverPath, std::f
 #endif
 		failedToStart = true;
 		if (logCallback) {
-			App::displayToast(icu::UnicodeString::fromUTF8("Failed to start language server at: " + serverPath + "\nError: " + serverProcess.errorString()));
+			App::displayToast(MST::toMonoString("Failed to start language server at: " + serverPath + "\nError: " + serverProcess.errorString()));
 			logCallback("Failed to start language server at: " + serverPath + "\nError: " + serverProcess.errorString());
 		}
 	}
@@ -513,7 +513,7 @@ void LanguageServerClient::initialize(const std::string &rootUri)
 	
 	if (failedToStart) {
 		if (logCallback) {
-			App::displayToast(icu::UnicodeString::fromUTF8("Failed to start LSP - Ensure it's accessible via the command given."));
+			App::displayToast(MST::toMonoString("Failed to start LSP - Ensure it's accessible via the command given."));
 			logCallback("Failed to start LSP - Ensure it's accessible via the command given.");
 		}
 		return;
@@ -524,14 +524,14 @@ void LanguageServerClient::initialize(const std::string &rootUri)
 	if (!initializeCondition.wait_for(lock, std::chrono::seconds(10), [this] { return initializeComplete.load(); })) {
 		failedToStart = true;
 		if (logCallback) {
-			App::displayToast(icu::UnicodeString::fromUTF8("LSP initialization timed out."));
+			App::displayToast(MST::toMonoString("LSP initialization timed out."));
 			logCallback("LSP initialization timed out.");
 		}
 	}
 	
 	if (failedToStart) {
 		if (logCallback) {
-			App::displayToast(icu::UnicodeString::fromUTF8("Failed to start LSP - Ensure it's accessible via the command given."));
+			App::displayToast(MST::toMonoString("Failed to start LSP - Ensure it's accessible via the command given."));
 			logCallback("Failed to start LSP - Ensure it's accessible via the command given.");
 		}
 		return;

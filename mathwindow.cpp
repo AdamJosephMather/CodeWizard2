@@ -3,7 +3,7 @@
 #include "text_renderer.h"
 
 MathWindow::MathWindow(Widget *parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("MathWindow");
+	id = MST::toMonoString("MathWindow");
 	
 	mathInput = new TextEdit(this, [&](Widget*){
 		mathInput->t_x = t_x;
@@ -19,78 +19,76 @@ MathWindow::MathWindow(Widget *parent) : Widget(parent) {
 	mathInput->ontextchange = [&](Widget* w){
 		results.clear();
 		results.reserve(mathInput->lines.size());
-		icu::UnicodeString lastCalc = icu::UnicodeString::fromUTF8("_");
+		MST::MonoString lastCalc = MST::toMonoString("_");
 		
-		std::unordered_map<std::string, icu::UnicodeString> vars;
-		icu::UnicodeString alphabet = icu::UnicodeString::fromUTF8("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+		std::unordered_map<std::string, MST::MonoString> vars;
+		MST::MonoString alphabet = MST::toMonoString("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
 		
 		for (auto& line : mathInput->lines) {
 			std::string varname = "";
-			icu::UnicodeString expression = "";
+			MST::MonoString expression{};
 			
-			auto splt = splitByChar(line.line_text, U'=');
+			auto splt = MST::split(line.line_text, U'=');
 			
 			if (splt.size() > 2) {
-				results.push_back(icu::UnicodeString());
+				results.push_back(MST::MonoString());
 				continue;
 			}else if(splt.size() == 2){
-				stripOfChar(splt.at(0), U' ').toUTF8String(varname);
+				varname = MST::toString(MST::stripOfChar(splt.at(0), U' '));
 				expression = splt.at(1);
 			}else{
 				expression = line.line_text;
 			}
 			
-			icu::UnicodeString done_str;
-			icu::UnicodeString current;
+			MST::MonoString done_str;
+			MST::MonoString current;
 			
-			for (int i = 0; i < expression.length(); i++) {
-				UChar32 c = expression.char32At(i);
-				if (alphabet.indexOf(c) != -1) {
-					current += c;
+			for (int i = 0; i < expression.length; i++) {
+				MST::u32 c = MST::char32At(expression, i);
+				if (MST::index(alphabet, 0, c) != -1) {
+					current += MST::substring(expression, i, i+1);
 				}else{
-					if (current.length() != 0) {
-						std::string cur;
-						current.toUTF8String(cur);
+					if (current.length != 0) {
+						std::string cur = MST::toString(current);
 						auto it = vars.find(cur);
 						if (it != vars.end()) {
-							current = "("+it->second+")";
+							current = MST::toMonoString(U'(')+it->second+MST::toMonoString(U')');
 						}
 						done_str += current;
-						current = "";
+						current = {};
 					}
-					done_str += c;
+					done_str += MST::substring(expression, i, i+1);
 				}
 			}
 			
-			if (current.length() != 0) {
-				std::string cur;
-				current.toUTF8String(cur);
+			if (current.length != 0) {
+				std::string cur = MST::toString(current);
 				auto it = vars.find(cur);
 				if (it != vars.end()) {
-					current = "("+it->second+")";
+					current = MST::toMonoString(U'(')+it->second+MST::toMonoString(U')');
 				}
 				done_str += current;
-				current = "";
+				current = {};
 			}
 			
-			auto modded = replaceWith(done_str, icu::UnicodeString::fromUTF8("_"), lastCalc);
+			auto modded = MST::replaceAll(done_str, MST::toMonoString("_"), lastCalc);
 			
 			auto res = calcExpression(modded);
 			if (res.first){
-				results.push_back(doubleToUnicodeString_pretty(res.second));
+				results.push_back(doubleToMonoString_pretty(res.second));
 				
-				auto out = doubleToUnicodeString(res.second);
+				auto out = doubleToMonoString(res.second);
 				lastCalc = out;
 				if (varname != "") {
 					vars[varname] = out;
 				}
 			}else{
-				results.push_back(icu::UnicodeString());
+				results.push_back(MST::MonoString());
 			}
 		}
 	};
 	
-	results = {icu::UnicodeString::fromUTF8("")};
+	results = {MST::toMonoString("")};
 }
 
 void MathWindow::render() {
@@ -118,14 +116,14 @@ void MathWindow::render() {
 	int mx = App::mouseX;
 	int my = App::mouseY;
 	
-	onMouseClick = icu::UnicodeString();
+	onMouseClick = MST::MonoString();
 	
 	for (int i = line_start; i <= end_line; i++) {
 		if (i >= results.size()) {
 			break;
 		}
 		
-		if (results[i].length() != 0) {
+		if (results[i].length != 0) {
 			TextRenderer::draw_text(x, cury, results[i], App::theme.main_text_color);
 			int ix = t_x+t_w-textH-App::text_padding;
 			if (mx >= ix && mx <= ix+textH && my >= cury && my <= cury + textH) {
@@ -143,11 +141,10 @@ void MathWindow::render() {
 }
 
 bool MathWindow::on_mouse_button_event(int button, int action, int mods) {
-	if (onMouseClick.length() != 0 && action == GLFW_PRESS) {
-		std::string txt;
-		onMouseClick.toUTF8String(txt);
+	if (onMouseClick.length != 0 && action == GLFW_PRESS) {
+		std::string txt = MST::toString(onMouseClick);
 		SetClipboardText(txt);
-		App::displayToast(icu::UnicodeString::fromUTF8("Coppied to clipboard!"));
+		App::displayToast(MST::toMonoString("Coppied to clipboard!"));
 		return true;
 	}
 	

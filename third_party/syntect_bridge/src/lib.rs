@@ -1,6 +1,7 @@
 use std::ffi::CStr;
 use std::os::raw::{c_char, c_int};
 use std::path::Path;
+use syntect::dumps;
 use std::ptr;
 use std::str::FromStr;
 
@@ -99,6 +100,23 @@ struct CW_Selectors {
 // ----------------------------
 // Helpers
 // ----------------------------
+
+static CW_SYNTAXES_NONEWLINES_DUMP: &[u8] =
+	include_bytes!(concat!(env!("OUT_DIR"), "/cw-syntect-syntaxes-nonewlines.packdump"));
+
+static CW_SYNTAXES_NEWLINES_DUMP: &[u8] =
+	include_bytes!(concat!(env!("OUT_DIR"), "/cw-syntect-syntaxes-newlines.packdump"));
+
+fn load_embedded_syntax_set(lines_include_newline: bool) -> Result<SyntaxSet, String> {
+	let dump = if lines_include_newline {
+		CW_SYNTAXES_NEWLINES_DUMP
+	} else {
+		CW_SYNTAXES_NONEWLINES_DUMP
+	};
+
+	dumps::from_uncompressed_data(dump)
+		.map_err(|err| format!("failed to load embedded syntax dump: {err}"))
+}
 
 fn c_string(ptr: *const c_char) -> Option<String> {
 	if ptr.is_null() {
@@ -298,10 +316,9 @@ pub extern "C" fn cw_syntect_setup(
 
 		let include_newlines = lines_include_newline != 0;
 
-		let mut syntax_set = if include_newlines {
-			SyntaxSet::load_defaults_newlines()
-		} else {
-			SyntaxSet::load_defaults_nonewlines()
+		let mut syntax_set = match load_embedded_syntax_set(include_newlines) {
+			Ok(syntax_set) => syntax_set,
+			Err(_) => return ptr::null_mut(),
 		};
 
 		// Optional: load additional .sublime-syntax files from a folder.

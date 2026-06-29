@@ -2,7 +2,7 @@
 #include "application.h"
 #include "text_renderer.h"
 
-Button::Button(Widget *parent, icu::UnicodeString text, Positioner positioner, OnClick onclick) : Widget(parent) {
+Button::Button(Widget *parent, MST::MonoString text, Positioner positioner, OnClick onclick) : Widget(parent) {
 	BUTTON_LABEL = text;
 	POSITIONER = positioner;
 	ONCLICK = onclick;
@@ -17,7 +17,7 @@ Button::Button(Widget *parent, icu::UnicodeString text, Positioner positioner, O
 	border_color = App::theme.border;
 	border_color_hover = App::theme.active_color;
 	
-	id = icu::UnicodeString::fromUTF8("Button - ") + text;
+	id = MST::toMonoString("Button - ") + text;
 }
 
 void Button::position(int x, int y, int width, int height) {
@@ -25,7 +25,7 @@ void Button::position(int x, int y, int width, int height) {
 		t_w = TextRenderer::get_text_height() * 2.5;
 		t_h = TextRenderer::get_text_height() + App::text_padding*2;
 	}else{
-		t_w = TextRenderer::get_text_width(BUTTON_LABEL.length()) + App::text_padding*2;
+		t_w = TextRenderer::get_text_width(BUTTON_LABEL.length) + App::text_padding*2;
 		t_h = TextRenderer::get_text_height() + App::text_padding*2;
 	}
 	
@@ -100,7 +100,7 @@ void Button::render() {
 			if (alignLeft) {
 				x = t_x+App::text_padding;
 			}else{
-				x = t_x+t_w/2-TextRenderer::get_text_width(BUTTON_LABEL.length())/2;
+				x = t_x+t_w/2-TextRenderer::get_text_width(BUTTON_LABEL.length)/2;
 			}
 			
 			int y = t_y+t_h/2-TextRenderer::get_text_height()/2;

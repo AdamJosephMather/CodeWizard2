@@ -216,8 +216,7 @@ void Widget::treePrint(int depth) {
 	for (int i = 0; i < depth; i++) {
 		std::cout << " ";
 	}
-	std::string idstr;
-	id.toUTF8String(idstr);
+	std::string idstr = MST::toString(id);
 	std::cout << idstr << "\n";
 	for (auto child : children) {
 		child->treePrint(depth+1);

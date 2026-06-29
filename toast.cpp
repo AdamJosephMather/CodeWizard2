@@ -3,7 +3,7 @@
 #include "text_renderer.h"
 
 Toast::Toast(Widget *parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("Toast");
+	id = MST::toMonoString("Toast");
 }
 
 void Toast::position(int x, int y, int width, int height) {
@@ -66,7 +66,7 @@ void Toast::render() {
 	Widget::render();
 }
 
-void Toast::displayMessage(icu::UnicodeString displ_text) {
+void Toast::displayMessage(MST::MonoString displ_text) {
 	text = displ_text;
 	time = glfwGetTime();
 	displayOffset = t_w;

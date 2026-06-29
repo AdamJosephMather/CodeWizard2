@@ -29,7 +29,7 @@ static std::string load_file_text(const std::string& path) {
 bool ModelXRunner::load() {
 	if (loading || loaded) { return false; }
 	
-	App::displayText(icu::UnicodeString::fromUTF8("Loading Chauffeur"));
+	App::displayText(MST::toMonoString("Loading Chauffeur"));
 	
 	loading = true;
 	
@@ -59,7 +59,7 @@ bool ModelXRunner::load() {
 			load_success = false;
 			loaded = true;
 			loading = false;
-			App::displayToast(icu::UnicodeString::fromUTF8("Failed to read Chauffeur tokenizer"));
+			App::displayToast(MST::toMonoString("Failed to read Chauffeur tokenizer"));
 			
 			return false;
 		}
@@ -70,7 +70,7 @@ bool ModelXRunner::load() {
 			load_success = false;
 			loaded = true;
 			loading = false;
-			App::displayToast(icu::UnicodeString::fromUTF8("Failed to load Chauffeur tokenizer"));
+			App::displayToast(MST::toMonoString("Failed to load Chauffeur tokenizer"));
 			
 			return false;
 		}
@@ -91,13 +91,13 @@ bool ModelXRunner::load() {
 		loaded = true;
 		loading = false;
 		
-		App::displayText(icu::UnicodeString::fromUTF8("Chauffeur Loaded!"));
+		App::displayText(MST::toMonoString("Chauffeur Loaded!"));
 		
 		return true;
 	} catch (const std::exception& e) {
 		std::cout << "Failed to load: " << e.what() << "\n";
 		
-		App::displayToast(icu::UnicodeString::fromUTF8("Failed to load Chauffeur model"));
+		App::displayToast(MST::toMonoString("Failed to load Chauffeur model"));
 		
 		load_success = false;
 		loaded = true;
@@ -181,7 +181,7 @@ std::string ModelXRunner::generate(const std::string& input, int max_tokens) {
 	if (!loaded) load();
 	if (!load_success) return "";
 
-	App::displayText(icu::UnicodeString::fromUTF8("Generating With Chauffeur"));
+	App::displayText(MST::toMonoString("Generating With Chauffeur"));
 	if (max_tokens <= 0) return "";
 
 	std::lock_guard<std::mutex> lock(genMutex);
@@ -311,7 +311,7 @@ std::string ModelXRunner::generate_fim(const std::string& prefix, const std::str
 	if (!loaded) load();
 	if (!load_success) return "";
 	
-	App::displayText(icu::UnicodeString::fromUTF8("Generating With Chauffeur"));
+	App::displayText(MST::toMonoString("Generating With Chauffeur"));
 	if (max_tokens <= 0) return "";
 	
 	std::lock_guard<std::mutex> lock(genMutex);

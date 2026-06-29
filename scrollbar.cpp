@@ -3,7 +3,7 @@
 #include "text_renderer.h"
 
 Scrollbar::Scrollbar(Widget* parent) : Widget(parent) { 
-	id = icu::UnicodeString::fromUTF8("scrollbar");
+	id = MST::toMonoString("scrollbar");
 }
 
 void Scrollbar::render() {

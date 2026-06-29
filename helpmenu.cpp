@@ -2,8 +2,8 @@
 #include "text_renderer.h"
 
 HelpMenu::HelpMenu(Widget* parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("HelpMenu");
-	closebutton = new Button(this, icu::UnicodeString::fromUTF8("X"), [&](Widget* b, int x, int y, int w, int h, int width, int height){
+	id = MST::toMonoString("HelpMenu");
+	closebutton = new Button(this, MST::toMonoString("X"), [&](Widget* b, int x, int y, int w, int h, int width, int height){
 		b->t_x = t_x+t_w-width;
 		b->t_y = t_y;
 		b->t_w = width;
@@ -37,15 +37,15 @@ HelpMenu::HelpMenu(Widget* parent) : Widget(parent) {
 	
 	helpInformation = {
 		{
-			icu::UnicodeString::fromUTF8("General"),
-			icu::UnicodeString::fromUTF8(R":(CodeWizard2 V):" + App::vnumstr + R":(
+			MST::toMonoString("General"),
+			MST::toMonoString(R":(CodeWizard2 V):" + App::vnumstr + R":(
 
 	CodeWizard2 is a performant code editor/ide written in C++. CodeWizard is designed to be extendable to a number of languages and configurations. Highlighting is provided using Syntect, and CodeWizard supports the Language Server Protocol. Note that the LSP support is not perfect, and doesn't support everything available. But, it's been tested with gopls, rust analyzer, clangd, and of course pypls (my multi-purpose LSP.)
 
 CodeWizard was created by Adam Mather.):"),
 		},{
-			icu::UnicodeString::fromUTF8("Using CodeWizard"),
-			icu::UnicodeString::fromUTF8(R":(	CodeWizard is an extremely opinionated editor. Namely, most actions are handled via keyboard key combos, mouse support is limited, and it's designed to work in the way I will use it.
+			MST::toMonoString("Using CodeWizard"),
+			MST::toMonoString(R":(	CodeWizard is an extremely opinionated editor. Namely, most actions are handled via keyboard key combos, mouse support is limited, and it's designed to work in the way I will use it.
 
 Opening Files/Folders:
 	
@@ -66,24 +66,24 @@ Quirks:
 	● The biggest will be the use of tabs instead of four space increments. Deal with it 😉 it's better.
 ):"),
 		},{
-			icu::UnicodeString::fromUTF8("Widgets"),
-			icu::UnicodeString::fromUTF8(R":(	Widgets are the gas on which CodeWizard runs. The most important widgets are the: editor, settings menu, file tree, and terminal widgets. The editor is where all code editing happens, including a tab bar (by default). The file tree is a tree constructed to match the files in your actively selected directory (see Using CodeWizard.) The terminal widget will take over the execution for your code if it's open, otherwise CodeWizard will open a Microsoft Command Prompt and run your code there. And of course the settings menu is where some of CodeWizard's settings are managed.
+			MST::toMonoString("Widgets"),
+			MST::toMonoString(R":(	Widgets are the gas on which CodeWizard runs. The most important widgets are the: editor, settings menu, file tree, and terminal widgets. The editor is where all code editing happens, including a tab bar (by default). The file tree is a tree constructed to match the files in your actively selected directory (see Using CodeWizard.) The terminal widget will take over the execution for your code if it's open, otherwise CodeWizard will open a Microsoft Command Prompt and run your code there. And of course the settings menu is where some of CodeWizard's settings are managed.
 
 	To open a new widget, click the '+' button in the top left of the screen, hover over where you want the new widget, and click again. (This will not work while in the help menu.)
 	
 	Similarly, to close, use the '-' button in the top left, hovering over the pane you want removed.
 ):"),
 		},{
-			icu::UnicodeString::fromUTF8("Settings"),
-			icu::UnicodeString::fromUTF8(R":(	The majority of settings are accessible via the settings widget (see 'Widgets'.) This includes editor appearance, toggling features (file tabs, etc,) and AI settings (see AI).
+			MST::toMonoString("Settings"),
+			MST::toMonoString(R":(	The majority of settings are accessible via the settings widget (see 'Widgets'.) This includes editor appearance, toggling features (file tabs, etc,) and AI settings (see AI).
 
 	However, CodeWizard also stores language settings in a json file located in C:\Users\<username>\AppData\Local\CodeWizard\languages.json. This file is where you can add syntax highlighting and language servers for specific languages. By default CodeWizard comes setup for some languages, including Python, CSharp, C++, Go, R, Java, JavaScript, HTML, and Rust.
 	
 	Project specific settings are described in 'Using CodeWizard', under 'Running Programs'.
 ):"),
 		},{
-			icu::UnicodeString::fromUTF8("Languages"),
-			icu::UnicodeString::fromUTF8(R":(	Languages in CodeWizard are extensible and all configured in the languages settings (see 'Settings')
+			MST::toMonoString("Languages"),
+			MST::toMonoString(R":(	Languages in CodeWizard are extensible and all configured in the languages settings (see 'Settings')
 
 CodeWizard requires a few things:
 	
@@ -98,8 +98,8 @@ CodeWizard requires a few things:
 In these settings, the following are available as variables in your build commands: %FILE_LOCATION%, %FILE_NAME%, %FILE_NAME_NO_EXT%, and %INSTALL_DIR%
 ):"),
 		},{
-			icu::UnicodeString::fromUTF8("KeyMaps"),
-			icu::UnicodeString::fromUTF8(R":(General:
+			MST::toMonoString("KeyMaps"),
+			MST::toMonoString(R":(General:
 	● Ctrl+Shift+O ----- Open Folder
 	● Ctrl+O ----------- Open File
 	● Ctrl+S ----------- Save (CodeWizard saves automatically every 4 seconds)
@@ -168,13 +168,13 @@ From Within Normal Mode:
 
 Note that for most movement shortcuts ('h', 'j', 'k', 'l', '<', '>', 'a', 'w', 'e', 'b') you can also hold shift to extend the selected cursor text.):"),
 		},{
-			icu::UnicodeString::fromUTF8("AI"),
-			icu::UnicodeString::fromUTF8(R":(	CodeWizard has support for AI. Specifically, after setting an AI provider, model, and key in the settings, press Alt+A to trigger an insertion at your current cursor position. Or you can then open an AI chat widget to chat with your chosen model in a window.
+			MST::toMonoString("AI"),
+			MST::toMonoString(R":(	CodeWizard has support for AI. Specifically, after setting an AI provider, model, and key in the settings, press Alt+A to trigger an insertion at your current cursor position. Or you can then open an AI chat widget to chat with your chosen model in a window.
 
 	For the settings you must get a provider (openrouter or lmstudio for example), a key for the provider (if required), the number of lines to send to the model for completions. If you choose 'Load AI Model On Start' it will send a request to your provider on startup (ONLY DO THIS IF YOU'RE RUNNING AN OFFLINE MODEL). The non-chat completions are not supported by most providers, but lmstudio supports them.):"),
 		},{
-			icu::UnicodeString::fromUTF8("Math/Graph Windows"),
-			icu::UnicodeString::fromUTF8(R":(Math Window:
+			MST::toMonoString("Math/Graph Windows"),
+			MST::toMonoString(R":(Math Window:
 
 	● The math window allows for multi step equasions. Variables are accepted as so: `x = 12` or `test = 12` and so on.
 
@@ -236,7 +236,7 @@ Graphing Window:
 	tb->selected_id = 0;
 	
 	label = new Label(this);
-	label->setFullText(icu::UnicodeString::fromUTF8("Widgets"));
+	label->setFullText(MST::toMonoString("Widgets"));
 	label->POSITIONER = [&](Widget* l) {
 		l->t_x = t_x;
 		l->t_y = tb->t_h+tb->t_y - scrolled_to[tb->selected_id];
@@ -258,7 +258,7 @@ void HelpMenu::render() {
 	App::DrawRoundedRect(t_x, t_y+closebutton->t_h, t_w, t_h-closebutton->t_h, App::text_padding, App::theme.darker_background_color);
 	
 	int vert_padding = (closebutton->t_h-TextRenderer::get_text_height())/2;
-	TextRenderer::draw_text(t_x+vert_padding, t_y+vert_padding, icu::UnicodeString::fromUTF8("CodeWizard2 Help Menu"), App::theme.main_text_color);
+	TextRenderer::draw_text(t_x+vert_padding, t_y+vert_padding, MST::toMonoString("CodeWizard2 Help Menu"), App::theme.main_text_color);
 	
 	closebutton->render();
 	App::runWithSKIZ(tb->t_x, tb->t_y, tb->t_w, tb->t_h, [&](){

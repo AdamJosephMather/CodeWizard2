@@ -3,7 +3,6 @@
 #include <GLFW/glfw3.h>
 #include <functional>
 #include "widget.h"
-#include "unicode/unistr.h"
 
 class ScrollNotify : public Widget {
 public:
@@ -14,12 +13,12 @@ public:
 	void render();
 	void position(int x, int y, int width, int height);
 	
-	void displayMessage(icu::UnicodeString text);
+	void displayMessage(MST::MonoString text);
 	
 //	bool on_mouse_button_event(int button, int action, int mods);
 //	bool on_mouse_move_event();
 	
-	icu::UnicodeString text;
+	MST::MonoString text;
 	
 private:
 	Positioner POSITIONER;

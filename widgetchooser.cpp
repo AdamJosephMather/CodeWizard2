@@ -14,9 +14,9 @@
 #include "terminalwidgettabbed.h"
 
 WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("Widgetchooser");
+	id = MST::toMonoString("Widgetchooser");
 	
-	auto text = icu::UnicodeString::fromUTF8("Editor View");
+	auto text = MST::toMonoString("Editor View");
 	b1 = new Button(this, text, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
 		button->t_y = t_y+App::text_padding*2+TextRenderer::get_text_height();
@@ -28,7 +28,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	});
 	b1->rounded = true;
 	
-	auto text2 = icu::UnicodeString::fromUTF8("File Tree");
+	auto text2 = MST::toMonoString("File Tree");
 	b2 = new Button(this, text2, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
 		button->t_y = b1->t_y+b1->t_h+App::text_padding/2;
@@ -40,7 +40,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	});
 	b2->rounded = true;
 	
-	auto text3 = icu::UnicodeString::fromUTF8("Settings Menu");
+	auto text3 = MST::toMonoString("Settings Menu");
 	b3 = new Button(this, text3, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
 		button->t_y = b2->t_y+b2->t_h+App::text_padding/2;
@@ -52,7 +52,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	});
 	b3->rounded = true;
 	
-	auto text4 = icu::UnicodeString::fromUTF8("Compare Two Files");
+	auto text4 = MST::toMonoString("Compare Two Files");
 	b4 = new Button(this, text4, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
 		button->t_y = b3->t_y+b3->t_h+App::text_padding/2;
@@ -66,7 +66,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	});
 	b4->rounded = true;
 	
-	auto text5 = icu::UnicodeString::fromUTF8("AI Chat");
+	auto text5 = MST::toMonoString("AI Chat");
 	b5 = new Button(this, text5, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
 		button->t_y = b4->t_y+b4->t_h+App::text_padding/2;
@@ -78,7 +78,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	});
 	b5->rounded = true;
 	
-	auto text6 = icu::UnicodeString::fromUTF8("LSP Debugger");
+	auto text6 = MST::toMonoString("LSP Debugger");
 	b6 = new Button(this, text6, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
 		button->t_y = b5->t_y+b5->t_h+App::text_padding/2;
@@ -90,7 +90,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	});
 	b6->rounded = true;
 	
-	auto text7 = icu::UnicodeString::fromUTF8("Terminal");
+	auto text7 = MST::toMonoString("Terminal");
 	b7 = new Button(this, text7, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
 		button->t_y = b6->t_y+b6->t_h+App::text_padding/2;
@@ -102,7 +102,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	});
 	b7->rounded = true;
 	
-	auto text8 = icu::UnicodeString::fromUTF8("Math Window");
+	auto text8 = MST::toMonoString("Math Window");
 	b8 = new Button(this, text8, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
 		button->t_y = b7->t_y+b7->t_h+App::text_padding/2;
@@ -114,7 +114,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	});
 	b8->rounded = true;
 	
-	auto text9 = icu::UnicodeString::fromUTF8("Asteroids");
+	auto text9 = MST::toMonoString("Asteroids");
 	b9 = new Button(this, text9, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
 		button->t_y = b8->t_y+b8->t_h+App::text_padding/2;
@@ -126,7 +126,7 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	});
 	b9->rounded = true;
 	
-	auto text10 = icu::UnicodeString::fromUTF8("Graph Window");
+	auto text10 = MST::toMonoString("Graph Window");
 	b10 = new Button(this, text10, [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = t_x+t_w/2-tw/2;
 		button->t_y = b9->t_y+b9->t_h+App::text_padding/2;
@@ -142,8 +142,8 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 void WidgetChooser::render() {
 	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
 	
-	auto txt = icu::UnicodeString::fromUTF8("Widget Chooser");
-	TextRenderer::draw_text(t_x+t_w/2-TextRenderer::get_text_width(txt.length())/2, t_y+App::text_padding, txt, App::theme.main_text_color);
+	auto txt = MST::toMonoString("Widget Chooser");
+	TextRenderer::draw_text(t_x+t_w/2-TextRenderer::get_text_width(txt.length)/2, t_y+App::text_padding, txt, App::theme.main_text_color);
 	
 	Widget::render();
 	

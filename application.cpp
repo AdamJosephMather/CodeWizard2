@@ -2,8 +2,6 @@
 #include <GLFW/glfw3.h>
 #include <queue>
 #include <syntect_bridge.h>
-#include <unicode/unistr.h>
-#include <unicode/ustream.h>
 #include <iostream>
 #include "scrollnotify.h"
 #include "codeedit.h"
@@ -32,8 +30,6 @@
 #endif
 
 #include <fstream>
-#include <unicode/ucsdet.h>   // CharsetDetector
-#include <unicode/ucnv.h>     // UConverter, ucnv_open/close
 
 #include <stb_image.h>
 #include "curler.h"
@@ -41,14 +37,17 @@
 #include "label.h"
 #include "updatechecker.h"
 
-#include <unicode/ustring.h>
+#include <unicode/ucsdet.h>
+#include <unicode/ucnv.h>
+#include <unicode/unistr.h>
+
 #include "Verify.hpp"
 
 
 
 int App::major_version = 2;
 int App::minor_version = 5;
-int App::patch_version = 0; // 🚀 (we now support emojis)
+int App::patch_version = 1; // 🚀 (we now support emojis)
 
 const std::vector<int> version = {App::major_version, App::minor_version, App::patch_version};
 
@@ -67,7 +66,7 @@ int App::reclear = 2;
 bool App::darkmode = true;
 std::string App::empty = "";
 
-icu::UnicodeString App::vnum = icu::UnicodeString();
+MST::MonoString App::vnum = MST::MonoString();
 std::string App::vnumstr = "";
 
 int App::moveMouseToX = -1;
@@ -254,8 +253,8 @@ void App::fixUpLanguages() {
 bool App::Init() {
 	std::cout << "Init...\n";
 	
-	icu::UnicodeString vnum = icu::UnicodeString::fromUTF8(std::to_string(App::major_version)+"."+std::to_string(App::minor_version)+"."+std::to_string(App::patch_version));
-	vnum.toUTF8String(vnumstr);
+	MST::MonoString vnum = MST::toMonoString(std::to_string(App::major_version)+"."+std::to_string(App::minor_version)+"."+std::to_string(App::patch_version));
+	vnumstr = MST::toString(vnum);
 	WINDOW_TITLE += vnumstr;
 	
 	STRING_REQUEST_TEXTEDIT = new TextEdit(nullptr, [&](Widget* w){
@@ -266,7 +265,7 @@ bool App::Init() {
 		w->t_h = new_h;
 		STRING_REQUEST_RECTANGLE->position(w->t_x, w->t_y, w->t_w, w->t_h);
 	});
-	STRING_REQUEST_TEXTEDIT->id = icu::UnicodeString::fromUTF8("STRING_REQUEST_TEXTEDIT");
+	STRING_REQUEST_TEXTEDIT->id = MST::toMonoString("STRING_REQUEST_TEXTEDIT");
 	STRING_REQUEST_TEXTEDIT->borderColor = nullptr;
 	STRING_REQUEST_TEXTEDIT->activeBorderColor = nullptr;
 	
@@ -277,7 +276,7 @@ bool App::Init() {
 		w->t_y = STRING_REQUEST_TEXTEDIT->t_y-h;
 		w->t_h = STRING_REQUEST_TEXTEDIT->t_h+h*2;
 	});
-	STRING_REQUEST_RECTANGLE->id = icu::UnicodeString::fromUTF8("STRING_REQUEST_RECTANGLE");
+	STRING_REQUEST_RECTANGLE->id = MST::toMonoString("STRING_REQUEST_RECTANGLE");
 	STRING_REQUEST_RECTANGLE->border_color = App::theme.active_color;
 	
 	STRING_REQUEST_LABEL = new Label(nullptr);
@@ -290,7 +289,7 @@ bool App::Init() {
 	};
 	STRING_REQUEST_LABEL->rect = false;
 	STRING_REQUEST_LABEL->border = false;
-	STRING_REQUEST_LABEL->id = icu::UnicodeString::fromUTF8("STRING_REQUEST_LABEL");
+	STRING_REQUEST_LABEL->id = MST::toMonoString("STRING_REQUEST_LABEL");
 	
 	settings->loadSettings();
 	
@@ -408,7 +407,7 @@ bool App::Init() {
 	// setup titlebar
 	
 	rootelement = new Widget(nullptr);
-	rootelement->id = icu::UnicodeString::fromUTF8("Root");
+	rootelement->id = MST::toMonoString("Root");
 	new PanelHolder(rootelement);
 	tb = new TitleBar(rootelement);
 	tb->exempt_from_parent_for_cursor = true;
@@ -549,11 +548,11 @@ void App::checkForUpdates() {
 	int f3 = latest[2]-patch_version;
 	
 	if (isNewer(latest, version)) {
-		displayToast(icu::UnicodeString::fromUTF8("There is a new version of CodeWizard available!"));
+		displayToast(MST::toMonoString("There is a new version of CodeWizard available!"));
 	}else if (isNewer(version, latest)) {
-		displayToast(icu::UnicodeString::fromUTF8("This CodeWizard is ahead of the latest release!"));
+		displayToast(MST::toMonoString("This CodeWizard is ahead of the latest release!"));
 	}else{
-//		displayToast(icu::UnicodeString::fromUTF8("This is the latest release!"));
+//		displayToast(MST::toMonoString("This is the latest release!"));
 	}
 }
 
@@ -575,7 +574,7 @@ LanguageServerClient* App::readyLSP(std::string lsp_command) {
 void App::openLanguagesFile() {
 	std::string path = settings->getLocalAppDataPath() + "/CodeWizard/languages.json";
 	openFromCMD(path, "languages.json");
-	displayToast(icu::UnicodeString::fromUTF8("Remember to reopen CodeWizard after making changes."));
+	displayToast(MST::toMonoString("Remember to reopen CodeWizard after making changes."));
 }
 
 void App::restartLSPs() {
@@ -1069,7 +1068,7 @@ void App::DoFullRenderWithoutInput() {
 		lastTime = currentTime;
 		
 		if (settings->getValue("show_fps", false)) {
-			displayText(icu::UnicodeString::fromUTF8("FPS: " + fps_str));
+			displayText(MST::toMonoString("FPS: " + fps_str));
 		}
 	}
 	
@@ -1379,7 +1378,7 @@ void App::Run() {
 				}else{
 					glfwSwapInterval(1); // Enable vsync
 					replaying_macro = false;
-					displayToast(icu::UnicodeString::fromUTF8("Finished Executing Macro"));
+					displayToast(MST::toMonoString("Finished Executing Macro"));
 				}
 			}
 		}
@@ -1503,7 +1502,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 	if (recording_macro) {
 		if ((key == GLFW_KEY_F12 || key == GLFW_KEY_F11) && action == GLFW_PRESS) {
 			recording_macro = false;
-			displayToast(icu::UnicodeString::fromUTF8("Macro Recording Over ("+std::to_string(keyboard_events.size())+")"));
+			displayToast(MST::toMonoString("Macro Recording Over ("+std::to_string(keyboard_events.size())+")"));
 			return;
 		}
 		
@@ -1517,11 +1516,11 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		keyboard_events.back().push_back(event);
 	}else if (key == GLFW_KEY_F12 && action == GLFW_PRESS) {
 		if (replaying_macro) {
-			displayToast(icu::UnicodeString::fromUTF8("Stopped Macro Replay"));
+			displayToast(MST::toMonoString("Stopped Macro Replay"));
 			glfwSwapInterval(1); // Enable vsync
 			replaying_macro = false;
 		}else{
-			displayToast(icu::UnicodeString::fromUTF8("Starting Macro Recording"));
+			displayToast(MST::toMonoString("Starting Macro Recording"));
 			recording_macro = true;
 			keyboard_events.clear();
 			keyboard_events.push_back({});
@@ -1532,31 +1531,30 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 	if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
 		if (!replaying_macro) {
 			if (keyboard_events.size() == 0) {
-				displayToast(icu::UnicodeString::fromUTF8("No Recorded Keystrokes"));
+				displayToast(MST::toMonoString("No Recorded Keystrokes"));
 				return;
 			}
-			displayToast(icu::UnicodeString::fromUTF8("Replaying Macro Recording"));
+			displayToast(MST::toMonoString("Replaying Macro Recording"));
 			
-			ON_STRING_GIVEN = [&](icu::UnicodeString str){
+			ON_STRING_GIVEN = [&](MST::MonoString str){
 				setActiveLeafNode(before_reps_request);
 				
-				if (str.length() == 0) {
-					displayToast(icu::UnicodeString::fromUTF8("Canceled"));
+				if (str.length == 0) {
+					displayToast(MST::toMonoString("Canceled"));
 					return;
 				}
 				
-				std::string as_string;
-				str.toUTF8String(as_string);
+				std::string as_string = MST::toString(str);
 				
 				try {
 					rep_count = std::stoi(as_string);
 				}catch(const std::invalid_argument& e) {
-					displayToast(icu::UnicodeString::fromUTF8("Invalid Number, Canceled"));
+					displayToast(MST::toMonoString("Invalid Number, Canceled"));
 					return;
 				}
 				
 				if (rep_count < 0) {
-					displayToast(icu::UnicodeString::fromUTF8("Invalid Number, Canceled"));
+					displayToast(MST::toMonoString("Invalid Number, Canceled"));
 					return;
 				}else if (rep_count == 0) {
 					rep_count = -1;
@@ -1567,9 +1565,9 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 				current_step = 0;
 			};
 			REQUESTING_STRING = true;
-			STRING_REQUEST_TEXTEDIT->setFullText(icu::UnicodeString());
+			STRING_REQUEST_TEXTEDIT->setFullText(MST::MonoString{});
 			STRING_REQUEST_TEXTEDIT->mode = 'i';
-			STRING_REQUEST_LABEL->setFullText(icu::UnicodeString::fromUTF8("Number of Repetitions (0 for Infinite)?"));
+			STRING_REQUEST_LABEL->setFullText(MST::toMonoString("Number of Repetitions (0 for Infinite)?"));
 			MoveWidget(STRING_REQUEST_RECTANGLE, rootelement);
 			MoveWidget(STRING_REQUEST_TEXTEDIT, rootelement);
 			MoveWidget(STRING_REQUEST_LABEL, rootelement);
@@ -1577,7 +1575,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 			setActiveLeafNode(STRING_REQUEST_TEXTEDIT);
 			reclear = 2;
 		}else{
-			displayToast(icu::UnicodeString::fromUTF8("Stopped Macro Replay"));
+			displayToast(MST::toMonoString("Stopped Macro Replay"));
 			glfwSwapInterval(1); // Enable vsync
 			replaying_macro = false;
 		}
@@ -1645,10 +1643,10 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		openFolderSelector();
 		return;
 	}else if (action == GLFW_PRESS && key == GLFW_KEY_S && control && !shift) {
-		displayText(icu::UnicodeString::fromUTF8("Saving..."));
+		displayText(MST::toMonoString("Saving..."));
 		save();
 	}else if (action == GLFW_PRESS && key == GLFW_KEY_F5) {
-		displayText(icu::UnicodeString::fromUTF8("Saving..."));
+		displayText(MST::toMonoString("Saving..."));
 		save();
 		std::string build_command = settings->getProjectBuild();
 		if (build_command != "") {
@@ -1659,18 +1657,18 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		setActiveLeafNode(commandPalette);
 		return;
 	}else if (action == GLFW_PRESS && key == GLFW_KEY_U && control && shift) {
-		icu::UnicodeString selectedStr = icu::UnicodeString::fromUTF8("");
+		MST::MonoString selectedStr = MST::toMonoString("");
 		if (auto te = dynamic_cast<TextEdit*>(activeLeafNode)) {
 			selectedStr = te->getSelectedText(te->cursors[0]);
 		}
 		
 		setActiveLeafNode(commandPalette);
 		auto cp = dynamic_cast<TextEdit*>(commandPalette);
-		cp->setFullText("&");
+		cp->setFullText(MST::toMonoString(U'&'));
 		cp->cursors = { {0, 1, 0, 1, 1} };
 		cp->mode = 'i';
 		
-		if (selectedStr.length() != 0) {
+		if (selectedStr.length != 0) {
 			cp->insertTextAtCursor(cp->cursors[0], selectedStr);
 		}
 		
@@ -1693,7 +1691,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 			TextRenderer::init_font(default_font_path.c_str());
 		}
 		
-		displayText(icu::UnicodeString::fromUTF8(std::to_string(new_v)));
+		displayText(MST::toMonoString(std::to_string(new_v)));
 	}else if (action == GLFW_PRESS && key == GLFW_KEY_MINUS && control) {
 		float new_v = App::settings->getValue("font_size", 23.0f) - 1;
 		
@@ -1712,7 +1710,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 			TextRenderer::init_font(default_font_path.c_str());
 		}
 		
-		displayText(icu::UnicodeString::fromUTF8(std::to_string(new_v)));
+		displayText(MST::toMonoString(std::to_string(new_v)));
 	}
 	
 	if ((action == GLFW_PRESS || action == GLFW_REPEAT) && activeLeafNode == commandPalette) {
@@ -1922,11 +1920,10 @@ void App::commandUnfocused() {
 		}else{
 			std::string folder = settings->getValue("current_folder", getExecutableDir());
 			std::filesystem::path p(folder);
-			com_p->setFullText(icu::UnicodeString::fromUTF8(p.filename().string()));
+			com_p->setFullText(MST::toMonoString(p.filename().string()));
 		}
 		
-		std::string txt;
-		com_p->getFullText().toUTF8String(txt);
+		std::string txt = MST::toString(com_p->getFullText());
 		pending_window_title = txt + " - " + WINDOW_TITLE;
 		time_till_regular = 2;
 	}
@@ -1959,9 +1956,9 @@ void App::openFilesList() {
 	files_in_box = rootelement->getOpenFiles(false);
 	
 	if (auto lb = dynamic_cast<ListBox*>(filesList)) {
-		std::vector<icu::UnicodeString> items;
+		std::vector<MST::MonoString> items;
 		for (auto v : files_in_box) {
-			items.push_back(icu::UnicodeString::fromUTF8(v[0]));
+			items.push_back(MST::toMonoString(v[0]));
 		}
 		
 		lb->setElements(items);
@@ -1970,13 +1967,12 @@ void App::openFilesList() {
 }
 
 void App::gitPush() {
-	ON_STRING_GIVEN = [&](icu::UnicodeString str){
-		if (str.length() == 0) {
+	ON_STRING_GIVEN = [&](MST::MonoString str){
+		if (str.length == 0) {
 			return;
 		}
 		
-		std::string mes;
-		str.toUTF8String(mes);
+		std::string mes = MST::toString(str);
 		
 		std::string folder = settings->getValue("current_folder", getExecutableDir());
 #ifdef _WIN32
@@ -1987,9 +1983,9 @@ void App::gitPush() {
 	};
 	
 	REQUESTING_STRING = true;
-	STRING_REQUEST_TEXTEDIT->setFullText(icu::UnicodeString());
+	STRING_REQUEST_TEXTEDIT->setFullText(MST::MonoString{});
 	STRING_REQUEST_TEXTEDIT->mode = 'i';
-	STRING_REQUEST_LABEL->setFullText(icu::UnicodeString::fromUTF8("Git Commit Message?"));
+	STRING_REQUEST_LABEL->setFullText(MST::toMonoString("Git Commit Message?"));
 	MoveWidget(STRING_REQUEST_RECTANGLE, rootelement);
 	MoveWidget(STRING_REQUEST_TEXTEDIT, rootelement);
 	MoveWidget(STRING_REQUEST_LABEL, rootelement);
@@ -2028,30 +2024,30 @@ void App::gitForcePull() {
 
 void App::undoFixIt() {
 	if (!activeEditor) {
-		displayToast(icu::UnicodeString::fromUTF8("No editor active."));
+		displayToast(MST::toMonoString("No editor active."));
 	}else{
 		Editor* edtr = (Editor*)activeEditor;
 		auto wdgt = edtr->editors[edtr->tab_bar->selected_id];
 		if (auto cdet = dynamic_cast<CodeEdit*>(wdgt)) {
 			cdet->undo_fixit();
-			displayToast(icu::UnicodeString::fromUTF8("Reverted to Spaces"));
+			displayToast(MST::toMonoString("Reverted to Spaces"));
 		}else{
-			displayToast(icu::UnicodeString::fromUTF8("Active Editor is not a CodeEdit."));
+			displayToast(MST::toMonoString("Active Editor is not a CodeEdit."));
 		}
 	}
 }
 
 void App::fixIt() {
 	if (!activeEditor) {
-		displayToast(icu::UnicodeString::fromUTF8("No editor active."));
+		displayToast(MST::toMonoString("No editor active."));
 	}else{
 		Editor* edtr = (Editor*)activeEditor;
 		auto wdgt = edtr->editors[edtr->tab_bar->selected_id];
 		if (auto cdet = dynamic_cast<CodeEdit*>(wdgt)) {
 			cdet->run_fixit();
-			displayToast(icu::UnicodeString::fromUTF8("Fix-It Complete"));
+			displayToast(MST::toMonoString("Fix-It Complete"));
 		}else{
-			displayToast(icu::UnicodeString::fromUTF8("Active Editor is not a CodeEdit."));
+			displayToast(MST::toMonoString("Active Editor is not a CodeEdit."));
 		}
 	}
 }
@@ -2070,9 +2066,9 @@ void App::saveThemeToFile() {
 		std::string tosave = settings->getSubSet({"dark_mode", "c_comments_color", "c_functs_color", "c_keywords_color", "c_literals_color", "c_punctuation_color", "c_strings_color", "c_tint_color", "c_saturation", "c_types_color", "c_vars_color", "c_operator_color", "c_preproc_color", "c_invalid_color"});
 		std::string err;
 		if (!atomicWriteReplace(filePath, tosave, &err)) {
-			displayToast(icu::UnicodeString::fromUTF8("Failed to write file: "+err));
+			displayToast(MST::toMonoString("Failed to write file: "+err));
 		}else{
-			displayToast(icu::UnicodeString::fromUTF8("Saved theme to file!"));
+			displayToast(MST::toMonoString("Saved theme to file!"));
 		}
 	}
 }
@@ -2088,15 +2084,14 @@ void App::loadThemeFromFile() {
 	if (fp) {
 		std::string filePath(fp);
 		bool worked = false;
-		icu::UnicodeString text = readFileToUnicodeString(filePath, worked);
+		MST::MonoString text = readFileToMonoString(filePath, worked);
 		if (!worked) {
-			displayToast(icu::UnicodeString::fromUTF8("Could not read file. ")+text);
+			displayToast(MST::toMonoString("Could not read file. ")+text);
 		}else{
-			std::string str;
-			text.toUTF8String(str);
+			std::string str = MST::toString(text);
 			
 			if (!settings->bringInSubset(str)) {
-				displayToast(icu::UnicodeString::fromUTF8("Could not load settings."));
+				displayToast(MST::toMonoString("Could not load settings."));
 			}else{
 				std::string cl = App::settings->getValue("c_tint_color", App::empty);
 				if (cl != empty) {
@@ -2121,7 +2116,7 @@ void App::loadThemeFromFile() {
 				setSynColor(&theme, "c_operator_color", 9);
 				setSynColor(&theme, "c_preproc_color", 10);
 				setSynColor(&theme, "c_invalid_color", 11);
-				displayToast(icu::UnicodeString::fromUTF8("Done!"));
+				displayToast(MST::toMonoString("Done!"));
 				
 				App::rootelement->executeAction(WidgetActionType::SETTINGS_CHANGE);
 			}
@@ -2151,17 +2146,16 @@ void App::executeCommandPaletteAction() {
 	if (cur_type == 1) { // move er up to the top and copy it
 		auto data = cmdbx->elements[cmdbx->selected_id];
 		
-		if (data.length() == 0){
+		if (data.length == 0){
 			return;
 		}
 		
-		std::string str;
-		data.toUTF8String(str);
+		std::string str = MST::toString(data);
 		
 		SetClipboardText(str);
 		cmdpl->setFullText(data);
 		cmdpl->cursors[0].head_line = cmdpl->lines.size()-1;
-		cmdpl->cursors[0].head_char = cmdpl->lines[cmdpl->cursors[0].head_line].line_text.length();
+		cmdpl->cursors[0].head_char = cmdpl->lines[cmdpl->cursors[0].head_line].line_text.length;
 		
 		return;
 	}else if (cur_type == 2){
@@ -2216,9 +2210,9 @@ void App::executeCommandPaletteAction() {
 		}else if (filepath == ":Load Theme Settings From File") {
 			loadThemeFromFile();
 		}else if(filepath == ":Test Toast Box"){
-			displayToast(icu::UnicodeString::fromUTF8("Example Toast Message."));
+			displayToast(MST::toMonoString("Example Toast Message."));
 		}else if(filepath == ":Test Text Line"){
-			displayText(icu::UnicodeString::fromUTF8("Example Text Line Message."));
+			displayText(MST::toMonoString("Example Text Line Message."));
 		}else if (filepath == ":Restart Language Servers (LSPs)") {
 			restartLSPs();
 		}else if (filepath == ":Open `languages.json` file") {
@@ -2228,7 +2222,7 @@ void App::executeCommandPaletteAction() {
 		}else if (filepath == ":Undo FixIt (Tabs to Spaces)") {
 			undoFixIt();
 		}else if (filepath == ":How Many Widgets Currently?") {
-			displayToast(icu::UnicodeString::fromUTF8("There are: " + std::to_string(all_widgets.size())+" open widgets."));
+			displayToast(MST::toMonoString("There are: " + std::to_string(all_widgets.size())+" open widgets."));
 		}
 		
 		return;
@@ -2317,7 +2311,7 @@ void App::indexFiles() {
 		
 		std::string absPath = fInfo[1];
 		INDEXED_FILES.fullPaths.push_back(absPath);
-		INDEXED_FILES.displayPaths.push_back(icu::UnicodeString::fromUTF8(">" + fInfo[0]));
+		INDEXED_FILES.displayPaths.push_back(MST::toMonoString(">" + fInfo[0]));
 		INDEXED_FILES.indexedNames.push_back(fInfo[0]);
 		dontshowagain.insert(absPath);
 	}
@@ -2360,7 +2354,7 @@ void App::indexFiles() {
 					if (slash != std::string::npos)
 						rel = rel.substr(slash);
 				}
-				INDEXED_FILES.displayPaths.push_back(icu::UnicodeString::fromUTF8(rel));
+				INDEXED_FILES.displayPaths.push_back(MST::toMonoString(rel));
 
 				// Store the bare file name
 				INDEXED_FILES.indexedNames.push_back(entry.path().filename().string());
@@ -2378,7 +2372,7 @@ void App::indexFiles() {
 		std::string tagged = ":" + cmd;
 		INDEXED_FILES.fullPaths.push_back(tagged);
 		INDEXED_FILES.indexedNames.push_back(tagged);
-		INDEXED_FILES.displayPaths.push_back(icu::UnicodeString::fromUTF8(tagged));
+		INDEXED_FILES.displayPaths.push_back(MST::toMonoString(tagged));
 	}
 }
 
@@ -2416,13 +2410,12 @@ void App::fillCmdBox() {
 	INDEXED_FILES.currentlyshowingtype.clear();
 	storedsearches.clear();
 	
-	std::vector<icu::UnicodeString> els;
+	std::vector<MST::MonoString> els;
 	
-	icu::UnicodeString searchfor = cp->getFullText();
+	MST::MonoString searchfor = cp->getFullText();
 	
-	if (searchfor.length() >= 3 && searchfor.char32At(0) == U'&') {
-		std::string loweredSearchfor;
-		searchfor.toUTF8String(loweredSearchfor);
+	if (searchfor.length >= 3 && MST::char32At(searchfor, 0) == U'&') {
+		std::string loweredSearchfor = MST::toString(searchfor);
 		loweredSearchfor = loweredSearchfor.substr(1);
 		SearchResult res = searchAcrossFiles(loweredSearchfor);
 		
@@ -2431,7 +2424,7 @@ void App::fillCmdBox() {
 			
 			std::filesystem::path p(filePath);
 			
-			els.push_back(icu::UnicodeString::fromUTF8(p.filename().string()));
+			els.push_back(MST::toMonoString(p.filename().string()));
 			
 			StoredSearch itm = {filePath, 0};
 			storedsearches.push_back(itm);
@@ -2440,7 +2433,7 @@ void App::fillCmdBox() {
 			INDEXED_FILES.currentlyshowingtype.push_back(2);
 			
 			for (const auto& [lineNum, text] : matches) {
-				els.push_back(icu::UnicodeString::fromUTF8("    "+text));
+				els.push_back(MST::toMonoString("    "+text));
 				
 				StoredSearch itm = {filePath, lineNum-1};
 				storedsearches.push_back(itm);
@@ -2455,11 +2448,11 @@ void App::fillCmdBox() {
 	if (res.first){
 		INDEXED_FILES.currentlyshowing.push_back(0);
 		INDEXED_FILES.currentlyshowingtype.push_back(1);
-		els.push_back(doubleToUnicodeString_pretty(res.second));
+		els.push_back(doubleToMonoString_pretty(res.second));
 	}
 	
-	std::string str;
-	searchfor.toUTF8String(str);
+	
+	std::string str = MST::toString(searchfor);
 	
 	std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c){ return std::tolower(c); });
 	
@@ -2529,7 +2522,7 @@ void App::setActiveLeafNode(Widget* w) {
 	
 	if (w == commandPalette) { // we must have just moved to the commandPalette (let's clear it)
 		if (auto edt = dynamic_cast<TextEdit*>(commandPalette)){
-			edt->setFullText(icu::UnicodeString());
+			edt->setFullText({});
 			edt->mode = 'i'; // let's always go back to insert when going there
 			
 			// here let's move the cp_listbox to the rootwidget. yeah.
@@ -2633,165 +2626,213 @@ void App::fixAllTmpFiles() {
 	}
 }
 
-icu::UnicodeString App::readFileToUnicodeString(const std::string& filename, bool& worked) {
+MST::MonoString App::readFileToMonoString(const std::string& filename, bool& worked) {
 	worked = false;
-	
-	for (int i = 0; i < 5; i++) {
-		// Read file as binary
+
+	auto errorString = [](const char* msg) -> MST::MonoString {
+		return MST::toMonoString(std::string(msg));
+	};
+
+	auto convertBytesToMonoString = [](const std::vector<char>& buffer,
+	                                    const char* encodingName,
+	                                    MST::MonoString& out) -> bool {
+		if (buffer.empty() || !encodingName) {
+			return false;
+		}
+
+		if (buffer.size() > static_cast<size_t>(std::numeric_limits<int32_t>::max())) {
+			return false;
+		}
+
+		UErrorCode status = U_ZERO_ERROR;
+		UConverter* converter = ucnv_open(encodingName, &status);
+		if (U_FAILURE(status) || !converter) {
+			return false;
+		}
+
+		const int32_t sourceLength = static_cast<int32_t>(buffer.size());
+
+		// Preflight required UTF-16 length.
+		status = U_ZERO_ERROR;
+		int32_t requiredLength = ucnv_toUChars(
+			converter,
+			nullptr,
+			0,
+			buffer.data(),
+			sourceLength,
+			&status
+		);
+
+		if (status != U_BUFFER_OVERFLOW_ERROR && U_FAILURE(status)) {
+			ucnv_close(converter);
+			return false;
+		}
+
+		std::vector<UChar> utf16Buffer(static_cast<size_t>(requiredLength));
+
+		status = U_ZERO_ERROR;
+		int32_t actualLength = ucnv_toUChars(
+			converter,
+			utf16Buffer.data(),
+			requiredLength,
+			buffer.data(),
+			sourceLength,
+			&status
+		);
+
+		ucnv_close(converter);
+
+		if (U_FAILURE(status)) {
+			return false;
+		}
+
+		// Convert decoded UTF-16 to UTF-8, then feed your MonoString grapheme logic.
+		std::string utf8;
+		icu::UnicodeString temp(false, utf16Buffer.data(), actualLength);
+		temp.toUTF8String(utf8);
+
+		out = MST::toMonoString(utf8);
+		return true;
+	};
+
+	for (int attempt = 0; attempt < 5; attempt++) {
 		std::ifstream file(filename, std::ios::binary | std::ios::ate);
 		if (!file.is_open()) {
-			return icu::UnicodeString::fromUTF8("Failed to open file - file.is_open");
+			return errorString("Failed to open file - file.is_open");
 		}
-	
+
 		std::streamsize fileSize = file.tellg();
 		if (fileSize < 0) {
 			file.close();
-			return icu::UnicodeString::fromUTF8("Failed to open file - fileSize < 0");
+			return errorString("Failed to open file - fileSize < 0");
 		}
-	
+
+		if (fileSize > static_cast<std::streamsize>(std::numeric_limits<int32_t>::max())) {
+			file.close();
+			return errorString("Failed to open file - file too large for ICU converter");
+		}
+
 		file.seekg(0, std::ios::beg);
+
 		std::vector<char> buffer(static_cast<size_t>(fileSize));
 		if (fileSize > 0 && !file.read(buffer.data(), fileSize)) {
 			file.close();
-			return icu::UnicodeString::fromUTF8("Failed to open file - couldn't read data");
+			return errorString("Failed to open file - couldn't read data");
 		}
+
 		file.close();
-		
-		// Empty file on disk → try again
+
+		// Empty file on disk -> try again in case another process is writing it.
 		if (buffer.empty()) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(25));
 			continue;
 		}
-		
+
 		UErrorCode status = U_ZERO_ERROR;
-		
-		// Charset detector
+
 		UCharsetDetector* detector = ucsdet_open(&status);
 		if (U_FAILURE(status) || !detector) {
-			return icu::UnicodeString::fromUTF8("Failed to open file - couldn't create charset detector");
+			return errorString("Failed to open file - couldn't create charset detector");
 		}
-		
-		ucsdet_setText(detector, buffer.data(), static_cast<int32_t>(fileSize), &status);
+
+		ucsdet_setText(
+			detector,
+			buffer.data(),
+			static_cast<int32_t>(buffer.size()),
+			&status
+		);
+
 		if (U_FAILURE(status)) {
 			ucsdet_close(detector);
-			return icu::UnicodeString::fromUTF8("Failed to open file - couldn't set input data for charset detector");
+			return errorString("Failed to open file - couldn't set input data for charset detector");
 		}
-		
+
 		int32_t matchCount = 0;
 		const UCharsetMatch** matches = ucsdet_detectAll(detector, &matchCount, &status);
+
 		if (U_FAILURE(status) || matchCount == 0) {
 			ucsdet_close(detector);
-			return icu::UnicodeString::fromUTF8("Failed to open file - no matches on charset detector");
+			return errorString("Failed to open file - no matches on charset detector");
 		}
-		
-		icu::UnicodeString result;
+
+		MST::MonoString result;
 		bool conversionSucceeded = false;
-		
-		// Try detected encodings
-		for (int32_t i = 0; i < matchCount && !conversionSucceeded; ++i) {
+
+		// Try detected encodings first.
+		for (int32_t matchIndex = 0; matchIndex < matchCount && !conversionSucceeded; ++matchIndex) {
 			status = U_ZERO_ERROR;
-			const char* encodingName = ucsdet_getName(matches[i], &status);
-			if (U_FAILURE(status) || !encodingName) continue;
-			
-			int32_t confidence = ucsdet_getConfidence(matches[i], &status);
-			if (U_FAILURE(status) || confidence < 10) continue;
-			
-			UConverter* converter = ucnv_open(encodingName, &status);
-			if (U_FAILURE(status) || !converter) continue;
-			
-			int32_t targetCapacity = static_cast<int32_t>(fileSize * 2 + 1);
-			std::vector<UChar> targetBuffer(static_cast<size_t>(targetCapacity));
-			
-			int32_t targetLength = ucnv_toUChars(
-				converter,
-				targetBuffer.data(),
-				targetCapacity,
-				buffer.data(),
-				static_cast<int32_t>(fileSize),
-				&status
-			);
-	
-			ucnv_close(converter);
-	
-			if (U_SUCCESS(status)) {
-				result = icu::UnicodeString(targetBuffer.data(), targetLength);
-				conversionSucceeded = true;
+
+			const char* encodingName = ucsdet_getName(matches[matchIndex], &status);
+			if (U_FAILURE(status) || !encodingName) {
+				continue;
 			}
+
+			int32_t confidence = ucsdet_getConfidence(matches[matchIndex], &status);
+			if (U_FAILURE(status) || confidence < 10) {
+				continue;
+			}
+
+			conversionSucceeded = convertBytesToMonoString(buffer, encodingName, result);
 		}
-		
+
 		ucsdet_close(detector);
-		
-		// Fallback encodings
+
+		// Fallback encodings.
 		if (!conversionSucceeded) {
 			const char* fallbackEncodings[] = {
-				"UTF-8","UTF-16","UTF-16BE","UTF-16LE",
-				"UTF-32","UTF-32BE","UTF-32LE",
-				"ISO-8859-1","Windows-1252","ASCII"
+				"UTF-8",
+				"UTF-16",
+				"UTF-16BE",
+				"UTF-16LE",
+				"UTF-32",
+				"UTF-32BE",
+				"UTF-32LE",
+				"ISO-8859-1",
+				"Windows-1252",
+				"ASCII"
 			};
-	
+
 			for (const char* enc : fallbackEncodings) {
-				status = U_ZERO_ERROR;
-				UConverter* converter = ucnv_open(enc, &status);
-				if (U_FAILURE(status) || !converter) continue;
-	
-				int32_t targetCapacity = static_cast<int32_t>(fileSize * 2 + 1);
-				std::vector<UChar> targetBuffer(static_cast<size_t>(targetCapacity));
-	
-				int32_t targetLength = ucnv_toUChars(
-					converter,
-					targetBuffer.data(),
-					targetCapacity,
-					buffer.data(),
-					static_cast<int32_t>(fileSize),
-					&status
-				);
-	
-				ucnv_close(converter);
-	
-				if (U_SUCCESS(status)) {
-					result = icu::UnicodeString(targetBuffer.data(), targetLength);
+				if (convertBytesToMonoString(buffer, enc, result)) {
 					conversionSucceeded = true;
 					break;
 				}
 			}
 		}
-	
-		// Final fallback: assume UTF-8 and sanity-check replacement chars
+
+		// Final fallback: assume UTF-8 and sanity-check replacement chars.
 		if (!conversionSucceeded) {
-			status = U_ZERO_ERROR;
-			result = icu::UnicodeString::fromUTF8(icu::StringPiece(buffer.data(), static_cast<int32_t>(fileSize)));
-	
-			int32_t replacementCount = 0;
-			const int32_t totalLength = result.length();
-			for (int32_t i = 0; i < totalLength; ++i) {
-				if (result.charAt(i) == 0xFFFD) replacementCount++;
+			std::string utf8(buffer.data(), buffer.size());
+			result = MST::toMonoString(utf8);
+
+			size_t replacementCount = 0;
+
+			for (size_t i = 0; i < result.length; ++i) {
+				if (result.data[i] == 0xFFFD) {
+					replacementCount++;
+				}
 			}
-			if (totalLength > 0 && (replacementCount * 100 / totalLength) < 5) {
+
+			if (result.length > 0 && (replacementCount * 100 / result.length) < 5) {
 				conversionSucceeded = true;
 			}
 		}
-		
-		// Normalize (strip CR) on success
+
+		// Normalize: strip CR on success.
 		if (conversionSucceeded) {
-			icu::UnicodeString normalized;
-			for (int32_t i = 0; i < result.length(); ++i) {
-				UChar ch = result.charAt(i);
-				if (ch != 0x000D) normalized.append(ch);
-			}
-			result = normalized;
+			result = MST::replaceAll(result, MST::toMonoString("\r\n"), MST::toMonoString("\n"));
 		}
-		
-	
-		if (result.length() != 0 || !conversionSucceeded) {
+
+		if (result.length != 0 || !conversionSucceeded) {
 			worked = conversionSucceeded;
 			return result;
 		}
-		
+
 		std::this_thread::sleep_for(std::chrono::milliseconds(25));
 	}
-	
+
 	worked = true;
-	return icu::UnicodeString();
+	return MST::MonoString{};
 }
 
 void App::launchCommandNonBlocking(const std::string& command) {
@@ -2999,14 +3040,14 @@ void App::updateFromTintColor(Theme* t) {
 	rootelement->executeAction(WidgetActionType::THEME_CALCULATED);
 }
 
-void App::displayToast(icu::UnicodeString text) {
+void App::displayToast(MST::MonoString text) {
 	if (auto toaster = dynamic_cast<Toast*>(toastBox)) {
 		toaster->displayMessage(text);
 	}
 	time_till_regular = 2;
 }
 
-void App::displayText(icu::UnicodeString text) {
+void App::displayText(MST::MonoString text) {
 	if (auto sn = dynamic_cast<ScrollNotify*>(scrollNotifyBox)) {
 		sn->displayMessage(text);
 	}

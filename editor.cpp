@@ -6,7 +6,7 @@
 #include "imageview.h"
 
 Editor::Editor(Widget* parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("Editor");
+	id = MST::toMonoString("Editor");
 	
 	tab_bar = new Tabs(this);
 	
@@ -89,9 +89,9 @@ void Editor::createNew(FileInfo* fn) {
 	auto ti = TabInfo();
 	
 	if (fn) {
-		ti.title = icu::UnicodeString::fromUTF8(fn->filename);
+		ti.title = MST::toMonoString(fn->filename);
 	}else{
-		ti.title = icu::UnicodeString::fromUTF8("Untitled");
+		ti.title = MST::toMonoString("Untitled");
 	}
 	
 	ti.id = tabid;
@@ -121,7 +121,7 @@ void Editor::createNew(FileInfo* fn) {
 			TabInfo tab;
 			CodeEdit* edtr = dynamic_cast<CodeEdit*>(widget);
 			tab.id = edtr->TABID;
-			tab.title = icu::UnicodeString::fromUTF8(info->filename);
+			tab.title = MST::toMonoString(info->filename);
 			tab_bar->updateTab(tab);
 		});
 		
@@ -272,7 +272,7 @@ void Editor::fileOpenRequested(FileInfo* f, int lns, int chrs, int ln, int chr) 
 	
 	if (auto ce = dynamic_cast<CodeEdit*>(editors[tabbeforetab])) { // we do this cast because not all widgets have FileInfo file; variables.
 		if (!ce->file) {
-			if (ce->textedit->getFullText() == "") { // empty file only in memory - let's remove it.
+			if (ce->textedit->getFullText().length == 0) { // empty file only in memory - let's remove it.
 				closeFile(tabbeforetab);
 			}
 		}
@@ -292,11 +292,11 @@ void Editor::moveto(int lns, int chrs, int ln, int chr) {
 			return;
 		}
 		
-		if (chr < 0 || ce->textedit->lines[ln].line_text.length() < chr) {
+		if (chr < 0 || ce->textedit->lines[ln].line_text.length < chr) {
 			return;
 		}
 		
-		if (chrs < 0 || ce->textedit->lines[lns].line_text.length() < chrs) {
+		if (chrs < 0 || ce->textedit->lines[lns].line_text.length < chrs) {
 			return;
 		}
 		
@@ -330,24 +330,24 @@ bool Editor::on_key_event(int key, int scancode, int action, int mods) {
 	return Widget::on_key_event(key, scancode, action, mods);
 }
 
-icu::UnicodeString Editor::getPaletteName() {
+MST::MonoString Editor::getPaletteName() {
 	if (auto ce = dynamic_cast<CodeEdit*>(editors[tab_bar->selected_id])) {
 		if (!ce->file || ce->file->filename == "") {
-			return icu::UnicodeString::fromUTF8("Untitled");
+			return MST::toMonoString("Untitled");
 		}
-		return icu::UnicodeString::fromUTF8(ce->file->filename);
+		return MST::toMonoString(ce->file->filename);
 	}else if (auto iv = dynamic_cast<ImageView*>(editors[tab_bar->selected_id])) {
 		if (!iv->file || iv->file->filename == "") {
-			return icu::UnicodeString::fromUTF8("Untitled Image");
+			return MST::toMonoString("Untitled Image");
 		}
-		return icu::UnicodeString::fromUTF8(iv->file->filename);
+		return MST::toMonoString(iv->file->filename);
 	}else if (auto he = dynamic_cast<HexEditor*>(editors[tab_bar->selected_id])) {
 		if (!he->file || he->file->filename == "") {
-			return icu::UnicodeString::fromUTF8("Untitled Binary File");
+			return MST::toMonoString("Untitled Binary File");
 		}
-		return icu::UnicodeString::fromUTF8(he->file->filename);
+		return MST::toMonoString(he->file->filename);
 	}
-	return icu::UnicodeString::fromUTF8("");
+	return MST::toMonoString("");
 }
 
 Widget* Editor::fileOpen(std::string fname) { // this is a widget function to find an editor which has a filename already open (let's not re-open it, no reason to.)
@@ -386,9 +386,8 @@ std::vector<std::vector<std::string>> Editor::getOpenFiles(bool includeText) {
 			}
 			
 			if (includeText) { // defaults to false
-				icu::UnicodeString fulltext = te->textedit->getFullText();
-				std::string text;
-				fulltext.toUTF8String(text);
+				MST::MonoString fulltext = te->textedit->getFullText();
+				std::string text = MST::toString(fulltext);
 				res.push_back(text);
 			}
 			

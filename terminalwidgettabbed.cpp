@@ -4,7 +4,7 @@
 #include "text_renderer.h"
 
 TerminalWidgetTabbed::TerminalWidgetTabbed(Widget* parent)  : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("Terminal Tabbed");
+	id = MST::toMonoString("Terminal Tabbed");
 	
 	tab_bar = new Tabs(this);
 	
@@ -69,9 +69,9 @@ void TerminalWidgetTabbed::createNew() {
 	auto ti = TabInfo();
 	
 	#ifdef _WIN32
-	ti.title = icu::UnicodeString::fromUTF8(App::settings->getValue("terminal_cmd", (std::string)"cmd.exe"));
+	ti.title = MST::toMonoString(App::settings->getValue("terminal_cmd", (std::string)"cmd.exe"));
 	#else
-	ti.title = icu::UnicodeString::fromUTF8(App::settings->getValue("terminal_cmd", (std::string)"/bin/bash"));
+	ti.title = MST::toMonoString(App::settings->getValue("terminal_cmd", (std::string)"/bin/bash"));
 	#endif
 	ti.id = tabid;
 	tab_bar->addTab(ti);

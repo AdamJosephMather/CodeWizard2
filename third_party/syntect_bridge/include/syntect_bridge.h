@@ -29,7 +29,7 @@ typedef enum CW_ColorRole {
 typedef struct CW_HighlightToken {
 	uint32_t start_byte;
 	uint32_t end_byte;
-	uint32_t role;
+	int32_t role;
 } CW_HighlightToken;
 
 typedef struct CW_LineResult {

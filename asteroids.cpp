@@ -16,7 +16,7 @@ long double getTime() {
 }
 
 Asteroids::Asteroids(Widget* parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("Asteroids");
+	id = MST::toMonoString("Asteroids");
 	
 	std::random_device rd;  // Hardware seed
 	gen = std::mt19937(rd()); // Standard mersenne_twister_engine
@@ -25,7 +25,7 @@ Asteroids::Asteroids(Widget* parent) : Widget(parent) {
 	lastTime = getTime();
 	lastBullet = getTime();
 	
-	startGameButton = new Button(this, icu::UnicodeString::fromUTF8("Play"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+	startGameButton = new Button(this, MST::toMonoString("Play"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
 		btn->t_x = t_x+t_w/2-w/2;
 		btn->t_y = t_y+t_h/2-h/2;

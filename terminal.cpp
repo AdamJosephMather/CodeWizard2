@@ -53,7 +53,7 @@ inline std::string defaultShell() {
 }
 
 static std::string wstringToUtf8(const std::wstring& wstr) {
-	icu::UnicodeString u = icu::UnicodeString::fromUTF32(
+	MST::MonoString u = MST::toMonoString(
 		reinterpret_cast<const UChar32*>(wstr.data()),
 		static_cast<int32_t>(wstr.size()));
 	std::string out;

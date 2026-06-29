@@ -4,13 +4,13 @@
 #include "helper_types.h"
 
 Label::Label(Widget* parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("Label");
+	id = MST::toMonoString("Label");
 	
-	fulltext = icu::UnicodeString::fromUTF8("");
+	fulltext = MST::toMonoString("");
 	drawlines = {};
 }
 
-void Label::setFullText(icu::UnicodeString text, std::vector<MarkdownSpan> spans) {
+void Label::setFullText(MST::MonoString text, std::vector<MarkdownSpan> spans) {
 	std::lock_guard<std::mutex> lock(positioning);
 	
 	fulltext = text;
@@ -19,7 +19,7 @@ void Label::setFullText(icu::UnicodeString text, std::vector<MarkdownSpan> spans
 	colorSpans = spans;
 }
 
-icu::UnicodeString Label::getFullText() {
+MST::MonoString Label::getFullText() {
 	return fulltext;
 }
 
@@ -29,13 +29,12 @@ bool Label::on_mouse_button_event(int button, int action, int mods) {
 	}
 	
 	if (t_x < App::mouseX && App::mouseX < t_x+t_w && t_y < App::mouseY && App::mouseY < t_y+t_h) {
-		if (fulltext.length() != 0) {
-			std::string text;
-			fulltext.toUTF8String(text);
+		if (fulltext.length != 0) {
+			std::string text = MST::toString(fulltext);
 			SetClipboardText(text);
-			App::displayToast(icu::UnicodeString::fromUTF8("Coppied to clipboard."));
+			App::displayToast(MST::toMonoString("Coppied to clipboard."));
 		}else{
-			App::displayToast(icu::UnicodeString::fromUTF8("Nothing to copy."));
+			App::displayToast(MST::toMonoString("Nothing to copy."));
 		}
 		
 		return true;
@@ -90,34 +89,24 @@ void Label::position(int x, int y, int w, int h) {
 	drawlines.clear();
 	drawColors.clear();
 	
-	icu::UnicodeString curline = icu::UnicodeString();
+	MST::MonoString curline = MST::MonoString();
 	
 	should_be_h = App::text_padding*2;
 	int linewidth = 0;
 	
-	int most_allowed = t_w-App::text_padding*2;
+	const int most_allowed = t_w-App::text_padding*2;
 	
 	int curspan = 0;
 	std::vector<Color*> curlineColor = {};
 	Color* thisColor;
 	
-	int byteIndex = 0;
-	
-	for (auto ci = 0; ci < fulltext.length(); ci++) {
-		char16_t c = fulltext.charAt(ci);
-		
-		int bytes = 0;
-		int emojiUtf16Count = get_emoji_sequence_length(fulltext, ci);
-		if (emojiUtf16Count == 0) {
-			bytes = U8_LENGTH(c);
-		}else{
-			bytes = emojiUtf16Count*2;
-		}
+	for (auto ci = 0; ci < fulltext.length; ci++) {
+		auto c = MST::char32At(fulltext, ci);
 		
 		if (handlingColor) {
 			thisColor = App::theme.main_text_color;
 			if (curspan < colorSpans.size()) { // spans are always ordered so that we can only look at one at a time (mucho faster)
-				if (byteIndex >= colorSpans[curspan].start && byteIndex < colorSpans[curspan].end) {
+				if (ci >= colorSpans[curspan].start && ci < colorSpans[curspan].end) {
 					auto t = colorSpans[curspan].type;
 					if (t == MarkdownElem::Header) {
 						thisColor = App::theme.equal_diff;
@@ -132,64 +121,42 @@ void Label::position(int x, int y, int w, int h) {
 					}
 				}
 				
-				if (byteIndex == colorSpans[curspan].end) {
+				if (ci == colorSpans[curspan].end) {
 					curspan ++;
 				}
 			}
 		}
 		
-		byteIndex += bytes;
-		
-		int num_chr = 1;
-		if (c == U'\t') {
-			num_chr = App::settings->getValue("tab_width", 4);
-			c = ' ';
-		}
-		
-		int newlen = linewidth + TextRenderer::get_text_width(num_chr);
-		
-		if (emojiUtf16Count != 0) {
-			newlen += TextRenderer::get_text_width(1);
-		}
+		int CHAR_WIDTH = MST::isEmoji(fulltext, ci) ? 2 : 1;
+		int newlen = linewidth + TextRenderer::get_text_width(CHAR_WIDTH);
 		
 		if (c == U'\n' || newlen > most_allowed) {
 			drawlines.push_back(curline);
-			curline = "";
+			curline = MST::MonoString{};
 			
 			if (handlingColor) {
 				drawColors.push_back(curlineColor);
-				curlineColor = {};
+				curlineColor = {thisColor};
 			}
 			
 			should_be_h += TextRenderer::get_text_height();
 			
 			linewidth = 0;
-			newlen = linewidth + TextRenderer::get_text_width(num_chr);
+			newlen = TextRenderer::get_text_width(CHAR_WIDTH);
 		}
 		
 		if (c != U'\n') {
-			if (emojiUtf16Count != 0) {
-				for (int i = 0; i < emojiUtf16Count; i++) {
-					curline.append(fulltext.charAt(ci+i));
-					if (handlingColor) {
-						curlineColor.push_back(thisColor);
-					}
-				}
+			if (c == U'\t'){
+				curline += MST::toMonoString(MST::CONT);
 			}else{
-				for (int rep = 0; rep < num_chr; rep++) {
-					curline += c;
-					if (handlingColor) {
-						curlineColor.push_back(thisColor);
-					}
-				}
+				curline += MST::toMonoString(c);
+			}
+			if (handlingColor) {
+				curlineColor.push_back(thisColor);
 			}
 		}
 		
 		linewidth = newlen;
-		
-		if (emojiUtf16Count != 0) {
-			ci += emojiUtf16Count-1;
-		}
 	}
 	
 	drawlines.push_back(curline);

@@ -4,14 +4,13 @@
 #include <functional>
 #include "helper_types.h"
 #include "widget.h"
-#include "unicode/unistr.h"
 
 class Button : public Widget {
 public:
 	using Positioner = std::function<void(Button*,int,int,int,int,int,int)>;
 	using OnClick = std::function<void(Button*)>;
 	
-	Button(Widget* parent, icu::UnicodeString text, Positioner positioner, OnClick onclick);
+	Button(Widget* parent, MST::MonoString text, Positioner positioner, OnClick onclick);
 
 	void render();
 	void position(int x, int y, int width, int height);
@@ -31,7 +30,7 @@ public:
 	Color* text_color_hover;
 	Color* border_color;
 	Color* border_color_hover;
-	icu::UnicodeString BUTTON_LABEL;
+	MST::MonoString BUTTON_LABEL;
 	
 	Positioner POSITIONER;
 	OnClick ONCLICK;

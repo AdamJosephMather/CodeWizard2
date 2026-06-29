@@ -6,7 +6,7 @@
 #include <mutex>
 
 struct TreeStructure {
-	icu::UnicodeString name;
+	MST::MonoString name;
 	std::string path;
 	bool is_folder = false;
 	
@@ -20,7 +20,7 @@ struct Visual {
 	int w;
 	int h;
 	
-	icu::UnicodeString name;
+	MST::MonoString name;
 	TreeStructure* ts = nullptr;
 	
 	bool is_folder = false;

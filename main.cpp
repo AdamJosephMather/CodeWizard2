@@ -4,8 +4,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#include <unicode/unistr.h>
-#include <unicode/ustream.h>
 #include "application.h"
 #include "helpmenu.h"
 #include "button.h"
@@ -167,7 +165,7 @@ int main(int argc, char* argv[]) {
 	});
 	commandPalette->background_color = App::theme.extras_background_color;
 	commandPalette->rounded = true;
-	commandPalette->id = icu::UnicodeString::fromUTF8("CommandPalette");
+	commandPalette->id = MST::toMonoString("CommandPalette");
 	
 	ListBox* commandBox = new ListBox(nullptr, [&](Widget* w){
 		w->t_x = commandPalette->t_x; 
@@ -196,7 +194,7 @@ int main(int argc, char* argv[]) {
 	menu->is_visible_2 = true;
 	menu->is_visible_3 = true;
 	
-	Button* file_button = new Button(App::tb, icu::UnicodeString::fromUTF8("File"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
+	Button* file_button = new Button(App::tb, MST::toMonoString("File"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = App::text_padding;
 		button->t_y = App::text_padding/2;
 		button->t_h -= App::text_padding;
@@ -207,30 +205,30 @@ int main(int argc, char* argv[]) {
 	}, [&](Button* button) {
 		menu->clearMenu();
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Open File\t(Ctrl+O)"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Open File\t(Ctrl+O)"), [](Button*){
 			App::closeMenu();
 			
 			Editor* e = dynamic_cast<Editor*>(App::activeEditor);
 			if (e == nullptr) {
 				e = dynamic_cast<Editor*>(App::rootelement->getFirstEditor());
 				if (e == nullptr) {
-					App::displayToast(icu::UnicodeString::fromUTF8("No open Editor widgets"));
+					App::displayToast(MST::toMonoString("No open Editor widgets"));
 				}
 			}
 			
 			e->fileOpenRequested(nullptr); // triggers a file open
 		});
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Open Folder\t(Ctrl+Shift+O)"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Open Folder\t(Ctrl+Shift+O)"), [](Button*){
 			App::closeMenu();
 			App::openFolderSelector();
 		});
 		
 		menu->addSeparaterToMenu();
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Save All\t(Ctrl+S)"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Save All\t(Ctrl+S)"), [](Button*){
 			App::closeMenu();
-			App::displayText(icu::UnicodeString::fromUTF8("Saving..."));
+			App::displayText(MST::toMonoString("Saving..."));
 			App::save();
 		});
 		
@@ -248,7 +246,7 @@ int main(int argc, char* argv[]) {
 	file_button->background_color = nullptr;
 	file_button->rounded = true;
 	
-	Button* actions_button = new Button(App::tb, icu::UnicodeString::fromUTF8("Actions"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
+	Button* actions_button = new Button(App::tb, MST::toMonoString("Actions"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = file_button->t_x+file_button->t_w+App::text_padding;
 		button->t_y = App::text_padding/2;
 		button->t_h -= App::text_padding;
@@ -259,7 +257,7 @@ int main(int argc, char* argv[]) {
 	}, [&](Button* button) {
 		menu->clearMenu();
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Run\t(F5)"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Run\t(F5)"), [](Button*){
 			App::closeMenu();
 			App::key_callback(App::window, GLFW_KEY_F5, 0, GLFW_PRESS, 0); // no scancode no mods
 			App::key_callback(App::window, GLFW_KEY_F5, 0, GLFW_RELEASE, 0);
@@ -267,42 +265,42 @@ int main(int argc, char* argv[]) {
 		
 		menu->addSeparaterToMenu();
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Push"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Git Push"), [](Button*){
 			App::closeMenu();
 			App::gitPush();
 		});
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Pull"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Git Pull"), [](Button*){
 			App::closeMenu();
 			App::gitPull();
 		});
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Git Force Pull"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Git Force Pull"), [](Button*){
 			App::closeMenu();
 			App::gitForcePull();
 		});
 		
 		menu->addSeparaterToMenu();
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Run FixIt\t(Spaces->Tabs)"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Run FixIt\t(Spaces->Tabs)"), [](Button*){
 			App::closeMenu();
 			App::fixIt();
 		});
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Undo FixIt\t(Tabs->Spaces)"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Undo FixIt\t(Tabs->Spaces)"), [](Button*){
 			App::closeMenu();
 			App::undoFixIt();
 		});
 		
 		menu->addSeparaterToMenu();
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Toggle Macro Recording\t(F12)"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Toggle Macro Recording\t(F12)"), [](Button*){
 			App::closeMenu();
 			App::key_callback(App::window, GLFW_KEY_F12, 0, GLFW_PRESS, 0); // no scancode no mods
 			App::key_callback(App::window, GLFW_KEY_F12, 0, GLFW_RELEASE, 0);
 		});
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Toggle Macro Replay\t(F11)"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Toggle Macro Replay\t(F11)"), [](Button*){
 			App::closeMenu();
 			App::key_callback(App::window, GLFW_KEY_F11, 0, GLFW_PRESS, 0); // no scancode no mods
 			App::key_callback(App::window, GLFW_KEY_F11, 0, GLFW_RELEASE, 0);
@@ -310,43 +308,43 @@ int main(int argc, char* argv[]) {
 		
 		menu->addSeparaterToMenu();
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Restart Language Servers"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Restart Language Servers"), [](Button*){
 			App::closeMenu();
 			App::restartLSPs();
 		});
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Open `languages.json` File"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Open `languages.json` File"), [](Button*){
 			App::closeMenu();
 			App::openLanguagesFile();
 		});
 		
 		menu->addSeparaterToMenu();
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Save Theme To File"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Save Theme To File"), [](Button*){
 			App::closeMenu();
 			App::saveThemeToFile();
 		});
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Load Theme From File"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Load Theme From File"), [](Button*){
 			App::closeMenu();
 			App::loadThemeFromFile();
 		});
 		
 		menu->addSeparaterToMenu();
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Widget Count"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Widget Count"), [](Button*){
 			App::closeMenu();
-			App::displayToast(icu::UnicodeString::fromUTF8("There are: " + std::to_string(App::all_widgets.size())+" open widgets."));
+			App::displayToast(MST::toMonoString("There are: " + std::to_string(App::all_widgets.size())+" open widgets."));
 		});
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Test Text Line"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Test Text Line"), [](Button*){
 			App::closeMenu();
-			App::displayText(icu::UnicodeString::fromUTF8("Example Text Line Message."));
+			App::displayText(MST::toMonoString("Example Text Line Message."));
 		});
 		
-		menu->addToMenu(icu::UnicodeString::fromUTF8("Test Toast Box"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Test Toast Box"), [](Button*){
 			App::closeMenu();
-			App::displayToast(icu::UnicodeString::fromUTF8("Example Toast Message."));
+			App::displayToast(MST::toMonoString("Example Toast Message."));
 		});
 		
 		menu->recalcButtonTexts();
@@ -363,7 +361,7 @@ int main(int argc, char* argv[]) {
 	actions_button->background_color = nullptr;
 	actions_button->rounded = true;
 	
-	Button* help_button = new Button(App::tb, icu::UnicodeString::fromUTF8("Help"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
+	Button* help_button = new Button(App::tb, MST::toMonoString("Help"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = actions_button->t_x+actions_button->t_w+App::text_padding;
 		button->t_y = App::text_padding/2;
 		button->t_h -= App::text_padding;
@@ -383,7 +381,7 @@ int main(int argc, char* argv[]) {
 	
 	// Widget controls
 	
-	Button* remove_button = new Button(App::tb, icu::UnicodeString::fromUTF8("- "), [&](Button* button, int x, int y, int w, int h, int tw, int th){
+	Button* remove_button = new Button(App::tb, MST::toMonoString("- "), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = commandPalette->t_x-tw-App::text_padding;
 		button->t_y = 0;
 	}, [&](Button* button) {
@@ -397,7 +395,7 @@ int main(int argc, char* argv[]) {
 	remove_button->border_color_hover = nullptr;
 	remove_button->window_button = false;
 	
-	Button* add_button = new Button(App::tb, icu::UnicodeString::fromUTF8("+ "), [&](Button* button, int x, int y, int w, int h, int tw, int th){
+	Button* add_button = new Button(App::tb, MST::toMonoString("+ "), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = remove_button->t_x-tw;
 		button->t_y = 0;
 	}, [&](Button* button) {
@@ -447,15 +445,15 @@ int main(int argc, char* argv[]) {
 			fi->is_opening = false;
 			edtr->fileOpenRequested(fi);
 		}else{
-			App::displayToast(icu::UnicodeString::fromUTF8("File No Longer Open"));
+			App::displayToast(MST::toMonoString("File No Longer Open"));
 		}
 	};
 	
-	Button* filesButton = new Button(App::tb, icu::UnicodeString::fromUTF8("0 Active"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
+	Button* filesButton = new Button(App::tb, MST::toMonoString("0 Active"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = commandPalette->t_x+commandPalette->t_w+App::text_padding;
 		button->t_y = App::text_padding/2;
 		button->t_h -= App::text_padding;
-		button->BUTTON_LABEL = icu::UnicodeString::fromUTF8(std::to_string(App::rootelement->getOpenFiles(false).size())+" Active");
+		button->BUTTON_LABEL = MST::toMonoString(std::to_string(App::rootelement->getOpenFiles(false).size())+" Active");
 	}, [&](Button* button) {
 		if (filesList->parent) {
 			App::closeFilesList();

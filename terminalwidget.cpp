@@ -6,7 +6,7 @@
 #include "Verify.hpp"
 
 TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("Terminal");
+	id = MST::toMonoString("Terminal");
 	
 	before_self_close = [&](){
 		term->stop();
@@ -47,7 +47,7 @@ TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 	contextmenu->is_visible_2 = false;
 	contextmenu->is_visible_3 = true;
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Copy\t(Ctrl+C)"),  [&](Widget* w){
+	contextmenu->addToMenu(MST::toMonoString("Copy\t(Ctrl+C)"),  [&](Widget* w){
 		std::string txt = selection_text();
 		if (!txt.empty()) {
 			SetClipboardText(txt.c_str());
@@ -57,7 +57,7 @@ TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 		needsRerender = 2;
 	});
 	
-	contextmenu->addToMenu(icu::UnicodeString::fromUTF8("Paste\t(Ctrl+V)"), [&](Widget* w){
+	contextmenu->addToMenu(MST::toMonoString("Paste\t(Ctrl+V)"), [&](Widget* w){
 		term->sendText(GetClipboardText());
 		contextmenu->is_visible_2 = false;
 		needsRerender = 2;
@@ -261,7 +261,7 @@ void TerminalWidget::reset_client() {
 	ajm_asv3_client = std::make_shared<sio::client>();
 
 	ajm_asv3_client->set_open_listener([&]() {
-		App::displayText(icu::UnicodeString::fromUTF8("AssistantV3 Connection Made"));
+		App::displayText(MST::toMonoString("AssistantV3 Connection Made"));
 		
 		Verify::json payload = {
 			{"CodeWizard", "Terminal"}
@@ -270,11 +270,11 @@ void TerminalWidget::reset_client() {
 	});
 	
 	ajm_asv3_client->set_fail_listener([&]() {
-		App::displayToast(icu::UnicodeString::fromUTF8("FAILED: AssistantV3 Connection"));
+		App::displayToast(MST::toMonoString("FAILED: AssistantV3 Connection"));
 	});
 	
 	ajm_asv3_client->set_close_listener([&](sio::client::close_reason const& reason) {
-		App::displayToast(icu::UnicodeString::fromUTF8("AssistantV3 Connection Closed."));
+		App::displayToast(MST::toMonoString("AssistantV3 Connection Closed."));
 	});
 	
 	ajm_asv3_client->socket()->on("get_term_screen", [&](std::string const& name, sio::message::ptr const& data, bool isAck, sio::message::list &ack_resp) {
@@ -469,7 +469,7 @@ void TerminalWidget::render() {
 			}
 			
 			if (cell.c != empty) {
-				TextRenderer::draw_text(x, y, cell.c, cell.fg_red, cell.fg_green, cell.fg_blue);
+				TextRenderer::draw_text(x, y, MST::toMonoString(cell.c), cell.fg_red, cell.fg_green, cell.fg_blue);
 			}
 		}
 	}

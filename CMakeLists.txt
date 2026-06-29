@@ -3,25 +3,25 @@ project(CodeWizard)
 
 # debug...
 
-# if (MSVC)
-# 	message(STATUS "Building with MSVC AddressSanitizer enabled")
-# 
-# 	# Let CMake pick the correct /MDd or /MD (recommended for ASan on MSVC)
-# 	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-# 
-# 	add_compile_options(
-# 		/fsanitize=address
-# 		/Zi
-# 	)
-# 
-# 	add_link_options(
-# 		/fsanitize=address
-# 		/INCREMENTAL:NO
-# 		/DEBUG:FULL
-# 		# REMOVE this line:
-# 		# /WHOLEARCHIVE:clang_rt.asan-x86_64.lib
-# 	)
-# endif()
+if (MSVC)
+	message(STATUS "Building with MSVC AddressSanitizer enabled")
+
+	# Let CMake pick the correct /MDd or /MD (recommended for ASan on MSVC)
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+
+	add_compile_options(
+		/fsanitize=address
+		/Zi
+	)
+
+	add_link_options(
+		/fsanitize=address
+		/INCREMENTAL:NO
+		/DEBUG:FULL
+		# REMOVE this line:
+		# /WHOLEARCHIVE:clang_rt.asan-x86_64.lib
+	)
+endif()
 
 
 
@@ -124,7 +124,7 @@ if(WIN32)
 endif()
 
 
-add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_renderer.cpp application.cpp widget.cpp button.cpp titlebar.cpp panel_holder.cpp widgetchooser.cpp editor.cpp filetree.cpp tabs.cpp settings.cpp codeedit.cpp linenumbers.cpp textedit.cpp tinyfiledialogs.c brokenstatemenu.cpp checkbox.cpp settingsmanager.cpp languageserverclient.cpp listbox.cpp imageview.cpp compare.cpp curler.cpp toast.cpp chat.cpp label.cpp myrect.cpp lspdebug.cpp terminal.cpp terminalwidget.cpp terminalwidgettabbed.cpp helpmenu.cpp scrollbar.cpp updatechecker.cpp contextmenu.cpp scrollnotify.cpp mathwindow.cpp asteroids.cpp graphwindow.cpp md4c.c EmojiRenderer.cpp hexeditor.cpp )
+add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_renderer.cpp application.cpp widget.cpp button.cpp titlebar.cpp panel_holder.cpp widgetchooser.cpp editor.cpp filetree.cpp tabs.cpp settings.cpp codeedit.cpp linenumbers.cpp textedit.cpp tinyfiledialogs.c brokenstatemenu.cpp checkbox.cpp settingsmanager.cpp languageserverclient.cpp listbox.cpp imageview.cpp compare.cpp curler.cpp toast.cpp chat.cpp label.cpp myrect.cpp lspdebug.cpp terminal.cpp terminalwidget.cpp terminalwidgettabbed.cpp helpmenu.cpp scrollbar.cpp updatechecker.cpp contextmenu.cpp scrollnotify.cpp mathwindow.cpp asteroids.cpp graphwindow.cpp md4c.c EmojiRenderer.cpp hexeditor.cpp MonoString.cpp )
 # modelxrunner.cpp 
 
 
@@ -154,6 +154,7 @@ target_link_libraries(${PROJECT_NAME}
 	sioclient
 	OpenSSL::Crypto
 	syntect_bridge
+	"${CMAKE_SOURCE_DIR}/grapheme.lib"
 )
 
 if(WIN32)
@@ -250,8 +251,8 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 
 
 
-if (MSVC)
-	set_target_properties(${PROJECT_NAME} PROPERTIES
-		WIN32_EXECUTABLE TRUE
-	)
-endif()
+# if (MSVC)
+# 	set_target_properties(${PROJECT_NAME} PROPERTIES
+# 		WIN32_EXECUTABLE TRUE
+# 	)
+# endif()

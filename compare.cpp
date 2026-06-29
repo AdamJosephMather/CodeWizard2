@@ -11,11 +11,11 @@
 Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 	POS_FUNC = positioner;
 	
-	id = icu::UnicodeString::fromUTF8("Compare");
+	id = MST::toMonoString("Compare");
 	
 	line_numbers = new LineNumbers(this);
 	
-	f1Button = new Button(this, icu::UnicodeString::fromUTF8("Select File 1"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+	f1Button = new Button(this, MST::toMonoString("Select File 1"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
 		btn->t_x = t_x+t_w/2-w-App::text_padding/2;
 		btn->t_y = t_y+App::text_padding;
@@ -39,31 +39,31 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 		f1->filepath = filePath;
 		f1->filename = filename;
 		
-		btn->BUTTON_LABEL = icu::UnicodeString::fromUTF8(filename);
-		cb1Button->BUTTON_LABEL = icu::UnicodeString::fromUTF8("Use Clipboard");
+		btn->BUTTON_LABEL = MST::toMonoString(filename);
+		cb1Button->BUTTON_LABEL = MST::toMonoString("Use Clipboard");
 		
 		reload();
 	});
 	
-	cb1Button = new Button(this, icu::UnicodeString::fromUTF8("Use Clipboard"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+	cb1Button = new Button(this, MST::toMonoString("Use Clipboard"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
 		btn->t_x = f1Button->t_x-w-App::text_padding;
 		btn->t_y = t_y+App::text_padding;
 	},  [&](Button* btn){
 		// onclick
-		clipBoardText1 = stripOfChar(icu::UnicodeString::fromUTF8(GetClipboardText()), U'\r');
+		clipBoardText1 = MST::replaceAll(MST::toMonoString(GetClipboardText()), MST::toMonoString("\r\n"), MST::toMonoString("\n"));
 		
 		f1 = new FileInfo();
 		f1->filepath = "";
 		f1->filename = "";
 		
-		btn->BUTTON_LABEL = icu::UnicodeString::fromUTF8("Coppied!");
-		f1Button->BUTTON_LABEL = icu::UnicodeString::fromUTF8("Select File 1");
+		btn->BUTTON_LABEL = MST::toMonoString("Coppied!");
+		f1Button->BUTTON_LABEL = MST::toMonoString("Select File 1");
 		
 		reload();
 	});
 	
-	f2Button = new Button(this, icu::UnicodeString::fromUTF8("Select File 2"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+	f2Button = new Button(this, MST::toMonoString("Select File 2"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
 		btn->t_x = t_x+t_w/2+App::text_padding/2;
 		btn->t_y = t_y+App::text_padding;
@@ -87,26 +87,26 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 		f2->filepath = filePath;
 		f2->filename = filename;
 		
-		btn->BUTTON_LABEL = icu::UnicodeString::fromUTF8(filename);
-		cb2Button->BUTTON_LABEL = icu::UnicodeString::fromUTF8("Use Clipboard");
+		btn->BUTTON_LABEL = MST::toMonoString(filename);
+		cb2Button->BUTTON_LABEL = MST::toMonoString("Use Clipboard");
 		
 		reload();
 	});
 	
-	cb2Button = new Button(this, icu::UnicodeString::fromUTF8("Use Clipboard"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+	cb2Button = new Button(this, MST::toMonoString("Use Clipboard"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
 		btn->t_x = f2Button->t_x+f2Button->t_w+App::text_padding;
 		btn->t_y = t_y+App::text_padding;
 	},  [&](Button* btn){
 		// onclick
-		clipBoardText2 = stripOfChar(icu::UnicodeString::fromUTF8(GetClipboardText()), U'\r');
+		clipBoardText2 = MST::replaceAll(MST::toMonoString(GetClipboardText()), MST::toMonoString("\r\n"), MST::toMonoString("\n"));
 		
 		f2 = new FileInfo();
 		f2->filepath = "";
 		f2->filename = "";
 		
-		btn->BUTTON_LABEL = icu::UnicodeString::fromUTF8("Coppied!");
-		f2Button->BUTTON_LABEL = icu::UnicodeString::fromUTF8("Select File 2");
+		btn->BUTTON_LABEL = MST::toMonoString("Coppied!");
+		f2Button->BUTTON_LABEL = MST::toMonoString("Select File 2");
 		
 		reload();
 	});
@@ -133,7 +133,7 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 
 void Compare::setOnlyTo(FileInfo* f, int num) {
 	bool worked = true;
-	icu::UnicodeString txt;
+	MST::MonoString txt;
 	
 	if (f->filepath == "") {
 		if (num == 1) {
@@ -142,20 +142,20 @@ void Compare::setOnlyTo(FileInfo* f, int num) {
 			txt = clipBoardText2;
 		}
 	}else{
-		txt = App::readFileToUnicodeString(f->filepath, worked);
-		if (!worked) { textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: " + f->filepath)); return; }
+		txt = App::readFileToMonoString(f->filepath, worked);
+		if (!worked) { textedit->setFullText(MST::toMonoString("Failed to open file: " + f->filepath)); return; }
 	}
 	
-	auto lines = splitByChar(txt, U'\n');
+	auto lines = MST::split(txt, U'\n');
 	
-	icu::UnicodeString text;
-	UChar32 newlinechar = U'\n';
+	MST::MonoString text;
+	const MST::MonoString newlinechar = MST::toMonoString(U'\n');
 	
 	for (int i = 0; i < lines.size(); i++) {
-		text += icu::UnicodeString::fromUTF8("++ ")+lines[i];
+		text += MST::toMonoString("++ ")+lines[i];
 		
 		if (i < lines.size()-1) {
-			text.append(newlinechar);
+			text += newlinechar;
 		}
 	}
 	
@@ -165,8 +165,8 @@ void Compare::setOnlyTo(FileInfo* f, int num) {
 	for (int i = 0; i < textedit->lines.size(); i++) {
 		CW_HighlightToken col;
 		col.start_byte = 0;
-		col.end_byte = textedit->lines[i].line_text.length()+1;
-		col.role = 1;
+		col.end_byte = textedit->lines[i].line_text.length+1;
+		col.role = -1;
 		
 		textedit->lines[i].visual_length = textedit->getVisLen(textedit->lines[i].line_text);
 		textedit->lines[i].tokens = {col};
@@ -181,7 +181,7 @@ void Compare::reload() {
 	App::rerender = true;
 	
 	if (!f1 && !f2) {
-		textedit->setFullText(icu::UnicodeString());
+		textedit->setFullText(MST::MonoString());
 		return;
 	}else if (!f1) {
 		setOnlyTo(f2, 2);
@@ -191,47 +191,47 @@ void Compare::reload() {
 		return;
 	}
 	
-	icu::UnicodeString txt;
-	icu::UnicodeString txt2;
+	MST::MonoString txt;
+	MST::MonoString txt2;
 	
 	bool worked = true;
 	if (f1->filepath != "") {
-		txt = App::readFileToUnicodeString(f1->filepath, worked);
-		if (!worked) { textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: " + f1->filepath)); return; }
+		txt = App::readFileToMonoString(f1->filepath, worked);
+		if (!worked) { textedit->setFullText(MST::toMonoString("Failed to open file: " + f1->filepath)); return; }
 	}else{
 		txt = clipBoardText1;
 	}
 	
 	if (f2->filepath != "") {
-		txt2 = App::readFileToUnicodeString(f2->filepath, worked);
-		if (!worked) { textedit->setFullText(icu::UnicodeString::fromUTF8("Failed to open file: " + f1->filepath)); return; }
+		txt2 = App::readFileToMonoString(f2->filepath, worked);
+		if (!worked) { textedit->setFullText(MST::toMonoString("Failed to open file: " + f1->filepath)); return; }
 	}else{
 		txt2 = clipBoardText2;
 	}
 	
-	auto l1 = splitByChar(txt, U'\n');
-	auto l2 = splitByChar(txt2, U'\n');
+	auto l1 = MST::split(txt, U'\n');
+	auto l2 = MST::split(txt2, U'\n');
 	
 	auto calcDiff = calculateDifferences(l1, l2);
 	
-	icu::UnicodeString text;
-	UChar32 newlinechar = U'\n';
+	MST::MonoString text;
+	const MST::MonoString newlinechar = MST::toMonoString(U'\n');
 	
 	for (int i = 0; i < calcDiff.size(); i++) {
 		auto c = calcDiff[i];
 		
 		if (c.first == 2) {
-			text += icu::UnicodeString::fromUTF8("== ")+c.second;
+			text += MST::toMonoString("== ")+c.second;
 		}
 		if (c.first == 1) {
-			text += icu::UnicodeString::fromUTF8("-- ")+c.second;
+			text += MST::toMonoString("-- ")+c.second;
 		}
 		if (c.first == 0) {
-			text += icu::UnicodeString::fromUTF8("++ ")+c.second;
+			text += MST::toMonoString("++ ")+c.second;
 		}
 		
 		if (i < calcDiff.size()-1) {
-			text.append(newlinechar);
+			text += newlinechar;
 		}
 	}
 	
@@ -242,7 +242,7 @@ void Compare::reload() {
 		auto c = calcDiff[i];
 		CW_HighlightToken col;
 		col.start_byte = 0;
-		col.end_byte = textedit->lines[i].line_text.length()+1;
+		col.end_byte = textedit->lines[i].line_text.length+1;
 		col.role = (-c.first)-1;
 		
 		textedit->lines[i].visual_length = textedit->getVisLen(textedit->lines[i].line_text);
@@ -316,7 +316,7 @@ bool Compare::on_mouse_button_event(int button, int action, int mods) {
 	return false;
 }
 
-std::vector<std::pair<int,icu::UnicodeString>> Compare::calculateDifferences(const std::vector<icu::UnicodeString>& t1, const std::vector<icu::UnicodeString>& t2) {
+std::vector<std::pair<int,MST::MonoString>> Compare::calculateDifferences(const std::vector<MST::MonoString>& t1, const std::vector<MST::MonoString>& t2) {
 	std::vector<std::vector<int>> cost(t1.size()+1, std::vector<int>(t2.size()+1));
 	std::vector<std::vector<int>> direction(t1.size()+1, std::vector<int>(t2.size()+1));
 	
@@ -339,7 +339,7 @@ std::vector<std::pair<int,icu::UnicodeString>> Compare::calculateDifferences(con
 		}
 	}
 	
-	std::vector<std::pair<int,icu::UnicodeString>> changes;
+	std::vector<std::pair<int,MST::MonoString>> changes;
 	
 	int x, y;
 	x = t1.size();

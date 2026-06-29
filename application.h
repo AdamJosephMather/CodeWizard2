@@ -1,5 +1,6 @@
 #pragma once
 
+#include "MonoString.cpp"
 #include "languageserverclient.h"
 #include "settingsmanager.h"
 #include <atomic>
@@ -97,7 +98,7 @@ public:
 	using VoidFunction = std::function<void()>;
 	using PosFunction = std::function<void(Widget*)>;
 	using UpdateFInfoFunction = std::function<void(Widget*, FileInfo*)>;
-	using StringGivenFunc = std::function<void(icu::UnicodeString)>;
+	using StringGivenFunc = std::function<void(MST::MonoString)>;
 	
 #ifdef _WIN32
 	static HWND window_handle;
@@ -108,7 +109,7 @@ public:
 	static int major_version;
 	static int minor_version;
 	static int patch_version;
-	static icu::UnicodeString vnum;
+	static MST::MonoString vnum;
 	static std::string vnumstr;
 	
 	static int x_nb_current; // for cleaner animations across panel holders.
@@ -283,7 +284,7 @@ public:
 	static void repeatEveryXSeconds(int intervalSeconds, std::function<void()> task);
 	static void save();
 	static void fixAllTmpFiles();
-	static icu::UnicodeString readFileToUnicodeString(const std::string& filename, bool& worked);
+	static MST::MonoString readFileToMonoString(const std::string& filename, bool& worked);
 	
 	static void launchCommandNonBlocking(const std::string& command);
 	static void commandUnfocused();
@@ -314,8 +315,8 @@ public:
 	
 	static void updateFromTintColor(Theme* t);
 	static void setTintedColor(Color* tint_c, Color* c, float b, float s);
-	static void displayToast(icu::UnicodeString text);
-	static void displayText(icu::UnicodeString text);
+	static void displayToast(MST::MonoString text);
+	static void displayText(MST::MonoString text);
 	
 	static void moveMouse(int x, int y);
 	

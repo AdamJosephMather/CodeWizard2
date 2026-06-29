@@ -11,7 +11,7 @@ public:
 	void render() override;
 	void position(int x, int y, int width, int height) override;
 	
-	void addToMenu(icu::UnicodeString name, Button::OnClick onclick);
+	void addToMenu(MST::MonoString name, Button::OnClick onclick);
 	void addSeparaterToMenu();
 	void clearMenu();
 	void recalcButtonTexts();
@@ -24,7 +24,7 @@ public:
 	bool on_mouse_button_event(int button, int action, int mods) override;
 private:
 	std::vector<Button*> buttons = {};
-	std::vector<icu::UnicodeString> buttonTexts = {};
+	std::vector<MST::MonoString> buttonTexts = {};
 	int maxwidth = 0;
 	int runningypos = 0;
 };

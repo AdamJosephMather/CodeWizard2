@@ -50,7 +50,7 @@ SettingsLabel* Settings::makeLabel(std::string name) {
 }
 
 Settings::Settings(Widget* parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("Settings");
+	id = MST::toMonoString("Settings");
 	
 	tab_bar = new Tabs(this);
 	tab_bar->has_close_button = false;
@@ -354,7 +354,7 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 	for (auto str : tabs) {
 		auto ti = TabInfo();
 		
-		ti.title = icu::UnicodeString::fromUTF8(str);
+		ti.title = MST::toMonoString(str);
 		ti.id = tabid;
 		
 		tab_bar->addTab(ti);
@@ -414,19 +414,19 @@ void Settings::handleChildren() {
 
 void Settings::setWithValue(TextEdit* e, SettingsElement* el) {
 	if (auto i = dynamic_cast<SettingsInt*>(el)) {
-		e->setFullText(icu::UnicodeString::fromUTF8(std::to_string(i->value)));
+		e->setFullText(MST::toMonoString(std::to_string(i->value)));
 	}else if (auto i = dynamic_cast<SettingsFloat*>(el)) {
-		e->setFullText(icu::UnicodeString::fromUTF8(std::to_string(i->value)));
+		e->setFullText(MST::toMonoString(std::to_string(i->value)));
 	}else if (auto i = dynamic_cast<SettingsString*>(el)) {
-		e->setFullText(icu::UnicodeString::fromUTF8(i->value));
+		e->setFullText(MST::toMonoString(i->value));
 	}else if (auto i = dynamic_cast<SettingsBool*>(el)) {
-		icu::UnicodeString vl = icu::UnicodeString::fromUTF8("false");
+		MST::MonoString vl = MST::toMonoString("false");
 		if (i->value) {
-			vl = icu::UnicodeString::fromUTF8("true");
+			vl = MST::toMonoString("true");
 		}
 		e->setFullText(vl);
 	}else if (auto i = dynamic_cast<SettingsLabel*>(el)) {
-		icu::UnicodeString vl = icu::UnicodeString::fromUTF8(i->default_value);
+		MST::MonoString vl = MST::toMonoString(i->default_value);
 		e->setFullText(vl);
 	}
 }
@@ -442,7 +442,7 @@ void Settings::render() {
 		for (auto it : elements_to_edit) {
 			int y = it.second->t_y-TextRenderer::get_text_height()-App::text_padding/2;
 			int x = t_x+App::text_padding*2;
-			icu::UnicodeString text = icu::UnicodeString::fromUTF8(it.first->name);
+			MST::MonoString text = MST::toMonoString(it.first->name);
 			
 			TextRenderer::draw_text(x, y, text, App::theme.main_text_color);
 			App::runWithSKIZ(it.second->t_x, it.second->t_y, it.second->t_w, it.second->t_h, [&](){
@@ -460,10 +460,9 @@ void Settings::render() {
 }
 
 void Settings::handleChange(TextEdit* te, SettingsElement* se) {
-	icu::UnicodeString text = te->getFullText();
+	MST::MonoString text = te->getFullText();
 	
-	std::string str;
-	text.toUTF8String(str);
+	std::string str = MST::toString(text);
 	
 	if (auto i = dynamic_cast<SettingsString*>(se)) {
 		if (str != "") {

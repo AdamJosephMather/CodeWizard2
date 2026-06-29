@@ -5,7 +5,7 @@ MyRect::MyRect(Widget *parent, App::PosFunction positioner) : Widget(parent) {
 	POSITIONER = positioner;
 	background_color = App::theme.main_background_color;
 	border_color = App::theme.border;
-	id = icu::UnicodeString::fromUTF8("MyRect");
+	id = MST::toMonoString("MyRect");
 }
 
 void MyRect::position(int x, int y, int width, int height) {

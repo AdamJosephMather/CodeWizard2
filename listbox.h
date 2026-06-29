@@ -30,12 +30,12 @@ public:
 	void position(int x, int y, int w, int h);
 	void render();
 	
-	void setElements(std::vector<icu::UnicodeString> el);
+	void setElements(std::vector<MST::MonoString> el);
 	void fillElementalPositions();
 	void moveUp();
 	void moveDown();
 	
 	int selected_id = 0;
-	std::vector<icu::UnicodeString> elements;
+	std::vector<MST::MonoString> elements;
 private:
 };

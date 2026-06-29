@@ -12,9 +12,9 @@ public:
 	bool border = true;
 	bool rect = true;
 	
-	icu::UnicodeString fulltext;
+	MST::MonoString fulltext;
 	std::vector<MarkdownSpan>        colorSpans = {};
-	std::vector<icu::UnicodeString>  drawlines;
+	std::vector<MST::MonoString>  drawlines;
 	std::vector<std::vector<Color*>> drawColors;
 	bool handlingColor = false;
 	
@@ -23,8 +23,8 @@ public:
 	void position(int x, int y, int w, int h);
 	void render();
 	
-	void setFullText(icu::UnicodeString text, std::vector<MarkdownSpan> spans = {});
-	icu::UnicodeString getFullText();
+	void setFullText(MST::MonoString text, std::vector<MarkdownSpan> spans = {});
+	MST::MonoString getFullText();
 	
 	bool on_mouse_button_event(int button, int action, int mods);
 	

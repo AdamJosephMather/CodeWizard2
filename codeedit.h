@@ -61,7 +61,7 @@ public:
 	std::thread hoverthread;
 //	std::thread chauffeurthread;
 	
-	static int indentIdentifierAfterLine(icu::UnicodeString line, icu::UnicodeString nextline);
+	static int indentIdentifierAfterLine(MST::MonoString line, MST::MonoString nextline);
 	
 	int completion_id = -1;
 	int goto_id = -1;
@@ -141,9 +141,9 @@ public:
 	std::mutex saving_lock;
 	
 	void activateCompletion();
-	void activateFind(bool forwards, icu::UnicodeString tofind, bool case_sensitive);
-	void activateReplace(bool forwards, icu::UnicodeString tofind, icu::UnicodeString replace, bool case_sensitive);
-	void replaceAll(icu::UnicodeString tofind, icu::UnicodeString toreplace, bool case_sensitive);
+	void activateFind(bool forwards, const MST::MonoString& tofind, bool case_sensitive);
+	void activateReplace(bool forwards, MST::MonoString tofind, const MST::MonoString& replace, bool case_sensitive);
+	void replaceAll(const MST::MonoString& tofind, const MST::MonoString& toreplace, bool case_sensitive);
 	
 	void run_fixit();
 	void undo_fixit();

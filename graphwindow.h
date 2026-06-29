@@ -47,7 +47,7 @@ struct DataType {
 	bool file = false;
 	
 	// for files
-	icu::UnicodeString filename;
+	MST::MonoString filename;
 	std::string filepath;
 	
 	// for non files
@@ -82,7 +82,7 @@ private:
 	void updateInfoFor(int id);
 	void recalculateDrawables(bool changeMinsMax=true);
 	void recalculateDisplayedValues();
-	std::vector<double> getVals(icu::UnicodeString text, bool& allgood);
+	std::vector<double> getVals(MST::MonoString text, bool& allgood);
 	
 	std::vector<std::filesystem::path> get_files_in_directory(const std::filesystem::path& dir_path);
 	

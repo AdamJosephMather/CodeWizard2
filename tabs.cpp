@@ -3,7 +3,7 @@
 #include "application.h"
 
 Tabs::Tabs(Widget* parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("Tabs");
+	id = MST::toMonoString("Tabs");
 	
 	tabs_list.clear();
 	tab_screen_loc.clear();
@@ -111,7 +111,7 @@ void Tabs::render() {
 	
 	for (int indx = 0; indx < tabs_list.size(); indx ++) {
 		auto info = tabs_list[indx];
-		int tab_width = TextRenderer::get_text_width(info.title.length()) + App::text_padding*2;
+		int tab_width = TextRenderer::get_text_width(info.title.length) + App::text_padding*2;
 		int newx = curx + tab_width;
 		
 		auto lc = tagloc();

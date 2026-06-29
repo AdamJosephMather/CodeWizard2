@@ -1,11 +1,7 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
-#include <functional>
-#include <vector>
-#include "helper_types.h"
 #include "widget.h"
-#include "unicode/unistr.h"
 
 
 class Toast : public Widget {
@@ -21,13 +17,13 @@ public:
 //	bool on_mouse_button_event(int button, int action, int mods);
 //	bool on_mouse_move_event();
 	
-	icu::UnicodeString text;
+	MST::MonoString text;
 	double time = -1;
 	
 	float displayOffset = -1;
 	float closingOpacity = 0;
 	
-	void displayMessage(icu::UnicodeString text);
+	void displayMessage(MST::MonoString text);
 
 private:
 //	Positioner POSITIONER;

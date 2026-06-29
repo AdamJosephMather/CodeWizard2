@@ -4,7 +4,7 @@
 #include <functional>
 #include <string>
 #include <vector>
-#include "unicode/unistr.h"
+#include "MonoString.cpp"
 
 enum WidgetActionType {
 	RESTART_LSP,
@@ -37,7 +37,7 @@ public:
 	bool exempt_from_parent_for_cursor = false;
 	bool cursor_in_this = false;
 	
-	icu::UnicodeString id = icu::UnicodeString::fromUTF8("UNNAMED");
+	MST::MonoString id = MST::toMonoString("UNNAMED");
 	
 	bool closing = false;
 	

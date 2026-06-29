@@ -1,5 +1,5 @@
 #include "text_renderer.h"
-#include <unicode/brkiter.h>
+#include "EmojiRenderer.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <fstream>
@@ -287,93 +287,8 @@ bool TextRenderer::init_font(const char* fontPath) {
 int TextRenderer::get_text_width(int len) { return TEXT_WIDTH * len; }
 int TextRenderer::get_text_height()       { return TEXT_HEIGHT; }
 
-static bool is_keycap_base(UChar32 cp) {
-	return (cp >= U'0' && cp <= U'9') || cp == U'#' || cp == U'*';
-}
-
-bool TextRenderer::try_get_keycap_sequence(const icu::UnicodeString& str,
-										   int32_t index,
-										   icu::UnicodeString& out_sequence) {
-	if (index >= str.length())
-		return false;
-
-	int32_t i = index;
-
-	UChar32 base = str.char32At(i);
-	if (!is_keycap_base(base))
-		return false;
-
-	i += U16_LENGTH(base);
-
-	// Optional variation selector:
-	// 0034 FE0F 20E3 = fully-qualified keycap
-	// 0033      20E3 = unqualified keycap
-	if (i < str.length()) {
-		UChar32 maybeVS16 = str.char32At(i);
-		if (maybeVS16 == 0xFE0F) {
-			i += U16_LENGTH(maybeVS16);
-		}
-	}
-
-	if (i >= str.length())
-		return false;
-
-	UChar32 maybeKeycap = str.char32At(i);
-	if (maybeKeycap != 0x20E3)
-		return false;
-
-	i += U16_LENGTH(maybeKeycap);
-
-	out_sequence = str.tempSubStringBetween(index, i);
-	return true;
-}
-
-bool TextRenderer::try_get_emoji_sequence(const icu::UnicodeString& str,
-										  int32_t index,
-										  icu::UnicodeString& out_sequence) {
-	if (index >= str.length()) {
-		return false;
-	}
-
-	// Keycap sequences start with ASCII digits/#/*, so the normal emoji
-	// property gate below will reject them unless handled first.
-	if (try_get_keycap_sequence(str, index, out_sequence)) {
-		return true;
-	}
-
-	UChar32 cp = str.char32At(index);
-
-	const bool looksLikeEmoji =
-		u_hasBinaryProperty(cp, UCHAR_EXTENDED_PICTOGRAPHIC) ||
-		u_hasBinaryProperty(cp, UCHAR_EMOJI_PRESENTATION)    ||
-		(cp >= 0x1F1E0 && cp <= 0x1F1FF);
-
-	if (!looksLikeEmoji) {
-		return false;
-	}
-
-	UErrorCode status = U_ZERO_ERROR;
-	std::unique_ptr<icu::BreakIterator> brk(
-		icu::BreakIterator::createCharacterInstance(
-			icu::Locale::getDefault(), status));
-
-	if (U_FAILURE(status)) {
-		return false;
-	}
-
-	brk->setText(str);
-
-	int32_t end = brk->following(index);
-	if (end == icu::BreakIterator::DONE || end <= index) {
-		return false;
-	}
-
-	out_sequence = str.tempSubStringBetween(index, end);
-	return true;
-}
-
 void TextRenderer::draw_text(float x, float y,
-							 const icu::UnicodeString& unicodeStr,
+							 const MST::MonoString& text,
 							 const std::vector<Color*>& colors,
 							 bool renderEmojis) {
 	y += ascent_px; // baseline adjustment
@@ -391,15 +306,13 @@ void TextRenderer::draw_text(float x, float y,
 
 	float cursorX = x;
 	float cursorY = y;
-	int glyphIdx  = 0;
 
 	glBegin(GL_QUADS);
-	for (int32_t i = 0; i < unicodeStr.length(); ) {
-		UChar32 cp = unicodeStr.char32At(i);
-		
-		icu::UnicodeString emojiSeq;
-		if (try_get_emoji_sequence(unicodeStr, i, emojiSeq)) {
-			int32_t seqLen = emojiSeq.length();   // UTF-16 code units
+	for (int32_t i = 0; i < text.length; i++) {
+		if (MST::skipIdx(text, i)) {
+			cursorX += TEXT_WIDTH;
+			continue;
+		}else if (MST::isEmoji(text, i)) {
 			float dist_right = 2*TEXT_WIDTH;
 			
 			if (renderEmojis) {
@@ -409,46 +322,43 @@ void TextRenderer::draw_text(float x, float y,
 				glEnd(); 
 				
 				// 2. Render the emoji (this will bind its own texture)
-				emoji_renderer->draw_emoji(emojiSeq, cursorX + (dist_right - emojiSize)/2, cursorY - ascent_px + (TEXT_HEIGHT - emojiSize)/2, emojiSize);
+				emoji_renderer->draw_emoji(MST::getEmoji(text, i), cursorX + (dist_right - emojiSize)/2, cursorY - ascent_px + (TEXT_HEIGHT - emojiSize)/2, emojiSize);
 				
 				// 3. Restore state and resume the quad batch for the rest of your font
 				glBindTexture(GL_TEXTURE_2D, fontTex);
 				glBegin(GL_QUADS); 
 			}
 			
-			cursorX  += dist_right;
-			i        += seqLen;
-			glyphIdx += seqLen;
+			cursorX += TEXT_WIDTH;
 			continue;
 		}
+		
+		MST::u32 cp = MST::char32At(text, i);
 		
 		int idx = lookup_packedchar_index(cp);
 		if (idx < 0 && cp != 0xFFFF && cp != U'\t') {
 			idx = lookup_packedchar_index(0xFFFD);    // unknown non-emoji fallback
 		}
 		
-		if (glyphIdx < static_cast<int>(colors.size()) && idx >= 0) {
+		if (idx >= 0) {
 			AlignedQuad q;
 			
 			float cx_temp = cursorX;
 			
 			GetPackedQuad(cdata, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
-
-			const Color* col = colors[glyphIdx];
+			
+			const Color* col = colors[i];
 			glColor4f(col->r, col->g, col->b, 1.0f);
-
+	
 			glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, q.y0);
 			glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, q.y0);
 			glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, q.y1);
 			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
 		}
 		
-		int codepoints_16 = U16_LENGTH(cp);
-		cursorX += TEXT_WIDTH*codepoints_16; // enforces monospacing
-
-		i = unicodeStr.moveIndex32(i, 1);
-		++glyphIdx;
+		cursorX += TEXT_WIDTH; // enforces monospaced
 	}
+	
 	glEnd();
 
 	if (!wasBlendEnabled) glDisable(GL_BLEND);
@@ -457,7 +367,7 @@ void TextRenderer::draw_text(float x, float y,
 }
 
 void TextRenderer::draw_text(float x, float y,
-							 const icu::UnicodeString& unicodeStr,
+							 const MST::MonoString& text,
 							 Color* color,
 							 bool renderEmojis) {
 	y += ascent_px; // baseline adjustment
@@ -479,12 +389,11 @@ void TextRenderer::draw_text(float x, float y,
 	glColor4f(color->r, color->g, color->b, 1.0f);
 
 	glBegin(GL_QUADS);
-	for (int32_t i = 0; i < unicodeStr.length(); ) {
-		UChar32 cp = unicodeStr.char32At(i);
-		
-		icu::UnicodeString emojiSeq;
-		if (try_get_emoji_sequence(unicodeStr, i, emojiSeq)) {
-			int32_t seqLen = emojiSeq.length();   // UTF-16 code units
+	for (int32_t i = 0; i < text.length; i++) {
+		if (MST::skipIdx(text, i)) {
+			cursorX += TEXT_WIDTH;
+			continue;
+		}else if (MST::isEmoji(text, i)) {
 			float dist_right = 2*TEXT_WIDTH;
 			
 			if (renderEmojis) {
@@ -494,7 +403,7 @@ void TextRenderer::draw_text(float x, float y,
 				glEnd(); 
 				
 				// 2. Render the emoji (this will bind its own texture)
-				emoji_renderer->draw_emoji(emojiSeq, cursorX + (dist_right - emojiSize)/2, cursorY - ascent_px + (TEXT_HEIGHT - emojiSize)/2, emojiSize);
+				emoji_renderer->draw_emoji(MST::getEmoji(text, i), cursorX + (dist_right - emojiSize)/2, cursorY - ascent_px + (TEXT_HEIGHT - emojiSize)/2, emojiSize);
 				
 				// 3. Restore state and resume the quad batch for the rest of your font
 				glBindTexture(GL_TEXTURE_2D, fontTex);
@@ -502,10 +411,11 @@ void TextRenderer::draw_text(float x, float y,
 				glBegin(GL_QUADS); 
 			}
 			
-			cursorX  += dist_right;
-			i        += seqLen;
+			cursorX += TEXT_WIDTH;
 			continue;
 		}
+		
+		MST::u32 cp = MST::char32At(text, i);
 		
 		int idx = lookup_packedchar_index(cp);
 		if (idx < 0 && cp != 0xFFFF && cp != U'\t') {
@@ -525,10 +435,7 @@ void TextRenderer::draw_text(float x, float y,
 			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
 		}
 		
-		int codepoints_16 = U16_LENGTH(cp);
-		cursorX += TEXT_WIDTH*codepoints_16; // enforces monospaced
-
-		i = unicodeStr.moveIndex32(i, 1);
+		cursorX += TEXT_WIDTH; // enforces monospaced
 	}
 	glEnd();
 
@@ -538,7 +445,7 @@ void TextRenderer::draw_text(float x, float y,
 }
 
 void TextRenderer::draw_text(float x, float y,
-							 const icu::UnicodeString& unicodeStr,
+							 const MST::MonoString& text,
 							 uint8_t r,
 							 uint8_t g,
 							 uint8_t b,
@@ -562,12 +469,11 @@ void TextRenderer::draw_text(float x, float y,
 	glColor4f((float)r/255.0f, (float)g/255.0f, (float)b/255.0f, 1.0f);
 
 	glBegin(GL_QUADS);
-	for (int32_t i = 0; i < unicodeStr.length(); ) {
-		UChar32 cp = unicodeStr.char32At(i);
-		
-		icu::UnicodeString emojiSeq;
-		if (try_get_emoji_sequence(unicodeStr, i, emojiSeq)) {
-			int32_t seqLen = emojiSeq.length();   // UTF-16 code units
+	for (int32_t i = 0; i < text.length; i++) {
+		if (MST::skipIdx(text, i)) {
+			cursorX += TEXT_WIDTH;
+			continue;
+		}else if (MST::isEmoji(text, i)) {
 			float dist_right = 2*TEXT_WIDTH;
 			
 			if (renderEmojis) {
@@ -577,18 +483,18 @@ void TextRenderer::draw_text(float x, float y,
 				glEnd(); 
 				
 				// 2. Render the emoji (this will bind its own texture)
-				emoji_renderer->draw_emoji(emojiSeq, cursorX + (dist_right - emojiSize)/2, cursorY - ascent_px + (TEXT_HEIGHT - emojiSize)/2, emojiSize);
+				emoji_renderer->draw_emoji(MST::getEmoji(text, i), cursorX + (dist_right - emojiSize)/2, cursorY - ascent_px + (TEXT_HEIGHT - emojiSize)/2, emojiSize);
 				
 				// 3. Restore state and resume the quad batch for the rest of your font
 				glBindTexture(GL_TEXTURE_2D, fontTex);
-				glColor4f((float)r/255.0f, (float)g/255.0f, (float)b/255.0f, 1.0f);
 				glBegin(GL_QUADS); 
 			}
 			
-			cursorX  += dist_right;
-			i        += seqLen;
+			cursorX += TEXT_WIDTH;
 			continue;
 		}
+		
+		MST::u32 cp = MST::char32At(text, i);
 		
 		int idx = lookup_packedchar_index(cp);
 		if (idx < 0 && cp != 0xFFFF && cp != U'\t') {
@@ -608,10 +514,7 @@ void TextRenderer::draw_text(float x, float y,
 			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
 		}
 		
-		int codepoints_16 = U16_LENGTH(cp);
-		cursorX += TEXT_WIDTH*codepoints_16;
-
-		i = unicodeStr.moveIndex32(i, 1);
+		cursorX += TEXT_WIDTH; // enforces monospaced
 	}
 	glEnd();
 

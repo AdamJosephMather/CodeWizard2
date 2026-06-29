@@ -3,7 +3,7 @@
 #include "application.h"
 
 LineNumbers::LineNumbers(Widget* parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("LineNumbers");
+	id = MST::toMonoString("LineNumbers");
 }
 
 void LineNumbers::render() {
@@ -50,7 +50,7 @@ void LineNumbers::render() {
 				}
 			}
 			
-			icu::UnicodeString text = icu::UnicodeString::fromUTF8(line_text);
+			MST::MonoString text = MST::toMonoString(line_text);
 			
 			lines_to_draw.push_back(text);
 			lines_to_color.push_back(fillcolor);
@@ -69,7 +69,7 @@ void LineNumbers::render() {
 				line_text = " " + line_text;
 			}
 			
-			icu::UnicodeString text = icu::UnicodeString::fromUTF8(line_text);
+			MST::MonoString text = MST::toMonoString(line_text);
 			
 			lines_to_draw.push_back(text);
 			lines_to_color.push_back(fillcolor);

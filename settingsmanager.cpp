@@ -241,7 +241,7 @@ std::vector<Language> SettingsManager::loadLanguages() {
 		
 		std::string com = lang["line_comment"];
 		
-		language.line_comment = icu::UnicodeString::fromUTF8(com);
+		language.line_comment = MST::toMonoString(com);
 		
 		std::string replace_dir = "%INSTALL_DIR%";
 		
@@ -280,8 +280,7 @@ void SettingsManager::saveLanguages(const std::vector<Language>& languages) {
 		}
 		
 		// Convert UnicodeString back to UTF8 string
-		std::string line_comment_utf8;
-		lang.line_comment.toUTF8String(line_comment_utf8);
+		std::string line_comment_utf8 = MST::toString(lang.line_comment);
 		langObj["line_comment"] = line_comment_utf8;
 		
 		// Reverse path replacement for lsp_command

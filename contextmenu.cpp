@@ -2,7 +2,7 @@
 #include "application.h"
 
 ContextMenu::ContextMenu(Widget* parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("contextmenu");
+	id = MST::toMonoString("contextmenu");
 }
 
 void ContextMenu::render() {
@@ -54,7 +54,7 @@ void ContextMenu::position(int x, int y, int width, int height) {
 	}
 }
 
-void ContextMenu::addToMenu(icu::UnicodeString name, Button::OnClick onclick) {
+void ContextMenu::addToMenu(MST::MonoString name, Button::OnClick onclick) {
 	Button* b = new Button(this, name, [&](Widget *btn, int x, int y, int av_width, int av_height, int w, int h) {
 		btn->t_x = t_x+App::text_padding+App::border_width;
 		btn->t_y = runningypos;
@@ -78,10 +78,10 @@ void ContextMenu::addToMenu(icu::UnicodeString name, Button::OnClick onclick) {
 void ContextMenu::recalcButtonTexts() {
 	int neededTextLen = 0;
 	for (auto l : buttonTexts) {
-		neededTextLen = fmax(neededTextLen, l.length());
+		neededTextLen = fmax(neededTextLen, l.length);
 	}
 	
-	UChar32 spaceChar = U' ';
+	const MST::MonoString spaceChar = MST::toMonoString(U' ');
 	
 	int ti = 0;
 	for (int i = 0; i < buttons.size(); i++) {
@@ -89,20 +89,20 @@ void ContextMenu::recalcButtonTexts() {
 			continue;
 		}
 		
-		auto prts = splitByChar(buttonTexts[ti], U'\t');
+		auto prts = MST::split(buttonTexts[ti], U'\t');
 		
 		if (prts.size() != 2) {
-			icu::UnicodeString newStr = buttonTexts[ti];
-			for (int j = buttonTexts[ti].length(); j < neededTextLen; j++) {
-				newStr.append(spaceChar);
+			MST::MonoString newStr = buttonTexts[ti];
+			for (int j = buttonTexts[ti].length; j < neededTextLen; j++) {
+				newStr += spaceChar;
 			}
 			buttons[i]->BUTTON_LABEL = newStr;
 		}else{
-			icu::UnicodeString newStr = prts[0];
-			for (int j = buttonTexts[ti].length()-1; j < neededTextLen; j++) {
-				newStr.append(spaceChar);
+			MST::MonoString newStr = prts[0];
+			for (int j = buttonTexts[ti].length-1; j < neededTextLen; j++) {
+				newStr += spaceChar;
 			}
-			newStr.append(prts[1]);
+			newStr += prts[1];
 			buttons[i]->BUTTON_LABEL = newStr;
 		}
 		

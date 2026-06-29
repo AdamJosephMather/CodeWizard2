@@ -4,7 +4,7 @@
 #include "tinyfiledialogs.h"
 
 GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("GraphWindow");
+	id = MST::toMonoString("GraphWindow");
 	
 	colorsList = {};
 	for (int i = 0; i < 10; i++) {
@@ -19,7 +19,7 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 		colorsList.clear();
 	};
 	
-	reset = new Button(this, icu::UnicodeString::fromUTF8("Reset View"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+	reset = new Button(this, MST::toMonoString("Reset View"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
 		btn->t_x = t_x+App::text_padding;
 		btn->t_y = t_y+App::text_padding;
@@ -29,7 +29,7 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 	});
 	reset->rounded = true;
 	
-	addCords = new Button(this, icu::UnicodeString::fromUTF8("Add Coords"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+	addCords = new Button(this, MST::toMonoString("Add Coords"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
 		btn->t_x = t_x+App::text_padding*2;
 		btn->t_y = screenStart+screenHeight+App::text_padding*2 - scroll;
@@ -39,7 +39,7 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 	});
 	addCords->rounded = true;
 	
-	addFile = new Button(this, icu::UnicodeString::fromUTF8("Add File"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+	addFile = new Button(this, MST::toMonoString("Add File"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
 		btn->t_x = addCords->t_x+addCords->t_w+App::text_padding;
 		btn->t_y = addCords->t_y;
@@ -49,7 +49,7 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 	});
 	addFile->rounded = true;
 	
-	addFolder = new Button(this, icu::UnicodeString::fromUTF8("Add Folder"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+	addFolder = new Button(this, MST::toMonoString("Add Folder"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
 		btn->t_x = addFile->t_x+addFile->t_w+App::text_padding;
 		btn->t_y = addFile->t_y;
@@ -81,7 +81,7 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 		t->t_h = TextRenderer::get_text_height()+2*App::text_padding;
 	});
 	averageText->rounded = true;
-	averageText->setFullText(icu::UnicodeString::fromUTF8("1"));
+	averageText->setFullText(MST::toMonoString("1"));
 	
 	Button* addCords;
 	Button* addFile;
@@ -142,21 +142,21 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 		}
 		
 		bool worked = true;
-		icu::UnicodeString text = App::readFileToUnicodeString(filePath, worked);
+		MST::MonoString text = App::readFileToMonoString(filePath, worked);
 		
 		if (!worked) {
 			return;
 		}
 		
-		auto lines = splitByChar(text, U'\n');
+		auto lines = MST::split(text, U'\n');
 		
-		lines.erase( std::remove_if(lines.begin(), lines.end(), [](const auto& line) { return line.length() == 0; }), lines.end() );
+		lines.erase( std::remove_if(lines.begin(), lines.end(), [](const auto& line) { return line.length == 0; }), lines.end() );
 		
 		worked = false;
 		auto line1Vals = getVals(lines[0], worked);
 		
 		if (!worked) {
-			App::displayToast(icu::UnicodeString::fromUTF8("Couldn't parse line 1."));
+			App::displayToast(MST::toMonoString("Couldn't parse line 1."));
 			return;
 		}
 		
@@ -170,12 +170,12 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 			auto line2Vals = getVals(lines[1], worked);
 			
 			if (!worked) {
-				App::displayToast(icu::UnicodeString::fromUTF8("Couldn't parse line 2."));
+				App::displayToast(MST::toMonoString("Couldn't parse line 2."));
 				return;
 			}
 			
 			if (line1Vals.size() != line2Vals.size()) {
-				App::displayToast(icu::UnicodeString::fromUTF8("X and Y Lines don't match size."));
+				App::displayToast(MST::toMonoString("X and Y Lines don't match size."));
 				return;
 			}
 			
@@ -188,7 +188,7 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 			line.y = {};
 			
 			if (expecting < 1 || expecting > 2) {
-				App::displayToast(icu::UnicodeString::fromUTF8("Format unknown, see help."));
+				App::displayToast(MST::toMonoString("Format unknown, see help."));
 				return;
 			}
 			
@@ -199,12 +199,12 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 				auto lineVals = getVals(lineUcode, worked);
 				
 				if (!worked) {
-					App::displayToast(icu::UnicodeString::fromUTF8("Couldn't parse line "+std::to_string(lineNum+1)+"."));
+					App::displayToast(MST::toMonoString("Couldn't parse line "+std::to_string(lineNum+1)+"."));
 					return;
 				}
 				
 				if (lineVals.size() != expecting) {
-					App::displayToast(icu::UnicodeString::fromUTF8("Line "+std::to_string(lineNum+1)+" doesn't have the right number of values."));
+					App::displayToast(MST::toMonoString("Line "+std::to_string(lineNum+1)+" doesn't have the right number of values."));
 					return;
 				}
 				
@@ -219,11 +219,11 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 		}
 		
 		if (line.x.size() == 0 || line.y.size() == 0) {
-			App::displayToast(icu::UnicodeString::fromUTF8("No graphable data."));
+			App::displayToast(MST::toMonoString("No graphable data."));
 			return;
 		}
 		
-		line.filename = icu::UnicodeString::fromUTF8(filename);
+		line.filename = MST::toMonoString(filename);
 		line.filepath = filePath;
 	}
 	
@@ -234,7 +234,7 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 	Button* remBut;
 	Button* scatBut;
 	
-	remBut = new Button(this, icu::UnicodeString::fromUTF8("Remove"), [=](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+	remBut = new Button(this, MST::toMonoString("Remove"), [=](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
 		btn->t_x = t_x+App::text_padding*3;
 		
@@ -262,7 +262,7 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 	});
 	remBut->rounded = true;
 	
-	scatBut = new Button(this, icu::UnicodeString::fromUTF8("Line"), [=](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+	scatBut = new Button(this, MST::toMonoString("Line"), [=](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
 		btn->t_x = remBut->t_x+remBut->t_w+App::text_padding;
 		btn->t_y = remBut->t_y;
@@ -271,9 +271,9 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 		for (int i = 0; i < allData.size(); i++) {
 			if (allData[i].id == thisId) {
 				if (allData[i].scatter) {
-					btn->BUTTON_LABEL = icu::UnicodeString::fromUTF8("Line");
+					btn->BUTTON_LABEL = MST::toMonoString("Line");
 				}else {
-					btn->BUTTON_LABEL = icu::UnicodeString::fromUTF8("Scatter");
+					btn->BUTTON_LABEL = MST::toMonoString("Scatter");
 				}
 				
 				allData[i].scatter = !allData[i].scatter;
@@ -337,21 +337,21 @@ bool GraphWindow::on_key_event(int key, int scancode, int action, int mods) {
 	return Widget::on_key_event(key, scancode, action, mods);
 }
 
-std::vector<double> GraphWindow::getVals(icu::UnicodeString text, bool& allgood) {
-	text = stripOfChar(text, U' ');
-	text = stripOfChar(text, U'\n');
-	text = stripOfChar(text, U'\t');
-	auto sects = splitByChar(text, U',');
+std::vector<double> GraphWindow::getVals(MST::MonoString text, bool& allgood) {
+	text = MST::stripOfChar(text, U' ');
+	text = MST::stripOfChar(text, U'\n');
+	text = MST::stripOfChar(text, U'\t');
+	auto sects = MST::split(text, U',');
 	
 	std::vector<double> out = {};
 	
 	for (auto s : sects) {
-		if (s.length() == 0) {
+		if (s.length == 0) {
 			continue;
 		}
 		
 		bool worked = false;
-		double xvl = unicodeStringToDouble_quick(s, worked);
+		double xvl = monoStringToDouble_quick(s, worked);
 		if (worked) {
 			out.push_back(xvl);
 		}else{
@@ -368,8 +368,8 @@ void GraphWindow::updateInfoFor(int id) {
 		if (allData[i].id == id) {
 			// this is a list of values, separated by commas and optional spaces
 			
-			icu::UnicodeString textX = allData[i].x_edit->getFullText();
-			icu::UnicodeString textY = allData[i].y_edit->getFullText();
+			MST::MonoString textX = allData[i].x_edit->getFullText();
+			MST::MonoString textY = allData[i].y_edit->getFullText();
 			
 			allData[i].x = {};
 			allData[i].y = {};
@@ -473,8 +473,7 @@ bool GraphWindow::on_scroll_event(double xchange, double ychange) {
 
 void GraphWindow::recalculateDisplayedValues() {
 	auto at = averageText->getFullText();
-	std::string strval;
-	at.toUTF8String(strval);
+	std::string strval = MST::toString(at);
 	
 	int avVal = 1;
 	
@@ -482,7 +481,7 @@ void GraphWindow::recalculateDisplayedValues() {
 		avVal = std::stoi(strval);
 	}catch (const std::exception& e) {
 		avVal = 1;
-		App::displayToast(icu::UnicodeString::fromUTF8("Couldn't parse average value."));
+		App::displayToast(MST::toMonoString("Couldn't parse average value."));
 	}
 	
 	for (int i = 0; i < allData.size(); i++) {
@@ -552,7 +551,7 @@ void GraphWindow::recalculateDrawables(bool changeEm) {
 	
 	for (size_t i = 0; i < allData.size(); i++) {
 		if (allData[i].modified_x.size() != allData[i].modified_y.size()) {
-			App::displayToast(icu::UnicodeString::fromUTF8("Ommitting data, non-matching x/y count"));
+			App::displayToast(MST::toMonoString("Ommitting data, non-matching x/y count"));
 			continue;
 		}
 		
@@ -652,11 +651,11 @@ void GraphWindow::render() {
 	if (App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart && App::mouseY <= screenStart+screenHeight) {
 		auto loc = fromPixelsToScaled(App::mouseX, App::mouseY);
 		
-		auto xStr = doubleToUnicodeString_pretty(loc.first);
-		auto yStr = doubleToUnicodeString_pretty(loc.second);
-		auto str = xStr + icu::UnicodeString::fromUTF8(", ")+yStr;
+		auto xStr = doubleToMonoString_pretty(loc.first);
+		auto yStr = doubleToMonoString_pretty(loc.second);
+		auto str = xStr + MST::toMonoString(", ")+yStr;
 		
-		int width = TextRenderer::get_text_width(str.length());
+		int width = TextRenderer::get_text_width(str.length);
 		
 		TextRenderer::draw_text(t_x + t_w - width - App::text_padding, reset->t_y + App::text_padding, str, App::theme.main_text_color);
 	}
@@ -716,7 +715,7 @@ void GraphWindow::render() {
 		addCords->render();
 		addFile->render();
 		addFolder->render();
-		TextRenderer::draw_text(addFolder->t_x+addFolder->t_w+App::text_padding, averageText->t_y+App::text_padding, icu::UnicodeString::fromUTF8("SMA:"), App::theme.main_text_color);
+		TextRenderer::draw_text(addFolder->t_x+addFolder->t_w+App::text_padding, averageText->t_y+App::text_padding, MST::toMonoString("SMA:"), App::theme.main_text_color);
 		App::runWithSKIZ(averageText->t_x, averageText->t_y, averageText->t_w, averageText->t_h, [&](){
 			averageText->render();
 		});
@@ -733,11 +732,11 @@ void GraphWindow::render() {
 			allData[i].removeButton->render();
 			allData[i].scatterButton->render();
 			if (allData[i].x_edit) {
-				TextRenderer::draw_text(allData[i].x_edit->t_x-App::text_padding-TextRenderer::get_text_width(2), allData[i].x_edit->t_y+App::text_padding, icu::UnicodeString::fromUTF8("x:"), App::theme.main_text_color);
+				TextRenderer::draw_text(allData[i].x_edit->t_x-App::text_padding-TextRenderer::get_text_width(2), allData[i].x_edit->t_y+App::text_padding, MST::toMonoString("x:"), App::theme.main_text_color);
 				App::runWithSKIZ(allData[i].x_edit->t_x, allData[i].x_edit->t_y, allData[i].x_edit->t_w, allData[i].x_edit->t_h, [&](){
 					allData[i].x_edit->render();
 				});
-				TextRenderer::draw_text(allData[i].y_edit->t_x-App::text_padding-TextRenderer::get_text_width(2), allData[i].y_edit->t_y+App::text_padding, icu::UnicodeString::fromUTF8("y:"), App::theme.main_text_color);
+				TextRenderer::draw_text(allData[i].y_edit->t_x-App::text_padding-TextRenderer::get_text_width(2), allData[i].y_edit->t_y+App::text_padding, MST::toMonoString("y:"), App::theme.main_text_color);
 				App::runWithSKIZ(allData[i].y_edit->t_x, allData[i].y_edit->t_y, allData[i].y_edit->t_w, allData[i].y_edit->t_h, [&](){
 					allData[i].y_edit->render();
 				});

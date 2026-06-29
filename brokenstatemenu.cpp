@@ -2,10 +2,10 @@
 #include "text_renderer.h"
 
 BrokenStateMenu::BrokenStateMenu(Widget* parent, std::string firsttext, std::string secondtext, std::string query) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("BrokenStateMenu");
+	id = MST::toMonoString("BrokenStateMenu");
 	Q = query;
 	
-	firstbutton = new Button(this, icu::UnicodeString::fromUTF8(firsttext), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+	firstbutton = new Button(this, MST::toMonoString(firsttext), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
 		btn->t_x = t_x+t_w/2-w/2;
 		btn->t_y = t_y+TextRenderer::get_text_height()+App::text_padding*2;
@@ -17,7 +17,7 @@ BrokenStateMenu::BrokenStateMenu(Widget* parent, std::string firsttext, std::str
 	});
 	firstbutton->rounded = true;
 	
-	secondbutton = new Button(this, icu::UnicodeString::fromUTF8(secondtext), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
+	secondbutton = new Button(this, MST::toMonoString(secondtext), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
 		btn->t_x = t_x+t_w/2-w/2;
 		btn->t_y = firstbutton->t_y+firstbutton->t_h+App::text_padding;
@@ -36,8 +36,8 @@ BrokenStateMenu::BrokenStateMenu(Widget* parent, std::string firsttext, std::str
 void BrokenStateMenu::render() {
 	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.hover_background_color);
 	
-	auto txt = icu::UnicodeString::fromUTF8(Q);
-	TextRenderer::draw_text(t_x+t_w/2-TextRenderer::get_text_width(txt.length())/2, t_y+App::text_padding, txt, App::theme.main_text_color);
+	auto txt = MST::toMonoString(Q);
+	TextRenderer::draw_text(t_x+t_w/2-TextRenderer::get_text_width(txt.length)/2, t_y+App::text_padding, txt, App::theme.main_text_color);
 	
 	Widget::render();
 }

@@ -3,7 +3,7 @@
 #include "text_renderer.h"
 
 ListBox::ListBox(Widget* parent, App::PosFunction pf) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("ListBox");
+	id = MST::toMonoString("ListBox");
 	pFunc = pf;
 }
 
@@ -52,7 +52,7 @@ void ListBox::render() {
 		
 		elementalPositions.push_back({t_x, y, t_w, th, indx});
 		
-		TextRenderer::draw_text(t_x+(float)App::text_padding/2+1, y+(float)App::text_padding/2, elements[indx].tempSubStringBetween(0, maxlen), textCol);
+		TextRenderer::draw_text(t_x+(float)App::text_padding/2+1, y+(float)App::text_padding/2, MST::substring(elements[indx], 0, maxlen), textCol);
 		y += th;
 	}
 	
@@ -68,7 +68,7 @@ void ListBox::render() {
 	}
 }
 
-void ListBox::setElements(std::vector<icu::UnicodeString> el) {
+void ListBox::setElements(std::vector<MST::MonoString> el) {
 	elements = el;
 	selected_id = 0;
 	scrolled_to = 0;

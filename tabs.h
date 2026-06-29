@@ -6,7 +6,7 @@
 
 struct TabInfo {
 	int xloc;
-	icu::UnicodeString title;
+	MST::MonoString title;
 	int id;
 };
 

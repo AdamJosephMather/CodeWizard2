@@ -3,7 +3,7 @@
 #include "text_renderer.h"
 
 HexEditor::HexEditor(Widget* parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("HexEditor");
+	id = MST::toMonoString("HexEditor");
 	
 	scrollbar = new Scrollbar(this);
 	scrollbar->getScrollInfo = [&](){
@@ -193,8 +193,8 @@ void HexEditor::render() {
 			}
 		}
 		
-		TextRenderer::draw_text(left, cur_y, icu::UnicodeString::fromUTF8(addressString+": "+hexdata), App::theme.main_text_color);
-		TextRenderer::draw_text(asciiX, cur_y, icu::UnicodeString::fromUTF8(ascii), asciiColors); // 53 is the combined length of the spaces and other text there
+		TextRenderer::draw_text(left, cur_y, MST::toMonoString(addressString+": "+hexdata), App::theme.main_text_color);
+		TextRenderer::draw_text(asciiX, cur_y, MST::toMonoString(ascii), asciiColors); // 53 is the combined length of the spaces and other text there
 		cur_y += TextRenderer::get_text_height();
 	}
 	

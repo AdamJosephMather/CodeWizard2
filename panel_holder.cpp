@@ -15,7 +15,7 @@
 #include "text_renderer.h"
 
 PanelHolder::PanelHolder(Widget *parent) : Widget(parent) {
-	id = icu::UnicodeString::fromUTF8("Panel holder");
+	id = MST::toMonoString("Panel holder");
 }
 
 void PanelHolder::position(int x, int y, int width, int height) {

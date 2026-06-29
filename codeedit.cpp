@@ -889,6 +889,8 @@ void CodeEdit::triggerSaveAs() {
 		f->filepath = filePath;
 		f->filename = filename;
 		
+		std::unique_lock<std::mutex> lock(saving_lock);
+		
 		FUPDATER(this, f);
 		
 		file = f;
@@ -905,6 +907,9 @@ void CodeEdit::triggerSaveAs() {
 		was_in_a_file = false;
 		f->is_opening = false;
 		madeChangeBetweenSaves = true;
+		
+		lock.unlock();
+		
 		save();
 		
 		if (App::lsp_client_map[lsp]){
@@ -913,11 +918,7 @@ void CodeEdit::triggerSaveAs() {
 		}
 	}
 	
-	std::cout << " SA 3\n";
-	
 	App::commandUnfocused();
-	
-	std::cout << " SA 4\n";
 }
 
 void CodeEdit::overwrite_file() {
@@ -1285,7 +1286,7 @@ std::string CodeEdit::augmentBuildCommand(std::string inital) {
 }
 
 bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
-	std::lock_guard<std::mutex> lock(saving_lock);
+	std::unique_lock<std::mutex> lock(saving_lock);
 	
 	if (FILE_BROKEN_STATE) { return broken_state_menu->on_key_event(key, scancode, action, mods); }
 	
@@ -1461,12 +1462,14 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 		}
 		
 		if (key == GLFW_KEY_S && is_press && shift_held && control_held){
-			std::cout << "TRIGGER SAVE AS 1\n";
+			lock.unlock();
 			triggerSaveAs();
+			lock.lock();
 			return true;
 		}else if (key == GLFW_KEY_S && is_press && !shift_held && control_held && !file){
-			std::cout << "TRIGGER SAVE AS 2\n";
+			lock.unlock();
 			triggerSaveAs();
+			lock.lock();
 			return true;
 		}else if (key == GLFW_KEY_F && is_press && (control_held || (App::activeLeafNode == textedit && textedit->mode == 'n'))) {
 			// open find menu and whatnot

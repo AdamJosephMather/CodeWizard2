@@ -4,7 +4,6 @@
 //#define DEBUG_MONOSTRING
 //#define DEBUG_MONOSTRING_FINICK
 
-#include <cassert>
 #include <mutex>
 #include <string>
 #include <string_view>
@@ -524,9 +523,6 @@ public:
 			return {};
 		}
 		
-		assert(start <= end);
-		assert(end <= inpt.length);
-		
 		MonoString out;
 		out.length = inpt.length-(end-start);
 		if (out.length == 0) {
@@ -545,10 +541,7 @@ public:
 #ifdef DEBUG_MONOSTRING
 			std::cout << "static MonoString insertAt(const MonoString& inpt, size_t start, const MonoString& add)\n";
 #endif
-		
 		// inserts add at start location in inpt
-		
-		assert(start <= inpt.length);
 		
 		if (!add.data || !inpt.data) {
 			if (add.data) {
@@ -1243,8 +1236,6 @@ public:
 #ifdef DEBUG_MONOSTRING_FINICK
 			std::cout << "static void setTabWidth(int wdth)\n";
 #endif
-		
-		assert(wdth >= 1);
 		std::lock_guard<std::mutex> lock(tab_width_mutex);
 		TAB_WIDTH = wdth;
 	}

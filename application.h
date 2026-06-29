@@ -1,6 +1,5 @@
 #pragma once
 
-#include "MonoString.cpp"
 #include "languageserverclient.h"
 #include "settingsmanager.h"
 #include <atomic>
@@ -23,6 +22,7 @@
 #include "titlebar.h"
 #include "widget.h"
 #include <mutex>
+#include "MonoString.cpp"
 
 #ifndef GL_COMBINE
 #define GL_COMBINE              0x8570

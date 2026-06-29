@@ -15,6 +15,7 @@ public:
 	static void draw_text(float x, float y, const MST::MonoString& text, const std::vector<Color*>& colors, bool renderEmojis=true);
 	static void draw_text(float x, float y, const MST::MonoString& text, Color* color, bool renderEmojis=true);
 	static void draw_text(float x, float y, const MST::MonoString& text, uint8_t r, uint8_t g, uint8_t b, bool renderEmojis=true);
+	static float draw_text_substring(float x, float y, const MST::MonoString& text, size_t start, size_t end, const std::vector<Color*>& colors, bool use_color_substring, bool renderEmojis=true);
 	
 	// Cleanup resources
 	static void cleanup();

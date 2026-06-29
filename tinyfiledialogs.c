@@ -3237,59 +3237,52 @@ char * tinyfd_saveFileDialog(
 	static char lBuff[MAX_PATH_OR_CMD] ;
 	char lString[MAX_PATH_OR_CMD] ;
 	char * p ;
-		char * lPointerInputBox;
-		int i;
+	char * lPointerInputBox;
+	int i;
 
 	lBuff[0]='\0';
 
-	if ( ! aFilterPatterns ) aNumOfFilterPatterns = 0 ;
-		if (tfd_quoteDetected(aTitle)) return tinyfd_saveFileDialog("INVALID TITLE WITH QUOTES", aDefaultPathAndOrFile, aNumOfFilterPatterns, aFilterPatterns, aSingleFilterDescription);
-		if (tfd_quoteDetected(aDefaultPathAndOrFile)) return tinyfd_saveFileDialog(aTitle, "INVALID DEFAULT_PATH WITH QUOTES", aNumOfFilterPatterns, aFilterPatterns, aSingleFilterDescription);
-		if (tfd_quoteDetected(aSingleFilterDescription)) return tinyfd_saveFileDialog(aTitle, aDefaultPathAndOrFile, aNumOfFilterPatterns, aFilterPatterns, "INVALID FILTER_DESCRIPTION WITH QUOTES");
-		for (i = 0; i < aNumOfFilterPatterns; i++)
-		{
-			if (tfd_quoteDetected(aFilterPatterns[i])) return tinyfd_saveFileDialog("INVALID FILTER_PATTERN WITH QUOTES: use the GRAVE ACCENT \\x60 instead.", aDefaultPathAndOrFile, 0, NULL, NULL);
-		}
-
-
-		if ( ( !tinyfd_forceConsole || !( GetConsoleWindow() || dialogPresent() ) )
-			&& (!getenv("SSH_CLIENT") || getenvDISPLAY()))
-	{
-		if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"windows");return (char *)1;}
-		p = saveFileDialogWinGui(lBuff,
-				aTitle, aDefaultPathAndOrFile, aNumOfFilterPatterns, (char const * const *)aFilterPatterns, aSingleFilterDescription);
+	if (! aFilterPatterns) aNumOfFilterPatterns = 0 ;
+	
+	if (tfd_quoteDetected(aTitle)) return tinyfd_saveFileDialog("INVALID TITLE WITH QUOTES", aDefaultPathAndOrFile, aNumOfFilterPatterns, aFilterPatterns, aSingleFilterDescription);
+	if (tfd_quoteDetected(aDefaultPathAndOrFile)) return tinyfd_saveFileDialog(aTitle, "INVALID DEFAULT_PATH WITH QUOTES", aNumOfFilterPatterns, aFilterPatterns, aSingleFilterDescription);
+	if (tfd_quoteDetected(aSingleFilterDescription)) return tinyfd_saveFileDialog(aTitle, aDefaultPathAndOrFile, aNumOfFilterPatterns, aFilterPatterns, "INVALID FILTER_DESCRIPTION WITH QUOTES");
+	
+	for (i = 0; i < aNumOfFilterPatterns; i++) {
+		if (tfd_quoteDetected(aFilterPatterns[i])) return tinyfd_saveFileDialog("INVALID FILTER_PATTERN WITH QUOTES: use the GRAVE ACCENT \\x60 instead.", aDefaultPathAndOrFile, 0, NULL, NULL);
 	}
-		else if (dialogPresent())
-		{
-			if (aTitle&&!strcmp(aTitle, "tinyfd_query")){ strcpy(tinyfd_response, "dialog"); return (char *)0; }
-			p = saveFileDialogWinConsole(lBuff, aTitle, aDefaultPathAndOrFile);
+	
+	if ((!tinyfd_forceConsole || !(GetConsoleWindow() || dialogPresent())) && (!getenv("SSH_CLIENT") || getenvDISPLAY())) {
+		if (aTitle&&!strcmp(aTitle,"tinyfd_query")){
+			strcpy(tinyfd_response,"windows");return (char *)1;
 		}
-		else
-		{
-			if (aTitle&&!strcmp(aTitle, "tinyfd_query")){ strcpy(tinyfd_response, "basicinput"); return (char *)0; }
-			strcpy(lBuff, "Save file in ");
-			strcat(lBuff, getCurDir());
+		p = saveFileDialogWinGui(lBuff, aTitle, aDefaultPathAndOrFile, aNumOfFilterPatterns, (char const * const *)aFilterPatterns, aSingleFilterDescription);
+	}else if (dialogPresent()) {
+		if (aTitle&&!strcmp(aTitle, "tinyfd_query")){ strcpy(tinyfd_response, "dialog"); return (char *)0; }
+		p = saveFileDialogWinConsole(lBuff, aTitle, aDefaultPathAndOrFile);
+	}else {
+		if (aTitle&&!strcmp(aTitle, "tinyfd_query")){ strcpy(tinyfd_response, "basicinput"); return (char *)0; }
+		strcpy(lBuff, "Save file in ");
+		strcat(lBuff, getCurDir());
 
-			lPointerInputBox = tinyfd_inputBox(NULL,NULL,NULL); /* obtain a pointer on the current content of tinyfd_inputBox */
-			if (lPointerInputBox) strcpy(lString, lPointerInputBox); /* preserve the current content of tinyfd_inputBox */
-			p = tinyfd_inputBox(aTitle, lBuff, "");
-			if (p) strcpy(lBuff, p); else lBuff[0] = '\0';
-			if (lPointerInputBox) strcpy(lPointerInputBox, lString); /* restore its previous content to tinyfd_inputBox */
-			p = lBuff;
-		}
+		lPointerInputBox = tinyfd_inputBox(NULL,NULL,NULL); /* obtain a pointer on the current content of tinyfd_inputBox */
+		if (lPointerInputBox) strcpy(lString, lPointerInputBox); /* preserve the current content of tinyfd_inputBox */
+		p = tinyfd_inputBox(aTitle, lBuff, "");
+		if (p) strcpy(lBuff, p); else lBuff[0] = '\0';
+		if (lPointerInputBox) strcpy(lPointerInputBox, lString); /* restore its previous content to tinyfd_inputBox */
+		p = lBuff;
+	}
 
-	if ( ! p || ! strlen( p )  )
-	{
+	if (!p || !strlen(p)) {
 		return NULL;
 	}
-	getPathWithoutFinalSlash( lString , p ) ;
-	if ( strlen( lString ) && ! dirExists( lString ) )
-	{
+	getPathWithoutFinalSlash(lString , p) ;
+	if (strlen(lString) && !dirExists(lString)) {
 		return NULL ;
 	}
 	getLastName(lString,p);
-	if ( ! filenameValid(lString) )
-	{
+	
+	if (!filenameValid(lString)) {
 		return NULL;
 	}
 	return p ;

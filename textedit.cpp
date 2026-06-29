@@ -42,6 +42,8 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 	coppiedText = {};
 	historyThisUpdate = createHistory();
 	
+	tabWidth = App::settings->getValue("tab_width", 4);
+	
 	draw_cursor = {};
 	draw_diagnostics = {};
 	draw_mark = {false};
@@ -1680,6 +1682,7 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 			applyInsertToAllCursors(MST::toMonoString("\n"));
 			return true;
 		}else if (key == GLFW_KEY_S && !is_control_held) {
+			std::cout << "TEXTEDIT 1\n";
 			vim_repeater = 0;
 			applyMoveToAllCursors(CODEWIZARD_WORD_WRAP, is_shift_held, false);
 			return true;
@@ -1857,13 +1860,13 @@ void TextEdit::render() {
 	
 	std::vector<int> drawMarkLines = {};
 	
-	for (int ln_ren = 0; ln_ren < draw_text.size(); ln_ren++) {
+	for (int ln_ren = 0; ln_ren < draw_errors.size(); ln_ren++) {
 		if (draw_mark[ln_ren]) {
 			App::DrawRect(t_x, cury, t_w, TextRenderer::get_text_height(), App::theme.overlay_background_color);
 			if (ln_ren == 0 || !draw_mark[ln_ren-1]) {
 				drawMarkLines.push_back(cury-1);
 			}
-			if (ln_ren == draw_text.size()-1 || !draw_mark[ln_ren+1]) {
+			if (ln_ren == draw_errors.size()-1 || !draw_mark[ln_ren+1]) {
 				drawMarkLines.push_back(cury+TextRenderer::get_text_height());
 			}
 		}
@@ -1903,8 +1906,12 @@ void TextEdit::render() {
 		App::DrawRect(sx, y+TextRenderer::get_text_height(), w, 2, c);
 	}
 
-	for (int ln_ren = 0; ln_ren < draw_text.size(); ln_ren++) {
-		TextRenderer::draw_text(curx, cury, draw_text[ln_ren], draw_color[ln_ren]);
+	for (int ln_ren = 0; ln_ren < draw_errors.size(); ln_ren++) {
+		if (ln_ren+line_start >= lines.size()) {
+			continue;
+		}
+		float newx = TextRenderer::draw_text_substring(curx, cury, lines[line_start+ln_ren].line_text, char_start, end_char, draw_color[ln_ren], false);
+		TextRenderer::draw_text(newx, cury, draw_errors[ln_ren].first, draw_errors[ln_ren].second);
 		cury += TextRenderer::get_text_height();
 	}
 
@@ -1962,6 +1969,7 @@ Color* TextEdit::getColorFromToken(const CW_HighlightToken& token) {
 
 void TextEdit::executeAction(WidgetActionType typ) {
 	if (typ == TAB_WIDTH_CHANGE) {
+		tabWidth = App::settings->getValue("tab_width", 4);
 		DO_POSITION = true;
 	}
 	Widget::executeAction(typ);
@@ -1991,8 +1999,6 @@ void TextEdit::position(int x, int y, int w, int h) {
 //#endif
 	
 	flushPendingCharInput();
-	
-	tabWidth = App::settings->getValue("tab_width", 4);
 	
 	int old_x = t_x;
 	int old_y = t_y;
@@ -2096,15 +2102,15 @@ void TextEdit::position(int x, int y, int w, int h) {
 		tabReplacementChars.push_back(U' ');
 	}
 	
-	draw_text.clear();
+	draw_errors.clear();
 	draw_color.clear();
 	draw_cursor.clear();
 	draw_selection.clear();
 	draw_diagnostics.clear();
 	draw_mark.clear();
 
-	int line_start = floor(scrolled_to_vert);
-	int char_start = floor(scrolled_to_horz);
+	line_start = floor(scrolled_to_vert);
+	char_start = floor(scrolled_to_horz);
 	
 	start_x = -fmod(scrolled_to_horz, 1) * TextRenderer::get_text_width(1);
 	start_y = -fmod(scrolled_to_vert, 1) * TextRenderer::get_text_height();
@@ -2117,8 +2123,8 @@ void TextEdit::position(int x, int y, int w, int h) {
 		start_x -= TextRenderer::get_text_width(2);
 	}
 	
-	int end_line = line_start+ceil((float)t_h/(float)TextRenderer::get_text_height()) + 1;
-	int end_char = char_start+ceil((float)t_w/(float)TextRenderer::get_text_width(1)) + 1;
+	end_line = line_start+ceil((float)t_h/(float)TextRenderer::get_text_height()) + 1;
+	end_char = char_start+ceil((float)t_w/(float)TextRenderer::get_text_width(1)) + 1;
 	
 	if (line_start > 0) {
 		line_start -= 1;
@@ -2210,13 +2216,19 @@ void TextEdit::position(int x, int y, int w, int h) {
 		
 		std::vector<Color*> draw_color_thisline = {};
 		
-		MST::MonoString text = MST::substring(lineText, char_start, end_char);
-		
 		if (thisdiag.length != 0) {
-			text += MST::toMonoString("  ● ") + thisdiag;
+			Color* c = App::theme.error_color;
+			
+			if (thisdiagtype == 1) {
+				c = App::theme.warning_color;
+			}else if (thisdiagtype == 2) {
+				c = App::theme.suggestion_color;
+			}
+			
+			draw_errors.push_back(std::make_pair(MST::toMonoString("  ● ") + thisdiag, c));
+		}else{
+			draw_errors.push_back(std::make_pair(MST::MonoString(), App::theme.main_text_color));
 		}
-		
-		draw_text.push_back(text);
 		
 		const auto& tokens = lines[ln_num].tokens;
 		size_t idx = MST::NOT_FOUND;
@@ -2275,19 +2287,6 @@ void TextEdit::position(int x, int y, int w, int h) {
 				}
 		
 				draw_color_thisline.push_back(clr);
-			}
-		}
-		
-		if (thisdiag.length != 0) {
-			Color* c = App::theme.error_color;
-			if (thisdiagtype == 1) {
-				c = App::theme.warning_color;
-			}else if (thisdiagtype == 2) {
-				c = App::theme.suggestion_color;
-			}
-			
-			for (int i = 0; i < 4+thisdiag.length; i++) {
-				draw_color_thisline.push_back(c);
 			}
 		}
 		

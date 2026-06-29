@@ -366,6 +366,97 @@ void TextRenderer::draw_text(float x, float y,
 	if (!wasTexEnabled) glDisable(GL_TEXTURE_2D);
 }
 
+float TextRenderer::draw_text_substring(float x, float y,
+							 const MST::MonoString& text,
+							 size_t start, size_t end,
+							 const std::vector<Color*>& colors,
+							 bool use_color_substring,
+							 bool renderEmojis) {
+	if (start >= text.length) {
+		return x;
+	}
+	
+	if (text.length < end) {
+		end = text.length;
+	}
+	
+	y += ascent_px; // baseline adjustment
+
+	GLboolean wasBlendEnabled = glIsEnabled(GL_BLEND);
+	GLboolean wasTexEnabled   = glIsEnabled(GL_TEXTURE_2D);
+	GLint oldBlendSrc, oldBlendDst;
+	glGetIntegerv(GL_BLEND_SRC, &oldBlendSrc);
+	glGetIntegerv(GL_BLEND_DST, &oldBlendDst);
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, fontTex);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	float cursorX = x;
+	float cursorY = y;
+	
+	glBegin(GL_QUADS);
+	for (int32_t i = start; i < end; i++) {
+		if (MST::skipIdx(text, i)) {
+			cursorX += TEXT_WIDTH;
+			continue;
+		}else if (MST::isEmoji(text, i)) {
+			float dist_right = 2*TEXT_WIDTH;
+			
+			if (renderEmojis) {
+				float emojiSize = std::fmin(dist_right, TEXT_HEIGHT); // Or whatever size mapping you prefer
+				
+				// 1. Break the current quad batch
+				glEnd(); 
+				
+				// 2. Render the emoji (this will bind its own texture)
+				emoji_renderer->draw_emoji(MST::getEmoji(text, i), cursorX + (dist_right - emojiSize)/2, cursorY - ascent_px + (TEXT_HEIGHT - emojiSize)/2, emojiSize);
+				
+				// 3. Restore state and resume the quad batch for the rest of your font
+				glBindTexture(GL_TEXTURE_2D, fontTex);
+				glBegin(GL_QUADS); 
+			}
+			
+			cursorX += TEXT_WIDTH;
+			continue;
+		}
+		
+		MST::u32 cp = MST::char32At(text, i);
+		
+		int idx = lookup_packedchar_index(cp);
+		if (idx < 0 && cp != 0xFFFF && cp != U'\t') {
+			idx = lookup_packedchar_index(0xFFFD);    // unknown non-emoji fallback
+		}
+		
+		if (idx >= 0) {
+			AlignedQuad q;
+			
+			float cx_temp = cursorX;
+			
+			GetPackedQuad(cdata, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
+			
+			const Color* col = colors[use_color_substring ? i : i-start];
+			glColor4f(col->r, col->g, col->b, 1.0f);
+	
+			glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, q.y0);
+			glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, q.y0);
+			glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, q.y1);
+			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
+		}
+		
+		cursorX += TEXT_WIDTH; // enforces monospaced
+	}
+	
+	glEnd();
+
+	if (!wasBlendEnabled) glDisable(GL_BLEND);
+	else glBlendFunc(oldBlendSrc, oldBlendDst);
+	if (!wasTexEnabled) glDisable(GL_TEXTURE_2D);
+	
+	return cursorX;
+}
+
 void TextRenderer::draw_text(float x, float y,
 							 const MST::MonoString& text,
 							 Color* color,

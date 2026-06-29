@@ -41,6 +41,8 @@
 int main(int argc, char* argv[]) {
 	auto start = std::chrono::steady_clock::now();
 	
+	DWORD main_thread_id = GetCurrentThreadId();
+	std::cerr << "MAIN thread id=" << main_thread_id << "\n";
 	
 	#ifdef _WIN32
 		HRESULT comHr = CoInitializeEx(

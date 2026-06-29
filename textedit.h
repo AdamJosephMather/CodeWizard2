@@ -136,6 +136,11 @@ public:
 	bool scrollbar_horizontal = false;
 	Scrollbar* scrollbar_h = nullptr;
 	
+	int line_start = 0;
+	int char_start = 0;
+	int end_line = 0;
+	int end_char = 0;
+	
 	ContextMenu* contextmenu = nullptr;
 	
 	Color* borderColor;
@@ -180,7 +185,7 @@ public:
 	char wasmode = 'i';
 	char ignoringChar = '\0';
 	
-	std::vector<MST::MonoString>  draw_text;
+	std::vector<std::pair<MST::MonoString, Color*>> draw_errors;
 	std::vector<std::vector<Color*>> draw_color;
 	std::vector<DiagnosticUnderline> draw_diagnostics;
 	std::vector<bool>                draw_mark;

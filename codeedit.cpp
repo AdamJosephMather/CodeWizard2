@@ -864,15 +864,19 @@ void CodeEdit::position(int x, int y, int w, int h) {
 
 void CodeEdit::triggerSaveAs() {
 	std::string default_path = "";
+	
 	if (file) {
 		default_path = file->filepath;
 	}
+
+	const char* default_path_ptr = default_path.empty() ? NULL : default_path.c_str();
 	
 	const char * fp = tinyfd_saveFileDialog(
-		"Save as?", // dialog title
-		default_path.c_str(), // default path and filename
-		0, NULL, // filter count and filters
-		0 // allow multiple selections (0 = no)
+		"Save as?",
+		default_path_ptr,
+		0,
+		NULL,
+		NULL
 	);
 	
 	if (fp) {
@@ -909,7 +913,11 @@ void CodeEdit::triggerSaveAs() {
 		}
 	}
 	
+	std::cout << " SA 3\n";
+	
 	App::commandUnfocused();
+	
+	std::cout << " SA 4\n";
 }
 
 void CodeEdit::overwrite_file() {
@@ -1453,9 +1461,11 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 		}
 		
 		if (key == GLFW_KEY_S && is_press && shift_held && control_held){
+			std::cout << "TRIGGER SAVE AS 1\n";
 			triggerSaveAs();
 			return true;
 		}else if (key == GLFW_KEY_S && is_press && !shift_held && control_held && !file){
+			std::cout << "TRIGGER SAVE AS 2\n";
 			triggerSaveAs();
 			return true;
 		}else if (key == GLFW_KEY_F && is_press && (control_held || (App::activeLeafNode == textedit && textedit->mode == 'n'))) {

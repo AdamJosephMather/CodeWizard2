@@ -3,25 +3,25 @@ project(CodeWizard)
 
 # debug...
 
-if (MSVC)
-	message(STATUS "Building with MSVC AddressSanitizer enabled")
-
-	# Let CMake pick the correct /MDd or /MD (recommended for ASan on MSVC)
-	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-
-	add_compile_options(
-		/fsanitize=address
-		/Zi
-	)
-
-	add_link_options(
-		/fsanitize=address
-		/INCREMENTAL:NO
-		/DEBUG:FULL
-		# REMOVE this line:
-		# /WHOLEARCHIVE:clang_rt.asan-x86_64.lib
-	)
-endif()
+# if (MSVC)
+# 	message(STATUS "Building with MSVC AddressSanitizer enabled")
+# 
+# 	# Let CMake pick the correct /MDd or /MD (recommended for ASan on MSVC)
+# 	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+# 
+# 	add_compile_options(
+# 		/fsanitize=address
+# 		/Zi
+# 	)
+# 
+# 	add_link_options(
+# 		/fsanitize=address
+# 		/INCREMENTAL:NO
+# 		/DEBUG:FULL
+# 		# REMOVE this line:
+# 		# /WHOLEARCHIVE:clang_rt.asan-x86_64.lib
+# 	)
+# endif()
 
 
 
@@ -251,8 +251,8 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 
 
 
-# if (MSVC)
-# 	set_target_properties(${PROJECT_NAME} PROPERTIES
-# 		WIN32_EXECUTABLE TRUE
-# 	)
-# endif()
+if (MSVC)
+	set_target_properties(${PROJECT_NAME} PROPERTIES
+		WIN32_EXECUTABLE TRUE
+	)
+endif()

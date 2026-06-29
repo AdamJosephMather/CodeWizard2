@@ -748,6 +748,8 @@ void Settings::after_change(SettingsString* el) {
 
 void Settings::after_change(SettingsInt* el) {
 	if (el->key_name == "tab_width") {
+		MST::setTabWidth(el->value);
+		App::displayToast(MST::toMonoString("This setting will only apply to new text, please reopen files to view changes."));
 		App::rootelement->executeAction(TAB_WIDTH_CHANGE);
 	}
 }

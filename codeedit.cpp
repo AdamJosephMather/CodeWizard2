@@ -1220,14 +1220,14 @@ void CodeEdit::activateFind(bool forwards, const MST::MonoString& tofind, bool c
 }
 
 bool CodeEdit::on_char_event(unsigned int keycode) {
-	std::lock_guard<std::mutex> lock(saving_lock);
-	
 	if (!is_visible) {
 		return false;
 	}
 	
 	if (FILE_BROKEN_STATE) { return broken_state_menu->on_char_event(keycode); }
 	if (REQUESTING_FIXIT) { return fixit_request_menu->on_char_event(keycode); }
+	
+	std::lock_guard<std::mutex> lock(saving_lock);
 	
 	if (App::activeLeafNode != hoverbox) {
 		if (hoverbox->parent == this) {

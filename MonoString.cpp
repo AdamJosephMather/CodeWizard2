@@ -1,5 +1,11 @@
 #pragma once
 
+/*
+A string implementation that keeps memory alligned with visual characters.
+
+ie 4 bytes -> 1 visual char
+*/
+
 //#include <iostream>
 //#define DEBUG_MONOSTRING
 //#define DEBUG_MONOSTRING_FINICK
@@ -1295,7 +1301,12 @@ public:
 			std::cout << "static std::string getEmoji(const MonoString& inpt, size_t idx)\n";
 #endif
 		
-		return idx_to_stored[charToIdx(inpt.data[idx])];
+		std::lock_guard<std::mutex> lock(table_mutex);
+		u32 handle_index = charToIdx(inpt.data[idx]);
+		if (handle_index < idx_to_stored.size()) {
+			return idx_to_stored[handle_index];
+		}
+		return {};
 	}
 	
 	static u32 char32At(const MonoString& inpt, size_t idx) {

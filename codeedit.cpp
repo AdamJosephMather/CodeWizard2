@@ -1630,8 +1630,6 @@ void CodeEdit::removeComments() {
 }
 
 bool CodeEdit::on_mouse_button_event(int button, int action, int mods) {
-	std::lock_guard<std::mutex> lock(saving_lock);
-	
 	if (FILE_BROKEN_STATE) {
 		return broken_state_menu->on_mouse_button_event(button, action, mods);
 	}else if (REQUESTING_FIXIT) {

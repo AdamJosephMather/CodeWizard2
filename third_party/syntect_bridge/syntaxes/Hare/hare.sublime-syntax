@@ -1,0 +1,123 @@
+%YAML 1.2
+---
+# http://www.sublimetext.com/docs/syntax.html
+name: Hare
+file_extensions: [ha]
+scope: source.hare
+contexts:
+  main:
+    - include: keywords
+    - include: strings
+    - include: strings_2
+    - include: char_lit
+    - include: line_comment
+    - include: misc_ops
+    - include: core_types
+    - include: boolean
+    - include: float_lit
+    - include: int_dec_lit
+    - include: int_bin_lit
+    - include: int_oct_lit
+    - include: int_hex_lit
+    # Comparison operator:
+    - match: (&&|\|\||==|!=)
+      scope: keyword.operator.comparison.hare
+    # Assignment operator:
+    - match: (\+=|-=|/=|\*=|%=|\^=|&=|\|=|<<=|>>=|=)
+      scope: keyword.operator.assignment.hare
+    # Arithmetic operator:
+    - match: (!|\+|-|/|\*|%|\^|&|\||<<|>>)
+      scope: keyword.operator.arithmetic.hare
+    # Comparison operator (second group because of regex precedence):
+    - match: (<=|>=|<|>)
+      scope: keyword.operator.comparison.hare
+    # Preprocessor Directive:
+    - match: '(@[a-z]+)'
+      scope: keyword.attribute.hare
+    # Conversion Operators:
+    - match: \b(is|as)\b
+      scope: keyword.operator.conversion.hare
+
+  # Boolean constant
+  boolean:
+    - match: \b(true|false)\b
+      scope: constant.language.boolean.hare
+
+  # Single-quote string literal (character)
+  char_lit:
+    - match: '''([^''\\]|\\(x[0-9A-Fa-f]{2}|[0-2][0-7]{0,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.))'''
+      scope: string.quoted.single.hare
+
+  # Built-in/core type
+  core_types:
+    - match: \b(str|rune|char|bool|int|uint|uintptr|u8|u16|u32|u64|i8|i16|i32|i64|f32|f64|opaque|null|void|nullable|valist)\b
+      scope: support.type.primitive.hare
+
+  # Integer literal (decimal)
+  int_dec_lit:
+    - match: '\b[0-9]+((e|E)[0-9]+)?(z|(u|i)(8|16|32|64)?)?\b'
+      scope: constant.numeric.integer.decimal.hare
+
+  # Integer literal (binary)
+  int_bin_lit:
+    - match: '\b0b[0-1]+(z|(u|i)(8|16|32|64)?)?\b'
+      scope: constant.numeric.integer.binary.hare
+
+  # Integer literal (octal)
+  int_oct_lit:
+    - match: '\b0o[0-7]+(z|(u|i)(8|16|32|64)?)?\b'
+      scope: constant.numeric.integer.octal.hare
+
+  # Integer literal (hex)
+  int_hex_lit:
+    - match: '\b0x[0-9A-Fa-f]+(z|(u|i)(8|16|32|64)?)?\b'
+      scope: constant.numeric.integer.hex.hare
+
+  # Floating point literal
+  float_lit:
+    - match: '\b[0-9]+\.[0-9]+((e|E)(\+|-)?[0-9]+)?(f(32|64))?\b'
+      scope: constant.numeric.floating.hare
+    - match: '\b[0-9]+((e|E)(\+|-)?[0-9]+)?f(32|64)\b'
+      scope: constant.numeric.floating.hare
+
+  keywords:
+    - match: \b(abort|align|alloc|append|assert|break|case|const|continue|def|defer|delete|done|else|enum|export|fn|for|free|if|insert|len|let|match|offset|return|size|static|struct|switch|type|union|vaarg|vaend|vastart|yield|use)\b
+      scope: keyword.control.hare
+
+  line_comment:
+    - match: //
+      push:
+        - meta_scope: comment.line.double-slash.hare
+        - match: $
+          pop: true
+
+  # Miscellaneous operators
+  misc_ops:
+    - match: (=>|::|:|\?|!|\||\.\.\.|\.\.|&\.\.)
+      scope: keyword.operator.misc.hare
+
+  # Strings
+  # see: haredoc fmt, fmt/iter.ha
+  strings:
+    - match: '"'
+      push:
+        - meta_scope: string.quoted.double.hare
+        - match: '"'
+          pop: true
+        - match: \\(0|a|b|f|n|r|t|v|\\|\'|\"|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8})
+          scope: constant.character.escape.hare
+        - match: '\{\{|\}\}'
+          scope: constant.character.format.hare
+        - match: '{([0-9]*(:([0\-\+\=\_\ ]*(\.)?[0-9]*(x|X|o|b)?(\.[0-9]*)?(e|f|g)?(F(s|\.|U|E|S|2))*))?|[0-9]*%[0-9]*)}'
+          scope: constant.character.format.hare
+
+  strings_2:
+    - match: '`'
+      push:
+        - meta_scope: string.quoted.double.hare
+        - match: '`'
+          pop: true
+        - match: '\{\{|\}\}'
+          scope: constant.character.format.hare
+        - match: '{([0-9]*(:([0\-\+\=\_\ ]*(\.)?[0-9]*(x|X|o|b)?(\.[0-9]*)?(e|f|g)?(F(s|\.|U|E|S|2))*))?|[0-9]*%[0-9]*)}'
+          scope: constant.character.format.hare

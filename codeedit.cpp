@@ -297,7 +297,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	textedit->highlighter = nullptr;
 	textedit->highlighter_initial_state.reset(cw_syntect_initial_state(highlighter));
 	
-	textedit->onlinechange = [&](EditType typ, int lineindex){
+	textedit->ontextchange = [&](Widget*) {
 		madeChangeBetweenSaves = true;
 		
 		if (hoverbox->parent == this) {
@@ -312,6 +312,24 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		
 		if (!App::lsp_client_map[lsp]->supportsIncrementalChanges) {
 			onTextChanged(textedit);
+		}
+	};
+	
+	textedit->onlinechange = [&](EditType typ, int lineindex){
+		madeChangeBetweenSaves = true;
+		
+		if (hoverbox->parent == this) {
+			App::RemoveWidgetFromParent(hoverbox);
+			hoverCrsr = Cursor();
+			DO_RENDER = 3;
+		}
+		
+		if (!App::lsp_client_map[lsp] || !file || file->filepath == "") {
+			return;
+		}
+		
+		if (!App::lsp_client_map[lsp]->supportsIncrementalChanges) {
+//			onTextChanged(textedit); - now handled in ontextchanged
 			return;
 		}
 		

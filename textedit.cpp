@@ -1459,11 +1459,11 @@ void TextEdit::ensureCursorVisible(Cursor c) {
 	DO_POSITION = true;
 }
 
-void TextEdit::applyInsertToAllCursors(MST::MonoString to_insert) {
-	to_insert = MST::replaceAll(to_insert, MST::toMonoString("\r\n"), MST::toMonoString("\n"));
+void TextEdit::applyInsertToAllCursors(const MST::MonoString& to_insert) {
+	MST::MonoString changed = MST::replaceAll(to_insert, MST::toMonoString("\r\n"), MST::toMonoString("\n"));
 	
 	for (int i = 0; i < cursors.size(); i++) {
-		insertTextAtCursor(cursors[i], to_insert);
+		insertTextAtCursor(cursors[i], changed);
 	}
 	
 	tryingToEnsureCursorPos = true;
@@ -1477,7 +1477,7 @@ void TextEdit::applyInsertToAllCursors(MST::MonoString to_insert) {
 	}
 }
 
-void TextEdit::insertTextAtCursor(Cursor c, MST::MonoString insert_text) {
+void TextEdit::insertTextAtCursor(Cursor c, const MST::MonoString& insert_text) {
 	auto sel = _getCursSelec(c);
 
 	if (sel.first.first != sel.first.second || sel.second.first != sel.second.second) {
@@ -1487,6 +1487,8 @@ void TextEdit::insertTextAtCursor(Cursor c, MST::MonoString insert_text) {
 	int sl = sel.first.first;
 	int sc = sel.second.first;
 
+	auto insert_lines = MST::split(insert_text, U'\n');
+	
 	if (getIndentationLevelAfterLine && insert_text == MST::toMonoString("\n")) {
 		MST::MonoString line = MST::substring(lines[sl].line_text, 0, sc);
 		MST::MonoString nextline = MST::substring(lines[sl].line_text, sc, lines[sl].line_text.length);
@@ -1494,15 +1496,13 @@ void TextEdit::insertTextAtCursor(Cursor c, MST::MonoString insert_text) {
 		int indentation_level = getIndentationLevelAfterLine(line, nextline);
 
 		for (int i = 0; i < indentation_level; i++) {
-			insert_text += MST::toMonoString(U'\t');
+			insert_lines[insert_lines.size()-1] += MST::toMonoString(U'\t');
 		}
 	}
-
-	auto insert_lines = MST::split(insert_text, u'\n');
-
+	
 	int nl = insert_lines.size()-1;
 	int nc = insert_lines[insert_lines.size()-1].length;
-
+	
 	// move cursors
 	for (int i = 0; i < cursors.size(); i ++) {
 		auto curs = cursors[i];
@@ -1519,8 +1519,6 @@ void TextEdit::insertTextAtCursor(Cursor c, MST::MonoString insert_text) {
 
 	auto start = MST::substring(lines[sl].line_text, 0, sc);
 	MST::MonoString end = MST::substring(lines[sl].line_text, sc, lines[sl].line_text.length);
-	
-	std::string endthing = MST::toString(end);
 	
 	changed_during_update = true;
 	DO_POSITION = true;
@@ -1544,8 +1542,6 @@ void TextEdit::insertTextAtCursor(Cursor c, MST::MonoString insert_text) {
 		for (int i = 1; i < insert_lines.size(); i ++) {
 			auto new_line = Line();
 			new_line.line_text = insert_lines[i];
-
-			std::string endthing = MST::toString(end);
 			
 			if (i == insert_lines.size()-1) {
 				new_line.line_text += end;

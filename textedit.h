@@ -209,8 +209,8 @@ public:
 	void applyIndentChangeToAllCursors(int change_by);
 	void deleteTextAtCursor(Cursor c, int key, bool control);
 	void applyIndentChangeToCursor(Cursor c, int change_by);
-	void applyInsertToAllCursors(MST::MonoString);
-	void insertTextAtCursor(Cursor c, MST::MonoString);
+	void applyInsertToAllCursors(const MST::MonoString&);
+	void insertTextAtCursor(Cursor c, const MST::MonoString&);
 	bool tryingToEnsureCursorPos = false;
 	void ensureCursorVisible(Cursor c);
 	void toggleMark();

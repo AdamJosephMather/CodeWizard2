@@ -450,35 +450,39 @@ public:
 	}
 	
 	static std::string toBastardizedStringUtf16Aligned(const MonoString& text) {
-	#ifdef DEBUG_MONOSTRING
+#ifdef DEBUG_MONOSTRING
 		std::cout << "static std::string toBastardizedStringUtf16Aligned(const MonoString& text)\n";
-	#endif
+#endif
 	
 		// Use for LSP text. LSP positions are normally UTF-16 code-unit offsets.
 		// Every MonoString slot must decode to exactly one UTF-16 code unit.
+	
 		std::string out;
+		out.reserve(text.length); // Minimum size. Grows only if non-ASCII BMP chars appear.
 	
 		for (size_t i = 0; i < text.length; i++) {
 			u32 chr = text.data[i];
 	
 			if (chr == U'\t' || chr == CONT) {
-				out += " ";
+				out.push_back(' ');
 			}
 			else if (chr > CONT) {
-				out += "?";
+				out.push_back('?');
 			}
 			else if (chr > 0xFFFF || (chr >= 0xD800 && chr <= 0xDFFF)) {
-				out += "?";
+				out.push_back('?');
+			}
+			else if (chr < 0x80) {
+				out.push_back(static_cast<char>(chr));
+			}
+			else if (chr < 0x800) {
+				out.push_back(static_cast<char>(0xC0 | (chr >> 6)));
+				out.push_back(static_cast<char>(0x80 | (chr & 0x3F)));
 			}
 			else {
-				char utf8_seq[4];
-				size_t len = grapheme_encode_utf8(chr, utf8_seq, sizeof(utf8_seq));
-	
-				if (len > 0) {
-					out += std::string(utf8_seq, len);
-				} else {
-					out += "?";
-				}
+				out.push_back(static_cast<char>(0xE0 | (chr >> 12)));
+				out.push_back(static_cast<char>(0x80 | ((chr >> 6) & 0x3F)));
+				out.push_back(static_cast<char>(0x80 | (chr & 0x3F)));
 			}
 		}
 	
@@ -486,32 +490,27 @@ public:
 	}
 	
 	static std::string toBastardizedStringUtf8Aligned(const MonoString& text) {
-	#ifdef DEBUG_MONOSTRING
+#ifdef DEBUG_MONOSTRING
 		std::cout << "static std::string toBastardizedStringUtf8Aligned(const MonoString& text)\n";
-	#endif
+#endif
 	
 		// Use for byte-offset parsers/highlighters.
 		// Every MonoString slot must become exactly one UTF-8 byte.
+	
 		std::string out;
+		out.resize(text.length);
 	
 		for (size_t i = 0; i < text.length; i++) {
 			u32 chr = text.data[i];
 	
 			if (chr == U'\t' || chr == CONT) {
-				out += " ";
+				out[i] = ' ';
 			}
-			else if (chr > CONT) {
-				out += "?";
+			else if (chr < 0x80 && chr <= CONT) {
+				out[i] = static_cast<char>(chr);
 			}
 			else {
-				char utf8_seq[4];
-				size_t len = grapheme_encode_utf8(chr, utf8_seq, sizeof(utf8_seq));
-	
-				if (len == 1) {
-					out += std::string(utf8_seq, len);
-				} else {
-					out += "?";
-				}
+				out[i] = '?';
 			}
 		}
 	

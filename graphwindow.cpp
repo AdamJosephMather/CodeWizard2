@@ -695,10 +695,14 @@ void GraphWindow::render() {
 		}
 	});
 	
+	Color* use_border_color = App::theme.border;
+	if (App::activeLeafNode == this) {
+		use_border_color = App::theme.active_color;
+	}
 	
 	if (App::reclear != 0) {
 		App::DrawInverseRoundedRect(startX, screenStart, widths, screenHeight, App::text_padding, App::theme.overlay_background_color, 5);
-		App::DrawRoundBorder(startX, screenStart, widths, screenHeight, App::theme.border, 5, App::text_padding);
+		App::DrawRoundBorder(startX, screenStart, widths, screenHeight, use_border_color, 5, App::text_padding);
 		rerender = false;
 	}
 	
@@ -749,10 +753,10 @@ void GraphWindow::render() {
 	});
 	
 	App::DrawInverseRoundedRect(startX, dataStart, widths, dataHeight, App::text_padding, App::theme.overlay_background_color, 5);
-	App::DrawRoundBorder(startX, dataStart, widths, dataHeight, App::theme.border, 5, App::text_padding);
+	App::DrawRoundBorder(startX, dataStart, widths, dataHeight, use_border_color, 5, App::text_padding);
 	
 	App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color, 5);
-	App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+	App::DrawRoundBorder(t_x, t_y, t_w, t_h, use_border_color, 5, App::text_padding);
 }
 
 bool GraphWindow::on_mouse_button_event(int button, int action, int mods) {
@@ -790,7 +794,14 @@ bool GraphWindow::on_mouse_button_event(int button, int action, int mods) {
 		}
 	}
 	
-	return Widget::on_mouse_button_event(button, action, mods);
+	if (!Widget::on_mouse_button_event(button, action, mods)) {
+		if (cursor_in_this) {
+			App::setActiveLeafNode(this);
+			return true;
+		}
+		return false;
+	}
+	return true;
 }
 
 bool GraphWindow::on_mouse_move_event() {

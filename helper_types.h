@@ -257,7 +257,8 @@ static MST::MonoString run_fixit_on_lines(const std::vector<MST::MonoString>& li
 	const MST::MonoString tabUnit = MST::toMonoString(U'\t');
 	const MST::MonoString newline = MST::toMonoString(U'\n');
 	
-	MST::MonoString newText;
+	std::vector<MST::MonoString> parts;
+	
 	for (int i = 0; i < lines.size(); i++) {
 		const auto& origLine = lines[i];
 		
@@ -276,28 +277,30 @@ static MST::MonoString run_fixit_on_lines(const std::vector<MST::MonoString>& li
 		
 		MST::MonoString rest = MST::substring(origLine, levels*indent, origLine.length);
 		
-		newText += fixedPrefix;
-		newText += rest;
-		if (i != lines.size()-1) {
-			newText += newline;
-		}
+		parts.push_back(fixedPrefix+rest);
 	}
 	
-	return newText;
+	return MST::join(parts, newline);
 }
 
 static MST::MonoString undo_fixit_on_lines(std::vector<MST::MonoString> lines) {
 	const MST::MonoString spaceUnit = MST::toMonoString("    ");
 	const MST::MonoString newline = MST::toMonoString(U'\n');
 	
-	MST::MonoString newText;
+	std::vector<MST::MonoString> parts;
+	
 	for (int i = 0; i < lines.size(); i++) {
 		const auto& origLine = lines[i];
 		
 		size_t origTabs = 0;
+		size_t endIdx = 0;
 		for (size_t c = 0; c < origLine.length; c++) {
-			if (MST::char32At(origLine, c) == U'\t') ++origTabs;
-			else if (!MST::skipIdx(origLine, c)) break;
+			if (MST::char32At(origLine, c) == U'\t') {
+				++origTabs;
+			}else if (!MST::skipIdx(origLine, c)) {
+				break;
+			}
+			endIdx = c+1;
 		}
 		
 		MST::MonoString fixedPrefix;
@@ -305,16 +308,12 @@ static MST::MonoString undo_fixit_on_lines(std::vector<MST::MonoString> lines) {
 			fixedPrefix += spaceUnit;
 		}
 		
-		MST::MonoString rest = MST::substring(origLine, origTabs, origLine.length);
+		MST::MonoString rest = MST::substring(origLine, endIdx, origLine.length);
 		
-		newText += fixedPrefix;
-		newText += rest;
-		if (i != lines.size()-1) {
-			newText += newline;
-		}
+		parts.push_back(fixedPrefix+rest);
 	}
 	
-	return newText;
+	return MST::join(parts, newline);
 }
 
 static MST::MonoString run_fixit_on_text(MST::MonoString text) {

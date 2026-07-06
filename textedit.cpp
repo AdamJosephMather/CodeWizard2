@@ -1462,17 +1462,16 @@ void TextEdit::ensureCursorVisible(Cursor c) {
 void TextEdit::applyInsertToAllCursors(MST::MonoString to_insert) {
 	to_insert = MST::replaceAll(to_insert, MST::toMonoString("\r\n"), MST::toMonoString("\n"));
 	
-
 	for (int i = 0; i < cursors.size(); i++) {
 		insertTextAtCursor(cursors[i], to_insert);
 	}
-
+	
 	tryingToEnsureCursorPos = true;
-
+	
 	for (int i = 0; i < cursors.size(); i++) {
 		cursors[i].preffered_collumn = cursors[i].head_char;
 	}
-
+	
 	if (!largereditblock && ontextchange) {
 		ontextchange(this);
 	}

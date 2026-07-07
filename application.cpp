@@ -793,7 +793,7 @@ auto drawCornerEdge = [](float cx, float cy, float startAngle, float endAngle, i
 
 void App::DrawRoundedRect(float x, float y, float w, float h, float radius, Color* color, bool border, int segments) {
 	glColor4f(color->r, color->g, color->b, color->a);
-	// Fill Logic (Original implementation)
+	
 	// Draw the center and side/quadrant straight regions as quads
 	glBegin(GL_QUADS);
 		// Center

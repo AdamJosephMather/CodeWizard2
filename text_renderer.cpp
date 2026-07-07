@@ -150,7 +150,7 @@ static bool build_font_atlas(bool italic,
 
 			FT_Matrix matrix;
 			matrix.xx = 1L << 16;
-			matrix.xy = italic ? static_cast<FT_Fixed>(0.25f * 65536.0f) : 0;
+			matrix.xy = italic ? static_cast<FT_Fixed>(0.18f * 65536.0f) : 0; // the first value 0.__f is the slant. lower == less pronounced. Higher == more pronounced.
 			matrix.yx = 0;
 			matrix.yy = 1L << 16;
 

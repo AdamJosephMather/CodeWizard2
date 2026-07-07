@@ -2089,9 +2089,9 @@ void App::gitPush() {
 void App::gitPull() {
 	std::string folder = settings->getValue("current_folder", getExecutableDir());
 #ifdef _WIN32
-		launchCommandNonBlocking("cd /d \""+folder+"\" && git pull");
+		launchCommandNonBlocking("cd /d "+quoteCmdPathWindows(folder)+" && git pull");
 #else
-		launchCommandNonBlocking("cd \""+folder+"\" && git pull");
+		launchCommandNonBlocking("cd "+quoteShellPathPosix(folder)+" && git pull");
 #endif
 }
 
@@ -2099,7 +2099,7 @@ void App::gitForcePull() {
 	std::string folder = settings->getValue("current_folder", getExecutableDir());
 #ifdef _WIN32
 	launchCommandNonBlocking(
-		"pushd \"" + folder + "\" && "
+		"pushd " + quoteCmdPathWindows(folder) + " && "
 		"git merge --abort 2>nul & git rebase --abort 2>nul & git cherry-pick --abort 2>nul & "
 		"git fetch --prune origin && "
 		"git reset --hard @{u} && "
@@ -2107,7 +2107,7 @@ void App::gitForcePull() {
 	);
 #else
 	launchCommandNonBlocking(
-		"cd \"" + folder + "\" && "
+		"cd " + quoteShellPathPosix(folder) + " && "
 		"git merge --abort 2>/dev/null; git rebase --abort 2>/dev/null; git cherry-pick --abort 2>/dev/null; "
 		"git fetch --prune origin && "
 		"git reset --hard @{u}"

@@ -1,6 +1,7 @@
 #include "application.h"
 #include <GLFW/glfw3.h>
 #include <queue>
+#include <random>
 #include <syntect_bridge.h>
 #include <iostream>
 #include "scrollnotify.h"
@@ -1966,6 +1967,79 @@ void App::openFilesList() {
 	}
 }
 
+static std::string quoteCmdPathWindows(const std::string& s) {
+	// For paths only. Windows paths cannot contain literal ".
+	// Still avoid % expansion.
+	std::string out;
+	out.reserve(s.size() + 2);
+
+	out += '"';
+
+	for (char c : s) {
+		if (c == '%') {
+			out += "%%";
+		}
+		else {
+			out += c;
+		}
+	}
+
+	out += '"';
+	return out;
+}
+
+static std::string quoteShellPathPosix(const std::string& s) {
+	std::string out;
+	out.reserve(s.size() + 2);
+
+	out += '\'';
+
+	for (char c : s) {
+		if (c == '\'') {
+			out += "'\\''";
+		}
+		else {
+			out += c;
+		}
+	}
+
+	out += '\'';
+	return out;
+}
+
+static std::string makeTempCommitMessageFile(const std::string& message) {
+	namespace fs = std::filesystem;
+
+	auto now = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+
+	std::random_device rd;
+	std::mt19937_64 rng(rd());
+	uint64_t r = rng();
+
+	fs::path path = fs::temp_directory_path() /
+		("codewizard_git_commit_" + std::to_string(now) + "_" + std::to_string(r) + ".txt");
+
+	std::ofstream file(path, std::ios::binary);
+	if (!file) {
+		return "";
+	}
+
+	file << message;
+
+	// Git likes commit message files to end with a newline.
+	if (message.empty() || message.back() != '\n') {
+		file << '\n';
+	}
+
+	file.close();
+
+	if (!file) {
+		return "";
+	}
+
+	return path.string();
+}
+
 void App::gitPush() {
 	ON_STRING_GIVEN = [&](MST::MonoString str){
 		if (str.length == 0) {
@@ -1973,13 +2047,32 @@ void App::gitPush() {
 		}
 		
 		std::string mes = MST::toString(str);
-		
 		std::string folder = settings->getValue("current_folder", getExecutableDir());
-#ifdef _WIN32
-		launchCommandNonBlocking("cd /d \""+folder+"\" && git add . && git commit -m \""+mes+"\" && git push");
-#else
-		launchCommandNonBlocking("cd \""+folder+"\" && git add . && git commit -m \""+mes+"\" && git push");
-#endif
+		
+		std::string commitFile = makeTempCommitMessageFile(mes);
+		
+		if (commitFile.empty()) {
+			std::cerr << "Failed to create temporary commit message file\n";
+			return;
+		}
+		
+		#ifdef _WIN32
+		launchCommandNonBlocking(
+			"git -C " + quoteCmdPathWindows(folder) +
+			" add . && git -C " + quoteCmdPathWindows(folder) +
+			" commit -F " + quoteCmdPathWindows(commitFile) +
+			" && git -C " + quoteCmdPathWindows(folder) +
+			" push"
+		);
+		#else
+		launchCommandNonBlocking(
+			"git -C " + quoteShellPathPosix(folder) +
+			" add . && git -C " + quoteShellPathPosix(folder) +
+			" commit -F " + quoteShellPathPosix(commitFile) +
+			" && git -C " + quoteShellPathPosix(folder) +
+			" push"
+		);
+		#endif
 	};
 	
 	REQUESTING_STRING = true;

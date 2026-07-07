@@ -60,9 +60,13 @@ struct RangeInfo {
 static FT_Library ftLib = nullptr;     // shared FreeType handle
 static FT_Face    ftFace = nullptr;    // font face currently active
 static float      font_size = 19.0f;   // px
-static std::vector<PackedChar> cdata;  // packed glyph metadata
+static std::vector<PackedChar> cdataRegular;
+static std::vector<PackedChar> cdataItalic;
+
+static GLuint fontTexRegular = 0;
+static GLuint fontTexItalic  = 0;
+
 static std::vector<RangeInfo> packedRanges;
-static GLuint fontTex = 0;
 
 const int TEX_W = 2048, TEX_H = 2048;
 int TEXT_WIDTH  = 1;  // monospace char cell
@@ -80,6 +84,178 @@ static int lookup_packedchar_index(int cp)
 }
 
 void TextRenderer::set_font_size(float sz) { font_size = sz; }
+
+static bool build_font_atlas(bool italic,
+							 std::vector<PackedChar>& outCData,
+							 GLuint& outTex) {
+	std::vector<unsigned char> atlas(TEX_W * TEX_H, 0);
+
+	struct Range { int first, count; };
+	std::vector<Range> ranges = {
+		{ 0x0020, 0x0060 },
+		{ 0x00A0, 0x0060 },
+		{ 0x0100, 0x0080 },
+		{ 0x0180, 0x00D0 },
+		{ 0x0300, 0x0070 },
+		{ 0x2000, 0x0080 },
+		{ 0x2E00, 0x0080 },
+		{ 0x20A0, 0x0030 },
+		{ 0x2100, 0x0050 },
+		{ 0x2150, 0x0040 },
+		{ 0x2190, 0x00F0 },
+		{ 0x27F0, 0x0010 },
+		{ 0x2900, 0x0080 },
+		{ 0x2B00, 0x0100 },
+		{ 0x2200, 0x0100 },
+		{ 0x2300, 0x0100 },
+		{ 0x2580, 0x0020 },
+		{ 0x2500, 0x0080 },
+		{ 0x2460, 0x009F },
+		{ 0x2070, 0x0030 },
+		{ 0x2600, 0x0100 },
+		{ 0x2700, 0x00C0 },
+		{ 0x0400, 0x0100 },
+		{ 0x0370, 0x0090 },
+		{ 0xFFFD, 0x0001 },
+		{ 0x25A0, 0x0060 },
+	};
+
+	int totalCandidateGlyphs = 0;
+	for (auto& r : ranges) {
+		totalCandidateGlyphs += r.count;
+	}
+
+	outCData.clear();
+	outCData.reserve(totalCandidateGlyphs);
+
+	if (!italic) {
+		packedIndexByCp.clear();
+		packedIndexByCp.reserve(totalCandidateGlyphs);
+	}
+
+	int pen_x = 2;
+	int pen_y = 2;
+	int row_h = 0;
+
+	for (const auto& r : ranges) {
+		for (int cp = r.first; cp < r.first + r.count; ++cp) {
+			if (cp >= 0xFE00 && cp <= 0xFE0F) {
+				continue;
+			}
+
+			FT_UInt glyph_index = FT_Get_Char_Index(ftFace, static_cast<FT_ULong>(cp));
+			if (glyph_index == 0) {
+				continue;
+			}
+
+			FT_Matrix matrix;
+			matrix.xx = 1L << 16;
+			matrix.xy = italic ? static_cast<FT_Fixed>(0.25f * 65536.0f) : 0;
+			matrix.yx = 0;
+			matrix.yy = 1L << 16;
+
+			FT_Set_Transform(ftFace, &matrix, nullptr);
+
+			if (FT_Load_Glyph(ftFace, glyph_index, FT_LOAD_RENDER | FT_LOAD_TARGET_NORMAL)) {
+				continue;
+			}
+
+			FT_GlyphSlot g = ftFace->glyph;
+
+			int gw = g->bitmap.width;
+			int gh = g->bitmap.rows;
+
+			if (gw > 0 && gh > 0) {
+				if (pen_x + gw + 2 >= TEX_W) {
+					pen_x = 2;
+					pen_y += row_h + 2;
+					row_h = 0;
+				}
+
+				if (pen_y + gh + 2 >= TEX_H) {
+					std::cerr << "Font atlas overflow - increase TEX_W/H or trim ranges\n";
+					FT_Set_Transform(ftFace, nullptr, nullptr);
+					return false;
+				}
+			}
+
+			PackedChar pc = {};
+
+			if (gw > 0 && gh > 0) {
+				for (int y = 0; y < gh; ++y) {
+					unsigned char* dst = &atlas[(pen_y + y) * TEX_W + pen_x];
+					const unsigned char* src = g->bitmap.buffer + y * g->bitmap.pitch;
+					std::memcpy(dst, src, gw);
+				}
+
+				pc.x0 = static_cast<unsigned short>(pen_x);
+				pc.y0 = static_cast<unsigned short>(pen_y);
+				pc.x1 = static_cast<unsigned short>(pen_x + gw);
+				pc.y1 = static_cast<unsigned short>(pen_y + gh);
+
+				pen_x += gw + 2;
+				if (gh > row_h) {
+					row_h = gh;
+				}
+			} else {
+				pc.x0 = static_cast<unsigned short>(pen_x);
+				pc.y0 = static_cast<unsigned short>(pen_y);
+				pc.x1 = static_cast<unsigned short>(pen_x);
+				pc.y1 = static_cast<unsigned short>(pen_y);
+			}
+
+			pc.xoff = static_cast<float>(g->bitmap_left);
+			pc.yoff = static_cast<float>(-g->bitmap_top);
+
+			// Keep monospaced layout stable. Use the original advance.
+			pc.xadvance = static_cast<float>(g->advance.x >> 6);
+
+			int dstIdx = static_cast<int>(outCData.size());
+			outCData.push_back(pc);
+
+			// Only build the cp->index map once. Both atlases are generated in same order.
+			if (!italic) {
+				packedIndexByCp[cp] = dstIdx;
+			}
+		}
+	}
+
+	FT_Set_Transform(ftFace, nullptr, nullptr);
+
+	std::vector<unsigned char> rgba(TEX_W * TEX_H * 4);
+	for (int i = 0; i < TEX_W * TEX_H; ++i) {
+		rgba[i * 4 + 0] = 255;
+		rgba[i * 4 + 1] = 255;
+		rgba[i * 4 + 2] = 255;
+		rgba[i * 4 + 3] = atlas[i];
+	}
+
+	if (outTex == 0) {
+		glGenTextures(1, &outTex);
+	}
+
+	glBindTexture(GL_TEXTURE_2D, outTex);
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
+		GL_RGBA,
+		TEX_W,
+		TEX_H,
+		0,
+		GL_RGBA,
+		GL_UNSIGNED_BYTE,
+		rgba.data()
+	);
+
+	// Important. NEAREST makes transformed or subpixel-positioned text look rough.
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+	return true;
+}
 
 bool TextRenderer::init_font(const char* fontPath) {
 	std::ifstream fontFile(fontPath, std::ios::binary | std::ios::ate);
@@ -117,155 +293,21 @@ bool TextRenderer::init_font(const char* fontPath) {
 		return false;
 	}
 
-	std::vector<unsigned char> atlas(TEX_W * TEX_H, 0); // 8‑bit alpha
+	if (!build_font_atlas(false, cdataRegular, fontTexRegular)) {
+	return false;
+}
 
-	struct Range { int first, count; };
-	std::vector<Range> ranges = {
-		{ 0x0020, 0x0060 }, // ASCII printable
-		{ 0x00A0, 0x0060 }, // Latin-1 Supplement
-		{ 0x0100, 0x0080 }, // Latin Extended-A
-		{ 0x0180, 0x00D0 }, // Latin Extended-B
-		{ 0x0300, 0x0070 }, // Combining Diacritical Marks
-		{ 0x2000, 0x0080 }, // General Punctuation
-		{ 0x2E00, 0x0080 }, // Supplemental Punctuation
-		{ 0x20A0, 0x0030 }, // Currency Symbols
-		{ 0x2100, 0x0050 }, // Letterlike Symbols (™, ℉, ♯, etc.)
-		{ 0x2150, 0x0040 }, // Number Forms (⅓, ½, Ⅻ, etc.)
-		{ 0x2190, 0x00F0 }, // Arrows
-		{ 0x27F0, 0x0010 }, // Supplemental Arrows-A
-		{ 0x2900, 0x0080 }, // Supplemental Arrows-B
-		{ 0x2B00, 0x0100 }, // Miscellaneous Symbols & Arrows
-		{ 0x2200, 0x0100 }, // Mathematical Operators
-		{ 0x2300, 0x0100 }, // Miscellaneous Technical (⌂, ⌘, ⌚…)
-		{ 0x2580, 0x0020 }, // Block Elements
-		{ 0x2500, 0x0080 }, // Box Drawing
-		{ 0x2460, 0x009F }, // Enclosed Alphanumerics (①, ②…Ⓐ, Ⓑ…)
-		{ 0x2070, 0x0030 }, // Superscripts & Subscripts
-		{ 0x2600, 0x0100 }, // Miscellaneous Symbols (☀, ♫, ❤…)
-		{ 0x2700, 0x00C0 }, // Dingbats (✂, ✔, ✉…)
-		{ 0x0400, 0x0100 }, // Cyrillic
-		{ 0x0370, 0x0090 }, // Greek and Coptic
-		{ 0xFFFD, 0x0001 }, // Replacement Character
-		{ 0x25A0, 0x0060 }, // Geometric Shapes (U+25A0–U+25FF), includes □ (U+25A1)
-	};
-
-	int totalCandidateGlyphs = 0;
-	for (auto& r : ranges) totalCandidateGlyphs += r.count;
-	
-	cdata.clear();
-	cdata.reserve(totalCandidateGlyphs);
-	
-	packedIndexByCp.clear();
-	packedIndexByCp.reserve(totalCandidateGlyphs);
-
-	// Simple skyline/shelf packing ‑ not optimal but robust for mono‑sized glyphs
-	int pen_x = 1; // 1‑pixel padding around glyphs
-	int pen_y = 1;
-	int row_h = 0;
-
-	for (const auto& r : ranges) {
-		for (int cp = r.first; cp < r.first + r.count; ++cp) {
-	
-			if (cp >= 0xFE00 && cp <= 0xFE0F) {
-				continue;
-			}
-	
-			FT_UInt glyph_index = FT_Get_Char_Index(ftFace, static_cast<FT_ULong>(cp));
-	
-			if (glyph_index == 0) {
-				continue;
-			}
-	
-			if (FT_Load_Glyph(ftFace, glyph_index, FT_LOAD_RENDER | FT_LOAD_TARGET_NORMAL)) {
-				continue;
-			}
-	
-			FT_GlyphSlot g = ftFace->glyph;
-	
-			int gw = g->bitmap.width;
-			int gh = g->bitmap.rows;
-	
-			// Row wrap. Zero-size glyphs like space are valid and should still be stored.
-			if (gw > 0 && gh > 0) {
-				if (pen_x + gw + 1 >= TEX_W) {
-					pen_x = 1;
-					pen_y += row_h + 1;
-					row_h = 0;
-				}
-	
-				if (pen_y + gh + 1 >= TEX_H) {
-					std::cerr << "Font atlas overflow - increase TEX_W/H or trim ranges\n";
-					return false;
-				}
-			}
-	
-			PackedChar pc = {};
-	
-			if (gw > 0 && gh > 0) {
-				for (int y = 0; y < gh; ++y) {
-					unsigned char* dst = &atlas[(pen_y + y) * TEX_W + pen_x];
-					const unsigned char* src = g->bitmap.buffer + y * g->bitmap.pitch;
-					std::memcpy(dst, src, gw);
-				}
-	
-				pc.x0 = static_cast<unsigned short>(pen_x);
-				pc.y0 = static_cast<unsigned short>(pen_y);
-				pc.x1 = static_cast<unsigned short>(pen_x + gw);
-				pc.y1 = static_cast<unsigned short>(pen_y + gh);
-	
-				pen_x += gw + 1;
-				if (gh > row_h) row_h = gh;
-			} else {
-				// Valid glyph with no bitmap, e.g. space.
-				pc.x0 = static_cast<unsigned short>(pen_x);
-				pc.y0 = static_cast<unsigned short>(pen_y);
-				pc.x1 = static_cast<unsigned short>(pen_x);
-				pc.y1 = static_cast<unsigned short>(pen_y);
-			}
-	
-			pc.xoff = static_cast<float>(g->bitmap_left);
-			pc.yoff = static_cast<float>(-g->bitmap_top);
-			pc.xadvance = static_cast<float>(g->advance.x >> 6);
-	
-			int dstIdx = static_cast<int>(cdata.size());
-			cdata.push_back(pc);
-			packedIndexByCp[cp] = dstIdx;
-		}
+	if (!build_font_atlas(true, cdataItalic, fontTexItalic)) {
+		return false;
 	}
-
-	std::vector<unsigned char> rgba(TEX_W * TEX_H * 4);
-	for (int i = 0; i < TEX_W * TEX_H; ++i) {
-		rgba[i*4+0] = 255;
-		rgba[i*4+1] = 255;
-		rgba[i*4+2] = 255;
-		rgba[i*4+3] = atlas[i];
+	
+	int sampleIdx = lookup_packedchar_index('Q');
+	if (sampleIdx < 0) {
+		sampleIdx = 0;
 	}
-
-	if (fontTex == 0) glGenTextures(1, &fontTex);
-	glBindTexture(GL_TEXTURE_2D, fontTex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEX_W, TEX_H, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	// --------------------------------------------------------------------------
-	// Debug: write atlas PPM (hella slow)
-	// --------------------------------------------------------------------------
-//	{
-//		std::ofstream ppm("font_atlas_debug.ppm");
-//		ppm << "P3\n" << TEX_W << " " << TEX_H << "\n255\n";
-//		for (int y = 0; y < TEX_H; ++y) {
-//			for (int x = 0; x < TEX_W; ++x) {
-//				int val = atlas[y * TEX_W + x];
-//				ppm << val << " " << val << " " << val << " ";
-//			}
-//			ppm << "\n";
-//		}
-//	}
-
-	int sampleIdx = lookup_packedchar_index('Q'); // pick representative char
-	if (sampleIdx < 0) sampleIdx = 0;
-	TEXT_WIDTH = static_cast<int>(cdata[sampleIdx].xadvance + 0.5f);
-
+	
+	TEXT_WIDTH = static_cast<int>(cdataRegular[sampleIdx].xadvance + 0.5f);
+	
 	FT_Size_Metrics m = ftFace->size->metrics;
 	ascent_px  = static_cast<int>(m.ascender  >> 6);
 	int descent_px = static_cast<int>(m.descender >> 6);
@@ -290,8 +332,9 @@ int TextRenderer::get_text_height()       { return TEXT_HEIGHT; }
 void TextRenderer::draw_text(float x, float y,
 							 const MST::MonoString& text,
 							 const std::vector<Color*>& colors,
-							 bool renderEmojis) {
-	y += ascent_px; // baseline adjustment
+							 bool renderEmojis,
+							 bool forceItalics) {
+	y += ascent_px;
 
 	GLboolean wasBlendEnabled = glIsEnabled(GL_BLEND);
 	GLboolean wasTexEnabled   = glIsEnabled(GL_TEXTURE_2D);
@@ -300,70 +343,93 @@ void TextRenderer::draw_text(float x, float y,
 	glGetIntegerv(GL_BLEND_DST, &oldBlendDst);
 
 	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, fontTex);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	bool currentItalic = false;
+	glBindTexture(GL_TEXTURE_2D, fontTexRegular);
 
 	float cursorX = x;
 	float cursorY = y;
 
 	glBegin(GL_QUADS);
+
 	for (int32_t i = 0; i < text.length; i++) {
 		if (MST::skipIdx(text, i)) {
 			cursorX += TEXT_WIDTH;
 			continue;
-		}else if (MST::isEmoji(text, i)) {
-			float dist_right = 2*TEXT_WIDTH;
-			
+		} else if (MST::isEmoji(text, i)) {
+			float dist_right = 2 * TEXT_WIDTH;
+
 			if (renderEmojis) {
-				float emojiSize = std::fmin(dist_right, TEXT_HEIGHT); // Or whatever size mapping you prefer
-				
-				// 1. Break the current quad batch
-				glEnd(); 
-				
-				// 2. Render the emoji (this will bind its own texture)
-				emoji_renderer->draw_emoji(MST::getEmoji(text, i), cursorX + (dist_right - emojiSize)/2, cursorY - ascent_px + (TEXT_HEIGHT - emojiSize)/2, emojiSize);
-				
-				// 3. Restore state and resume the quad batch for the rest of your font
-				glBindTexture(GL_TEXTURE_2D, fontTex);
-				glBegin(GL_QUADS); 
+				float emojiSize = std::fmin(dist_right, TEXT_HEIGHT);
+
+				glEnd();
+
+				emoji_renderer->draw_emoji(
+					MST::getEmoji(text, i),
+					cursorX + (dist_right - emojiSize) / 2,
+					cursorY - ascent_px + (TEXT_HEIGHT - emojiSize) / 2,
+					emojiSize
+				);
+
+				glBindTexture(GL_TEXTURE_2D, currentItalic ? fontTexItalic : fontTexRegular);
+				glBegin(GL_QUADS);
 			}
-			
+
 			cursorX += TEXT_WIDTH;
 			continue;
 		}
-		
+
 		MST::u32 cp = MST::char32At(text, i);
-		
+
 		int idx = lookup_packedchar_index(cp);
 		if (idx < 0 && cp != 0xFFFF && cp != U'\t') {
-			idx = lookup_packedchar_index(0xFFFD);    // unknown non-emoji fallback
+			idx = lookup_packedchar_index(0xFFFD);
 		}
-		
+
 		if (idx >= 0) {
-			AlignedQuad q;
-			
-			float cx_temp = cursorX;
-			
-			GetPackedQuad(cdata, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
-			
 			const Color* col = colors[i];
+
+			bool wantItalic = (col && col->italic) || forceItalics;
+			if (wantItalic != currentItalic) {
+				glEnd();
+
+				currentItalic = wantItalic;
+				glBindTexture(GL_TEXTURE_2D, currentItalic ? fontTexItalic : fontTexRegular);
+
+				glBegin(GL_QUADS);
+			}
+
+			const std::vector<PackedChar>& glyphs = currentItalic ? cdataItalic : cdataRegular;
+
+			AlignedQuad q;
+
+			float cx_temp = cursorX;
+			GetPackedQuad(glyphs, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
+
 			glColor4f(col->r, col->g, col->b, 1.0f);
-	
+
 			glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, q.y0);
 			glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, q.y0);
 			glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, q.y1);
 			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
 		}
-		
-		cursorX += TEXT_WIDTH; // enforces monospaced
+
+		cursorX += TEXT_WIDTH;
 	}
-	
+
 	glEnd();
 
-	if (!wasBlendEnabled) glDisable(GL_BLEND);
-	else glBlendFunc(oldBlendSrc, oldBlendDst);
-	if (!wasTexEnabled) glDisable(GL_TEXTURE_2D);
+	if (!wasBlendEnabled) {
+		glDisable(GL_BLEND);
+	} else {
+		glBlendFunc(oldBlendSrc, oldBlendDst);
+	}
+
+	if (!wasTexEnabled) {
+		glDisable(GL_TEXTURE_2D);
+	}
 }
 
 float TextRenderer::draw_text_substring(float x, float y,
@@ -371,15 +437,16 @@ float TextRenderer::draw_text_substring(float x, float y,
 							 size_t start, size_t end,
 							 const std::vector<Color*>& colors,
 							 bool use_color_substring,
-							 bool renderEmojis) {
+							 bool renderEmojis,
+							 bool forceItalics) {
 	if (start >= text.length) {
 		return x;
 	}
-	
+
 	if (text.length < end) {
 		end = text.length;
 	}
-	
+
 	y += ascent_px; // baseline adjustment
 
 	GLboolean wasBlendEnabled = glIsEnabled(GL_BLEND);
@@ -389,78 +456,102 @@ float TextRenderer::draw_text_substring(float x, float y,
 	glGetIntegerv(GL_BLEND_DST, &oldBlendDst);
 
 	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, fontTex);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	bool currentItalic = false;
+	glBindTexture(GL_TEXTURE_2D, fontTexRegular);
+
 	float cursorX = x;
 	float cursorY = y;
-	
+
 	glBegin(GL_QUADS);
-	for (int32_t i = start; i < end; i++) {
+
+	for (int32_t i = static_cast<int32_t>(start); i < static_cast<int32_t>(end); i++) {
 		if (MST::skipIdx(text, i)) {
 			cursorX += TEXT_WIDTH;
 			continue;
-		}else if (MST::isEmoji(text, i)) {
-			float dist_right = 2*TEXT_WIDTH;
-			
+		} else if (MST::isEmoji(text, i)) {
+			float dist_right = 2 * TEXT_WIDTH;
+
 			if (renderEmojis) {
-				float emojiSize = std::fmin(dist_right, TEXT_HEIGHT); // Or whatever size mapping you prefer
-				
-				// 1. Break the current quad batch
-				glEnd(); 
-				
-				// 2. Render the emoji (this will bind its own texture)
-				emoji_renderer->draw_emoji(MST::getEmoji(text, i), cursorX + (dist_right - emojiSize)/2, cursorY - ascent_px + (TEXT_HEIGHT - emojiSize)/2, emojiSize);
-				
-				// 3. Restore state and resume the quad batch for the rest of your font
-				glBindTexture(GL_TEXTURE_2D, fontTex);
-				glBegin(GL_QUADS); 
+				float emojiSize = std::fmin(dist_right, TEXT_HEIGHT);
+
+				glEnd();
+
+				emoji_renderer->draw_emoji(
+					MST::getEmoji(text, i),
+					cursorX + (dist_right - emojiSize) / 2,
+					cursorY - ascent_px + (TEXT_HEIGHT - emojiSize) / 2,
+					emojiSize
+				);
+
+				glBindTexture(GL_TEXTURE_2D, currentItalic ? fontTexItalic : fontTexRegular);
+				glBegin(GL_QUADS);
 			}
-			
+
 			cursorX += TEXT_WIDTH;
 			continue;
 		}
-		
+
 		MST::u32 cp = MST::char32At(text, i);
-		
+
 		int idx = lookup_packedchar_index(cp);
 		if (idx < 0 && cp != 0xFFFF && cp != U'\t') {
-			idx = lookup_packedchar_index(0xFFFD);    // unknown non-emoji fallback
+			idx = lookup_packedchar_index(0xFFFD);
 		}
-		
+
 		if (idx >= 0) {
+			const Color* col = colors[use_color_substring ? i : i - start];
+
+			bool wantItalic = (col && col->italic) || forceItalics;
+			if (wantItalic != currentItalic) {
+				glEnd();
+
+				currentItalic = wantItalic;
+				glBindTexture(GL_TEXTURE_2D, currentItalic ? fontTexItalic : fontTexRegular);
+
+				glBegin(GL_QUADS);
+			}
+
+			const std::vector<PackedChar>& glyphs = currentItalic ? cdataItalic : cdataRegular;
+
 			AlignedQuad q;
-			
+
 			float cx_temp = cursorX;
-			
-			GetPackedQuad(cdata, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
-			
-			const Color* col = colors[use_color_substring ? i : i-start];
+			GetPackedQuad(glyphs, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
+
 			glColor4f(col->r, col->g, col->b, 1.0f);
-	
+
 			glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, q.y0);
 			glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, q.y0);
 			glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, q.y1);
 			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
 		}
-		
+
 		cursorX += TEXT_WIDTH; // enforces monospaced
 	}
-	
+
 	glEnd();
 
-	if (!wasBlendEnabled) glDisable(GL_BLEND);
-	else glBlendFunc(oldBlendSrc, oldBlendDst);
-	if (!wasTexEnabled) glDisable(GL_TEXTURE_2D);
-	
+	if (!wasBlendEnabled) {
+		glDisable(GL_BLEND);
+	} else {
+		glBlendFunc(oldBlendSrc, oldBlendDst);
+	}
+
+	if (!wasTexEnabled) {
+		glDisable(GL_TEXTURE_2D);
+	}
+
 	return cursorX;
 }
 
 void TextRenderer::draw_text(float x, float y,
 							 const MST::MonoString& text,
 							 Color* color,
-							 bool renderEmojis) {
+							 bool renderEmojis,
+							 bool forceItalics) {
 	y += ascent_px; // baseline adjustment
 
 	GLboolean wasBlendEnabled = glIsEnabled(GL_BLEND);
@@ -470,69 +561,82 @@ void TextRenderer::draw_text(float x, float y,
 	glGetIntegerv(GL_BLEND_DST, &oldBlendDst);
 
 	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, fontTex);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	bool useItalic = (color && color->italic) || forceItalics;
+	glBindTexture(GL_TEXTURE_2D, useItalic ? fontTexItalic : fontTexRegular);
+
+	const std::vector<PackedChar>& glyphs = useItalic ? cdataItalic : cdataRegular;
+
 	float cursorX = x;
 	float cursorY = y;
-	
+
 	glColor4f(color->r, color->g, color->b, 1.0f);
 
 	glBegin(GL_QUADS);
+
 	for (int32_t i = 0; i < text.length; i++) {
 		if (MST::skipIdx(text, i)) {
 			cursorX += TEXT_WIDTH;
 			continue;
-		}else if (MST::isEmoji(text, i)) {
-			float dist_right = 2*TEXT_WIDTH;
-			
+		} else if (MST::isEmoji(text, i)) {
+			float dist_right = 2 * TEXT_WIDTH;
+
 			if (renderEmojis) {
-				float emojiSize = std::fmin(dist_right, TEXT_HEIGHT); // Or whatever size mapping you prefer
-				
-				// 1. Break the current quad batch
-				glEnd(); 
-				
-				// 2. Render the emoji (this will bind its own texture)
-				emoji_renderer->draw_emoji(MST::getEmoji(text, i), cursorX + (dist_right - emojiSize)/2, cursorY - ascent_px + (TEXT_HEIGHT - emojiSize)/2, emojiSize);
-				
-				// 3. Restore state and resume the quad batch for the rest of your font
-				glBindTexture(GL_TEXTURE_2D, fontTex);
+				float emojiSize = std::fmin(dist_right, TEXT_HEIGHT);
+
+				glEnd();
+
+				emoji_renderer->draw_emoji(
+					MST::getEmoji(text, i),
+					cursorX + (dist_right - emojiSize) / 2,
+					cursorY - ascent_px + (TEXT_HEIGHT - emojiSize) / 2,
+					emojiSize
+				);
+
+				glBindTexture(GL_TEXTURE_2D, useItalic ? fontTexItalic : fontTexRegular);
 				glColor4f(color->r, color->g, color->b, 1.0f);
-				glBegin(GL_QUADS); 
+				glBegin(GL_QUADS);
 			}
-			
+
 			cursorX += TEXT_WIDTH;
 			continue;
 		}
-		
+
 		MST::u32 cp = MST::char32At(text, i);
-		
+
 		int idx = lookup_packedchar_index(cp);
 		if (idx < 0 && cp != 0xFFFF && cp != U'\t') {
-			idx = lookup_packedchar_index(0xFFFD);    // unknown non-emoji fallback
+			idx = lookup_packedchar_index(0xFFFD);
 		}
-		
+
 		if (idx >= 0) {
 			AlignedQuad q;
-			
+
 			float cx_temp = cursorX;
-			
-			GetPackedQuad(cdata, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
-	
+			GetPackedQuad(glyphs, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
+
 			glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, q.y0);
 			glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, q.y0);
 			glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, q.y1);
 			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
 		}
-		
+
 		cursorX += TEXT_WIDTH; // enforces monospaced
 	}
+
 	glEnd();
 
-	if (!wasBlendEnabled) glDisable(GL_BLEND);
-	else glBlendFunc(oldBlendSrc, oldBlendDst);
-	if (!wasTexEnabled) glDisable(GL_TEXTURE_2D);
+	if (!wasBlendEnabled) {
+		glDisable(GL_BLEND);
+	} else {
+		glBlendFunc(oldBlendSrc, oldBlendDst);
+	}
+
+	if (!wasTexEnabled) {
+		glDisable(GL_TEXTURE_2D);
+	}
 }
 
 void TextRenderer::draw_text(float x, float y,
@@ -540,7 +644,8 @@ void TextRenderer::draw_text(float x, float y,
 							 uint8_t r,
 							 uint8_t g,
 							 uint8_t b,
-							 bool renderEmojis) {
+							 bool renderEmojis,
+							 bool forceItalics) {
 	y += ascent_px; // baseline adjustment
 
 	GLboolean wasBlendEnabled = glIsEnabled(GL_BLEND);
@@ -550,77 +655,114 @@ void TextRenderer::draw_text(float x, float y,
 	glGetIntegerv(GL_BLEND_DST, &oldBlendDst);
 
 	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, fontTex);
+	if (forceItalics) {
+		glBindTexture(GL_TEXTURE_2D, fontTexItalic);
+	}else{
+		glBindTexture(GL_TEXTURE_2D, fontTexRegular);
+	}
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	float cursorX = x;
 	float cursorY = y;
-	
-	glColor4f((float)r/255.0f, (float)g/255.0f, (float)b/255.0f, 1.0f);
+
+	glColor4f((float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f, 1.0f);
 
 	glBegin(GL_QUADS);
+
 	for (int32_t i = 0; i < text.length; i++) {
 		if (MST::skipIdx(text, i)) {
 			cursorX += TEXT_WIDTH;
 			continue;
-		}else if (MST::isEmoji(text, i)) {
-			float dist_right = 2*TEXT_WIDTH;
-			
+		} else if (MST::isEmoji(text, i)) {
+			float dist_right = 2 * TEXT_WIDTH;
+
 			if (renderEmojis) {
-				float emojiSize = std::fmin(dist_right, TEXT_HEIGHT); // Or whatever size mapping you prefer
+				float emojiSize = std::fmin(dist_right, TEXT_HEIGHT);
+
+				glEnd();
+
+				emoji_renderer->draw_emoji(
+					MST::getEmoji(text, i),
+					cursorX + (dist_right - emojiSize) / 2,
+					cursorY - ascent_px + (TEXT_HEIGHT - emojiSize) / 2,
+					emojiSize
+				);
 				
-				// 1. Break the current quad batch
-				glEnd(); 
-				
-				// 2. Render the emoji (this will bind its own texture)
-				emoji_renderer->draw_emoji(MST::getEmoji(text, i), cursorX + (dist_right - emojiSize)/2, cursorY - ascent_px + (TEXT_HEIGHT - emojiSize)/2, emojiSize);
-				
-				// 3. Restore state and resume the quad batch for the rest of your font
-				glBindTexture(GL_TEXTURE_2D, fontTex);
-				glBegin(GL_QUADS); 
+				if (forceItalics) {
+					glBindTexture(GL_TEXTURE_2D, fontTexItalic);
+				}else{
+					glBindTexture(GL_TEXTURE_2D, fontTexRegular);
+				}
+				glColor4f((float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f, 1.0f);
+				glBegin(GL_QUADS);
 			}
-			
+
 			cursorX += TEXT_WIDTH;
 			continue;
 		}
-		
+
 		MST::u32 cp = MST::char32At(text, i);
-		
+
 		int idx = lookup_packedchar_index(cp);
 		if (idx < 0 && cp != 0xFFFF && cp != U'\t') {
-			idx = lookup_packedchar_index(0xFFFD);    // unknown non-emoji fallback
+			idx = lookup_packedchar_index(0xFFFD);
 		}
-		
+
 		if (idx >= 0) {
 			AlignedQuad q;
-			
+
 			float cx_temp = cursorX;
-			
-			GetPackedQuad(cdata, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
-	
+			if (forceItalics) {
+				GetPackedQuad(cdataItalic, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
+			}else{
+				GetPackedQuad(cdataRegular, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
+			}
+
 			glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, q.y0);
 			glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, q.y0);
 			glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, q.y1);
 			glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
 		}
-		
+
 		cursorX += TEXT_WIDTH; // enforces monospaced
 	}
+
 	glEnd();
 
-	if (!wasBlendEnabled) glDisable(GL_BLEND);
-	else glBlendFunc(oldBlendSrc, oldBlendDst);
-	if (!wasTexEnabled) glDisable(GL_TEXTURE_2D);
+	if (!wasBlendEnabled) {
+		glDisable(GL_BLEND);
+	} else {
+		glBlendFunc(oldBlendSrc, oldBlendDst);
+	}
+
+	if (!wasTexEnabled) {
+		glDisable(GL_TEXTURE_2D);
+	}
 }
 
 void TextRenderer::cleanup() {
-	if (fontTex) {
-		glDeleteTextures(1, &fontTex);
-		fontTex = 0;
+	if (fontTexRegular) {
+		glDeleteTextures(1, &fontTexRegular);
+		fontTexRegular = 0;
 	}
-	cdata.clear();
+
+	if (fontTexItalic) {
+		glDeleteTextures(1, &fontTexItalic);
+		fontTexItalic = 0;
+	}
+
+	cdataRegular.clear();
+	cdataItalic.clear();
+
 	packedRanges.clear();
+	packedIndexByCp.clear();
+
+	if (emoji_renderer) {
+		delete emoji_renderer;
+		emoji_renderer = nullptr;
+	}
+
 	if (ftFace) {
 		FT_Done_Face(ftFace);
 		ftFace = nullptr;

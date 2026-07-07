@@ -72,10 +72,10 @@ int main(int argc, char* argv[]) {
 	
 	Theme theme;
 	
-	theme.add_panel = MakeColor(0.2f, 1.0f, 0.2f, 0.25f);
-	theme.remove_panel = MakeColor(1.0f, 0.2f, 0.2f, 0.25f);
+	theme.add_panel = MakeColor(0.2f, 1.0f, 0.2f, false, 0.25f);
+	theme.remove_panel = MakeColor(1.0f, 0.2f, 0.2f, false, 0.25f);
 	
-	theme.tint_color = MakeColor(1, 1, 1, 0.7);
+	theme.tint_color = MakeColor(1, 1, 1, false, 0.7);
 	
 	theme.main_background_color = MakeColor(0.0509803922, 0.0784313725, 0.0941176471);
 	theme.extras_background_color = MakeColor(0.0862745098, 0.1294117647, 0.1607843137);
@@ -99,17 +99,17 @@ int main(int argc, char* argv[]) {
 	theme.black = MakeColor(0.0, 0.0, 0.0);
 	
 	theme.syntax_colors[0]  = theme.main_text_color;
-	theme.syntax_colors[1]  = MakeColor(0.4980392156862745, 0.6784313725490196, 0.3686274509803922);
-	theme.syntax_colors[2]  = MakeColor(0.4980392156862745, 0.5176470588235295, 0.5568627450980392);
-	theme.syntax_colors[3]  = MakeColor(0.9607843137254902, 0.3568627450980392, 0.4);
-	theme.syntax_colors[4]  = MakeColor(0.3333333333333333, 0.6627450980392157, 0.9294117647058824);
-	theme.syntax_colors[5]  = MakeColor(0.7803921568627451, 0.615686274509804, 0.3058823529411765);
-	theme.syntax_colors[6]  = MakeColor(0.6901960784313725, 0.37254901960784315, 0.7803921568627451);
-	theme.syntax_colors[7]  = MakeColor(0.4980392156862745, 0.5176470588235295, 0.5568627450980392);
-	theme.syntax_colors[8]  = MakeColor(0.7607843137254902, 0.4980392156862745, 0.25098039215686274);
-	theme.syntax_colors[9]  = MakeColor(0.760784314, 0.309803922, 0.250980392);
-	theme.syntax_colors[10] = MakeColor(0.250980392, 0.760784314, 0.470588235);
-	theme.syntax_colors[11] = MakeColor(1, 0, 0);
+	theme.syntax_colors[1]  = MakeColor(0.4980392156862745, 0.6784313725490196, 0.3686274509803922); // strings
+	theme.syntax_colors[2]  = MakeColor(0.4980392156862745, 0.5176470588235295, 0.5568627450980392); // comments
+	theme.syntax_colors[3]  = MakeColor(0.9607843137254902, 0.3568627450980392, 0.4); // variables
+	theme.syntax_colors[4]  = MakeColor(0.3333333333333333, 0.6627450980392157, 0.9294117647058824, true); // types
+	theme.syntax_colors[5]  = MakeColor(0.7803921568627451, 0.615686274509804, 0.3058823529411765); // function calls
+	theme.syntax_colors[6]  = MakeColor(0.6901960784313725, 0.37254901960784315, 0.7803921568627451, true); // keywords
+	theme.syntax_colors[7]  = MakeColor(0.4980392156862745, 0.5176470588235295, 0.5568627450980392); // punctuation
+	theme.syntax_colors[8]  = MakeColor(0.7607843137254902, 0.4980392156862745, 0.25098039215686274, true); // literal
+	theme.syntax_colors[9]  = MakeColor(0.760784314, 0.309803922, 0.250980392); // operator
+	theme.syntax_colors[10] = MakeColor(0.250980392, 0.760784314, 0.470588235, true); // preproc
+	theme.syntax_colors[11] = MakeColor(1, 0, 0, true); // invalid
 	
 	App::theme = theme;
 	

@@ -1915,10 +1915,10 @@ void TextEdit::render() {
 			w = TextRenderer::get_text_width(1);
 		}
 
-		App::DrawRect(x, y, w, TextRenderer::get_text_height(), cs.color);
+		App::DrawRect(x, y, w, TextRenderer::get_text_height(), App::theme.main_text_color);
 
 		if (mode == 'n' && cs.charUnder != U'\0' && cs.charUnder != U'\t') {
-			TextRenderer::draw_text(x, y, MST::toMonoString(cs.charUnder), App::theme.darker_background_color, false); // don't draw emojis here because... it doesn't work
+			TextRenderer::draw_text(x, y, MST::toMonoString(cs.charUnder), App::theme.darker_background_color, false, cs.italic); // don't draw emojis here because... it doesn't work
 		}
 	}
 	
@@ -2297,11 +2297,18 @@ void TextEdit::position(int x, int y, int w, int h) {
 			int rel_char = c.head_char-char_start;
 			MST::u32 charUnder = MST::char32At(lines[c.head_line].line_text, c.head_char);
 			
-			draw_cursor.push_back({
+			CursorScreen cs = {
 				rel_line, 
 				rel_char,
 				charUnder
-			});
+			};
+			if (rel_line < draw_color.size() && rel_line >= 0) {
+				if (rel_char >= 0 && rel_char < draw_color[rel_line].size()) {
+					cs.italic = draw_color[rel_line][rel_char]->italic;
+				}
+			}
+			
+			draw_cursor.push_back(cs);
 		}
 	}
 	

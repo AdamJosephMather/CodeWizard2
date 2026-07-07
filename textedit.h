@@ -78,7 +78,7 @@ struct CursorScreen {
 	int rel_line = 0;
 	int rel_char = 0;
 	MST::u32 charUnder = '\0';
-	Color* color = App::theme.main_text_color;
+	bool italic = false;
 };
 
 struct CursorSelect {

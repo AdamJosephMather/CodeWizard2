@@ -70,6 +70,9 @@ struct Color {
 	float g;
 	float b;
 	float a;
+	
+	// this is genius, I promise
+	bool italic = false;
 };
 
 static constexpr std::array<unsigned char,256> ToLower = []{
@@ -80,12 +83,13 @@ static constexpr std::array<unsigned char,256> ToLower = []{
 	return m;
 }();
 
-inline Color* MakeColor(float r, float g, float b, float a = 1.0f){
+inline Color* MakeColor(float r, float g, float b, bool italicized=false, float a = 1.0f){
 	auto c = new Color();
 	c->r = r;
 	c->g = g;
 	c->b = b;
 	c->a = a;
+	c->italic = italicized;
 	return c;
 }
 

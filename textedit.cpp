@@ -1279,50 +1279,8 @@ void TextEdit::applyIndentChangeToAllCursors(int change_by) {
 	}
 }
 
-static MST::MonoString joinLines(const std::vector<Line>& lines, const MST::MonoString& joiner) {
-	if (lines.empty()) {
-		return MST::MonoString{};
-	}
-
-	size_t totalLength = 0;
-	for (const auto& item : lines) {
-		totalLength += item.line_text.length;
-	}
-	if (lines.size() > 1) {
-		totalLength += joiner.length * (lines.size() - 1);
-	}
-
-	if (totalLength == 0) {
-		return MST::MonoString{};
-	}
-
-	MST::MonoString out;
-	out.length = totalLength;
-	out.data = new MST::u32[totalLength];
-
-	size_t offset = 0;
-
-	if (lines[0].line_text.data && lines[0].line_text.length > 0) {
-		std::memcpy(out.data + offset, lines[0].line_text.data, lines[0].line_text.length * sizeof(MST::u32));
-		offset += lines[0].line_text.length;
-	}
-
-	for (size_t l = 1; l < lines.size(); l++) {
-		if (joiner.data && joiner.length > 0) {
-			std::memcpy(out.data + offset, joiner.data, joiner.length * sizeof(MST::u32));
-			offset += joiner.length;
-		}
-		if (lines[l].line_text.data && lines[l].line_text.length > 0) {
-			std::memcpy(out.data + offset, lines[l].line_text.data, lines[l].line_text.length * sizeof(MST::u32));
-			offset += lines[l].line_text.length;
-		}
-	}
-
-	return out;
-}
-
 MST::MonoString TextEdit::getFullText() {
-	return joinLines(lines, MST::toMonoString("\n"));
+	return MST::join(lines, &Line::line_text, MST::toMonoString("\n"));
 }
 
 bool TextEdit::handleInsertKey(int key, int scancode, int action, int mods) {

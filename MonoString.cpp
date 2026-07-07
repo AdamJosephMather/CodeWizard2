@@ -614,6 +614,58 @@ public:
 		return out;
 	}
 	
+	template <typename T>
+	static MonoString join(
+		const std::vector<T>& items,
+		const MonoString T::* member,
+		const MonoString& joiner
+	) {
+#ifdef DEBUG_MONOSTRING
+		std::cout << "static MonoString join(const std::vector<T>& items, const MonoString T::* member, const MonoString& joiner)\n";
+#endif
+	
+		if (items.empty()) {
+			return MonoString{};
+		}
+	
+		size_t totalLength = 0;
+	
+		for (const auto& item : items) {
+			const MonoString& s = item.*member;
+			totalLength += s.length;
+		}
+	
+		if (items.size() > 1) {
+			totalLength += joiner.length * (items.size() - 1);
+		}
+	
+		if (totalLength == 0) {
+			return MonoString{};
+		}
+	
+		MonoString out;
+		out.length = totalLength;
+		out.data = new u32[totalLength];
+	
+		size_t offset = 0;
+	
+		for (size_t i = 0; i < items.size(); i++) {
+			if (i > 0 && joiner.data && joiner.length > 0) {
+				std::memcpy(out.data + offset, joiner.data, joiner.length * sizeof(u32));
+				offset += joiner.length;
+			}
+	
+			const MonoString& s = items[i].*member;
+	
+			if (s.data && s.length > 0) {
+				std::memcpy(out.data + offset, s.data, s.length * sizeof(u32));
+				offset += s.length;
+			}
+		}
+	
+		return out;
+	}
+	
 	static MonoString join(const std::vector<MonoString>& items, const MonoString& joiner) {
 #ifdef DEBUG_MONOSTRING
 			std::cout << "static MonoString join(const std::vector<MonoString>& items, const MonoString& joiner)\n";

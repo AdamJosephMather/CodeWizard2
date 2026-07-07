@@ -316,6 +316,7 @@ void TextEdit::Highlight(int first_visible_line, int last_visible_line) {
 	}
 
 	int highlighted = 0;
+	auto start = std::chrono::steady_clock::now();
 
 	for (int i = 0; i < lines.size(); i++) {
 		Line* line = &lines[i];
@@ -411,11 +412,15 @@ void TextEdit::Highlight(int first_visible_line, int last_visible_line) {
 //		}
 
 		highlighted++;
-
-		if (i < first_visible_line && highlighted > 40) {
-			break;
-		} else if (i >= first_visible_line && highlighted > 10) {
-			break;
+		
+		auto end = std::chrono::steady_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+		
+		// early breaks to keep ui responsiveness
+		if (i < last_visible_line && highlighted > 3 && duration.count() > 12 /*milliseconds*/) {
+			break; // we highlighted at least 4 lines, and we're currently above where we can see, and we've been highlighting for at least 12 ms
+		} else if (i >= last_visible_line && highlighted > 1 && duration.count() > 5 /*milliseconds*/) {
+			break; // 5 ms instead of 12 because when we're below where we can see it is less critical that we get highlighting (because it's not visible). So let's aim for a smooth experience (and thus 5ms)
 		}
 	}
 }

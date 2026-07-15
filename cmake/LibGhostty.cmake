@@ -205,15 +205,25 @@ else()
     set(ENV{PATH} "${_codewizard_zig_dir}:$ENV{PATH}")
 endif()
 
+set(_codewizard_ghostty_flags "${GHOSTTY_ZIG_BUILD_FLAGS}")
+
+# Force the Zig global cache onto the same drive as the build tree so that
+# Run-step path conversions never cross drive letters (Zig 0.15.2 bug
+# ziglang/zig#25805).
+set(_codewizard_global_cache "${CMAKE_BINARY_DIR}/_zig-global-cache")
+file(MAKE_DIRECTORY "${_codewizard_global_cache}")
+list(APPEND _codewizard_ghostty_flags
+    "--global-cache-dir" "${_codewizard_global_cache}")
+
 if(WIN32 AND CODEWIZARD_GHOSTTY_STATIC)
-    set(_codewizard_ghostty_flags "${GHOSTTY_ZIG_BUILD_FLAGS}")
     if(NOT _codewizard_ghostty_flags MATCHES "(^|[ ;])-Dsimd=false($|[ ;])")
         list(APPEND _codewizard_ghostty_flags "-Dsimd=false")
     endif()
-    set(GHOSTTY_ZIG_BUILD_FLAGS "${_codewizard_ghostty_flags}"
-        CACHE STRING "Additional flags passed to Ghostty's Zig build" FORCE)
-    unset(_codewizard_ghostty_flags)
 endif()
+
+set(GHOSTTY_ZIG_BUILD_FLAGS "${_codewizard_ghostty_flags}"
+    CACHE STRING "Additional flags passed to Ghostty's Zig build" FORCE)
+unset(_codewizard_ghostty_flags)
 
 FetchContent_Declare(
     ghostty

@@ -525,7 +525,7 @@ void TerminalWidget::render() {
 				}
 			}
 
-			if (cell.c != empty) {
+			if (cell.c != empty && cell.c != U'\t') {
 				TextRenderer::draw_text(x, y, MST::toMonoString(cell.c),
 				                        cell.fg_red, cell.fg_green, cell.fg_blue);
 			}

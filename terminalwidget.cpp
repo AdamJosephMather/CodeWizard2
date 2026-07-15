@@ -3,6 +3,7 @@
 #include "terminal.h"
 #include "text_renderer.h"
 #include <algorithm>
+#include <codecvt>
 #include <iostream>
 #include <vector>
 #include "Verify.hpp"
@@ -449,6 +450,15 @@ void TerminalWidget::apply_pending_resize() {
 	}
 }
 
+std::string char32_to_string_legacy(char32_t c32) {
+	// Create a temporary 1-character u32string
+	std::u32string u32_str(1, c32);
+	
+	// Convert to a UTF-8 encoded std::string
+	std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> converter;
+	return converter.to_bytes(u32_str);
+}
+
 void TerminalWidget::render() {
 	std::lock_guard<std::recursive_mutex> lock(m_term_mutex);
 	if (!is_visible) { return; }
@@ -526,7 +536,7 @@ void TerminalWidget::render() {
 			}
 
 			if (cell.c != empty && cell.c != U'\t') {
-				TextRenderer::draw_text(x, y, MST::toMonoString(cell.c),
+				TextRenderer::draw_text(x, y, MST::toMonoString(char32_to_string_legacy(cell.c)),
 				                        cell.fg_red, cell.fg_green, cell.fg_blue);
 			}
 		}

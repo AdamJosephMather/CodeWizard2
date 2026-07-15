@@ -54,6 +54,7 @@ public:
 private:
 	std::recursive_mutex m_term_mutex;
 	void cell_from_cursor(int& row, int& col);
+	void apply_pending_resize();
 	
 	std::shared_ptr<sio::client> ajm_asv3_client;
 	CheckBox* ajm_asv3_tm = nullptr;
@@ -72,4 +73,12 @@ private:
 	int old_tw = -1;
 	int old_th = -1;
 	int needsRerender = 2;
+
+	// Window dragging can produce dozens of column changes in a few
+	// milliseconds. Apply only the final geometry after a short quiet period so
+	// ConPTY and libghostty do not repeatedly reflow the same scrollback.
+	int pending_w_cells = 0;
+	int pending_h_cells = 0;
+	bool resize_pending = false;
+	double resize_due_at = 0.0;
 };

@@ -2,7 +2,9 @@
 #include "application.h"
 #include "terminal.h"
 #include "text_renderer.h"
+#include <algorithm>
 #include <iostream>
+#include <vector>
 #include "Verify.hpp"
 
 TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
@@ -119,6 +121,14 @@ void TerminalWidget::run() {
 	});
 	
 	if (term->start()) {
+		term->resize(width_cells, height_cells,
+		             TextRenderer::get_text_width(1),
+		             TextRenderer::get_text_height());
+		prev_w_cells = width_cells;
+		prev_h_cells = height_cells;
+		pending_w_cells = width_cells;
+		pending_h_cells = height_cells;
+		resize_pending = false;
 //		term->enableMouseTracking(true);
 	}else {
 		std::cerr << "Failed to create terminal..." << std::endl;
@@ -393,10 +403,49 @@ void TerminalWidget::position(int x, int y, int w, int h) {
 	int width_cells = std::max((w-App::text_padding*2) / TextRenderer::get_text_width(1), 1);
 	int height_cells = std::max((h-App::text_padding*2) / TextRenderer::get_text_height(), 1);
 	
-	if (!settingup && (prev_w_cells != width_cells || prev_h_cells != height_cells) && !glfwGetWindowAttrib(App::window, GLFW_ICONIFIED)) {
-		term->resize(width_cells, height_cells);
-		prev_w_cells = width_cells;
-		prev_h_cells = height_cells;
+	if (!settingup && !glfwGetWindowAttrib(App::window, GLFW_ICONIFIED)) {
+		// Returning to the already-applied size cancels a queued intermediate
+		// resize. Otherwise wait for a short quiet period before reflowing.
+		if (width_cells == prev_w_cells && height_cells == prev_h_cells) {
+			resize_pending = false;
+		} else if (!resize_pending ||
+		           pending_w_cells != width_cells ||
+		           pending_h_cells != height_cells) {
+			// libghostty reflows scrollback on a column-count change. Integer
+			// document row selections cannot remain stable across that reflow.
+			clear_selection();
+			pending_w_cells = width_cells;
+			pending_h_cells = height_cells;
+			resize_pending = true;
+			resize_due_at = glfwGetTime() + 0.050;
+			needsRerender = 2;
+			App::time_till_regular = std::max(App::time_till_regular, 6);
+		}
+	}
+}
+
+void TerminalWidget::apply_pending_resize() {
+	if (!resize_pending || !term || settingup) return;
+
+	if (glfwGetTime() < resize_due_at) {
+		// Keep the render loop alive until the quiet-period deadline.
+		needsRerender = 2;
+		App::time_till_regular = std::max(App::time_till_regular, 2);
+		return;
+	}
+
+	const int widthCells = pending_w_cells;
+	const int heightCells = pending_h_cells;
+	resize_pending = false;
+
+	if (term->resize(widthCells, heightCells,
+	                 TextRenderer::get_text_width(1),
+	                 TextRenderer::get_text_height())) {
+		prev_w_cells = widthCells;
+		prev_h_cells = heightCells;
+	} else {
+		std::cerr << "Terminal resize failed for "
+		          << widthCells << "x" << heightCells << ".\n";
 	}
 }
 
@@ -407,85 +456,93 @@ void TerminalWidget::render() {
 		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.main_background_color);
 		return;
 	}
-	
-	if (term->RERENDER || t_x != old_tx || t_y != old_ty || t_w != old_tw || t_h != old_th) {
-		term->RERENDER = false;
+
+	apply_pending_resize();
+
+	if (term->RERENDER.exchange(false, std::memory_order_acq_rel) ||
+	    t_x != old_tx || t_y != old_ty || t_w != old_tw || t_h != old_th) {
 		needsRerender = 2;
 	}
-	
+
 	if (needsRerender == 0 && App::reclear == 0) {
-		Widget::render(); // still renders the checkbox / other thing
+		Widget::render();
 		return;
 	}
-	
 	needsRerender -= 1;
-	
-	int row_to_use = (prev_h_cells/2);
-	int col_to_use = (prev_w_cells/2);
-	
-	OurCell bgcell = term->getCell(row_to_use, col_to_use);
-	uint8_t bgr = bgcell.bg_red;
-	uint8_t bgg = bgcell.bg_green;
-	uint8_t bbg = bgcell.bg_blue;
-	
+
+	std::vector<OurCell> cells;
+	CursorInfo ci{};
+	int viewCols = 0;
+	int viewRows = 0;
+	if (!term->getViewSnapshot(cells, ci, viewCols, viewRows) || viewCols <= 0 || viewRows <= 0) {
+		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.main_background_color);
+		Widget::render();
+		return;
+	}
+
+	const int rowToUse = std::min(viewRows - 1, viewRows / 2);
+	const int colToUse = std::min(viewCols - 1, viewCols / 2);
+	const OurCell& bgcell = cells[static_cast<size_t>(rowToUse) * viewCols + colToUse];
+	const uint8_t bgr = bgcell.bg_red;
+	const uint8_t bgg = bgcell.bg_green;
+	const uint8_t bbg = bgcell.bg_blue;
+
 	App::DrawRect(t_x, t_y, t_w, t_h, bgr, bgg, bbg);
-//	App::DrawRect(t_x+App::text_padding, t_y+App::text_padding, TextRenderer::get_text_width(prev_w_cells), prev_h_cells*TextRenderer::get_text_height(), bgr, bgg, bbg);
-	
-	UChar32 empty = U' ';
-	
-	auto ci = term->getCursorInfo();
-	int c_wid = TextRenderer::get_text_width(1)/4;
-	
-	for (int r = 0; r < prev_h_cells; r++) {
-		for (int c = 0; c < prev_w_cells; c++) {
-			OurCell cell = term->getCell(r, c);
-			
-			int x = t_x+App::text_padding+TextRenderer::get_text_width(c);
-			int y = t_y+App::text_padding+TextRenderer::get_text_height()*r;
-			
-			// inside the (r,c) loop, after computing x,y and before drawing text
-			bool show_local_sel = !term->appWantsMouse();
-			if (show_local_sel && cell_in_selection(r, c)) {
-				App::DrawRect(x, y, TextRenderer::get_text_width(1), TextRenderer::get_text_height(), App::theme.white);
-				
-				cell.fg_red = 255-cell.fg_red;
-				cell.fg_green = 255-cell.fg_green;
-				cell.fg_blue = 255-cell.fg_blue;
-			}else if (cell.bg_red != bgr || cell.bg_green != bgg || cell.bg_blue != bbg) {
-				App::DrawRect(x, y, TextRenderer::get_text_width(1), TextRenderer::get_text_height(), cell.bg_red, cell.bg_green, cell.bg_blue);
+
+	const UChar32 empty = U' ';
+	const int cellWidth = TextRenderer::get_text_width(1);
+	const int cellHeight = TextRenderer::get_text_height();
+	const int cursorWidth = std::max(cellWidth / 4, 1);
+	const bool showLocalSelection = !term->appWantsMouse();
+
+	for (int r = 0; r < viewRows; ++r) {
+		for (int c = 0; c < viewCols; ++c) {
+			OurCell cell = cells[static_cast<size_t>(r) * viewCols + c];
+			const int x = t_x + App::text_padding + cellWidth * c;
+			const int y = t_y + App::text_padding + cellHeight * r;
+
+			if (showLocalSelection && cell_in_selection(r, c)) {
+				App::DrawRect(x, y, cellWidth, cellHeight, App::theme.white);
+				cell.fg_red = 255 - cell.fg_red;
+				cell.fg_green = 255 - cell.fg_green;
+				cell.fg_blue = 255 - cell.fg_blue;
+			} else if (cell.bg_red != bgr || cell.bg_green != bgg || cell.bg_blue != bbg) {
+				App::DrawRect(x, y, cellWidth, cellHeight,
+				              cell.bg_red, cell.bg_green, cell.bg_blue);
 			}
-			
+
 			if (ci.row == r && ci.col == c && ci.visible) {
-				if (ci.shape == 1) { // block
-					App::DrawRect(x, y, TextRenderer::get_text_width(1), TextRenderer::get_text_height(), App::theme.white);
-					cell.fg_red = 255-cell.fg_red;
-					cell.fg_green = 255-cell.fg_green;
-					cell.fg_blue = 255-cell.fg_blue;
-				}else if (ci.shape == 2) { // underline
-					App::DrawRect(x, y+TextRenderer::get_text_height()-c_wid, TextRenderer::get_text_width(1), c_wid, App::theme.white);
-				}else { // bar left
-					App::DrawRect(x, y, c_wid, TextRenderer::get_text_height(), App::theme.white);
+				if (ci.shape == 1) {
+					App::DrawRect(x, y, cellWidth, cellHeight, App::theme.white);
+					cell.fg_red = 255 - cell.fg_red;
+					cell.fg_green = 255 - cell.fg_green;
+					cell.fg_blue = 255 - cell.fg_blue;
+				} else if (ci.shape == 2) {
+					App::DrawRect(x, y + cellHeight - cursorWidth,
+					              cellWidth, cursorWidth, App::theme.white);
+				} else {
+					App::DrawRect(x, y, cursorWidth, cellHeight, App::theme.white);
 				}
 			}
-			
+
 			if (cell.c != empty) {
-				TextRenderer::draw_text(x, y, MST::toMonoString(cell.c), cell.fg_red, cell.fg_green, cell.fg_blue);
+				TextRenderer::draw_text(x, y, MST::toMonoString(cell.c),
+				                        cell.fg_red, cell.fg_green, cell.fg_blue);
 			}
 		}
 	}
-	
+
 	Color* bColor = App::theme.border;
-	if (this == App::activeLeafNode) {
-		bColor = App::theme.active_color;
-	}
-	
+	if (this == App::activeLeafNode) bColor = App::theme.active_color;
+
 	if (rounded) {
-		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
+		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h,
+		                            App::text_padding, App::theme.main_background_color);
 		App::DrawRoundBorder(t_x, t_y, t_w, t_h, bColor, 5, App::text_padding);
-	}else{
+	} else {
 		App::DrawBorder(t_x, t_y, t_w, t_h, bColor);
 	}
-	
+
 	Widget::render();
 }
 
@@ -705,6 +762,9 @@ bool TerminalWidget::on_mouse_button_event(int button, int action, int mods) {
 			contextmenu->y_loc = ny;
 			contextmenu->position(nx, ny, t_w, t_h);
 		}
+
+		// Do not fall through and encode this same right-click for the PTY.
+		return true;
 	}
 	
 	// otherwise: forward to the app (nvim/tui, etc.)
@@ -744,7 +804,20 @@ bool TerminalWidget::on_mouse_move_event() {
 			
 			int state = glfwGetMouseButton(App::window, GLFW_MOUSE_BUTTON_LEFT);
 			if (state != GLFW_PRESS) { selecting = false; return false; }
-			
+
+			// cell_from_cursor() deliberately returns -1 outside the widget, but
+			// selection autoscroll still needs a valid endpoint on the nearest edge.
+			const int cellWidth = std::max(TextRenderer::get_text_width(1), 1);
+			const int cellHeight = std::max(TextRenderer::get_text_height(), 1);
+			const int maxCol = std::max(term->docCols() - 1, 0);
+			const int maxRow = std::max(term->docRows() - 1, 0);
+			col = std::clamp(
+				(App::mouseX - t_x - App::text_padding) / cellWidth,
+				0, maxCol);
+			row = std::clamp(
+				(App::mouseY - t_y - App::text_padding) / cellHeight,
+				0, maxRow);
+
 			sel_doc_r1 = term->docLineIdForScreenRow(row);
 			sel_c1 = col;
 			return true;
@@ -766,7 +839,9 @@ bool TerminalWidget::on_scroll_event(double /*xchange*/, double ychange) {
 	int row=0, col=0;
 	cell_from_cursor(row, col);
 	
-	ychange *= -6;
+	// CodeWizard's widget scroll convention is negative for up and positive
+	// for down, which already matches Terminal::mouseScroll/libghostty.
+	ychange *= 6;
 	
 	int lines = static_cast<int>( (ychange > 0) ? std::floor(ychange + 0.5) : std::ceil (ychange - 0.5) );
 	if (lines == 0) return true;
@@ -854,7 +929,7 @@ std::string TerminalWidget::selection_text() const {
 
 		out += line;
 		
-		if (!term->getDocWraps(doc+1) && doc != r1) {
+		if (!term->getDocWraps(doc) && doc != r1) {
 			out += '\n';
 		}
 		
@@ -864,38 +939,6 @@ std::string TerminalWidget::selection_text() const {
 
 std::string TerminalWidget::get_last_n_doc_lines(int n) {
 	std::lock_guard<std::recursive_mutex> lock(m_term_mutex);
-	if (!term) return {};
-	if (n <= 0) return {};
-
-	// Pick the most recent doc line by mapping the *bottom visible screen row*.
-	// If your viewport can scroll, this returns "bottom of what you're viewing".
-	const int bottom_screen_row = prev_h_cells - 1;
-	int end_doc = term->docLineIdForScreenRow(bottom_screen_row);
-	if (end_doc < 0) return {};
-
-	int start_doc = end_doc - (n - 1);
-	if (start_doc < 0) start_doc = 0;
-
-	// Full-width selection (so selection_text() returns whole lines)
-	const int W = term->docCols();
-	if (W <= 0) return {};
-
-	// Save selection state (so we don't mess with the user's selection)
-	int saved_r0 = sel_doc_r0, saved_c0 = sel_c0, saved_r1 = sel_doc_r1, saved_c1 = sel_c1;
-	bool saved_selecting = selecting;
-
-	// Set selection to the last N doc lines
-	selecting  = false;
-	sel_doc_r0 = start_doc;
-	sel_c0     = 0;
-	sel_doc_r1 = end_doc;
-	sel_c1     = W - 1;
-
-	std::string out = selection_text();
-
-	// Restore prior selection state
-	selecting  = saved_selecting;
-	sel_doc_r0 = saved_r0; sel_c0 = saved_c0; sel_doc_r1 = saved_r1; sel_c1 = saved_c1;
-
-	return out;
+	if (!term || n <= 0) return {};
+	return term->getLastTextLines(n);
 }

@@ -48,13 +48,6 @@ endif()
 
 
 include(FetchContent)
-FetchContent_Declare(
-	libvterm_src
-	GIT_REPOSITORY https://github.com/neovim/libvterm.git
-	GIT_TAG        nvim
-)
-FetchContent_MakeAvailable(libvterm_src)
-
 
 FetchContent_Declare(
 	sioclient
@@ -98,25 +91,6 @@ set_target_properties(syntect_bridge PROPERTIES
 
 add_dependencies(syntect_bridge syntect_bridge_build)
 
-set(LIBVTERM_DIR ${libvterm_src_SOURCE_DIR})
-add_library(libvterm STATIC
-	${LIBVTERM_DIR}/src/encoding.c
-	${LIBVTERM_DIR}/src/keyboard.c
-	${LIBVTERM_DIR}/src/mouse.c
-	${LIBVTERM_DIR}/src/parser.c
-	${LIBVTERM_DIR}/src/pen.c
-	${LIBVTERM_DIR}/src/screen.c
-	${LIBVTERM_DIR}/src/state.c
-	${LIBVTERM_DIR}/src/unicode.c
-	${LIBVTERM_DIR}/src/vterm.c
-)
-
-set_property(TARGET libvterm PROPERTY C_STANDARD 99)
-target_include_directories(libvterm PUBLIC
-	${LIBVTERM_DIR}/include
-	${LIBVTERM_DIR}/src           # headers live here too (vterm_internal.h, utf8.h, rect.h)
-)
-
 add_definitions(-DNOMINMAX)
 if(WIN32)
 	# Windows needs these for ConPTY APIs
@@ -127,7 +101,8 @@ endif()
 add_executable(${PROJECT_NAME} main.cpp ${APP_ICON_RESOURCE_WINDOWS} text_renderer.cpp application.cpp widget.cpp button.cpp titlebar.cpp panel_holder.cpp widgetchooser.cpp editor.cpp filetree.cpp tabs.cpp settings.cpp codeedit.cpp linenumbers.cpp textedit.cpp tinyfiledialogs.c brokenstatemenu.cpp checkbox.cpp settingsmanager.cpp languageserverclient.cpp listbox.cpp imageview.cpp compare.cpp curler.cpp toast.cpp chat.cpp label.cpp myrect.cpp lspdebug.cpp terminal.cpp terminalwidget.cpp terminalwidgettabbed.cpp helpmenu.cpp scrollbar.cpp updatechecker.cpp contextmenu.cpp scrollnotify.cpp mathwindow.cpp asteroids.cpp graphwindow.cpp md4c.c EmojiRenderer.cpp hexeditor.cpp MonoString.cpp )
 # modelxrunner.cpp 
 
-
+include(cmake/LibGhostty.cmake)
+codewizard_target_use_libghostty(CodeWizard)
 
 # set(Torch_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libtorch/share/cmake/Torch" CACHE PATH "" FORCE)
 
@@ -150,7 +125,6 @@ target_link_libraries(${PROJECT_NAME}
 	ICU::data          # ICU data blobs (formerly icudata)
 	Freetype::Freetype
 	CURL::libcurl
-	libvterm
 	sioclient
 	OpenSSL::Crypto
 	syntect_bridge

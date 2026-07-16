@@ -81,4 +81,6 @@ private:
 	int pending_h_cells = 0;
 	bool resize_pending = false;
 	double resize_due_at = 0.0;
+	
+	std::vector<OurCell> render_cells;
 };

@@ -474,17 +474,21 @@ void TerminalWidget::render() {
 		needsRerender = 2;
 	}
 
-	if (needsRerender == 0 && App::reclear == 0) {
+	const bool redrawTerminal = needsRerender > 0 || App::reclear != 0;
+	
+	if (!redrawTerminal) {
 		Widget::render();
 		return;
 	}
-	needsRerender -= 1;
+	
+	if (needsRerender > 0) {
+		--needsRerender;
+	}
 
-	std::vector<OurCell> cells;
 	CursorInfo ci{};
 	int viewCols = 0;
 	int viewRows = 0;
-	if (!term->getViewSnapshot(cells, ci, viewCols, viewRows) || viewCols <= 0 || viewRows <= 0) {
+	if (!term->getViewSnapshot(render_cells, ci, viewCols, viewRows) || viewCols <= 0 || viewRows <= 0) {
 		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.main_background_color);
 		Widget::render();
 		return;
@@ -492,7 +496,7 @@ void TerminalWidget::render() {
 
 	const int rowToUse = std::min(viewRows - 1, viewRows / 2);
 	const int colToUse = std::min(viewCols - 1, viewCols / 2);
-	const OurCell& bgcell = cells[static_cast<size_t>(rowToUse) * viewCols + colToUse];
+	const OurCell& bgcell = render_cells[static_cast<size_t>(rowToUse) * viewCols + colToUse];
 	const uint8_t bgr = bgcell.bg_red;
 	const uint8_t bgg = bgcell.bg_green;
 	const uint8_t bbg = bgcell.bg_blue;
@@ -507,7 +511,7 @@ void TerminalWidget::render() {
 
 	for (int r = 0; r < viewRows; ++r) {
 		for (int c = 0; c < viewCols; ++c) {
-			OurCell cell = cells[static_cast<size_t>(r) * viewCols + c];
+			OurCell cell = render_cells[static_cast<size_t>(r) * viewCols + c];
 			const int x = t_x + App::text_padding + cellWidth * c;
 			const int y = t_y + App::text_padding + cellHeight * r;
 

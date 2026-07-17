@@ -520,7 +520,6 @@ int main(int argc, char* argv[]) {
 	App::helpMenu = helpMenu;
 	
 	auto end = std::chrono::steady_clock::now();
-	
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 	
 	std::cout << "Init took: " << duration.count() << " milliseconds" << std::endl;

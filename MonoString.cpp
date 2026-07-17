@@ -418,6 +418,55 @@ public:
 		return a;
 	}
 	
+	static MonoString fromUnicodeCodepoint(const u32 cp) {
+	#ifdef DEBUG_MONOSTRING_FINICK
+		std::cout << "static MonoString fromUnicodeCodepoint(const u32 cp)\n";
+	#endif
+		MonoString a;
+	
+		if (is_emoji_codepoint(cp)) {
+			// Need the UTF-8 encoding of this single codepoint to use as the table key,
+			// since idx_to_stored/stored_to_idx are keyed by std::string, not u32.
+			char utf8_buf[4];
+			size_t utf8_len = grapheme_encode_utf8(cp, utf8_buf, sizeof(utf8_buf));
+			std::string value(utf8_buf, utf8_len);
+	
+			u32 idx;
+			{
+				std::lock_guard<std::mutex> lock(table_mutex);
+				auto it = stored_to_idx.find(value);
+				if (it != stored_to_idx.end()) {
+					idx = it->second;
+				} else {
+					idx = idx_to_stored.size();
+					idx_to_stored.push_back(value);
+					stored_to_idx[value] = idx;
+				}
+			}
+	
+			a.length = 2; // all emoji are 2 wide: IDX + CONT
+			a.data = new u32[a.length];
+			a.data[0] = idxToChar(idx);
+			a.data[1] = CONT;
+			return a;
+		}
+	
+		if (cp == U'\t') {
+			a.length = TAB_WIDTH;
+		} else {
+			a.length = 1;
+		}
+	
+		a.data = new u32[a.length];
+		a.data[0] = cp;
+	
+		for (int i = 1; i < a.length; i++) {
+			a.data[i] = CONT;
+		}
+	
+		return a;
+	}
+	
 	static std::string toString(const MonoString& text) {
 #ifdef DEBUG_MONOSTRING
 			std::cout << "static std::string toString(const MonoString& text)\n";

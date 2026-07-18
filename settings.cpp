@@ -465,15 +465,25 @@ void Settings::handleChange(TextEdit* te, SettingsElement* se) {
 	std::string str = MST::toString(text);
 	
 	if (auto i = dynamic_cast<SettingsString*>(se)) {
-		if (str != "") {
-			std::string oldvalue = i->value;
-			i->value = str;
-			if (validate_input(i, oldvalue)) {
-				App::settings->setValue(se->key_name, str);
-				after_change(i);
-			}
+		if (str == "") {
+			str = i->default_value;
+		}
+		
+		std::string oldvalue = i->value;
+		i->value = str;
+		if (validate_input(i, oldvalue)) {
+			App::settings->setValue(se->key_name, str);
+			after_change(i);
 		}
 	}else if (auto i = dynamic_cast<SettingsBool*>(se)) {
+		if (str == "") {
+			if (i->default_value) {
+				str = "true";
+			}else{
+				str = "false";
+			}
+		}
+		
 		if (str == "true") {
 			i->value = true;
 		}else if (str == "false") {
@@ -492,8 +502,10 @@ void Settings::handleChange(TextEdit* te, SettingsElement* se) {
 			if (pos != str.length() || str.length() == 0) {
 				result = -1;
 			}
-		} catch (...) {
-			
+		} catch (...) {}
+		
+		if (result == -1) {
+			result = i->default_value;
 		}
 		
 		if (result >= 0 && i->value != result) {
@@ -511,8 +523,10 @@ void Settings::handleChange(TextEdit* te, SettingsElement* se) {
 			if (pos != str.length() || result > 50 || str.length() == 0) {
 				result = -1;
 			}
-		} catch (...) {
-			
+		} catch (...) {}
+		
+		if (result == -1) {
+			result = i->default_value;
 		}
 		
 		if (result >= 0 && i->value != result) {

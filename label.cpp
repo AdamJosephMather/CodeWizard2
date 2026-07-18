@@ -136,7 +136,7 @@ void Label::position(int x, int y, int w, int h) {
 			
 			if (handlingColor) {
 				drawColors.push_back(curlineColor);
-				curlineColor = {thisColor};
+				curlineColor.clear();
 			}
 			
 			should_be_h += TextRenderer::get_text_height();

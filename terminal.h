@@ -106,6 +106,8 @@ public:
 	bool appWantsMouse() const;
 
 	std::atomic<bool> RERENDER{true};
+	
+	std::string shellStr = "UNKNOWN";
 
 private:
 	bool initConPty();

@@ -46,7 +46,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 5;
-int App::patch_version = 7; // 🚀 (we now support emojis)
+int App::patch_version = 8; // 🚀 (we now support emojis)
 
 const std::vector<int> version = {App::major_version, App::minor_version, App::patch_version};
 
@@ -2976,7 +2976,7 @@ void searchTheseFiles(const std::string& st, std::vector<std::string> files, Sea
 		const auto& path = files[idx];
 		if (isBinaryFile(path))
 			continue;
-
+		
 		std::ifstream in(path, std::ios::binary | std::ios::ate);
 		if (!in) continue;
 		auto size = in.tellg();

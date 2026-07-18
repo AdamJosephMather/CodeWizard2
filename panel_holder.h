@@ -29,6 +29,8 @@ private:
 	bool hastwo = false;
 	bool is_horizontal = false;
 	
+	int handle_short = 4;
+	
 	bool has_one_to_add = false;
 	bool has_one_to_rem = false;
 	bool adding_first_pos = false;
@@ -52,8 +54,6 @@ private:
 	
 	bool first_hovered = false;
 	bool second_hovered = false;
-	
-	int handle_short = 4;
 	
 	int xpos_h = 0;
 	int ypos_h = 0;

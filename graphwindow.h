@@ -68,6 +68,11 @@ public:
 	void position(int x, int y, int w, int h) override;
 	
 	void executeAction(WidgetActionType typ) override;
+	
+	double xmin = 0;
+	double ymin = 0;
+	double xmax = 10;
+	double ymax = 10;
 private:
 	std::vector<Color*> colorsList;
 	std::vector<std::unique_ptr<Drawable>> drawables = {};
@@ -88,11 +93,6 @@ private:
 	
 	std::pair<int,int> fromScaledToPixels(double x, double y);
 	std::pair<double,double> fromPixelsToScaled(int x, int y);
-	
-	double xmin = 0;
-	double ymin = 0;
-	double xmax = 10;
-	double ymax = 10;
 	
 	Button* reset;
 	Button* addCords;

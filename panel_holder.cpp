@@ -13,6 +13,7 @@
 #include "settings.h"
 #include "filetree.h"
 #include "text_renderer.h"
+#include "statusbar.h"
 
 PanelHolder::PanelHolder(Widget *parent) : Widget(parent) {
 	id = MST::toMonoString("Panel holder");
@@ -24,7 +25,7 @@ void PanelHolder::position(int x, int y, int width, int height) {
 	t_w = width;
 	t_h = height;
 	
-	handle_short = TextRenderer::get_text_width(1)*0.4;
+	handle_short = App::text_padding/2;
 	if (handle_short & 1) {
 		handle_short += 1;
 	}
@@ -292,10 +293,11 @@ bool PanelHolder::on_mouse_move_event() {
 			ratio = (App::mouseY-t_y)/(float)t_h;
 		}
 		
-		if (ratio < 0.025) {
-			ratio = 0.025;
-		}else if (ratio > 0.975) {
-			ratio = 0.975;
+		// force ratios to not be outrageously small
+		if (ratio < 0.01) {
+			ratio = 0.01;
+		}else if (ratio > 0.99) {
+			ratio = 0.99;
 		}
 		return true;
 	}
@@ -347,6 +349,8 @@ void PanelHolder::setState(nlohmann::json state) {
 			new Asteroids(this);
 		}else if (c == "GraphWindow"){
 			new GraphWindow(this);
+		}else if (c == "StatusBar"){
+			new StatusBar(this);
 		}else { // any unknown, or editor
 			new Editor(this);
 		}
@@ -386,6 +390,8 @@ nlohmann::json PanelHolder::saveConfiguration() {
 			thisitm["children"][i] = "Asteroids";
 		}else if (auto pe = dynamic_cast<GraphWindow*>(c)){
 			thisitm["children"][i] = "GraphWindow";
+		}else if (auto pe = dynamic_cast<StatusBar*>(c)){
+			thisitm["children"][i] = "StatusBar";
 		}else {
 			thisitm["children"][i] = "Ehhhhh";
 		}

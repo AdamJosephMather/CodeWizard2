@@ -12,6 +12,7 @@
 #include "text_renderer.h"
 #include "application.h"
 #include "terminalwidgettabbed.h"
+#include "statusbar.h"
 
 WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	id = MST::toMonoString("Widgetchooser");
@@ -137,6 +138,18 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		App::deleteWidget(this);
 	});
 	b10->rounded = true;
+	
+	auto text11 = MST::toMonoString("Status Bar");
+	b11 = new Button(this, text11, [&](Button* button, int x, int y, int w, int h, int tw, int th){
+		button->t_x = t_x+t_w/2-tw/2;
+		button->t_y = b10->t_y+b10->t_h+App::text_padding/2;
+		button->t_h = th-App::text_padding;
+	}, [&](Button* button) {
+		App::ReplaceWith(this, new StatusBar(nullptr));
+		std::cout << "Creating statusbar\n";
+		App::deleteWidget(this);
+	});
+	b11->rounded = true;
 }
 
 void WidgetChooser::render() {

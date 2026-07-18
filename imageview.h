@@ -15,9 +15,11 @@ public:
 	bool rounded = true;
 	
 	FileInfo* file = nullptr;
+	
+	int imgW = 0, imgH = 0;
 
 private:
 	GLuint texID = 0;
-	int imgW = 0, imgH = 0;
+	
 	bool hasTexture = false;
 };

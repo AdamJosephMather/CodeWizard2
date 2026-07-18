@@ -68,6 +68,8 @@ void ImageView::openFile(FileInfo* f) {
 
 void ImageView::render() {
 	if (!is_visible) return;
+	
+	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
 
 	Widget::render();
 
@@ -80,7 +82,7 @@ void ImageView::render() {
 		// --- STEP 1: DEFINE THE "BUFFER" BACKGROUND COLOR ---
 		// This is the color you want to composite the image against.
 		// It simulates the "background" of the separate buffer you described.
-		Color* bg = App::theme.main_background_color;
+		Color* bg = App::theme.darker_background_color;
 		float blendColor[] = { bg->r, bg->g, bg->b, 1.0f };
 		
 		// Pass this color into the Texture Environment

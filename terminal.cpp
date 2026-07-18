@@ -104,6 +104,21 @@ Terminal::~Terminal() {
 // Lifecycle
 // ============================================================================
 
+#ifdef WIN32
+std::string wstring_to_utf8_windows(const std::wstring& wstr) {
+	if (wstr.empty()) return std::string();
+
+	// Calculate required buffer size first
+	int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+	
+	std::string strTo(size_needed, 0);
+	// Perform the actual conversion
+	WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
+	
+	return strTo;
+}
+#endif
+
 bool Terminal::start(const std::wstring& shell) {
 	if (m_running.load(std::memory_order_acquire)) return true;
 
@@ -113,12 +128,13 @@ bool Terminal::start(const std::wstring& shell) {
 	}
 
 #ifdef _WIN32
+	shellStr = shell.empty() ? wstring_to_utf8_windows(defaultShell()) : wstring_to_utf8_windows(shell);
 	if (!launchShell(shell.empty() ? defaultShell() : shell)) {
 		teardownConPty();
 		return false;
 	}
 #else
-	std::string shellStr = shell.empty() ? defaultShell() : wstringToUtf8(shell);
+	shellStr = shell.empty() ? defaultShell() : wstringToUtf8(shell);
 	if (!launchShell(shellStr)) {
 		teardownConPty();
 		return false;

@@ -27,7 +27,7 @@ Ever seen Asteroids inside a code editor, with no plugins? I didn't think so.
 ## Widgets
 
 CodeWizard2 uses `widgets`, of which we have:
-1. Editor View (code, images)
+1. Editor View (code, images, hex viewer)
 2. File Tree
 3. Settings Menu
 4. File Compare (compairs two files)
@@ -37,10 +37,11 @@ CodeWizard2 uses `widgets`, of which we have:
 8. Math Window
 9. Asteroids
 10. Graph Window
+11. Status Bar
 
 ## Quick Note
 
-CodeWizard2 is only available on Windows. There is a modal option (which I quite enjoy but doesn't match any other editors) available in the settings.
+CodeWizard2 is only available for Windows. (though should be fairly easy to get compiling on Linux, emoji rendering is not implemented for Linux however) There is a modal option (which I quite enjoy but doesn't match any other editors) available in the settings.
 
 ## Important Key Bindings:
 

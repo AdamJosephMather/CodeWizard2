@@ -253,7 +253,7 @@ static bool build_font_atlas(bool italic,
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-
+	
 	return true;
 }
 
@@ -502,9 +502,27 @@ float TextRenderer::draw_text_substring(float x, float y,
 		}
 
 		if (idx >= 0) {
-			const Color* col = colors[use_color_substring ? i : i - start];
-
-			bool wantItalic = (col && col->italic) || forceItalics;
+			int colorIdx = use_color_substring ? i : i - start;
+			
+			bool wantItalic = forceItalics;
+			
+			float r;
+			float g;
+			float b;
+			
+			if (colorIdx < colors.size()) {
+				const Color* col = colors[colorIdx];
+				wantItalic |= col->italic;
+				
+				r = col->r;
+				g = col->g;
+				b = col->b;
+			}else{
+				r = 0.5;
+				g = 0.5;
+				b = 0.5;
+			}
+			
 			if (wantItalic != currentItalic) {
 				glEnd();
 
@@ -521,7 +539,7 @@ float TextRenderer::draw_text_substring(float x, float y,
 			float cx_temp = cursorX;
 			GetPackedQuad(glyphs, TEX_W, TEX_H, idx, &cx_temp, &cursorY, &q, true);
 
-			glColor4f(col->r, col->g, col->b, 1.0f);
+			glColor4f(r, g, b, 1.0f);
 
 			glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, q.y0);
 			glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, q.y0);

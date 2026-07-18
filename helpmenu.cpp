@@ -69,9 +69,9 @@ Quirks:
 			MST::toMonoString("Widgets"),
 			MST::toMonoString(R":(	Widgets are the gas on which CodeWizard runs. The most important widgets are the: editor, settings menu, file tree, and terminal widgets. The editor is where all code editing happens, including a tab bar (by default). The file tree is a tree constructed to match the files in your actively selected directory (see Using CodeWizard.) The terminal widget will take over the execution for your code if it's open, otherwise CodeWizard will open a Microsoft Command Prompt and run your code there. And of course the settings menu is where some of CodeWizard's settings are managed.
 
-	To open a new widget, click the '+' button in the top left of the screen, hover over where you want the new widget, and click again. (This will not work while in the help menu.)
+	To open a new widget, click the '+' button next to the command palette at the top of the window, hover over where you want the new widget, and click again. (This will not work while in the help menu.)
 	
-	Similarly, to close, use the '-' button in the top left, hovering over the pane you want removed.
+	Similarly, to close, use the '-' button next to the command palette at the top of the window, hovering over the pane you want removed.
 ):"),
 		},{
 			MST::toMonoString("Settings"),

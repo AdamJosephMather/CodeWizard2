@@ -1901,7 +1901,16 @@ void TextEdit::render() {
 		if (ln_ren+line_start >= lines.size()) {
 			continue;
 		}
-		float newx = TextRenderer::draw_text_substring(curx, cury, lines[line_start+ln_ren].line_text, char_start, end_char, draw_color[ln_ren], false);
+		
+		float newx = TextRenderer::draw_text_substring(
+			curx,
+			cury,
+			lines[line_start+ln_ren].line_text,
+			char_start,
+			end_char,
+			draw_color[ln_ren],
+			false
+		);
 		TextRenderer::draw_text(newx, cury, draw_errors[ln_ren].first, draw_errors[ln_ren].second);
 		cury += TextRenderer::get_text_height();
 	}

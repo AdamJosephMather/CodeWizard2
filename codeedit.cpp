@@ -26,6 +26,9 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		}
 		
 		if (App::lsp_client_map[lsp]) {
+			if (file) {
+				App::lsp_client_map[lsp]->closeDocument(file->filepath);
+			}
 			for (int i = static_cast<int>(App::lsp_client_map[lsp]->connected_edits.size())-1; i >= 0; i--) {
 				if (App::lsp_client_map[lsp]->connected_edits[i] == this) { 
 					App::lsp_client_map[lsp]->connected_edits.erase(App::lsp_client_map[lsp]->connected_edits.begin()+i);
@@ -467,6 +470,9 @@ void CodeEdit::gotoerror(int s) {
 
 void CodeEdit::detectLanguage() {
 	if (App::lsp_client_map[lsp]) {
+		if (file) {
+			App::lsp_client_map[lsp]->closeDocument(file->filepath);
+		}
 		for (int i = static_cast<int>(App::lsp_client_map[lsp]->connected_edits.size())-1; i >= 0; i--) {
 			if (App::lsp_client_map[lsp]->connected_edits[i] == this) { 
 				App::lsp_client_map[lsp]->connected_edits.erase(App::lsp_client_map[lsp]->connected_edits.begin()+i);
@@ -563,6 +569,7 @@ void CodeEdit::executeAction(WidgetActionType typ) {
 				}
 				
 				if (file) {
+					App::lsp_client_map[lsp]->closeDocument(file->filepath);
 					std::string str = MST::toBastardizedStringUtf16Aligned(textedit->getFullText());
 					App::lsp_client_map[lsp]->openDocument(file->filepath, App::languagemap[language].name, str);
 				}
@@ -1863,35 +1870,7 @@ void CodeEdit::renameReceived(int id, json resp) {
 	
 	auto sections = gatherCurrentFileSections(edits, file->filepath);
 	
-	for (auto& s : sections) {
-		Cursor c = Cursor();
-		c.anchor_char = s.startChar;
-		c.anchor_line = s.startLine;
-		c.head_char = s.endChar;
-		c.head_line = s.endLine;
-		
-		if (c.head_line > textedit->lines.size()-1 || c.anchor_line > textedit->lines.size()-1) {
-			std::cerr << "Had to skip one outside of line bounds\n";
-			continue;
-		}
-		
-		std::cout << "Replacing [" << s.startLine << ":" << s.startChar << " → " << s.endLine   << ":" << s.endChar << "] with: " << s.newText << "\n";
-		
-		textedit->insertTextAtCursor(c, MST::toMonoString(s.newText));
-	}
-	
-	Cursor c = textedit->cursors[0];
-	if (c.head_line >= textedit->lines.size()) {
-		c.head_line = textedit->lines.size()-1;
-	}
-	if (c.head_char > textedit->lines[c.head_line].line_text.length) {
-		c.head_char = textedit->lines[c.head_line].line_text.length;
-	}
-	c.preffered_collumn = c.head_char;
-	c.anchor_char = c.head_char;
-	c.anchor_line = c.head_line;
-	
-	textedit->cursors = {c};
+	applyEditsToTextedit(textedit, sections);
 	
 	return;
 }
@@ -1910,40 +1889,7 @@ void CodeEdit::activateCompletion() {
 
 		auto sections = gatherCurrentFileSections(edits, file->filepath);
 
-		for (auto& s : sections) {
-			Cursor c = Cursor();
-			c.anchor_char = s.startChar;
-			c.anchor_line = s.startLine;
-			c.head_char = s.endChar;
-			c.head_line = s.endLine;
-
-			std::cerr
-				<< "Replacing ["
-				<< s.startLine << ":" << s.startChar
-				<< " -> "
-				<< s.endLine << ":" << s.endChar
-				<< "] with: "
-				<< s.newText
-				<< "\n";
-
-			textedit->insertTextAtCursor(c, MST::toMonoString(s.newText));
-		}
-
-		Cursor c = textedit->cursors[0];
-
-		if (c.head_line >= textedit->lines.size()) {
-			c.head_line = static_cast<int>(textedit->lines.size()) - 1;
-		}
-
-		if (c.head_char > textedit->lines[c.head_line].line_text.length) {
-			c.head_char = static_cast<int>(textedit->lines[c.head_line].line_text.length);
-		}
-
-		c.preffered_collumn = c.head_char;
-		c.anchor_char = c.head_char;
-		c.anchor_line = c.head_line;
-
-		textedit->cursors = { c };
+		applyEditsToTextedit(textedit, sections);
 
 		return;
 	}
@@ -2276,9 +2222,38 @@ void CodeEdit::applyOtherFileEdits(const std::vector<FileEdit>& edits, const std
 		if (URISEqual(fe.uri, App::lsp_client_map[lsp]->fromLocalFile(currentFilePath)))
 			continue;
 		
-		std::filesystem::path p = std::filesystem::path(fileUriToPath(fe.uri));
+		std::string targetPath = fileUriToPath(fe.uri);
 		
-		// read into lines
+		// collect EditSections for this file
+		std::vector<EditSection> sections;
+		for (auto& te : fe.edits) {
+			sections.push_back(EditSection{
+				te.range.start.line,
+				te.range.start.character,
+				te.range.end.line,
+				te.range.end.character,
+				te.newText
+			});
+		}
+		
+		// check if the file is already open in an editor
+		if (auto editorWidget = App::rootelement->fileOpen(targetPath)) {
+			if (auto edtr = dynamic_cast<Editor*>(editorWidget)) {
+				for (auto itm : edtr->tab_bar->tabs_list) {
+					if (auto ce = dynamic_cast<CodeEdit*>(edtr->editors[itm.id])) {
+						if (ce->file && areSameFile(ce->file->filepath, targetPath)) {
+							applyEditsToTextedit(ce->textedit, sections);
+							break;
+						}
+					}
+				}
+			}
+			continue;
+		}
+		
+		// file not open — apply edits directly on disk
+		std::filesystem::path p = std::filesystem::path(targetPath);
+		
 		std::ifstream in(p);
 		std::vector<std::string> lines;
 		std::string line;
@@ -2286,18 +2261,15 @@ void CodeEdit::applyOtherFileEdits(const std::vector<FileEdit>& edits, const std
 			lines.push_back(line);
 		in.close();
 	
-		// sort edits *descending* so earlier edits don’t shift later ones
 		std::vector<EditDoc> sorted = fe.edits;
 		std::sort(sorted.begin(), sorted.end(), [](auto const& a, auto const& b){
 			if (a.range.end.line != b.range.end.line) return a.range.end.line > b.range.end.line;
 			return a.range.end.character > b.range.end.character;
 		});
 		
-		// apply each
 		for (auto& te : sorted)
 			applyEditToLines(lines, te);
 		
-		// write back
 		std::ofstream out(p, std::ios::trunc);
 		for (auto& L : lines)
 			out << L << "\n";
@@ -2328,4 +2300,30 @@ std::vector<EditSection> CodeEdit::gatherCurrentFileSections(const std::vector<F
 	});
 	
 	return sections;
+}
+
+void CodeEdit::applyEditsToTextedit(TextEdit* te, const std::vector<EditSection>& sections) {
+	std::vector<EditSection> sorted = sections;
+	std::sort(sorted.begin(), sorted.end(), [](auto const& a, auto const& b) {
+		if (a.endLine != b.endLine) return a.endLine > b.endLine;
+		return a.endChar  > b.endChar;
+	});
+
+	for (auto& s : sorted) {
+		Cursor c = Cursor();
+		c.anchor_char = s.startChar;
+		c.anchor_line = s.startLine;
+		c.head_char = s.endChar;
+		c.head_line = s.endLine;
+		
+		std::cout << "Replacing [" << s.startLine << ":" << s.startChar << " -> " << s.endLine   << ":" << s.endChar << "] with: " << s.newText << "\n";
+		std::cout << "'" << MST::toString(te->lines[c.head_line].line_text) << "'\n";
+		
+		if (c.head_line > te->lines.size()-1 || c.anchor_line > te->lines.size()-1) {
+			std::cerr << "Had to skip one outside of line bounds\n";
+			continue;
+		}
+		
+		te->insertTextAtCursor(c, MST::toMonoString(s.newText));
+	}
 }

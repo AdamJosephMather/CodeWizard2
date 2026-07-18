@@ -167,6 +167,7 @@ public:
 	void applyEditToLines(std::vector<std::string>& lines, const EditDoc& te);
 	void applyOtherFileEdits(const std::vector<FileEdit>& edits, const std::string& currentFilePath);
 	std::vector<EditSection> gatherCurrentFileSections(const std::vector<FileEdit>& edits, const std::string& currentFilePath);
+	void applyEditsToTextedit(TextEdit* te, const std::vector<EditSection>& sections);
 	
 	std::string augmentBuildCommand(std::string inital);
 	

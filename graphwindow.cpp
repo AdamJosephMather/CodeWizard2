@@ -795,7 +795,7 @@ bool GraphWindow::on_mouse_button_event(int button, int action, int mods) {
 	}
 	
 	if (!Widget::on_mouse_button_event(button, action, mods)) {
-		if (cursor_in_this) {
+		if (cursor_in_this && action == GLFW_PRESS) {
 			App::setActiveLeafNode(this);
 			return true;
 		}

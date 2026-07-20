@@ -732,7 +732,9 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 			mmi->ptMinTrackSize.x = 500;
 			mmi->ptMinTrackSize.y = 100;
 		
-			mmi->ptMaxTrackSize = mmi->ptMaxSize;
+			// Allow the window to be resized larger than any single monitor or the virtual screen both horizontally and vertically
+			mmi->ptMaxTrackSize.x = 100000;
+			mmi->ptMaxTrackSize.y = 100000;
 			return 0;
 		}case WM_MOVING: {
 		}case WM_SIZING: {

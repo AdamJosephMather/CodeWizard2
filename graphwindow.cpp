@@ -634,7 +634,7 @@ std::pair<double,double> GraphWindow::fromPixelsToScaled(int x, int y) {
 
 void GraphWindow::render() {
 	if (rerender) {
-		App::reclear = 2;
+		App::reclear = 3;
 	}
 	
 	if (App::reclear != 0) {

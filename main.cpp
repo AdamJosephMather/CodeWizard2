@@ -386,7 +386,7 @@ int main(int argc, char* argv[]) {
 			App::RemoveWidgetFromParent(App::helpMenu);
 		}
 		App::closeMenu();
-		App::reclear = 2;
+		App::reclear = 3;
 		App::currentMenu = 2;
 	});
 	help_button->border_color = nullptr;

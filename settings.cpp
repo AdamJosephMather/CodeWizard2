@@ -616,14 +616,14 @@ bool Settings::validate_input(SettingsFloat* el) {
 			return false;
 		}
 		
-		App::reclear = 2;
+		App::reclear = 3;
 	}else if (el->key_name == "smooth_scroll") {
 		if (el->value <= 0 || el->value > 1) {
 			el->value = el->default_value;
 			return false;
 		}
 		
-		App::reclear = 2;
+		App::reclear = 3;
 	}else if (el->key_name == "c_saturation") {
 		if (el->value < 0 || el->value > 1) {
 			el->value = el->default_value;

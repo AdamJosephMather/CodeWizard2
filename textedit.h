@@ -281,5 +281,4 @@ private:
 	
 	std::u32string pendingCharInput;
 	bool hasPendingCharInput = false;
-	
 };

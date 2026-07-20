@@ -10,7 +10,7 @@ HelpMenu::HelpMenu(Widget* parent) : Widget(parent) {
 		b->t_h = height;
 	}, [&](Widget*){
 		App::RemoveWidgetFromParent(this);
-		App::reclear = 2;
+		App::reclear = 3;
 	});
 	closebutton->text_special = 1;
 	closebutton->window_button = true;
@@ -302,7 +302,7 @@ bool HelpMenu::on_mouse_button_event(int button, int action, int mods) {
 	
 	if (action == GLFW_PRESS && !cursor_in_this) {
 		App::RemoveWidgetFromParent(this);
-		App::reclear = 2;
+		App::reclear = 3;
 		return true;
 	}
 	

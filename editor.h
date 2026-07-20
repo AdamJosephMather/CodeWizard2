@@ -43,4 +43,5 @@ public:
 	std::vector<std::vector<std::string>> getOpenFiles(bool includeText) override;
 	int openUnnamedFile(int count) override;
 private:
+	float oldalpha = 0;
 };

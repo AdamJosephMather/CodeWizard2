@@ -71,7 +71,7 @@ HWND App::window_handle = nullptr;
 #endif
 
 bool App::last_transparency_w_clear = false;
-int App::reclear = 2;
+int App::reclear = 3;
 bool App::darkmode = true;
 std::string App::empty = "";
 
@@ -401,7 +401,7 @@ bool App::Init() {
 	TextRenderer::after_font_change = [&](){
 		text_padding = std::min(TextRenderer::get_text_width(1), TextRenderer::get_text_height()) * 0.5;
 		recheckmenusizing = true;
-		reclear = 2;
+		reclear = 3;
 		rerender = true;
 	};
 	
@@ -609,21 +609,21 @@ void App::restartLSPs() {
 
 void App::adding_panel() {
 	rerender = true;
-	reclear = 2;
+	reclear = 3;
 	curr_removing_panel = false;
 	curr_adding_panel = true;
 }
 
 void App::removing_panel() {
 	rerender = true;
-	reclear = 2;
+	reclear = 3;
 	curr_adding_panel = false;
 	curr_removing_panel = true;
 }
 
 void App::nada_panel() {
 	rerender = true;
-	reclear = 2;
+	reclear = 3;
 	curr_removing_panel = false;
 	curr_adding_panel = false;
 }
@@ -985,42 +985,35 @@ void App::renderTexture(
 	int y,
 	int w,
 	int h,
-	const Color* background
+	const Color* background,
+	float alpha
 ) {
 	if (texID == (GLuint)-1 || background == nullptr) {
 		return;
 	}
-
 	glPushAttrib(
 		GL_TEXTURE_BIT |
 		GL_ENABLE_BIT |
 		GL_CURRENT_BIT |
 		GL_COLOR_BUFFER_BIT
 	);
-
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, texID);
-
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
+	// Scale all channels together since blending uses premultiplied alpha
+	glColor4f(alpha, alpha, alpha, alpha);
 	// Enable standard blending with premultiplied alpha
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
 	glBegin(GL_QUADS);
 		glTexCoord2f(0.0f, 1.0f);
 		glVertex2f(x, y + h);
-
 		glTexCoord2f(1.0f, 1.0f);
 		glVertex2f(x + w, y + h);
-
 		glTexCoord2f(1.0f, 0.0f);
 		glVertex2f(x + w, y);
-
 		glTexCoord2f(0.0f, 0.0f);
 		glVertex2f(x, y);
 	glEnd();
-
 	glPopAttrib();
 }
 
@@ -1233,7 +1226,7 @@ void App::DrawShip(int x, int y, int s, double r, Color* color, bool drawfire) {
 
 void App::DoFullRenderWithoutInput() {
 	if (curr_adding_panel || curr_removing_panel) {
-		reclear = 2;
+		reclear = 3;
 	}
 	
 	double currentTime = glfwGetTime();
@@ -1333,7 +1326,7 @@ void App::DoFullRenderWithoutInput() {
 	
 	
 	if (settings->getValue("use_transparency", false) != last_transparency_w_clear) {
-		reclear = 2;
+		reclear = 3;
 	}
 	
 	
@@ -1664,7 +1657,7 @@ void App::mouse_button_callback(GLFWwindow* window, int button, int action, int 
 			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 			RemoveWidgetFromParent(STRING_REQUEST_LABEL);
 			setActiveLeafNode(nullptr);
-			reclear = 2;
+			reclear = 3;
 		}else{
 			return;
 		}
@@ -1754,7 +1747,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 			MoveWidget(STRING_REQUEST_LABEL, rootelement);
 			before_reps_request = activeLeafNode;
 			setActiveLeafNode(STRING_REQUEST_TEXTEDIT);
-			reclear = 2;
+			reclear = 3;
 		}else{
 			displayToast(MST::toMonoString("Stopped Macro Replay"));
 			glfwSwapInterval(1); // Enable vsync
@@ -1786,7 +1779,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 			RemoveWidgetFromParent(STRING_REQUEST_LABEL);
 			setActiveLeafNode(nullptr);
-			reclear = 2;
+			reclear = 3;
 			if (ON_STRING_GIVEN) {
 				ON_STRING_GIVEN(STRING_REQUEST_TEXTEDIT->getFullText());
 			}
@@ -1796,7 +1789,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 			RemoveWidgetFromParent(STRING_REQUEST_RECTANGLE);
 			RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 			RemoveWidgetFromParent(STRING_REQUEST_LABEL);
-			reclear = 2;
+			reclear = 3;
 			if (beforeCommandLeafNode && rootelement->widgetexists(beforeCommandLeafNode)){
 				setActiveLeafNode(beforeCommandLeafNode);
 			}else{
@@ -1818,7 +1811,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		curr_removing_panel = false;
 		curr_adding_panel = false;
 		rerender = true;
-		reclear = 2;
+		reclear = 3;
 		return;
 	}if (action == GLFW_PRESS && key == GLFW_KEY_O && control && shift) {
 		openFolderSelector();
@@ -2026,7 +2019,7 @@ void App::scroll_callback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 void App::resize_callback(GLFWwindow* window, int width, int height) {
-	reclear = 2;
+	reclear = 3;
 	
 	WINDOW_WIDTH = width;
 	WINDOW_HEIGHT = height;
@@ -2114,11 +2107,11 @@ void App::commandUnfocused() {
 		RemoveWidgetFromParent(commandBox);
 	}
 	
-	reclear = 2;
+	reclear = 3;
 }
 
 void App::closeFilesList() {
-	reclear = 2;
+	reclear = 3;
 	
 	if (filesList && filesList->parent != nullptr) {
 		RemoveWidgetFromParent(filesList);
@@ -2126,7 +2119,7 @@ void App::closeFilesList() {
 }
 
 void App::openFilesList() {
-	reclear = 2;
+	reclear = 3;
 	
 	if (!filesList) { return; }
 	
@@ -2263,7 +2256,7 @@ void App::gitPush() {
 	MoveWidget(STRING_REQUEST_TEXTEDIT, rootelement);
 	MoveWidget(STRING_REQUEST_LABEL, rootelement);
 	setActiveLeafNode(STRING_REQUEST_TEXTEDIT);
-	reclear = 2;
+	reclear = 3;
 }
 
 void App::gitPull() {
@@ -2477,7 +2470,7 @@ void App::executeCommandPaletteAction() {
 			gitForcePull();
 		}else if (filepath == ":Help") {
 			MoveWidget(helpMenu, rootelement);
-			reclear = 2;
+			reclear = 3;
 		}else if (filepath == ":Save Theme Settings To File") {
 			saveThemeToFile();
 		}else if (filepath == ":Load Theme Settings From File") {
@@ -2758,7 +2751,7 @@ void App::setActiveLeafNode(Widget* w) {
 		RemoveWidgetFromParent(STRING_REQUEST_RECTANGLE);
 		RemoveWidgetFromParent(STRING_REQUEST_TEXTEDIT);
 		RemoveWidgetFromParent(STRING_REQUEST_LABEL);
-		reclear = 2;
+		reclear = 3;
 	}
 	
 	if (w == commandPalette && activeLeafNode != commandPalette) {
@@ -3329,7 +3322,7 @@ void App::displayText(MST::MonoString text) {
 
 void App::closeMenu() {
 	App::RemoveWidgetFromParent(menu);
-	reclear = 2;
+	reclear = 3;
 	App::time_till_regular = 2;
 }
 
@@ -3340,6 +3333,6 @@ void App::openMenu(int x_offset) {
 	}
 	
 	MoveWidget(menu, rootelement);
-	reclear = 2;
+	reclear = 3;
 	App::time_till_regular = 2;
 }

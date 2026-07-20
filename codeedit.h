@@ -53,6 +53,8 @@ public:
 	int timeuntil = -1;
 //	int timeuntilchauffeur = -1;
 	
+	float splash_transparency = 0.0;
+	
 	TextEdit* textedit;
 	LineNumbers* line_numbers;
 	

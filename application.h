@@ -112,7 +112,7 @@ public:
 	
 	static ImageInfo prepareTexture(std::string imagepath);
 	static void renderColorlessTexture(GLuint texID, int x, int y, int w, int h, Color* foreground, Color* background);
-	static void renderTexture(GLuint texID, int x, int y, int w, int h, const Color* background);
+	static void renderTexture(GLuint texID, int x, int y, int w, int h, const Color* background, float alpha=1.0f);
 	
 	static std::unordered_map<std::string, CW_SyntaxEngine*> highlighters;
 	

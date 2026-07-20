@@ -1839,7 +1839,6 @@ void TextEdit::render() {
 //#ifdef DEBUG
 //		std::cout << "Render\n";
 //#endif
-	
 	if (rounded) {
 		App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, background_color);
 	}else {

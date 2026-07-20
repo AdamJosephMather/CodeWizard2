@@ -59,6 +59,7 @@ void Editor::tabinfoclicked(TabInfo info) {
 			
 			if (auto ce = dynamic_cast<CodeEdit*>(it.second)) {
 				App::setActiveLeafNode(ce->textedit);
+				ce->splash_transparency = oldalpha;
 			}else if (auto iv = dynamic_cast<ImageView*>(it.second)) {
 				App::setActiveLeafNode(iv);
 			}else if (auto he = dynamic_cast<HexEditor*>(it.second)) {
@@ -126,6 +127,7 @@ void Editor::createNew(FileInfo* fn) {
 		});
 		
 		editors[ti.id] = edtr;
+		edtr->splash_transparency = oldalpha;
 	}
 	
 	auto edtr = editors[ti.id];
@@ -198,6 +200,12 @@ void Editor::position(int x, int y, int w, int h) {
 		}
 		
 		editors[tab_bar->selected_id]->position(x, y, w, h);
+	}
+	
+	if (auto ce = dynamic_cast<CodeEdit*>(editors[tab_bar->selected_id])) {
+		oldalpha = ce->splash_transparency;
+	}else{
+		oldalpha = 0;
 	}
 }
 
@@ -272,7 +280,7 @@ void Editor::fileOpenRequested(FileInfo* f, int lns, int chrs, int ln, int chr) 
 	
 	if (auto ce = dynamic_cast<CodeEdit*>(editors[tabbeforetab])) { // we do this cast because not all widgets have FileInfo file; variables.
 		if (!ce->file) {
-			if (ce->textedit->getFullText().length == 0) { // empty file only in memory - let's remove it.
+			if (ce->textedit->lines.size() == 1 && ce->textedit->lines[0].line_text.length == 0) { // empty file only in memory - let's remove it.
 				closeFile(tabbeforetab);
 			}
 		}

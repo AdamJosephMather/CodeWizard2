@@ -823,6 +823,24 @@ void CodeEdit::render() {
 		});
 		
 		if (!file && textedit->lines.size() == 1 && textedit->lines[0].line_text.length == 0) {
+			splash_transparency += 0.05 * App::settings->getValue("anim_speed", 1.0f);
+			App::time_till_regular = 2;
+			DO_RENDER = 3;
+			
+			if (splash_transparency > 1) {
+				splash_transparency = 1;
+			}
+		}else if (splash_transparency != 0) {
+			splash_transparency -= 0.05 * App::settings->getValue("anim_speed", 1.0f);
+			App::time_till_regular = 2;
+			DO_RENDER = 3;
+			
+			if (splash_transparency < 0) {
+				splash_transparency = 0;
+			}
+		}
+		
+		if (splash_transparency != 0) {
 			int sW = App::splashW;
 			int sH = App::splashH;
 			
@@ -841,7 +859,7 @@ void CodeEdit::render() {
 			int sx = textedit->t_x + (textedit->t_w-sW)/2;
 			int sy = textedit->t_y + (textedit->t_h-sH)/2;
 			
-			App::renderTexture(App::splashTexture, sx, sy, sW, sH, App::theme.darker_background_color);
+			App::renderTexture(App::splashTexture, sx, sy, sW, sH, App::theme.darker_background_color, splash_transparency);
 		}
 	}
 	
@@ -887,8 +905,11 @@ void CodeEdit::position(int x, int y, int w, int h) {
 		findTextEdit->position(t_x, t_y, t_w, t_h);
 		caseSensitivity->position(t_x, t_y, t_w, t_h);
 	}
-	textedit->position(t_x, t_y, t_w, t_h);
 	line_numbers->position(t_x, t_y, t_w, t_h);
+	textedit->position(t_x, t_y, t_w, t_h);
+	line_numbers->t_h = textedit->t_h;
+	line_numbers->t_y = textedit->t_y;
+	
 	if (showErrorsButton->parent == this) {
 		showErrorsButton->position(t_x, t_y, t_w, t_h);
 	}
@@ -946,9 +967,9 @@ void CodeEdit::triggerSaveAs() {
 		
 		detectLanguage();
 		
-		App::reclear = 2;
+		App::reclear = 3;
 		textedit->DO_POSITION = true;
-		DO_RENDER = 2;
+		DO_RENDER = 3;
 		
 		was_in_a_file = false;
 		f->is_opening = false;

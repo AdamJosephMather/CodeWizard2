@@ -823,7 +823,7 @@ void CodeEdit::render() {
 		});
 		
 		if (!file && textedit->lines.size() == 1 && textedit->lines[0].line_text.length == 0) {
-			splash_transparency += 0.05 * App::settings->getValue("anim_speed", 1.0f);
+			splash_transparency += 0.1 * App::settings->getValue("anim_speed", 1.0f);
 			App::time_till_regular = 2;
 			DO_RENDER = 3;
 			
@@ -831,7 +831,7 @@ void CodeEdit::render() {
 				splash_transparency = 1;
 			}
 		}else if (splash_transparency != 0) {
-			splash_transparency -= 0.05 * App::settings->getValue("anim_speed", 1.0f);
+			splash_transparency -= 0.1 * App::settings->getValue("anim_speed", 1.0f);
 			App::time_till_regular = 2;
 			DO_RENDER = 3;
 			

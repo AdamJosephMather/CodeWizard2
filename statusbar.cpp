@@ -73,11 +73,13 @@ void StatusBar::render() {
 			0.2 // left side, ideally farther left
 		});
 	}else if (auto tw = dynamic_cast<TerminalWidget*>(App::activeLeafNode)) {
-		items.push_back({
-			3, // higher importance
-			MST::toMonoString(tw->term->shellStr),
-			0 // far left side
-		});
+		if (tw->term) {
+			items.push_back({
+				3, // higher importance
+				MST::toMonoString(tw->term->shellStr),
+				0 // far left side
+			});
+		}
 	}else if (auto gw = dynamic_cast<GraphWindow*>(App::activeLeafNode)) {
 		items.push_back({
 			3, // higher importance

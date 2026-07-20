@@ -30,6 +30,10 @@
 #include <GLFW/glfw3native.h>
 #endif
 
+#ifndef GL_MULTISAMPLE
+#define GL_MULTISAMPLE 0x809D
+#endif
+
 #include <fstream>
 
 #include <stb_image.h>
@@ -46,9 +50,15 @@
 
 int App::major_version = 2;
 int App::minor_version = 5;
-int App::patch_version = 8; // 🚀 (we now support emojis)
+int App::patch_version = 9; // 🚀 (we now support emojis)
 
 const std::vector<int> version = {App::major_version, App::minor_version, App::patch_version};
+
+int App::splashW = 0;
+int App::splashH = 0;
+GLuint App::splashTexture = 0;
+
+std::function<bool()> App::doMipmapThing = [](){ return false; };
 
 #ifndef M_PI
 const float M_PI = 3.141592653589793238f; // nice
@@ -313,7 +323,7 @@ bool App::Init() {
 		return false;
 	}
 	
-	glfwWindowHint(GLFW_SAMPLES, 4); // request 4 samples
+//	glfwWindowHint(GLFW_SAMPLES, 4); // request 4 samples
 	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 	
 	glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
@@ -354,7 +364,7 @@ bool App::Init() {
 	
 	glfwMakeContextCurrent(window);
 	
-//	glEnable(GL_MULT);
+//	glEnable(GL_MULTISAMPLE);
 	
 	glfwSwapInterval(1); // Enable vsync
 	
@@ -469,6 +479,12 @@ bool App::Init() {
 		std::cerr << "Failed to load icon: " << stbi_failure_reason() << "\n";
 	}
 	
+	// load splashscreen texture
+	
+	auto stuff = prepareTexture(getExecutableDir()+"/splashscreen.png");
+	splashTexture = stuff.tex;
+	splashW = stuff.imgW;
+	splashH = stuff.imgH;
 	
 	// restore full screened
 	
@@ -842,6 +858,170 @@ void App::DrawRect(int x, int y, int w, int h, Color* color) {
 		glVertex2f(x+w, y+h); // bottom-right
 		glVertex2f(x, y+h); // bottom-left
 	glEnd();
+}
+
+ImageInfo App::prepareTexture(std::string imagepath) {
+	int channels;
+	int imgW;
+	int imgH;
+	
+	unsigned char* data = stbi_load(
+		imagepath.c_str(),
+		&imgW, &imgH, &channels,
+		STBI_rgb_alpha
+	);
+	
+	if (!data) {
+		return {(GLuint)-1, 0, 0};
+	}
+	
+	// Premultiply alpha to prevent bright/white edges (halo artifact) during filtering/mipmapping.
+	// Optimized using fast integer math and branch short-circuiting.
+	int numPixels = imgW * imgH;
+	for (int i = 0; i < numPixels; ++i) {
+		unsigned int a = data[i * 4 + 3];
+		if (a == 255) {
+			continue; // Opaque pixels are already correct; skip to save work
+		}
+		if (a == 0) {
+			// Zero out colors for fully transparent pixels
+			data[i * 4 + 0] = 0;
+			data[i * 4 + 1] = 0;
+			data[i * 4 + 2] = 0;
+			continue;
+		}
+		
+		unsigned int r = data[i * 4 + 0];
+		unsigned int g = data[i * 4 + 1];
+		unsigned int b = data[i * 4 + 2];
+		
+		// Highly accurate fast division by 255 using integer shift math: (t + (t >> 8)) >> 8
+		unsigned int tr = r * a + 128;
+		unsigned int tg = g * a + 128;
+		unsigned int tb = b * a + 128;
+		
+		data[i * 4 + 0] = (unsigned char)((tr + (tr >> 8)) >> 8);
+		data[i * 4 + 1] = (unsigned char)((tg + (tg >> 8)) >> 8);
+		data[i * 4 + 2] = (unsigned char)((tb + (tb >> 8)) >> 8);
+	}
+	
+	GLuint texID;
+	// Generate GL texture
+	glGenTextures(1, &texID);
+	glBindTexture(GL_TEXTURE_2D, texID);
+	glTexImage2D(
+		GL_TEXTURE_2D, 0, GL_RGBA,
+		imgW, imgH, 0,
+		GL_RGBA, GL_UNSIGNED_BYTE, data
+	);
+	
+	// Build mip chain so minification samples a lower-res level instead
+	// of point/linear-sampling the full-res image (avoids shimmering/aliasing
+	// when the texture is drawn smaller than its source size).
+	bool mipmapped = doMipmapThing();
+	
+	if (mipmapped) {
+		// Trilinear filtering: smooth blend between mip levels and within each level.
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	} else {
+		// Fallback to bilinear filtering if mipmaps could not be generated.
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	}
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	
+	// Prevents edge bleed/wrap artifacts at smaller mip levels for non-tiling images.
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	
+	glBindTexture(GL_TEXTURE_2D, 0);
+	stbi_image_free(data);
+	
+	return {texID, imgW, imgH};
+}
+
+void App::renderColorlessTexture(GLuint texID, int x, int y, int w, int h, Color* foreground, Color* background) {
+	if (texID == (GLuint)-1) { return; }
+
+	glPushAttrib(GL_TEXTURE_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT | GL_COLOR_BUFFER_BIT);
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, texID);
+
+	glColor4f(foreground->r,
+			  foreground->g,
+			  foreground->b,
+			  foreground->a);
+
+	float blendColor[] = { background->r, background->g, background->b, 1.0f };
+	glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, blendColor);
+
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_INTERPOLATE);
+
+	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_PRIMARY_COLOR);
+	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
+
+	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_CONSTANT);
+	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
+
+	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE2_RGB, GL_TEXTURE);
+	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA);
+
+	glDisable(GL_BLEND);
+
+	glBegin(GL_QUADS);
+		glTexCoord2f(0.0f, 1.0f); glVertex2f(x,   y+h);
+		glTexCoord2f(1.0f, 1.0f); glVertex2f(x+w, y+h);
+		glTexCoord2f(1.0f, 0.0f); glVertex2f(x+w, y);
+		glTexCoord2f(0.0f, 0.0f); glVertex2f(x,   y);
+	glEnd();
+
+	glPopAttrib();
+}
+
+void App::renderTexture(
+	GLuint texID,
+	int x,
+	int y,
+	int w,
+	int h,
+	const Color* background
+) {
+	if (texID == (GLuint)-1 || background == nullptr) {
+		return;
+	}
+
+	glPushAttrib(
+		GL_TEXTURE_BIT |
+		GL_ENABLE_BIT |
+		GL_CURRENT_BIT |
+		GL_COLOR_BUFFER_BIT
+	);
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, texID);
+
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+	// Enable standard blending with premultiplied alpha
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+	glBegin(GL_QUADS);
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex2f(x, y + h);
+
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex2f(x + w, y + h);
+
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex2f(x + w, y);
+
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex2f(x, y);
+	glEnd();
+
+	glPopAttrib();
 }
 
 void App::DrawCircle(int x, int y, int radius, int segments, Color* color) {

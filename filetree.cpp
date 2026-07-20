@@ -2,8 +2,6 @@
 #include "text_renderer.h"
 #include "application.h"
 
-#include <stb_image.h>
-
 FileTree::FileTree(Widget* parent) : Widget(parent) {
 	id = MST::toMonoString("FileTree");
 	
@@ -13,91 +11,12 @@ FileTree::FileTree(Widget* parent) : Widget(parent) {
 	
 	openpaths = { App::settings->getValue("current_folder", getExecutableDir()) };
 	
-	folderIcon = prepareTexture(getExecutableDir()+"/folderIcon.png");
-	fileIcon = prepareTexture(getExecutableDir()+"/fileIcon.png");
-}
-
-GLuint FileTree::prepareTexture(std::string imagepath) {
-	int channels;
-	int imgW;
-	int imgH;
+	folderIcon = App::prepareTexture(getExecutableDir()+"/folderIcon.png").tex;
+	fileIcon = App::prepareTexture(getExecutableDir()+"/fileIcon.png").tex;
 	
-	unsigned char* data = stbi_load(
-		imagepath.c_str(),
-		&imgW, &imgH, &channels,
-		STBI_rgb_alpha
-	);
-	
-	if (!data) {
-		App::displayToast(MST::toMonoString("Failed to load image: "+imagepath));
-		return -1;
+	if (folderIcon == (GLuint)-1 || fileIcon == (GLuint)-1) {
+		App::displayToast(MST::toMonoString("Could not load texture(s) for filetree"));
 	}
-	
-	GLuint texID;
-	// Generate GL texture
-	glGenTextures(1, &texID);
-	glBindTexture(GL_TEXTURE_2D, texID);
-	glTexImage2D(
-		GL_TEXTURE_2D, 0, GL_RGBA,
-		imgW, imgH, 0,
-		GL_RGBA, GL_UNSIGNED_BYTE, data
-	);
-	// Simple linear filtering
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-	stbi_image_free(data);
-	
-	return texID;
-}
-
-void FileTree::renderTexture(GLuint texID, int x, int y, int w, int h, Color* backcol) {
-	if (texID == (GLuint)-1) { return; }
-
-	glPushAttrib(GL_TEXTURE_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT | GL_COLOR_BUFFER_BIT);
-
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, texID);
-
-	// 1) Set the main text color as the PRIMARY_COLOR
-	glColor4f(backcol->r,
-			  backcol->g,
-			  backcol->b,
-			  backcol->a);
-
-	// 2) Background color (behind the icon)
-	float blendColor[] = { back_color->r, back_color->g, back_color->b, 1.0f };
-	glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, blendColor);
-
-	// 3) Configure combiner:
-	// result.rgb = PRIMARY_COLOR * tex.a + CONSTANT(back) * (1 - tex.a)
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_INTERPOLATE);
-
-	// Arg0: foreground = main text color (PRIMARY_COLOR)
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_PRIMARY_COLOR);
-	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
-
-	// Arg1: background = constant back_color
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_CONSTANT);
-	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
-
-	// Arg2: mixer = texture alpha
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE2_RGB, GL_TEXTURE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA);
-
-	// We’re doing all the "alpha compositing" in RGB, so blending can stay off
-	glDisable(GL_BLEND);
-
-	glBegin(GL_QUADS);
-		glTexCoord2f(0.0f, 1.0f); glVertex2f(x,   y+h);
-		glTexCoord2f(1.0f, 1.0f); glVertex2f(x+w, y+h);
-		glTexCoord2f(1.0f, 0.0f); glVertex2f(x+w, y);
-		glTexCoord2f(0.0f, 0.0f); glVertex2f(x,   y);
-	glEnd();
-
-	glPopAttrib();
 }
 
 void FileTree::render() {
@@ -119,9 +38,9 @@ void FileTree::render() {
 		}
 		
 		if (itm.is_folder) {
-			renderTexture(folderIcon, itm.x+App::text_padding/2, itm.y+App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol);
+			App::renderColorlessTexture(folderIcon, itm.x+App::text_padding/2, itm.y+App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol, back_color);
 		}else {
-			renderTexture(fileIcon, itm.x+App::text_padding/2, itm.y+App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol);
+			App::renderColorlessTexture(fileIcon, itm.x+App::text_padding/2, itm.y+App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol, back_color);
 		}
 		
 		TextRenderer::draw_text(itm.x+TextRenderer::get_text_height()+App::text_padding, itm.y+(float)App::text_padding/2, itm.name, textCol);

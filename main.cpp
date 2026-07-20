@@ -1,4 +1,3 @@
-#include <GL/glew.h>
 #include <curl/curl.h>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -112,6 +111,19 @@ int main(int argc, char* argv[]) {
 	theme.syntax_colors[11] = MakeColor(1, 0, 0, true); // invalid
 	
 	App::theme = theme;
+	
+	App::doMipmapThing = []() -> bool {
+		typedef void (APIENTRY *PFNGLGENERATEMIPAPROC)(GLenum);
+		static auto pfn = (PFNGLGENERATEMIPAPROC)glfwGetProcAddress("glGenerateMipmap");
+		if (!pfn) {
+			pfn = (PFNGLGENERATEMIPAPROC)glfwGetProcAddress("glGenerateMipmapEXT");
+		}
+		if (pfn) {
+			pfn(GL_TEXTURE_2D);
+			return true;
+		}
+		return false;
+	};
 	
 	App::Init();
 	

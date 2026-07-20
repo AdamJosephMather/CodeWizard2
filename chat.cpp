@@ -67,6 +67,7 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 		Label* te = new Label(this);
 		te->background_color = App::theme.extras_background_color;
 		te->setFullText(MST::toMonoString(message));
+		te->rounded = true;
 		message_te.push_back(te);
 		from_user.push_back(true);
 		filesAddList->is_visible_layered = false;
@@ -345,6 +346,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 			auto message = querybox->getFullText();
 			te->background_color = App::theme.extras_background_color;
 			te->setFullText(message);
+			te->rounded = true;
 			
 			message_te.push_back(te);
 			from_user.push_back(true);
@@ -399,6 +401,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 						auto te = new TextEdit(this, [](Widget*){});
 						te->setFullText(trimMonoAscii(segment.content));
 						te->DONT_SCROLL_VERT_CURS = true;
+						te->rounded = true;
 						
 						App::setTextEditHighlighter(te, segment.name);
 						

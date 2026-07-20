@@ -104,6 +104,16 @@ public:
 	static HWND window_handle;
 #endif
 	
+	static std::function<bool()> doMipmapThing;
+
+	static int splashW;
+	static int splashH;
+	static GLuint splashTexture;
+	
+	static ImageInfo prepareTexture(std::string imagepath);
+	static void renderColorlessTexture(GLuint texID, int x, int y, int w, int h, Color* foreground, Color* background);
+	static void renderTexture(GLuint texID, int x, int y, int w, int h, const Color* background);
+	
 	static std::unordered_map<std::string, CW_SyntaxEngine*> highlighters;
 	
 	static int major_version;

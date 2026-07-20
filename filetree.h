@@ -2,7 +2,6 @@
 
 #include "helper_types.h"
 #include "widget.h"
-#include <GLFW/glfw3.h>
 #include <mutex>
 
 struct TreeStructure {
@@ -66,6 +65,4 @@ public:
 	
 	double createVisuals(double pos, double depth, TreeStructure* el);
 private:
-	GLuint prepareTexture(std::string imagepath);
-	void renderTexture(GLuint texID, int x, int y, int w, int h, Color* mainCol);
 };

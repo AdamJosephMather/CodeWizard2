@@ -821,6 +821,28 @@ void CodeEdit::render() {
 			
 			renderExtras();
 		});
+		
+		if (!file && textedit->lines.size() == 1 && textedit->lines[0].line_text.length == 0) {
+			int sW = App::splashW;
+			int sH = App::splashH;
+			
+			if (sW > textedit->t_w*.6) {
+				double change = (double)(textedit->t_w*.6) / sW;
+				sW *= change;
+				sH *= change;
+			}
+			
+			if (sH > textedit->t_h*.6) {
+				double change = (double)(textedit->t_h*.6) / sH;
+				sW *= change;
+				sH *= change;
+			}
+			
+			int sx = textedit->t_x + (textedit->t_w-sW)/2;
+			int sy = textedit->t_y + (textedit->t_h-sH)/2;
+			
+			App::renderTexture(App::splashTexture, sx, sy, sW, sH, App::theme.darker_background_color);
+		}
 	}
 	
 	if (rounded) {
@@ -865,9 +887,8 @@ void CodeEdit::position(int x, int y, int w, int h) {
 		findTextEdit->position(t_x, t_y, t_w, t_h);
 		caseSensitivity->position(t_x, t_y, t_w, t_h);
 	}
-	
-	line_numbers->position(t_x, t_y, t_w, t_h);
 	textedit->position(t_x, t_y, t_w, t_h);
+	line_numbers->position(t_x, t_y, t_w, t_h);
 	if (showErrorsButton->parent == this) {
 		showErrorsButton->position(t_x, t_y, t_w, t_h);
 	}

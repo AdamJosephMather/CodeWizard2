@@ -2012,6 +2012,13 @@ void TextEdit::position(int x, int y, int w, int h) {
 	
 	POS_FUNC(this);
 	
+	if (t_w < 0) {
+		t_w = 0;
+	}
+	if (t_h < 0) {
+		t_h = 0;
+	}
+	
 	if (old_x != t_x || old_y != t_y || old_w != t_w || old_h != t_h) {
 		DO_POSITION = true;
 	}

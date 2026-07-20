@@ -174,6 +174,20 @@ configure_file(${CMAKE_SOURCE_DIR}/folderIcon.png
 # 	)
 # endif()
 
+set(SPLASHSCREEN "${CMAKE_SOURCE_DIR}/build_needs/splashscreen.png")
+
+if(NOT EXISTS "${SPLASHSCREEN}")
+	message(FATAL_ERROR "splashscreen not found at: ${SPLASHSCREEN}")
+endif()
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different
+					"${SPLASHSCREEN}"
+					"$<TARGET_FILE_DIR:${PROJECT_NAME}>/splashscreen.png"
+	COMMENT "Copying SPLASHSCREEN to output folder"
+	VERBATIM
+)
+
 if(MSVC AND WIN32)
 	set(VC_REDIST_EXE "${CMAKE_SOURCE_DIR}/build_needs/vc_redist.x64.exe")
 

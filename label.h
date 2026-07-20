@@ -32,6 +32,8 @@ public:
 	int old_width = -1;
 	
 	Color* background_color = App::theme.darker_background_color;
+	
+	bool rounded = false;
 private:
 	std::mutex positioning;
 };

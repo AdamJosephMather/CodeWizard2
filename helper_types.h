@@ -1,5 +1,7 @@
 #pragma once
 
+#include <GLFW/glfw3.h>
+
 #ifdef _WIN32
 #include <corecrt_io.h>
 #include <process.h>
@@ -7,7 +9,6 @@
 #else
 #include <unistd.h>
 #include <string>
-#include <GLFW/glfw3.h>
 
 extern GLFWwindow* g_main_window;
 
@@ -42,6 +43,12 @@ using SearchFileKey  = std::pair<std::string, std::string>;
 using SearchMatch    = std::pair<int, std::string>;
 using SearchMatchVec = std::vector<SearchMatch>;
 using SearchResult   = std::map<SearchFileKey, SearchMatchVec>;
+
+struct ImageInfo {
+	GLuint tex;
+	int imgW;
+	int imgH;
+};
 
 struct FileIndexResult {
 	std::vector<std::string> indexedNames;       // just the file names

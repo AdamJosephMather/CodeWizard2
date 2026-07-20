@@ -45,9 +45,15 @@ bool Label::on_mouse_button_event(int button, int action, int mods) {
 
 void Label::render() {
 	if (rect) {
-		App::DrawRect(t_x, t_y, t_w, t_h, background_color);
+		if (rounded) {
+			App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, background_color);
+		}else{
+			App::DrawRect(t_x, t_y, t_w, t_h, background_color);
+		}
 	}
-	if (border) {
+	if (border && rounded) {
+		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
+	}else if (border) {
 		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
 	}
 	

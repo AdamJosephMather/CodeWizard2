@@ -369,12 +369,13 @@ std::string Process::errorString() const {
 
 // URL conversion functions
 std::string LanguageServerClient::fromLocalFile(const std::string& path) {
+	const std::string backend_path = FileBackends::current()->toLspPath(path);
 #ifdef _WIN32
-	std::string result = "file:///" + path;
+	std::string result = "file:///" + backend_path;
 	std::replace(result.begin(), result.end(), '\\', '/');
 	return result;
 #else
-	return "file://" + path;
+	return "file://" + backend_path;
 #endif
 }
 

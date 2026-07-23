@@ -29,8 +29,9 @@ void ImageView::openFile(FileInfo* f) {
 	if (!file) {
 		return;
 	}
+	if (!file->backend) file->backend = FileBackends::current();
 	
-	auto info = App::prepareTexture(file->filepath.c_str());
+	auto info = App::prepareTexture(file->filepath.c_str(), file->backend);
 	if (info.tex == (GLuint)-1) {
 		App::displayToast(MST::toMonoString("Could not load texture."));
 		hasTexture = false;

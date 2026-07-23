@@ -617,6 +617,7 @@ void CodeEdit::openFile(FileInfo* f) {
 	std::unique_lock<std::mutex> lock2(saving_lock);
 	
 	file = f; // set it after the locks are in place
+	if (file && !file->backend) file->backend = FileBackends::current();
 	
 	REQUESTING_FIXIT = false;
 	DO_RENDER = 3;
@@ -628,7 +629,10 @@ void CodeEdit::openFile(FileInfo* f) {
 	
 	detectLanguage();
 	
-	if (!fileExists(path)) {
+	bool path_exists = false;
+	std::string backend_error;
+	if (!file->backend->exists(path, path_exists, backend_error) || !path_exists) {
+		file->is_opening = false;
 		file = nullptr;
 		textedit->setFullText(MST::toMonoString("File does not exist: "+path));
 		onTextChanged(textedit);
@@ -636,7 +640,9 @@ void CodeEdit::openFile(FileInfo* f) {
 		return;
 	}
 	
-	if (isBinaryFile(path)){
+	bool path_is_binary = true;
+	if (!file->backend->isBinary(path, path_is_binary, backend_error) || path_is_binary){
+		file->is_opening = false;
 		file = nullptr;
 		textedit->setFullText(MST::toMonoString("File detected as binary file: "+path+"\nDID NOT OPEN"));
 		onTextChanged(textedit);
@@ -645,10 +651,11 @@ void CodeEdit::openFile(FileInfo* f) {
 	}
 	
 	bool worked = true;
-	MST::MonoString text = App::readFileToMonoString(path, worked);
+	MST::MonoString text = App::readFileToMonoString(path, worked, file->backend);
 	
 	if (worked) {
-		last_file_mod_time = std::filesystem::last_write_time(path);
+		std::string metadata_error;
+		file->backend->modificationTime(path, last_file_mod_time, metadata_error);
 		
 		textedit->setFullText(text);
 		onTextChanged(textedit);
@@ -667,13 +674,14 @@ void CodeEdit::openFile(FileInfo* f) {
 			App::lsp_client_map[lsp]->openDocument(file->filepath, App::languagemap[language].name, str);
 		}
 	}else {
+		file->is_opening = false;
 		file = nullptr;
 		textedit->setFullText(MST::toMonoString("Failed to open file: "+path+"\n\n")+text);
 		onTextChanged(textedit);
 		last_file_mod_time = {};
 	}
 	
-	file->is_opening = false;
+	if (file) file->is_opening = false;
 }
 
 int CodeEdit::indentIdentifierAfterLine(MST::MonoString line, MST::MonoString nextline) {
@@ -936,6 +944,40 @@ void CodeEdit::triggerSaveAs() {
 		default_path = file->filepath;
 	}
 
+	if (FileBackends::isRemote()) {
+		App::requestString("Remote save path?", default_path, [this](MST::MonoString selected) {
+			const std::string filePath = MST::toString(selected);
+			if (filePath.empty()) {
+				App::commandUnfocused();
+				return;
+			}
+			FileInfo *f = new FileInfo();
+			f->filepath = filePath;
+			f->filename = FileBackends::current()->filename(filePath);
+			f->backend = FileBackends::current();
+			std::unique_lock<std::mutex> lock(saving_lock);
+			FUPDATER(this, f);
+			file = f;
+			std::string metadata_error;
+			file->backend->modificationTime(file->filepath, last_file_mod_time, metadata_error);
+			detectLanguage();
+			App::reclear = 3;
+			textedit->DO_POSITION = true;
+			DO_RENDER = 3;
+			was_in_a_file = false;
+			f->is_opening = false;
+			madeChangeBetweenSaves = true;
+			lock.unlock();
+			save();
+			if (App::lsp_client_map[lsp]){
+				std::string str = MST::toBastardizedStringUtf16Aligned(textedit->getFullText());
+				App::lsp_client_map[lsp]->openDocument(file->filepath, App::languagemap[language].name, str);
+			}
+			App::commandUnfocused();
+		});
+		return;
+	}
+
 	const char* default_path_ptr = default_path.empty() ? NULL : default_path.c_str();
 	
 	const char * fp = tinyfd_saveFileDialog(
@@ -955,6 +997,7 @@ void CodeEdit::triggerSaveAs() {
 		FileInfo *f = new FileInfo();
 		f->filepath = filePath;
 		f->filename = filename;
+		f->backend = FileBackends::current();
 		
 		std::unique_lock<std::mutex> lock(saving_lock);
 		
@@ -962,8 +1005,8 @@ void CodeEdit::triggerSaveAs() {
 		
 		file = f;
 		
-		std::error_code ec;
-		last_file_mod_time = std::filesystem::last_write_time(file->filepath, ec); // a hack to think we edited the file instead of whatever happened to it.
+		std::string metadata_error;
+		file->backend->modificationTime(file->filepath, last_file_mod_time, metadata_error);
 		
 		detectLanguage();
 		
@@ -993,8 +1036,8 @@ void CodeEdit::overwrite_file() {
 	DO_RENDER = 3;
 	App::RemoveWidgetFromParent(broken_state_menu);
 	
-	std::error_code ec;
-	last_file_mod_time = std::filesystem::last_write_time(file->filepath, ec); // a hack to think we edited the file instead of whatever happened to it.
+	std::string metadata_error;
+	file->backend->modificationTime(file->filepath, last_file_mod_time, metadata_error);
 	madeChangeBetweenSaves = true;
 	was_in_a_file = false;
 	save();
@@ -1016,10 +1059,11 @@ void CodeEdit::save() {
 	if (file && !file->is_opening) {
 		std::string filepath = file->filepath;
 		
-		std::error_code ec;
-		auto current = std::filesystem::last_write_time(file->filepath, ec);
+		std::string metadata_error;
+		std::int64_t current = 0;
+		const bool have_mtime = file->backend->modificationTime(file->filepath, current, metadata_error);
 		
-		if (!ec) {
+		if (have_mtime) {
 			was_in_a_file = true;
 			
 			if (current != last_file_mod_time) { // some other process edited the file since we touched it
@@ -1052,13 +1096,12 @@ void CodeEdit::save() {
 		
 		{
 			std::string err;
-			std::filesystem::path toPath = filepath; // ensure includes <filesystem>
-		
-			if (!atomicWriteReplace(toPath, str, &err)) {
-				std::cerr << "Atomic save failed for " << toPath << ": " << err << "\n";
+			std::vector<std::uint8_t> bytes(str.begin(), str.end());
+			if (!file->backend->writeFile(filepath, bytes, err)) {
+				std::cerr << "Atomic save failed for " << filepath << ": " << err << "\n";
 				return;
 			}
-			last_file_mod_time = std::filesystem::last_write_time(file->filepath, ec);
+			file->backend->modificationTime(file->filepath, last_file_mod_time, err);
 			madeChangeBetweenSaves = false;
 		}
 		
@@ -2081,12 +2124,10 @@ void CodeEdit::gotoDef(int id, int line1, int character1, int line, int characte
 		textedit->tryingToEnsureCursorPos = true;
 	}else {
 		if (auto edtr = dynamic_cast<Editor*>(parent)) {
-			std::filesystem::path fullPath = pointing_to;
-			std::string filename = fullPath.filename().string();
-			
 			FileInfo* finfo = new FileInfo();
 			finfo->filepath = pointing_to;
-			finfo->filename = filename;
+			finfo->filename = FileBackends::current()->filename(pointing_to);
+			finfo->backend = FileBackends::current();
 			
 			edtr->fileOpenRequested(finfo, line1, character1, line, character);
 		}
@@ -2294,14 +2335,13 @@ void CodeEdit::applyOtherFileEdits(const std::vector<FileEdit>& edits, const std
 		}
 		
 		// file not open — apply edits directly on disk
-		std::filesystem::path p = std::filesystem::path(targetPath);
-		
-		std::ifstream in(p);
-		std::vector<std::string> lines;
-		std::string line;
-		while (std::getline(in, line))
-			lines.push_back(line);
-		in.close();
+		std::vector<std::uint8_t> file_bytes;
+		std::string backend_error;
+		if (!FileBackends::current()->readFile(targetPath, file_bytes, backend_error)) {
+			App::displayToast(MST::toMonoString("LSP edit read failed: " + backend_error));
+			continue;
+		}
+		std::vector<std::string> lines = splitLines(std::string(file_bytes.begin(), file_bytes.end()));
 	
 		std::vector<EditDoc> sorted = fe.edits;
 		std::sort(sorted.begin(), sorted.end(), [](auto const& a, auto const& b){
@@ -2312,9 +2352,15 @@ void CodeEdit::applyOtherFileEdits(const std::vector<FileEdit>& edits, const std
 		for (auto& te : sorted)
 			applyEditToLines(lines, te);
 		
-		std::ofstream out(p, std::ios::trunc);
-		for (auto& L : lines)
-			out << L << "\n";
+		std::string updated;
+		for (std::size_t i = 0; i < lines.size(); ++i) {
+			if (i != 0) updated.push_back('\n');
+			updated += lines[i];
+		}
+		std::vector<std::uint8_t> updated_bytes(updated.begin(), updated.end());
+		if (!FileBackends::current()->writeFile(targetPath, updated_bytes, backend_error)) {
+			App::displayToast(MST::toMonoString("LSP edit write failed: " + backend_error));
+		}
 	}
 }
 

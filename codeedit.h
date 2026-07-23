@@ -83,7 +83,7 @@ public:
 //	bool is_chauffeur = false;
 	std::vector<json> code_actions = {};
 	ListBox* errorMenu;
-	std::filesystem::file_time_type last_file_mod_time = {};
+	std::int64_t last_file_mod_time = 0;
 	
 	bool on_key_event(int key, int scancode, int action, int mods);
 	bool on_char_event(unsigned int keycode);

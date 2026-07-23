@@ -272,7 +272,18 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"Auto Clean Up .TMP Files",
 			"use_auto_tmp_clean",
 			true
+		),
+		makeString(
+			"SSH Key Path",
+			"ssh_key_path",
+			""
+		),
+		makeString(
+			"SSH Helper Path",
+			"ssh_helper_path",
+			""
 		)
+		
 //		makeBool(
 //			"Use Chauffeur",
 //			"use_chauffeur",

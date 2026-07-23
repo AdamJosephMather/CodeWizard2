@@ -185,6 +185,7 @@ private:
 	mutable std::mutex m_stateMutex;
 	std::mutex m_resizeMutex;
 	std::atomic<bool> m_terminalReady{false};
+	std::string m_remoteCommand;
 
 	std::vector<OurCell> m_viewCells;
 	bool m_renderSnapshotDirty{true};

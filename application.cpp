@@ -21,6 +21,8 @@
 #include "languageserverclient.h"
 #include "textedit.h"
 #include "toast.h"
+#include "filetree.h"
+#include "sshfilebackend.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -308,7 +310,15 @@ bool App::Init() {
 	
 	Verify::setup(password);
 	
-	setFolder(settings->getValue("current_folder", getExecutableDir()));
+	std::string initial_folder = settings->getValue("current_folder", getExecutableDir());
+	BackendFileStat initial_info;
+	std::string initial_error;
+	if (!FileBackends::current()->stat(initial_folder, initial_info, initial_error) ||
+		!initial_info.exists || !initial_info.is_directory) {
+		initial_folder = settings->getValue("ssh_previous_local_folder", getExecutableDir());
+		settings->setValue("current_folder", initial_folder);
+	}
+	setFolder(initial_folder);
 	
 	darkmode = settings->getValue("dark_mode", true);
 	WINDOW_WIDTH = settings->getValue("window_width", 1200);
@@ -862,16 +872,28 @@ void App::DrawRect(int x, int y, int w, int h, Color* color) {
 	glEnd();
 }
 
-ImageInfo App::prepareTexture(std::string imagepath) {
+ImageInfo App::prepareTexture(std::string imagepath, std::shared_ptr<FileBackend> backend) {
 	int channels;
 	int imgW;
 	int imgH;
 	
-	unsigned char* data = stbi_load(
-		imagepath.c_str(),
-		&imgW, &imgH, &channels,
-		STBI_rgb_alpha
-	);
+	unsigned char* data = nullptr;
+	std::vector<std::uint8_t> remote_bytes;
+	if (backend && backend->isRemote()) {
+		std::string error;
+		if (backend->readFile(imagepath, remote_bytes, error) &&
+			remote_bytes.size() <= static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+			data = stbi_load_from_memory(
+				remote_bytes.data(), static_cast<int>(remote_bytes.size()),
+				&imgW, &imgH, &channels, STBI_rgb_alpha);
+		}
+	} else {
+		data = stbi_load(
+			imagepath.c_str(),
+			&imgW, &imgH, &channels,
+			STBI_rgb_alpha
+		);
+	}
 	
 	if (!data) {
 		return {(GLuint)-1, 0, 0};
@@ -1917,6 +1939,14 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 }
 
 void App::openFolderSelector() {
+	if (FileBackends::isRemote()) {
+		const std::string current = settings->getValue("current_folder", FileBackends::current()->homeDirectory());
+		requestString("Remote folder path?", current, [](MST::MonoString path) {
+			if (path.length != 0) setFolder(MST::toString(path));
+			commandUnfocused();
+		});
+		return;
+	}
 	std::string fldr = settings->getValue("current_folder", std::string());
 	
 	const char * fpr = tinyfd_selectFolderDialog(
@@ -1930,18 +1960,142 @@ void App::openFolderSelector() {
 	commandUnfocused();
 }
 
-void App::setFolder(std::string fpr) {
-	std::filesystem::path new_path(fpr);
+void App::requestString(const std::string& label, const std::string& initial, StringGivenFunc callback) {
+	ON_STRING_GIVEN = std::move(callback);
+	REQUESTING_STRING = true;
+	STRING_REQUEST_TEXTEDIT->setFullText(MST::toMonoString(initial));
+	STRING_REQUEST_TEXTEDIT->mode = 'i';
+	STRING_REQUEST_LABEL->setFullText(MST::toMonoString(label));
+	MoveWidget(STRING_REQUEST_RECTANGLE, rootelement);
+	MoveWidget(STRING_REQUEST_TEXTEDIT, rootelement);
+	MoveWidget(STRING_REQUEST_LABEL, rootelement);
+	before_reps_request = activeLeafNode;
+	setActiveLeafNode(STRING_REQUEST_TEXTEDIT);
+	reclear = 3;
+}
 
-	if (!std::filesystem::exists(new_path) || !std::filesystem::is_directory(new_path)) {
-		return; 
+namespace {
+void refreshFileTrees(Widget* widget) {
+	if (!widget) return;
+	if (auto tree = dynamic_cast<FileTree*>(widget)) tree->save();
+	for (auto* child : widget->children) refreshFileTrees(child);
+}
+
+bool parseSSHTarget(const std::string& input, SSHConnectionOptions& options, std::string& error) {
+	std::string target = trim(input);
+	if (target.empty()) {
+		error = "SSH target is empty";
+		return false;
+	}
+	const auto at = target.rfind('@');
+	if (at != std::string::npos) {
+		options.username = target.substr(0, at);
+		target = target.substr(at + 1);
+	}
+	if (!target.empty() && target.front() == '[') {
+		const auto close = target.find(']');
+		if (close == std::string::npos) {
+			error = "Invalid bracketed SSH hostname";
+			return false;
+		}
+		options.hostname = target.substr(1, close - 1);
+		if (close + 1 < target.size() && target[close + 1] == ':') {
+			try {
+				const int port = std::stoi(target.substr(close + 2));
+				if (port < 1 || port > 65535) throw std::out_of_range("port");
+				options.port = static_cast<unsigned short>(port);
+			} catch (...) {
+				error = "Invalid SSH port";
+				return false;
+			}
+		}
+	} else {
+		const auto colon = target.rfind(':');
+		if (colon != std::string::npos && target.find(':') == colon) {
+			try {
+				const int port = std::stoi(target.substr(colon + 1));
+				if (port < 1 || port > 65535) throw std::out_of_range("port");
+				options.port = static_cast<unsigned short>(port);
+				target.resize(colon);
+			} catch (...) {
+				error = "Invalid SSH port";
+				return false;
+			}
+		}
+		options.hostname = target;
+	}
+	if (options.hostname.empty()) {
+		error = "SSH hostname is empty";
+		return false;
+	}
+	return true;
+}
+} // namespace
+
+void App::connectSSH() {
+	const std::string previous = settings->getValue("ssh_target", std::string());
+	requestString("SSH target (user@host[:port])?", previous, [](MST::MonoString value) {
+		SSHConnectionOptions options;
+		std::string error;
+		if (!parseSSHTarget(MST::toString(value), options, error)) {
+			displayToast(MST::toMonoString(error));
+			return;
+		}
+		options.key_path = settings->getValue("ssh_key_path", std::string());
+		options.helper_path = settings->getValue("ssh_helper_path", std::string("cwremote"));
+		const std::string target = MST::toString(value);
+		requestString("SSH password (blank for key/agent)?", "", [options, target](MST::MonoString password) mutable {
+			options.password = MST::toString(password);
+			STRING_REQUEST_TEXTEDIT->setFullText(MST::MonoString{});
+			std::string connect_error;
+			auto backend = SSHFileBackend::connect(options, connect_error);
+			// Do not retain the password after OpenSSH has started.
+			options.password.clear();
+			if (!backend) {
+				std::cout << "SSH connection failed: " << connect_error << "\n";
+				displayToast(MST::toMonoString("SSH connection failed: " + connect_error));
+				return;
+			}
+			if (!FileBackends::isRemote()) {
+				settings->setValue("ssh_previous_local_folder", settings->getValue("current_folder", getExecutableDir()));
+			}
+			settings->setValue("ssh_target", target);
+			FileBackends::use(backend);
+			const std::string remote_folder = backend->remoteInfo().cwd.empty()
+				? backend->homeDirectory()
+				: backend->remoteInfo().cwd;
+			setFolder(remote_folder);
+			refreshFileTrees(rootelement);
+			displayToast(MST::toMonoString("Connected to " + backend->displayName()));
+			commandUnfocused();
+		});
+	});
+}
+
+void App::disconnectSSH() {
+	if (!FileBackends::isRemote()) {
+		displayToast(MST::toMonoString("No SSH connection is active."));
+		return;
+	}
+	const std::string local_folder = settings->getValue("ssh_previous_local_folder", getExecutableDir());
+	FileBackends::useLocal();
+	setFolder(local_folder);
+	refreshFileTrees(rootelement);
+	displayToast(MST::toMonoString("SSH connection closed."));
+	commandUnfocused();
+}
+
+void App::setFolder(std::string fpr) {
+	BackendFileStat info;
+	std::string backend_error;
+	if (!FileBackends::current()->stat(fpr, info, backend_error) || !info.exists || !info.is_directory) {
+		return;
 	}
 
-	std::error_code ec;
-	std::filesystem::current_path(new_path, ec);
-	
-	if (ec) {
-		return;
+	if (!FileBackends::isRemote()) {
+		std::error_code ec;
+		std::filesystem::current_path(std::filesystem::path(fpr), ec);
+		if (ec) return;
 	}
 	
 	std::string oldfolder = settings->getValue("current_folder", getExecutableDir());
@@ -2464,7 +2618,11 @@ void App::executeCommandPaletteAction() {
 		// this can happen with the sep between files already open and all files.
 		return;
 	}if (filepath.at(0) == ':') { // it's a command
-		if (filepath == ":Git Push") {
+		if (filepath == ":Connect via SSH") {
+			connectSSH();
+		}else if (filepath == ":Disconnect SSH") {
+			disconnectSSH();
+		}else if (filepath == ":Git Push") {
 			gitPush();
 		}else if (filepath == ":Git Pull") {
 			gitPull();
@@ -2514,6 +2672,7 @@ void App::openFromCMD(std::string filepath, std::string filename, int line) {
 	FileInfo* finfo = new FileInfo();
 	finfo->filepath = filepath;
 	finfo->filename = filename;
+	finfo->backend = FileBackends::current();
 	
 	auto openInEditor = [&](Editor* edtr) {
 		if (line != -1) {
@@ -2583,9 +2742,39 @@ void App::indexFiles() {
 		INDEXED_FILES.indexedNames.push_back(fInfo[0]);
 		dontshowagain.insert(absPath);
 	}
+
+	if (FileBackends::isRemote()) {
+		auto backend = FileBackends::current();
+		while (!dirs.empty() && seen < maxFiles) {
+			const auto curDir = dirs.front();
+			dirs.pop();
+			std::vector<BackendDirectoryEntry> entries;
+			std::string list_error;
+			if (!backend->listDirectory(curDir, entries, list_error)) continue;
+			for (const auto& entry : entries) {
+				if (seen >= maxFiles) break;
+				const std::string absPath = backend->join(curDir, entry.name);
+				if (entry.is_directory) {
+					if (!entry.name.empty() && entry.name[0] != '.') dirs.push(absPath);
+					continue;
+				}
+				if (dontshowagain.count(absPath)) continue;
+				INDEXED_FILES.fullPaths.push_back(absPath);
+				std::string rel = absPath.size() > rootLen ? absPath.substr(rootLen) : absPath;
+				if (rel.size() > maxDisplayChars) {
+					rel = rel.substr(rel.size() - maxDisplayChars);
+					const auto slash = rel.find_first_of("/\\");
+					if (slash != std::string::npos) rel = rel.substr(slash);
+				}
+				INDEXED_FILES.displayPaths.push_back(MST::toMonoString(rel));
+				INDEXED_FILES.indexedNames.push_back(entry.name);
+				++seen;
+			}
+		}
+	}
 	
 	// 1) BFS through the tree, up to maxFiles files
-	while (!dirs.empty() && seen < maxFiles) {
+	while (!FileBackends::isRemote() && !dirs.empty() && seen < maxFiles) {
 		auto curDir = dirs.front(); 
 		dirs.pop();
 		
@@ -2633,7 +2822,7 @@ void App::indexFiles() {
 	}
 	
 	static const std::vector<std::string> commands = {
-		"Git Push","Git Pull","Git Force Pull","Help","Save Theme Settings To File","Load Theme Settings From File","Restart Language Servers (LSPs)","Open `languages.json` file","Test Toast Box","Test Text Line","Run FixIt (Spaces to Tabs)","Undo FixIt (Tabs to Spaces)","How Many Widgets Currently?"
+		"Connect via SSH","Disconnect SSH","Git Push","Git Pull","Git Force Pull","Help","Save Theme Settings To File","Load Theme Settings From File","Restart Language Servers (LSPs)","Open `languages.json` file","Test Toast Box","Test Text Line","Run FixIt (Spaces to Tabs)","Undo FixIt (Tabs to Spaces)","How Many Widgets Currently?"
 	};
 
 	for (auto const& cmd : commands) {
@@ -2894,8 +3083,12 @@ void App::fixAllTmpFiles() {
 	}
 }
 
-MST::MonoString App::readFileToMonoString(const std::string& filename, bool& worked) {
+MST::MonoString App::readFileToMonoString(
+	const std::string& filename,
+	bool& worked,
+	std::shared_ptr<FileBackend> backend) {
 	worked = false;
+	if (!backend) backend = FileBackends::current();
 
 	auto errorString = [](const char* msg) -> MST::MonoString {
 		return MST::toMonoString(std::string(msg));
@@ -2964,31 +3157,15 @@ MST::MonoString App::readFileToMonoString(const std::string& filename, bool& wor
 	};
 
 	for (int attempt = 0; attempt < 5; attempt++) {
-		std::ifstream file(filename, std::ios::binary | std::ios::ate);
-		if (!file.is_open()) {
-			return errorString("Failed to open file - file.is_open");
+		std::vector<std::uint8_t> rawBuffer;
+		std::string backendError;
+		if (!backend->readFile(filename, rawBuffer, backendError)) {
+			return MST::toMonoString("Failed to open file - " + backendError);
 		}
-
-		std::streamsize fileSize = file.tellg();
-		if (fileSize < 0) {
-			file.close();
-			return errorString("Failed to open file - fileSize < 0");
-		}
-
-		if (fileSize > static_cast<std::streamsize>(std::numeric_limits<int32_t>::max())) {
-			file.close();
+		if (rawBuffer.size() > static_cast<std::size_t>(std::numeric_limits<int32_t>::max())) {
 			return errorString("Failed to open file - file too large for ICU converter");
 		}
-
-		file.seekg(0, std::ios::beg);
-
-		std::vector<char> buffer(static_cast<size_t>(fileSize));
-		if (fileSize > 0 && !file.read(buffer.data(), fileSize)) {
-			file.close();
-			return errorString("Failed to open file - couldn't read data");
-		}
-
-		file.close();
+		std::vector<char> buffer(rawBuffer.begin(), rawBuffer.end());
 
 		// Empty file on disk -> try again in case another process is writing it.
 		if (buffer.empty()) {
@@ -3152,14 +3329,10 @@ void searchTheseFiles(const std::string& st, std::vector<std::string> files, Sea
 		if (isBinaryFile(path))
 			continue;
 		
-		std::ifstream in(path, std::ios::binary | std::ios::ate);
-		if (!in) continue;
-		auto size = in.tellg();
-		in.seekg(0);
-		
-		std::string buf;
-		buf.resize(size);
-		in.read(&buf[0], size);
+		std::vector<std::uint8_t> bytes;
+		std::string read_error;
+		if (!FileBackends::current()->readFile(path, bytes, read_error)) continue;
+		std::string buf(bytes.begin(), bytes.end());
 		
 		int buflen = (int)buf.size();
 		

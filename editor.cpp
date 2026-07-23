@@ -215,6 +215,22 @@ void Editor::closeFile(int file_id) {
 
 void Editor::fileOpenRequested(FileInfo* f, int lns, int chrs, int ln, int chr) {
 	if (!f) {
+		if (FileBackends::isRemote()) {
+			App::requestString("Remote file path?", App::settings->getValue("current_folder", FileBackends::current()->homeDirectory()),
+				[this, lns, chrs, ln, chr](MST::MonoString selected) {
+					const std::string path = MST::toString(selected);
+					if (path.empty()) {
+						App::commandUnfocused();
+						return;
+					}
+					auto* remote_file = new FileInfo();
+					remote_file->filepath = path;
+					remote_file->filename = FileBackends::current()->filename(path);
+					remote_file->backend = FileBackends::current();
+					fileOpenRequested(remote_file, lns, chrs, ln, chr);
+				});
+			return;
+		}
 		const char * fp = tinyfd_openFileDialog(
 			"Select a file",    // dialog title
 			"",                 // default path and filename
@@ -231,6 +247,7 @@ void Editor::fileOpenRequested(FileInfo* f, int lns, int chrs, int ln, int chr) 
 			f = new FileInfo();
 			f->filepath = filePath;
 			f->filename = filename;
+			f->backend = FileBackends::current();
 		}else{
 			App::commandUnfocused();
 			return;

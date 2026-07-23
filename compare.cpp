@@ -21,6 +21,21 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 		btn->t_y = t_y+App::text_padding;
 	},  [&](Button* btn){
 		// onclick
+		if (FileBackends::isRemote()) {
+			App::requestString("First remote file?", App::settings->getValue("current_folder", FileBackends::current()->homeDirectory()),
+				[this, btn](MST::MonoString selected) {
+					const std::string filePath = MST::toString(selected);
+					if (filePath.empty()) return;
+					const std::string filename = FileBackends::current()->filename(filePath);
+					f1 = new FileInfo();
+					f1->filepath = filePath;
+					f1->filename = filename;
+					btn->BUTTON_LABEL = MST::toMonoString(filename);
+					cb1Button->BUTTON_LABEL = MST::toMonoString("Use Clipboard");
+					reload();
+				});
+			return;
+		}
 		const char * fp1 = tinyfd_openFileDialog(
 			"Select first file", // dialog title
 			"",                  // default path and filename
@@ -69,6 +84,21 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 		btn->t_y = t_y+App::text_padding;
 	},  [&](Button* btn){
 		// onclick
+		if (FileBackends::isRemote()) {
+			App::requestString("Second remote file?", App::settings->getValue("current_folder", FileBackends::current()->homeDirectory()),
+				[this, btn](MST::MonoString selected) {
+					const std::string filePath = MST::toString(selected);
+					if (filePath.empty()) return;
+					const std::string filename = FileBackends::current()->filename(filePath);
+					f2 = new FileInfo();
+					f2->filepath = filePath;
+					f2->filename = filename;
+					btn->BUTTON_LABEL = MST::toMonoString(filename);
+					cb2Button->BUTTON_LABEL = MST::toMonoString("Use Clipboard");
+					reload();
+				});
+			return;
+		}
 		const char * fp2 = tinyfd_openFileDialog(
 			"Select second file", // dialog title
 			"",                   // default path and filename

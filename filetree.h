@@ -2,7 +2,9 @@
 
 #include "helper_types.h"
 #include "widget.h"
+#include <atomic>
 #include <mutex>
+#include <thread>
 
 struct TreeStructure {
 	MST::MonoString name;
@@ -28,6 +30,7 @@ struct Visual {
 class FileTree : public Widget {
 public:
 	FileTree(Widget* parent);
+	~FileTree() override;
 	
 	std::mutex tree_mutex;
 	
@@ -62,7 +65,11 @@ public:
 	
 	void fillOutTree(TreeStructure* el);
 	void deleteTree(TreeStructure* el);
+	void refreshAsync();
 	
 	double createVisuals(double pos, double depth, TreeStructure* el);
 private:
+	void fillOutTreeImpl(TreeStructure* el, const std::vector<std::string>& expanded, const std::shared_ptr<FileBackend>& backend);
+	std::atomic<bool> refresh_in_progress{false};
+	std::thread refresh_thread;
 };

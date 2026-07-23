@@ -94,6 +94,7 @@ void StatusBar::render() {
 		double side = 0; // far left (for hexeditor and imageview which have no other items on the left
 		
 		std::string filepath;
+		std::shared_ptr<FileBackend> file_backend = FileBackends::current();
 		MST::MonoString filename;
 		if (w != e->editors.end()) {
 			if (auto ce = dynamic_cast<CodeEdit*>(w->second)) {
@@ -103,6 +104,7 @@ void StatusBar::render() {
 						filename += MST::toMonoString("*");
 					}
 					filepath = ce->file->filepath;
+					if (ce->file->backend) file_backend = ce->file->backend;
 				}else{
 					filename = MST::toMonoString("Untitled*");
 				}
@@ -111,6 +113,7 @@ void StatusBar::render() {
 				if (iv->file && iv->file->filename != "") {
 					filename = MST::toMonoString(iv->file->filename);
 					filepath = iv->file->filepath;
+					if (iv->file->backend) file_backend = iv->file->backend;
 				}else{
 					filename = MST::toMonoString("Untitled"); // not sure how you'd get here...
 				}
@@ -123,6 +126,7 @@ void StatusBar::render() {
 				if (he->file && he->file->filename != "") {
 					filename = MST::toMonoString(he->file->filename);
 					filepath = he->file->filepath;
+					if (he->file->backend) file_backend = he->file->backend;
 				}else{
 					filename = MST::toMonoString("Untitled"); // not sure how you'd get here...
 				}
@@ -136,10 +140,11 @@ void StatusBar::render() {
 		});
 		
 		if (!filepath.empty()) {
-			std::filesystem::path p(filepath);
-			if (std::filesystem::exists(p)) {
+			BackendFileStat info;
+			std::string stat_error;
+			if (file_backend->stat(filepath, info, stat_error) && info.exists) {
 				try {
-					auto size = std::filesystem::file_size(p);
+					auto size = info.size;
 					std::string sizeStr;
 					if (size < 1024) sizeStr = std::to_string(size) + " B";
 					else if (size < 1024 * 1024) sizeStr = std::to_string(size / 1024) + " KB";

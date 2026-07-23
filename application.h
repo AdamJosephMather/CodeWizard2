@@ -110,7 +110,7 @@ public:
 	static int splashH;
 	static GLuint splashTexture;
 	
-	static ImageInfo prepareTexture(std::string imagepath);
+	static ImageInfo prepareTexture(std::string imagepath, std::shared_ptr<FileBackend> backend = nullptr);
 	static void renderColorlessTexture(GLuint texID, int x, int y, int w, int h, Color* foreground, Color* background);
 	static void renderTexture(GLuint texID, int x, int y, int w, int h, const Color* background, float alpha=1.0f);
 	
@@ -148,6 +148,9 @@ public:
 	static void checkForUpdates();
 	static bool isNewer(std::vector<int> check, std::vector<int> current);
 	static void setFolder(std::string fpr);
+	static void requestString(const std::string& label, const std::string& initial, StringGivenFunc callback);
+	static void connectSSH();
+	static void disconnectSSH();
 	
 	static void setTextEditHighlighter(Widget* te, std::string name);
 	
@@ -294,7 +297,10 @@ public:
 	static void repeatEveryXSeconds(int intervalSeconds, std::function<void()> task);
 	static void save();
 	static void fixAllTmpFiles();
-	static MST::MonoString readFileToMonoString(const std::string& filename, bool& worked);
+	static MST::MonoString readFileToMonoString(
+		const std::string& filename,
+		bool& worked,
+		std::shared_ptr<FileBackend> backend = nullptr);
 	
 	static void launchCommandNonBlocking(const std::string& command);
 	static void commandUnfocused();

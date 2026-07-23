@@ -1,4 +1,6 @@
 #include "terminal.h"
+#include "filebackend.h"
+#include "sshfilebackend.h"
 #include "application.h"
 
 #include <algorithm>
@@ -14,6 +16,88 @@
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0A00
 #endif
+
+namespace {
+std::string quotePosixTerminalArg(const std::string& value) {
+	std::string result = "'";
+	for (const char c : value) result += c == '\'' ? "'\\''" : std::string(1, c);
+	return result + "'";
+}
+
+std::vector<std::string> remoteTerminalArguments(const SSHFileBackend& backend) {
+	const auto& options = backend.connectionOptions();
+	const auto& info = backend.remoteInfo();
+	const std::string cwd = App::settings
+		? App::settings->getValue("current_folder", info.cwd)
+		: info.cwd;
+	std::vector<std::string> arguments{
+		"ssh", "-tt", "-p", std::to_string(options.port)
+	};
+	if (!options.key_path.empty()) {
+		arguments.push_back("-i");
+		arguments.push_back(options.key_path);
+	}
+	arguments.push_back("--");
+	arguments.push_back(options.username.empty() ? options.hostname : options.username + "@" + options.hostname);
+	if (info.os != "windows" && !cwd.empty()) {
+		const std::string shell = info.shell.empty() ? "/bin/sh" : info.shell;
+		arguments.push_back("cd -- " + quotePosixTerminalArg(cwd) + " && exec " + quotePosixTerminalArg(shell) + " -l");
+	}
+	return arguments;
+}
+
+#ifdef _WIN32
+std::wstring widenTerminalArg(const std::string& value) {
+	if (value.empty()) return {};
+	const int length = MultiByteToWideChar(CP_UTF8, 0, value.data(), static_cast<int>(value.size()), nullptr, 0);
+	if (length <= 0) return {};
+	std::wstring result(static_cast<std::size_t>(length), L'\0');
+	MultiByteToWideChar(CP_UTF8, 0, value.data(), static_cast<int>(value.size()), result.data(), length);
+	return result;
+}
+
+std::wstring quoteWindowsTerminalArg(const std::string& value) {
+	const std::wstring source = widenTerminalArg(value);
+	if (source.find_first_of(L" \t\n\v\"") == std::wstring::npos) return source;
+	std::wstring result = L"\"";
+	std::size_t slashes = 0;
+	for (const wchar_t c : source) {
+		if (c == L'\\') {
+			++slashes;
+		} else if (c == L'"') {
+			result.append(slashes * 2 + 1, L'\\');
+			result.push_back(c);
+			slashes = 0;
+		} else {
+			result.append(slashes, L'\\');
+			slashes = 0;
+			result.push_back(c);
+		}
+	}
+	result.append(slashes * 2, L'\\');
+	result.push_back(L'"');
+	return result;
+}
+
+std::wstring windowsTerminalCommand(const std::vector<std::string>& arguments) {
+	std::wstring result;
+	for (const auto& argument : arguments) {
+		if (!result.empty()) result.push_back(L' ');
+		result += quoteWindowsTerminalArg(argument);
+	}
+	return result;
+}
+#else
+std::string posixTerminalCommand(const std::vector<std::string>& arguments) {
+	std::string result;
+	for (const auto& argument : arguments) {
+		if (!result.empty()) result.push_back(' ');
+		result += quotePosixTerminalArg(argument);
+	}
+	return result;
+}
+#endif
+} // namespace
 #include <consoleapi2.h>
 #include <consoleapi3.h>
 #include <processthreadsapi.h>
@@ -128,13 +212,25 @@ bool Terminal::start(const std::wstring& shell) {
 	}
 
 #ifdef _WIN32
-	shellStr = shell.empty() ? wstring_to_utf8_windows(defaultShell()) : wstring_to_utf8_windows(shell);
-	if (!launchShell(shell.empty() ? defaultShell() : shell)) {
+	std::wstring command = shell.empty() ? defaultShell() : shell;
+	if (auto remote = std::dynamic_pointer_cast<SSHFileBackend>(FileBackends::current())) {
+		command = windowsTerminalCommand(remoteTerminalArguments(*remote));
+		shellStr = "SSH: " + remote->displayName();
+	} else {
+		shellStr = wstring_to_utf8_windows(command);
+	}
+	if (!launchShell(command)) {
 		teardownConPty();
 		return false;
 	}
 #else
-	shellStr = shell.empty() ? defaultShell() : wstringToUtf8(shell);
+	m_remoteCommand.clear();
+	if (auto remote = std::dynamic_pointer_cast<SSHFileBackend>(FileBackends::current())) {
+		m_remoteCommand = posixTerminalCommand(remoteTerminalArguments(*remote));
+		shellStr = "SSH: " + remote->displayName();
+	} else {
+		shellStr = shell.empty() ? defaultShell() : wstringToUtf8(shell);
+	}
 	if (!launchShell(shellStr)) {
 		teardownConPty();
 		return false;
@@ -653,6 +749,11 @@ bool Terminal::launchShell(const std::string& shell) {
 
 		::setenv("TERM", "xterm-256color", 1);
 		::setenv("COLORTERM", "truecolor", 1);
+
+		if (!m_remoteCommand.empty()) {
+			::execl("/bin/sh", "sh", "-lc", m_remoteCommand.c_str(), nullptr);
+			::_exit(1);
+		}
 
 		const char* sh = shell.c_str();
 		const char* shBase = std::strrchr(sh, '/');

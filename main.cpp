@@ -1,4 +1,7 @@
 #include <curl/curl.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -38,6 +41,31 @@
 //extern "C" PfnDliHook __pfnDliNotifyHook2 = DelayHook;
 
 int main(int argc, char* argv[]) {
+	const char* askpass_mode = std::getenv("CODEWIZARD_SSH_ASKPASS");
+	if (askpass_mode && std::string(askpass_mode) == "1") {
+		bool is_host_key_prompt = false;
+		for (int i = 1; i < argc; ++i) {
+			std::string arg(argv[i]);
+			if (arg.find("authenticity") != std::string::npos ||
+				arg.find("fingerprint") != std::string::npos ||
+				arg.find("connecting") != std::string::npos ||
+				arg.find("Host key") != std::string::npos) {
+				is_host_key_prompt = true;
+				break;
+			}
+		}
+
+		if (is_host_key_prompt) {
+			std::fwrite("yes\n", 1, 4, stdout);
+		} else {
+			const char* password = std::getenv("CODEWIZARD_SSH_PASSWORD");
+			if (password) std::fwrite(password, 1, std::strlen(password), stdout);
+			std::fputc('\n', stdout);
+		}
+		std::fflush(stdout);
+		return 0;
+	}
+
 	auto start = std::chrono::steady_clock::now();
 	
 	DWORD main_thread_id = GetCurrentThreadId();
@@ -359,6 +387,18 @@ int main(int argc, char* argv[]) {
 		menu->addToMenu(MST::toMonoString("Test Toast Box"), [](Button*){
 			App::closeMenu();
 			App::displayToast(MST::toMonoString("Example Toast Message."));
+		});
+		
+		menu->addSeparaterToMenu();
+		
+		menu->addToMenu(MST::toMonoString("Connect SSH"), [](Button*){
+			App::closeMenu();
+			App::connectSSH();
+		});
+		
+		menu->addToMenu(MST::toMonoString("Disconnect SSH"), [](Button*){
+			App::closeMenu();
+			App::disconnectSSH();
 		});
 		
 		menu->recalcButtonTexts();

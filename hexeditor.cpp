@@ -63,9 +63,11 @@ void HexEditor::openFile(FileInfo* f) {
 	if (!file) {
 		return;
 	}
+	if (!file->backend) file->backend = FileBackends::current();
 	
 	bool worked;
-	bytes = loadFileBytes(f->filepath, worked);
+	std::string read_error;
+	worked = file->backend->readFile(f->filepath, bytes, read_error);
 	
 	if (!worked) {
 		file = nullptr;

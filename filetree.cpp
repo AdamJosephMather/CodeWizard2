@@ -6,7 +6,9 @@ FileTree::FileTree(Widget* parent) : Widget(parent) {
 	id = MST::toMonoString("FileTree");
 	
 	before_self_close = [&](){
+		if (refresh_thread.joinable()) refresh_thread.join();
 		deleteTree(root);
+		root = nullptr;
 	};
 	
 	openpaths = { App::settings->getValue("current_folder", getExecutableDir()) };
@@ -56,7 +58,16 @@ void FileTree::render() {
 	}
 }
 
+FileTree::~FileTree() {
+	if (refresh_thread.joinable()) refresh_thread.join();
+	if (root) {
+		deleteTree(root);
+		root = nullptr;
+	}
+}
+
 void FileTree::deleteTree(TreeStructure* node) {
+	if (!node) return;
 	for (auto c : node->childrenFolders) {
 		deleteTree(c);
 	}
@@ -67,50 +78,77 @@ void FileTree::deleteTree(TreeStructure* node) {
 }
 
 void FileTree::fillOutTree(TreeStructure* el) {
+	fillOutTreeImpl(el, openpaths, FileBackends::current());
+	App::time_till_regular = 2;
+}
+
+void FileTree::fillOutTreeImpl(TreeStructure* el, const std::vector<std::string>& expanded, const std::shared_ptr<FileBackend>& backend) {
 	try {
-		if (!std::filesystem::exists(el->path)) {
+		BackendFileStat info;
+		std::string error;
+		if (!backend->stat(el->path, info, error) || !info.exists) {
 			return;
 		}
 		
-		std::filesystem::path itm(el->path);
-		
-		if (std::filesystem::is_directory(itm)){
+		if (info.is_directory){
 			el->is_folder = true;
 			
-			if (std::find(openpaths.begin(), openpaths.end(), el->path) != openpaths.end()) {
-				for (const auto& entry : std::filesystem::directory_iterator(itm)){
-					if (!entry.is_directory()) {
-						continue;
-					}
-					
+			if (std::find(expanded.begin(), expanded.end(), el->path) != expanded.end()) {
+				std::vector<BackendDirectoryEntry> entries;
+				if (!backend->listDirectory(el->path, entries, error)) return;
+				for (const auto& entry : entries) {
 					auto ts = new TreeStructure();
-					ts->path = entry.path().string();
-					ts->name = MST::toMonoString(entry.path().filename().string());
-					el->childrenFolders.push_back(ts);
-					fillOutTree(ts);
-				}
-				
-				for (const auto& entry : std::filesystem::directory_iterator(itm)){
-					if (!entry.is_regular_file()) {
-						continue;
+					ts->path = backend->join(el->path, entry.name);
+					ts->name = MST::toMonoString(entry.name);
+					ts->is_folder = entry.is_directory;
+					if (entry.is_directory) {
+						el->childrenFolders.push_back(ts);
+						if (std::find(expanded.begin(), expanded.end(), ts->path) != expanded.end()) {
+							fillOutTreeImpl(ts, expanded, backend);
+						}
+					} else {
+						el->childrenFiles.push_back(ts);
 					}
-					
-					auto ts = new TreeStructure();
-					ts->path = entry.path().string();
-					ts->name = MST::toMonoString(entry.path().filename().string());
-					el->childrenFiles.push_back(ts);
-					fillOutTree(ts);
 				}
 			}
 		}else {
 			el->is_folder = false;
-			el->name = MST::toMonoString(itm.filename().string());
+			el->name = MST::toMonoString(backend->filename(el->path));
 		}
 	} catch(const std::filesystem::filesystem_error& e){
 		
 	}
 	
-	App::time_till_regular = 2;
+}
+
+void FileTree::refreshAsync() {
+	if (refresh_in_progress.exchange(true)) return;
+	if (refresh_thread.joinable()) refresh_thread.join();
+
+	const std::string path = App::settings->getValue("current_folder", FileBackends::current()->homeDirectory());
+	const auto backend = FileBackends::current();
+	std::vector<std::string> expanded;
+	{
+		std::lock_guard<std::mutex> lock(tree_mutex);
+		if (std::find(openpaths.begin(), openpaths.end(), path) == openpaths.end()) openpaths.push_back(path);
+		expanded = openpaths;
+	}
+	refresh_thread = std::thread([this, path, backend, expanded = std::move(expanded)]() {
+		auto* new_root = new TreeStructure();
+		new_root->path = path;
+		new_root->name = MST::toMonoString(backend->filename(path));
+		fillOutTreeImpl(new_root, expanded, backend);
+		{
+			std::lock_guard<std::mutex> lock(tree_mutex);
+			auto* old_root = root;
+			root = new_root;
+			toRender.clear();
+			deleteTree(old_root);
+		}
+		refresh_in_progress = false;
+		App::time_till_regular = 2;
+		App::rerender = true;
+	});
 }
 
 double FileTree::createVisuals(double pos, double depth, TreeStructure* el) {
@@ -144,13 +182,19 @@ double FileTree::createVisuals(double pos, double depth, TreeStructure* el) {
 void FileTree::position(int x, int y, int w, int h) {
 	Widget::position(x, y, w, h);
 	
-	std::lock_guard<std::mutex> lock(tree_mutex);
+	bool start_remote_refresh = false;
+	std::unique_lock<std::mutex> lock(tree_mutex);
 	
 	if (!root) {
 		root = new TreeStructure();
 		root->path = App::settings->getValue("current_folder", getExecutableDir());
-		root->name = MST::toMonoString(std::filesystem::path(root->path).filename().string());
-		fillOutTree(root);
+		root->name = MST::toMonoString(FileBackends::current()->filename(root->path));
+		if (FileBackends::isRemote()) {
+			root->is_folder = true;
+			start_remote_refresh = true;
+		} else {
+			fillOutTree(root);
+		}
 	}
 	
 	elHeighto = TextRenderer::get_text_height()+App::text_padding;
@@ -170,6 +214,8 @@ void FileTree::position(int x, int y, int w, int h) {
 	}else if (scrolled_to_horz < 0.0) {
 		scrolled_to_horz = 0.0;
 	}
+	lock.unlock();
+	if (start_remote_refresh) refreshAsync();
 }
 
 bool FileTree::on_mouse_button_event(int button, int action, int mods) {
@@ -180,7 +226,7 @@ bool FileTree::on_mouse_button_event(int button, int action, int mods) {
 	int mx = App::mouseX;
 	int my = App::mouseY;
 	
-	std::lock_guard<std::mutex> lock(tree_mutex);
+	std::unique_lock<std::mutex> lock(tree_mutex);
 	
 	for (auto vs : toRender) {
 		if (vs.x <= mx && vs.y <= my && vs.x+vs.w >= mx && vs.y+vs.h >= my) {
@@ -194,15 +240,20 @@ bool FileTree::on_mouse_button_event(int button, int action, int mods) {
 				}else{
 					openpaths.push_back(vs.ts->path);
 				}
+
+				if (FileBackends::isRemote()) {
+					lock.unlock();
+					refreshAsync();
+					return true;
+				}
 				
 				deleteTree(root);
 				root = new TreeStructure();
 				root->path = App::settings->getValue("current_folder", getExecutableDir());
-				root->name = MST::toMonoString(std::filesystem::path(root->path).filename().string());
+				root->name = MST::toMonoString(FileBackends::current()->filename(root->path));
 				fillOutTree(root);
 			}else{
-				std::filesystem::path p(vs.ts->path);
-				App::openFromCMD(vs.ts->path, p.filename().string());
+				App::openFromCMD(vs.ts->path, FileBackends::current()->filename(vs.ts->path));
 			}
 			break;
 		}
@@ -212,9 +263,15 @@ bool FileTree::on_mouse_button_event(int button, int action, int mods) {
 }
 
 void FileTree::save() {
+	if (FileBackends::isRemote()) {
+		refreshAsync();
+		return;
+	}
+	if (refresh_thread.joinable()) refresh_thread.join();
+	refresh_in_progress = false;
 	TreeStructure* newRoot = new TreeStructure();
 	newRoot->path = App::settings->getValue("current_folder", getExecutableDir());
-	newRoot->name = MST::toMonoString(std::filesystem::path(newRoot->path).filename().string());
+	newRoot->name = MST::toMonoString(FileBackends::current()->filename(newRoot->path));
 	
 	fillOutTree(newRoot);
 

@@ -56,6 +56,12 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 	},  [&](Button* btn){
 		// onclick
 		std::string fldr = App::settings->getValue("current_folder", std::string());
+		if (FileBackends::isRemote()) {
+			App::requestString("Remote graph folder?", fldr, [this](MST::MonoString selected) {
+				for (const auto& file : get_files_in_directory(MST::toString(selected))) addThing(true, file.string());
+			});
+			return;
+		}
 		
 		const char * fpr = tinyfd_selectFolderDialog(
 			"Select folder",
@@ -91,21 +97,14 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 
 std::vector<std::filesystem::path> GraphWindow::get_files_in_directory(const std::filesystem::path& dir_path) {
 	std::vector<std::filesystem::path> file_paths;
-	
-	try {
-		if (std::filesystem::exists(dir_path) && std::filesystem::is_directory(dir_path)) {
-			for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
-				// Filter out subdirectories; only keep files
-				if (std::filesystem::is_regular_file(entry.status())) {
-					// Convert path to an absolute full path
-					file_paths.push_back(std::filesystem::absolute(entry.path()));
-				}
-			}
+	auto backend = FileBackends::current();
+	std::vector<BackendDirectoryEntry> entries;
+	std::string error;
+	if (backend->listDirectory(dir_path.string(), entries, error)) {
+		for (const auto& entry : entries) {
+			if (!entry.is_directory) file_paths.emplace_back(backend->join(dir_path.string(), entry.name));
 		}
-	} catch (const std::filesystem::filesystem_error& e) {
-		std::cerr << "File system error: " << e.what() << '\n';
 	}
-	
 	return file_paths;
 }
 
@@ -118,6 +117,14 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 		std::string filePath;
 		
 		if (filepath == "") {
+			if (FileBackends::isRemote()) {
+				App::requestString("Remote graph file?", App::settings->getValue("current_folder", FileBackends::current()->homeDirectory()),
+					[this](MST::MonoString selected) {
+						const std::string path = MST::toString(selected);
+						if (!path.empty()) addThing(true, path);
+					});
+				return;
+			}
 			const char * fp = tinyfd_openFileDialog(
 				"Select a file",    // dialog title
 				"",                 // default path and filename
@@ -134,8 +141,7 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 			filePath = filepath;
 		}
 		
-		std::filesystem::path fullPath = filePath;
-		std::string filename = fullPath.filename().string();
+		std::string filename = FileBackends::current()->filename(filePath);
 		
 		if (!fileExists(filePath) || isBinaryFile(filePath)) {
 			return;

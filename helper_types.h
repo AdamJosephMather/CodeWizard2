@@ -1,5 +1,6 @@
 #pragma once
 
+#include "filebackend.h"
 #include <GLFW/glfw3.h>
 
 #ifdef _WIN32
@@ -70,6 +71,7 @@ struct FileInfo {
 	std::string filepath;
 	std::string filename;
 	bool is_opening = true;
+	std::shared_ptr<FileBackend> backend;
 };
 
 struct Color {
@@ -332,11 +334,25 @@ static MST::MonoString run_fixit_on_text(MST::MonoString text) {
 }
 
 static bool areSameFile(const std::string& path1, const std::string& path2) {
+	if (FileBackends::isRemote()) {
+		auto normalize = [](std::string path) {
+			std::replace(path.begin(), path.end(), '\\', '/');
+			while (path.size() > 1 && path.back() == '/') path.pop_back();
+			if (FileBackends::current()->pathSeparator() == '\\') {
+				std::transform(path.begin(), path.end(), path.begin(), [](unsigned char c) {
+					return static_cast<char>(std::tolower(c));
+				});
+			}
+			return path;
+		};
+		return normalize(path1) == normalize(path2);
+	}
 	try {
 		return std::filesystem::equivalent(std::filesystem::path(path1), std::filesystem::path(path2));
 	} catch (const std::filesystem::filesystem_error& e) {
-		// Handle errors (e.g., file doesn't exist)
-		return false;
+		std::error_code ignored;
+		return std::filesystem::absolute(path1, ignored).lexically_normal() ==
+			   std::filesystem::absolute(path2, ignored).lexically_normal();
 	}
 }
 
@@ -370,7 +386,7 @@ static std::string fileUriToPath(const std::string& uri) {
 		path = path.substr(7);  // skip file://
 #endif
 	}
-	return uriDecode(path);
+	return FileBackends::current()->fromLspPath(uriDecode(path));
 }
 
 static void trim_decimal(std::string& s) {
@@ -801,51 +817,15 @@ static std::string trim(const std::string& s) {
 }
 
 static bool fileExists(const std::string& path) {
-	std::ifstream test(path.c_str());
-	return test.good();
+	bool exists = false;
+	std::string error;
+	return FileBackends::current()->exists(path, exists, error) && exists;
 }
 
 static bool isBinaryFile(const std::string& path) {
-	std::ifstream file(path, std::ios::binary);
-	if (!file.is_open()) {
-		// Couldn’t open → treat as “binary”/ignore
-		return true;
-	}
-
-	// Read up to the first 4 KB
-	const std::size_t MAX_CHECK = 4096;
-	std::vector<unsigned char> buf(MAX_CHECK);
-	file.read(reinterpret_cast<char*>(buf.data()),
-	 buf.size());
-	std::streamsize n = file.gcount();
-
-	if (n == 0) {
-		// Empty file is text
-		return false;
-	}
-
-	int controlCount = 0;
-	for (std::streamsize i = 0; i < n; ++i) {
-		unsigned char c = buf[i];
-		if (c == 0) {
-			// A single NUL byte almost certainly means binary
-			return true;
-		}
-		// Count C0 controls except: TAB (9), LF (10), VT (11), FF (12), CR (13)
-		if ( (c < 9) ||
-			 (c > 13 && c < 32) ) 
-		{
-			++controlCount;
-			// If more than 1% of bytes are “odd” controls, call it binary
-			if (controlCount > static_cast<int>(n / 100)) {
-				return true;
-			}
-		}
-		// NOTE: we do *not* reject c >= 128 here
-	}
-
-	// Passed all binary tests → text
-	return false;
+	bool backend_binary = true;
+	std::string backend_error;
+	return !FileBackends::current()->isBinary(path, backend_binary, backend_error) || backend_binary;
 }
 
 static std::string colorToString(Color* c) {
@@ -971,32 +951,8 @@ inline bool atomicWriteReplace(const std::filesystem::path& target,
 }
 
 static std::vector<std::uint8_t> loadFileBytes(const std::string& filename, bool& worked) {
-	std::ifstream file(filename, std::ios::binary | std::ios::ate);
-
-	if (!file) {
-		worked = false;
-		return {};
-	}
-
-	std::streamsize size = file.tellg();
-	if (size < 0) {
-		worked = false;
-		return {};
-	}
-
-	file.seekg(0, std::ios::beg);
-
-	std::vector<std::uint8_t> data(static_cast<size_t>(size));
-
-	if (size > 0) {
-		file.read(reinterpret_cast<char*>(data.data()), size);
-
-		if (!file) {
-			worked = false;
-			return {};
-		}
-	}
-
-	worked = true;
-	return data;
+	std::vector<std::uint8_t> backend_data;
+	std::string backend_error;
+	worked = FileBackends::current()->readFile(filename, backend_data, backend_error);
+	return backend_data;
 }

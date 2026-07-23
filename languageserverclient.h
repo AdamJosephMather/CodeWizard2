@@ -113,6 +113,7 @@ private:
 	void onServerReadyRead();
 	void onServerErrorOccurred(Process::ProcessError error);
 	void onServerFinished(int exitCode, Process::ExitStatus exitStatus);
+	void flushPendingInitQueue();
 	
 	json filterDiagnostics(const json &diagnostics, int lineStart, int columnStart, int lineEnd, int columnEnd);
 	void sendMessage(const json &message);
@@ -129,11 +130,9 @@ private:
 	std::condition_variable queueCond;
 	std::atomic<bool> stopWriter{false};
 	
-	// Replace QEventLoop with condition variables
-	std::mutex initializeMutex;
-	std::condition_variable initializeCondition;
-	std::atomic<bool> initializeComplete{false};
+	std::queue<json> pendingInitQueue;
 	
+	// Replace QEventLoop with condition variables
 	std::mutex shutdownMutex;
 	std::condition_variable shutdownCondition;
 	std::atomic<bool> shutdownComplete{false};

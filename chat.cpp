@@ -133,7 +133,7 @@ void Chat::render() {
 		return;
 	}
 	
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.main_background_color);
+	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
 	
 	for (auto m : message_te) {
 		App::runWithSKIZ(m->t_x, m->t_y, m->t_w, m->t_h, [&](){
@@ -376,7 +376,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 			}
 			
 			Label* te2 = new Label(this);
-			te2->background_color = App::theme.main_background_color;
+			te2->background_color = App::theme.extras_background_color;
 			te2->border = false;
 			
 			message_te.push_back(te2);
@@ -409,7 +409,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 					}else{
 						auto la = new Label(this);
 						la->setFullText(segment.content, segment.spans);
-						la->background_color = App::theme.main_background_color;
+						la->background_color = App::theme.extras_background_color;
 						la->border = false;
 						message_te.push_back(la);
 					}

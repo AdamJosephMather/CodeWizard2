@@ -2130,7 +2130,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 	}
 	
 	end_line = line_start+ceil((float)t_h/(float)TextRenderer::get_text_height()) + 1;
-	end_char = char_start+ceil((float)t_w/(float)TextRenderer::get_text_width(1)) + 1;
+	end_char = char_start+ceil((float)t_w/(float)TextRenderer::get_text_width(1)) + 3;
 	
 	if (line_start > 0) {
 		line_start -= 1;

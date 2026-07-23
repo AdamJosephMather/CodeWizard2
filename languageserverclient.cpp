@@ -425,8 +425,6 @@ void LanguageServerClient::onServerErrorOccurred(Process::ProcessError error)
 	if (logCallback) {
 		logCallback("Server error occurred: " + std::to_string(static_cast<int>(error)) + "\nError String: " + serverProcess.errorString());
 	}
-	initializeComplete = true;
-	initializeCondition.notify_all();
 	failedToStart = true;
 }
 
@@ -435,8 +433,6 @@ void LanguageServerClient::onServerFinished(int exitCode, Process::ExitStatus ex
 	if (logCallback) {
 		logCallback("Server process finished with exit code: " + std::to_string(exitCode) + " and status: " + std::to_string(static_cast<int>(exitStatus)));
 	}
-	initializeComplete = true;
-	initializeCondition.notify_all();
 	failedToStart = true;
 }
 
@@ -509,24 +505,15 @@ void LanguageServerClient::initialize(const std::string &rootUri)
 		{"params", params}
 	};
 	
-	sendMessage(message);
-	
-	if (failedToStart) {
-		if (logCallback) {
-			App::displayToast(MST::toMonoString("Failed to start LSP - Ensure it's accessible via the command given."));
-			logCallback("Failed to start LSP - Ensure it's accessible via the command given.");
-		}
-		return;
+	{
+		std::lock_guard<std::mutex> lk(queueMutex);
+		messageQueue.push(message);
 	}
-
-	// Wait for initialization (max 10 seconds)
-	std::unique_lock<std::mutex> lock(initializeMutex);
-	if (!initializeCondition.wait_for(lock, std::chrono::seconds(10), [this] { return initializeComplete.load(); })) {
-		failedToStart = true;
-		if (logCallback) {
-			App::displayToast(MST::toMonoString("LSP initialization timed out."));
-			logCallback("LSP initialization timed out.");
-		}
+	queueCond.notify_one();
+	
+	if (logCallback) {
+		std::string from = "CodeWizard    ";
+		App::rootelement->lspmessage(from, message.dump());
 	}
 	
 	if (failedToStart) {
@@ -536,45 +523,6 @@ void LanguageServerClient::initialize(const std::string &rootUri)
 		}
 		return;
 	}
-
-	json initializedMessage = {
-		{"jsonrpc", "2.0"},
-		{"method", "initialized"},
-		{"params", json::object()}
-	};
-
-	sendMessage(initializedMessage);
-	
-	json params2 = {
-		{"settings", {
-			{"python", {
-				{"analysis", {
-					{"diagnosticMode", "openFilesOnly"},
-					{"typeCheckingMode", "basic"},
-					{"useLibraryCodeForTypes", false},
-					{"indexing", false},
-					{"inlayHints", {
-						{"variableTypes", false},
-						{"functionReturnTypes", false},
-						{"callArgumentNames", "off"}
-					}},
-					{"memory", {
-						{"keepLibraryAst", false}
-					}}
-				}}
-			}}
-		}}
-	};
-
-	json workspaceChanged = {
-		{"jsonrpc", "2.0"},
-		{"method", "workspace/didChangeConfiguration"},
-		{"params", params2}
-	};
-	
-	sendMessage(workspaceChanged);
-	
-	isInitialized = true;
 }
 
 void LanguageServerClient::shutdown()
@@ -1040,9 +988,44 @@ void LanguageServerClient::onServerReadyRead()
 				supportsIncrementalChanges = true;
 			}
 			
+			isInitialized = true;
 
-			initializeComplete = true;
-			initializeCondition.notify_all();
+			json initializedMsg = {
+				{"jsonrpc", "2.0"},
+				{"method", "initialized"},
+				{"params", json::object()}
+			};
+			sendMessage(initializedMsg);
+
+			json configParams = {
+				{"settings", {
+					{"python", {
+						{"analysis", {
+							{"diagnosticMode", "openFilesOnly"},
+							{"typeCheckingMode", "basic"},
+							{"useLibraryCodeForTypes", false},
+							{"indexing", false},
+							{"inlayHints", {
+								{"variableTypes", false},
+								{"functionReturnTypes", false},
+								{"callArgumentNames", "off"}
+							}},
+							{"memory", {
+								{"keepLibraryAst", false}
+							}}
+						}}
+					}}
+				}}
+			};
+
+			json workspaceChanged = {
+				{"jsonrpc", "2.0"},
+				{"method", "workspace/didChangeConfiguration"},
+				{"params", configParams}
+			};
+			sendMessage(workspaceChanged);
+
+			flushPendingInitQueue();
 			if (initializeResponseReceivedCallback) {
 				initializeResponseReceivedCallback();
 			}
@@ -1050,8 +1033,44 @@ void LanguageServerClient::onServerReadyRead()
 		}
 
 		if (!isInitialized && int_id == initializeRequestId && (!response.contains("method") || response["method"].is_null())) {
-			initializeComplete = true;
-			initializeCondition.notify_all();
+			isInitialized = true;
+
+			json initializedMsg = {
+				{"jsonrpc", "2.0"},
+				{"method", "initialized"},
+				{"params", json::object()}
+			};
+			sendMessage(initializedMsg);
+
+			json configParams = {
+				{"settings", {
+					{"python", {
+						{"analysis", {
+							{"diagnosticMode", "openFilesOnly"},
+							{"typeCheckingMode", "basic"},
+							{"useLibraryCodeForTypes", false},
+							{"indexing", false},
+							{"inlayHints", {
+								{"variableTypes", false},
+								{"functionReturnTypes", false},
+								{"callArgumentNames", "off"}
+							}},
+							{"memory", {
+								{"keepLibraryAst", false}
+							}}
+						}}
+					}}
+				}}
+			};
+
+			json workspaceChanged = {
+				{"jsonrpc", "2.0"},
+				{"method", "workspace/didChangeConfiguration"},
+				{"params", configParams}
+			};
+			sendMessage(workspaceChanged);
+
+			flushPendingInitQueue();
 			if (initializeResponseReceivedCallback) {
 				initializeResponseReceivedCallback();
 			}
@@ -1283,6 +1302,12 @@ void LanguageServerClient::onServerReadyRead()
 
 void LanguageServerClient::sendMessage(const json &message)
 {
+	if (!isInitialized) {
+		std::lock_guard<std::mutex> lk(queueMutex);
+		pendingInitQueue.push(message);
+		return;
+	}
+
 	{
 		std::lock_guard<std::mutex> lk(queueMutex);
 		messageQueue.push(message);
@@ -1293,6 +1318,28 @@ void LanguageServerClient::sendMessage(const json &message)
 	std::string from = "CodeWizard    ";
 	std::string tosend = message.dump();
 	App::rootelement->lspmessage(from, tosend);
+}
+
+void LanguageServerClient::flushPendingInitQueue()
+{
+	std::queue<json> pending;
+	{
+		std::lock_guard<std::mutex> lk(queueMutex);
+		pending.swap(pendingInitQueue);
+	}
+	while (!pending.empty()) {
+		const auto& msg = pending.front();
+		{
+			std::lock_guard<std::mutex> lk(queueMutex);
+			messageQueue.push(msg);
+		}
+		queueCond.notify_one();
+
+		std::string from = "CodeWizard    ";
+		std::string tosend = msg.dump();
+		App::rootelement->lspmessage(from, tosend);
+		pending.pop();
+	}
 }
 
 void LanguageServerClient::changeFolder(const std::string& oldUri, const std::string& newUri)

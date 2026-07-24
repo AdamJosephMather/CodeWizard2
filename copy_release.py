@@ -7,7 +7,7 @@ BUILD_DIR = os.path.join(SCRIPT_DIR, "build", "windows-release")
 INSTALLER_DIR = os.path.join(SCRIPT_DIR, "Installer")
 
 EXCLUDE_PREFIXES = ("_", ".", "CMakeFiles")
-EXCLUDE_EXTENSIONS = (".exp", ".pdb", ".cmake", ".txt", ".ninja", ".json", ".log", ".deps", ".lib", ".dll.a")
+EXCLUDE_EXTENSIONS = (".exp", ".pdb", ".cmake", ".txt", ".ninja", ".json", ".log", ".deps", ".lib", ".dll.a", ".dmp")
 
 
 def find_output_dir():

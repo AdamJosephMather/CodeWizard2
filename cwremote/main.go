@@ -92,7 +92,62 @@ func environmentInfo() handshake {
 	}
 }
 
+func install() {
+	if runtime.GOOS != "linux" {
+		fmt.Fprintln(os.Stderr, "cwremote: --install is only supported on linux")
+		os.Exit(1)
+	}
+
+	exe, err := os.Executable()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cwremote:", err)
+		os.Exit(1)
+	}
+	exe, err = filepath.EvalSymlinks(exe)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cwremote:", err)
+		os.Exit(1)
+	}
+
+	src, err := os.Open(exe)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cwremote:", err)
+		os.Exit(1)
+	}
+	defer src.Close()
+
+	info, err := src.Stat()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cwremote:", err)
+		os.Exit(1)
+	}
+
+	dst, err := os.OpenFile("/usr/local/bin/cwremote", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, info.Mode())
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cwremote:", err)
+		os.Exit(1)
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, src); err != nil {
+		fmt.Fprintln(os.Stderr, "cwremote:", err)
+		os.Exit(1)
+	}
+
+	if err := dst.Close(); err != nil {
+		fmt.Fprintln(os.Stderr, "cwremote:", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("cwremote: installed to /usr/local/bin/cwremote")
+}
+
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "--install" {
+		install()
+		return
+	}
+
 	s := &server{
 		in:   bufio.NewReader(os.Stdin),
 		out:  bufio.NewWriter(os.Stdout),
@@ -442,6 +497,137 @@ func (s *server) handle(method string, raw json.RawMessage) (any, error) {
 			return nil, err
 		}
 		return map[string]any{"ok": true}, os.MkdirAll(path, 0o755)
+
+	case "file/scan":
+		var p struct {
+			Path     string `json:"path"`
+			MaxFiles uint64 `json:"maxFiles"`
+		}
+		if err := decodeParams(raw, &p); err != nil {
+			return nil, err
+		}
+		root, err := cleanPath(p.Path)
+		if err != nil {
+			return nil, err
+		}
+		max := p.MaxFiles
+		if max == 0 {
+			max = 2000
+		}
+
+		type scannedFile struct {
+			Name string `json:"name"`
+			Path string `json:"path"`
+		}
+		files := make([]scannedFile, 0, max)
+		queue := []string{root}
+		seen := uint64(0)
+
+		for len(queue) > 0 && seen < max {
+			curDir := queue[0]
+			queue = queue[1:]
+
+			items, readErr := os.ReadDir(curDir)
+			if readErr != nil {
+				continue
+			}
+			for _, item := range items {
+				if seen >= max {
+					break
+				}
+				name := item.Name()
+				if item.IsDir() {
+					if len(name) > 0 && name[0] != '.' {
+						queue = append(queue, filepath.Join(curDir, name))
+					}
+					continue
+				}
+				if !item.Type().IsRegular() {
+					continue
+				}
+				fullPath := filepath.Join(curDir, name)
+				files = append(files, scannedFile{Name: name, Path: fullPath})
+				seen++
+			}
+		}
+
+		return map[string]any{"files": files}, nil
+
+	case "file/search":
+		var p struct {
+			Files      []string `json:"files"`
+			SearchTerm string   `json:"searchTerm"`
+		}
+		if err := decodeParams(raw, &p); err != nil {
+			return nil, err
+		}
+		if strings.TrimSpace(p.SearchTerm) == "" {
+			return map[string]any{"results": []any{}}, nil
+		}
+
+		lowerTerm := strings.ToLower(p.SearchTerm)
+		termLen := len(lowerTerm)
+
+		type searchMatch struct {
+			Line    int    `json:"line"`
+			Content string `json:"content"`
+		}
+		type searchResult struct {
+			Path    string        `json:"path"`
+			Matches []searchMatch `json:"matches"`
+		}
+		results := make([]searchResult, 0)
+
+		for _, filePath := range p.Files {
+			cleaned, cleanErr := cleanPath(filePath)
+			if cleanErr != nil {
+				continue
+			}
+
+			data, readErr := os.ReadFile(cleaned)
+			if readErr != nil {
+				continue
+			}
+			if isBinary(data) {
+				continue
+			}
+
+			content := string(data)
+			lowerContent := strings.ToLower(content)
+			var matches []searchMatch
+			lineNum := 1
+			lineStart := 0
+
+			for i := 0; i <= len(lowerContent)-termLen; i++ {
+				if lowerContent[i] == '\n' {
+					lineNum++
+					lineStart = i + 1
+				}
+				if strings.HasPrefix(lowerContent[i:], lowerTerm) {
+					endLine := strings.IndexByte(content[lineStart:], '\n')
+					if endLine < 0 {
+						endLine = len(content) - lineStart
+					}
+					line := strings.TrimRight(content[lineStart:lineStart+endLine], " \t\r\n")
+					matches = append(matches, searchMatch{Line: lineNum, Content: line})
+					// skip to end of this line so we don't match twice on the same line
+					if i < len(lowerContent) {
+						nl := strings.IndexByte(lowerContent[i:], '\n')
+						if nl >= 0 {
+							i += nl
+						} else {
+							break
+						}
+					}
+				}
+			}
+
+			if len(matches) > 0 {
+				results = append(results, searchResult{Path: cleaned, Matches: matches})
+			}
+		}
+
+		return map[string]any{"results": results}, nil
 
 	default:
 		return nil, fmt.Errorf("unknown method %q", method)

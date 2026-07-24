@@ -542,6 +542,9 @@ int main(int argc, char* argv[]) {
 	App::scrollNotifyBox = displayMessage;
 	App::menu = menu;
 	
+	HelpMenu* helpMenu = new HelpMenu(nullptr);
+	App::helpMenu = helpMenu;
+	
 	Widget* wdgt = App::rootelement->getFirstEditor();
 	if (auto edtr = dynamic_cast<Editor*>(wdgt)) {
 		auto wdgt = edtr->editors[edtr->tab_bar->selected_id];
@@ -553,23 +556,43 @@ int main(int argc, char* argv[]) {
 		
 		if (argc >= 2) {
 			std::string candidate = argv[1];
-			std::filesystem::path p(candidate);
-	
-			if (std::filesystem::exists(p) && std::filesystem::is_regular_file(p)) {
-				App::setFolder(p.parent_path().string());
+			
+			if (candidate == "--ssh" || candidate == "--ssh_password") { // codewizard --ssh _______@___.___.___.___ --ssh_password __________
+				std::string host;
+				std::string password;
 				
-				FileInfo* f = new FileInfo;
 				
-				f->filepath = p.string();
-				f->filename = p.filename().string();
+				if (candidate == "--ssh" && argc >= 3) { // executable, --ssh, host -> 3
+					host = argv[2]; // host follows ssh
+					if (argc >= 5 && std::string(argv[3]) == "--ssh_password") {
+						password = argv[4];
+					}
+				}else if (candidate == "--ssh_password" && argc >= 5 && std::string(argv[3]) == "--ssh") {
+					host = argv[4];
+					password = argv[2];
+				}else {
+					//invalid
+				}
 				
-				edtr->fileOpenRequested(f);
+				if (!host.empty()) {
+					App::_connectSSH(host, password);
+				}
+			}else {
+				std::filesystem::path p(candidate);
+				
+				if (std::filesystem::exists(p) && std::filesystem::is_regular_file(p)) {
+					App::setFolder(p.parent_path().string());
+					
+					FileInfo* f = new FileInfo;
+					
+					f->filepath = p.string();
+					f->filename = p.filename().string();
+					
+					edtr->fileOpenRequested(f);
+				}
 			}
 		}
 	}
-	
-	HelpMenu* helpMenu = new HelpMenu(nullptr);
-	App::helpMenu = helpMenu;
 	
 	auto end = std::chrono::steady_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);

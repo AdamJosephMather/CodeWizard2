@@ -20,6 +20,21 @@ struct BackendDirectoryEntry {
 	std::int64_t mtime = 0;
 };
 
+struct ScannedFile {
+	std::string name;
+	std::string fullPath;
+};
+
+struct SearchMatchResult {
+	int line;
+	std::string content;
+};
+
+struct SearchedFile {
+	std::string path;
+	std::vector<SearchMatchResult> matches;
+};
+
 class FileBackend {
 public:
 	virtual ~FileBackend() = default;
@@ -39,6 +54,12 @@ public:
 	virtual bool remove(const std::string& path, std::string& error) = 0;
 	virtual bool rename(const std::string& old_path, const std::string& new_path, std::string& error) = 0;
 	virtual bool createDirectories(const std::string& path, std::string& error) = 0;
+
+	virtual bool scanFiles(const std::string& rootPath, std::size_t maxFiles,
+						   std::vector<ScannedFile>& files, std::string& error) { return false; }
+	virtual bool searchFiles(const std::vector<std::string>& filePaths,
+							 const std::string& searchTerm,
+							 std::vector<SearchedFile>& results, std::string& error) { return false; }
 
 	bool exists(const std::string& path, bool& result, std::string& error);
 	virtual bool isBinary(const std::string& path, bool& result, std::string& error);

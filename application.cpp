@@ -742,9 +742,7 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 			mmi->ptMinTrackSize.x = 500;
 			mmi->ptMinTrackSize.y = 100;
 		
-			// Allow the window to be resized larger than any single monitor or the virtual screen both horizontally and vertically
-			mmi->ptMaxTrackSize.x = 100000;
-			mmi->ptMaxTrackSize.y = 100000;
+			mmi->ptMaxTrackSize = mmi->ptMaxSize;
 			return 0;
 		}case WM_MOVING: {
 		}case WM_SIZING: {
@@ -1965,6 +1963,8 @@ void App::requestString(const std::string& label, const std::string& initial, St
 	REQUESTING_STRING = true;
 	STRING_REQUEST_TEXTEDIT->setFullText(MST::toMonoString(initial));
 	STRING_REQUEST_TEXTEDIT->mode = 'i';
+	int chr = STRING_REQUEST_TEXTEDIT->lines[0].line_text.length;
+	STRING_REQUEST_TEXTEDIT->cursors = {{0, chr, 0, chr, chr}};
 	STRING_REQUEST_LABEL->setFullText(MST::toMonoString(label));
 	MoveWidget(STRING_REQUEST_RECTANGLE, rootelement);
 	MoveWidget(STRING_REQUEST_TEXTEDIT, rootelement);
@@ -2032,44 +2032,193 @@ bool parseSSHTarget(const std::string& input, SSHConnectionOptions& options, std
 }
 } // namespace
 
+#ifdef _WIN32
+bool LaunchDetachedProcess(const std::wstring& exePath, const std::vector<std::wstring>& args) {
+	// 1. Build the command line string. The first token should be the executable path.
+	std::wstring cmdLine = L"\"" + exePath + L"\"";
+	for (const auto& arg : args) {
+		cmdLine += L" \"" + arg + L"\""; // Quotes prevent splitting on internal spaces
+	}
+
+	// CreateProcessW requires a mutable buffer for the command line
+	std::vector<wchar_t> cmdLineBuffer(cmdLine.begin(), cmdLine.end());
+	cmdLineBuffer.push_back(L'\0');
+
+	STARTUPINFOW si = { sizeof(si) };
+	PROCESS_INFORMATION pi = {};
+
+	// 2. Launch with DETACHED_PROCESS flag to decouple from the parent console/process tree
+	BOOL success = CreateProcessW(
+		nullptr,               // Application Name (null when passed in cmdLine)
+		cmdLineBuffer.data(),  // Command line arguments
+		nullptr,               // Process security attributes
+		nullptr,               // Thread security attributes
+		FALSE,                 // Inherit handles
+		DETACHED_PROCESS,      // Detach completely from parent
+		nullptr,               // Use parent's environment
+		nullptr,               // Use parent's starting directory
+		&si,                   // Startup info
+		&pi                    // Process information
+	);
+
+	if (success) {
+		// Close handles immediately so OS can clean up when the child terminates
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+		return true;
+	}
+
+	std::wcerr << L"Launch failed. Error: " << GetLastError() << std::endl;
+	return false;
+}
+#else
+bool LaunchDetachedProcess(const std::string& exePath, const std::vector<std::string>& args) {
+	// 1. Convert vector to the C-style array format expected by execvp
+	std::vector<char*> c_args;
+	c_args.push_back(const_cast<char*>(exePath.c_str()));
+	for (const auto& arg : args) {
+		c_args.push_back(const_cast<char*>(arg.c_str()));
+	}
+	c_args.push_back(nullptr); // Argument list must be null-terminated
+
+	// 2. First fork
+	pid_t pid = fork();
+	if (pid < 0) return false;
+
+	if (pid == 0) {
+		// Inside the first child: fork a second time
+		pid_t grandchild_pid = fork();
+		
+		if (grandchild_pid < 0) {
+			_exit(1); 
+		}
+		
+		if (grandchild_pid > 0) {
+			// First child exits immediately. The grandchild becomes an orphan 
+			// and gets adopted by init (PID 1), disconnecting it from the parent.
+			_exit(0); 
+		}
+
+		// Inside the grandchild: start a new session to fully detach
+		setsid();
+
+		// Optional: Redirect standard streams to prevent writing to parent terminal
+		FILE* devNull = fopen("/dev/null", "w");
+		if (devNull) {
+			dup2(fileno(devNull), STDIN_FILENO);
+			dup2(fileno(devNull), STDOUT_FILENO);
+			dup2(fileno(devNull), STDERR_FILENO);
+			fclose(devNull);
+		}
+
+		// Replace grandchild process image with the target executable
+		execvp(exePath.c_str(), c_args.data());
+		
+		// execvp only returns if an error occurred
+		_exit(1); 
+	}
+
+	// Inside the parent: reap the first child immediately
+	int status;
+	waitpid(pid, &status, 0); 
+	
+	return true; 
+}
+#endif
+
 void App::connectSSH() {
 	const std::string previous = settings->getValue("ssh_target", std::string());
 	requestString("SSH target (user@host[:port])?", previous, [](MST::MonoString value) {
 		SSHConnectionOptions options;
 		std::string error;
-		if (!parseSSHTarget(MST::toString(value), options, error)) {
+		const std::string target = MST::toString(value);
+		
+		if (!parseSSHTarget(target, options, error)) {
 			displayToast(MST::toMonoString(error));
 			return;
 		}
-		options.key_path = settings->getValue("ssh_key_path", std::string());
-		options.helper_path = settings->getValue("ssh_helper_path", std::string("cwremote"));
-		const std::string target = MST::toString(value);
-		requestString("SSH password (blank for key/agent)?", "", [options, target](MST::MonoString password) mutable {
-			options.password = MST::toString(password);
+		
+		settings->setValue("ssh_target", target);
+		requestString("SSH password (blank for key/agent)?", "", [options, target](MST::MonoString passwordMST) mutable {
+			std::string password = MST::toString(passwordMST);
 			STRING_REQUEST_TEXTEDIT->setFullText(MST::MonoString{});
-			std::string connect_error;
-			auto backend = SSHFileBackend::connect(options, connect_error);
-			// Do not retain the password after OpenSSH has started.
-			options.password.clear();
-			if (!backend) {
-				std::cout << "SSH connection failed: " << connect_error << "\n";
-				displayToast(MST::toMonoString("SSH connection failed: " + connect_error));
-				return;
+			
+			std::string startpath = getExecutablePath();
+			
+			bool worked;
+			
+			#ifdef _WIN32
+			if (password != "") {
+				worked = LaunchDetachedProcess(widen(startpath), {widen("--ssh"), widen(target), widen("--ssh_password"), widen(password)});
+			}else{
+				worked = LaunchDetachedProcess(widen(startpath), {widen("--ssh"), widen(target)});
 			}
-			if (!FileBackends::isRemote()) {
-				settings->setValue("ssh_previous_local_folder", settings->getValue("current_folder", getExecutableDir()));
+			#else
+			if (password != "") {
+				worked = LaunchDetachedProcess(startpath, {"--ssh", target, "--ssh_password", password});
+			}else{
+				worked = LaunchDetachedProcess(startpath, {"--ssh", target});
 			}
-			settings->setValue("ssh_target", target);
-			FileBackends::use(backend);
-			const std::string remote_folder = backend->remoteInfo().cwd.empty()
-				? backend->homeDirectory()
-				: backend->remoteInfo().cwd;
-			setFolder(remote_folder);
-			refreshFileTrees(rootelement);
-			displayToast(MST::toMonoString("Connected to " + backend->displayName()));
+			#endif
+			
+			if (!worked) {
+				displayToast(MST::toMonoString("Failed to start codewizard process"));
+			}
+			
 			commandUnfocused();
 		});
 	});
+}
+
+void App::_connectSSH(std::string host, std::string password) {
+	SSHConnectionOptions options;
+	std::string error;
+	if (!parseSSHTarget(host, options, error)) {
+		displayToast(MST::toMonoString(error));
+		return;
+	}
+	options.key_path = settings->getValue("ssh_key_path", std::string());
+	options.helper_path = settings->getValue("ssh_helper_path", std::string("cwremote"));
+	options.password = password;
+	
+	std::string connect_error;
+	auto backend = SSHFileBackend::connect(options, connect_error);
+	// Do not retain the password after OpenSSH has started.
+	options.password.clear();
+	if (!backend) {
+		std::cout << "SSH connection failed: " << connect_error << "\n";
+		displayToast(MST::toMonoString("SSH connection failed: " + connect_error));
+		return;
+	}
+
+	backend->setDisconnectCallback([backend]() {
+		if (FileBackends::current().get() != backend.get()) return;
+		const std::string local_folder = settings->getValue("ssh_previous_local_folder", getExecutableDir());
+		FileBackends::useLocal();
+		setFolder(local_folder);
+		
+		tinyfd_messageBox(
+			"SSH Disconnected",
+			"The SSH connection has been lost!",
+			"ok",
+			"error",
+			1
+		);
+		
+		glfwSetWindowShouldClose(window, GLFW_TRUE);
+	});
+
+	if (!FileBackends::isRemote()) {
+		settings->setValue("ssh_previous_local_folder", settings->getValue("current_folder", getExecutableDir()));
+	}
+	
+	FileBackends::use(backend);
+	const std::string remote_folder = backend->remoteInfo().cwd.empty()
+		? backend->homeDirectory()
+		: backend->remoteInfo().cwd;
+	setFolder(remote_folder);
+	refreshFileTrees(rootelement);
+	displayToast(MST::toMonoString("Connected to " + backend->displayName()));
 }
 
 void App::disconnectSSH() {
@@ -2077,12 +2226,14 @@ void App::disconnectSSH() {
 		displayToast(MST::toMonoString("No SSH connection is active."));
 		return;
 	}
+	
+	save();
+	
 	const std::string local_folder = settings->getValue("ssh_previous_local_folder", getExecutableDir());
 	FileBackends::useLocal();
 	setFolder(local_folder);
-	refreshFileTrees(rootelement);
-	displayToast(MST::toMonoString("SSH connection closed."));
-	commandUnfocused();
+	
+	glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
 void App::setFolder(std::string fpr) {
@@ -2745,29 +2896,21 @@ void App::indexFiles() {
 
 	if (FileBackends::isRemote()) {
 		auto backend = FileBackends::current();
-		while (!dirs.empty() && seen < maxFiles) {
-			const auto curDir = dirs.front();
-			dirs.pop();
-			std::vector<BackendDirectoryEntry> entries;
-			std::string list_error;
-			if (!backend->listDirectory(curDir, entries, list_error)) continue;
-			for (const auto& entry : entries) {
+		std::vector<ScannedFile> scanned;
+		std::string scan_error;
+		if (backend->scanFiles(rootPath, maxFiles, scanned, scan_error)) {
+			for (const auto& f : scanned) {
 				if (seen >= maxFiles) break;
-				const std::string absPath = backend->join(curDir, entry.name);
-				if (entry.is_directory) {
-					if (!entry.name.empty() && entry.name[0] != '.') dirs.push(absPath);
-					continue;
-				}
-				if (dontshowagain.count(absPath)) continue;
-				INDEXED_FILES.fullPaths.push_back(absPath);
-				std::string rel = absPath.size() > rootLen ? absPath.substr(rootLen) : absPath;
+				if (dontshowagain.count(f.fullPath)) continue;
+				INDEXED_FILES.fullPaths.push_back(f.fullPath);
+				std::string rel = f.fullPath.size() > rootLen ? f.fullPath.substr(rootLen) : f.fullPath;
 				if (rel.size() > maxDisplayChars) {
 					rel = rel.substr(rel.size() - maxDisplayChars);
 					const auto slash = rel.find_first_of("/\\");
 					if (slash != std::string::npos) rel = rel.substr(slash);
 				}
 				INDEXED_FILES.displayPaths.push_back(MST::toMonoString(rel));
-				INDEXED_FILES.indexedNames.push_back(entry.name);
+				INDEXED_FILES.indexedNames.push_back(f.name);
 				++seen;
 			}
 		}
@@ -3385,6 +3528,24 @@ SearchResult App::searchAcrossFiles(const std::string& searchTerm) {
 	
 	// limit to first 300 (or fewer) files
 	size_t maxlen = std::min<size_t>(300, INDEXED_FILES.fullPaths.size());
+	
+	if (FileBackends::isRemote()) {
+		std::vector<std::string> searchPaths(
+			INDEXED_FILES.fullPaths.begin(),
+			INDEXED_FILES.fullPaths.begin() + maxlen);
+		std::vector<SearchedFile> remoteResults;
+		std::string search_error;
+		if (FileBackends::current()->searchFiles(searchPaths, searchTerm, remoteResults, search_error)) {
+			for (const auto& sf : remoteResults) {
+				SearchMatchVec matches;
+				for (const auto& m : sf.matches) {
+					matches.emplace_back(m.line, m.content);
+				}
+				out[{sf.path, sf.path}] = std::move(matches);
+			}
+		}
+		return out;
+	}
 	
 	std::vector<std::string>  torun;
 	std::vector<std::thread>  threads;

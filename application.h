@@ -150,6 +150,7 @@ public:
 	static void setFolder(std::string fpr);
 	static void requestString(const std::string& label, const std::string& initial, StringGivenFunc callback);
 	static void connectSSH();
+	static void _connectSSH(std::string host, std::string password);
 	static void disconnectSSH();
 	
 	static void setTextEditHighlighter(Widget* te, std::string name);

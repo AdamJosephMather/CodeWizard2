@@ -4,7 +4,6 @@
 #include <array>
 #include <cstring>
 #include <filesystem>
-#include <iomanip>
 #include <limits>
 #include <sstream>
 #include <utility>
@@ -163,6 +162,8 @@ std::vector<std::string> sshArguments(const SSHConnectionOptions& options) {
 		"ssh", "-T",
 		"-o", options.password.empty() ? "BatchMode=yes" : "BatchMode=no",
 		"-o", "ConnectTimeout=10",
+		"-o", "ServerAliveInterval=10",
+		"-o", "ServerAliveCountMax=3",
 		"-p", std::to_string(options.port)
 	};
 	if (!options.password.empty()) {
@@ -186,6 +187,51 @@ SSHTransport::SSHTransport() = default;
 
 SSHTransport::~SSHTransport() {
 	close();
+}
+
+void SSHTransport::setDisconnectCallback(std::function<void()> callback) {
+	std::lock_guard<std::mutex> lock(monitor_mutex_);
+	disconnect_callback_ = std::move(callback);
+}
+
+void SSHTransport::fireDisconnect() {
+	std::function<void()> cb;
+	{
+		std::lock_guard<std::mutex> lock(monitor_mutex_);
+		cb = disconnect_callback_;
+	}
+	if (cb) cb();
+}
+
+void SSHTransport::monitorProcess() {
+	for (;;) {
+		{
+			std::lock_guard<std::mutex> lock(monitor_mutex_);
+			if (monitor_stop_) return;
+		}
+
+#ifdef _WIN32
+		DWORD exit_code = 0;
+		const HANDLE proc = static_cast<HANDLE>(process_);
+		if (!proc) return;
+		if (!GetExitCodeProcess(proc, &exit_code)) return;
+		if (exit_code != STILL_ACTIVE) {
+			fireDisconnect();
+			return;
+		}
+#else
+		if (process_id_ <= 0) return;
+		int status = 0;
+		const pid_t result = ::waitpid(process_id_, &status, WNOHANG);
+		if (result < 0) return;
+		if (result > 0) {
+			fireDisconnect();
+			return;
+		}
+#endif
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	}
 }
 
 bool SSHTransport::start(const SSHConnectionOptions& options, SSHRemoteInfo& info, std::string& error) {
@@ -311,6 +357,14 @@ bool SSHTransport::start(const SSHConnectionOptions& options, SSHRemoteInfo& inf
 		close();
 		return false;
 	}
+
+	{
+		std::lock_guard<std::mutex> lock(monitor_mutex_);
+		monitor_stop_ = false;
+	}
+	if (monitor_thread_.joinable()) monitor_thread_.join();
+	monitor_thread_ = std::thread(&SSHTransport::monitorProcess, this);
+
 	return true;
 }
 
@@ -466,6 +520,12 @@ bool SSHTransport::readAll(void* data, std::size_t size, std::string& error) {
 }
 
 void SSHTransport::close() {
+	{
+		std::lock_guard<std::mutex> lock(monitor_mutex_);
+		monitor_stop_ = true;
+	}
+	if (monitor_thread_.joinable()) monitor_thread_.join();
+
 	std::lock_guard<std::mutex> lock(request_mutex_);
 #ifdef _WIN32
 	if (input_write_) {
@@ -588,6 +648,10 @@ bool SSHFileBackend::call(const std::string& method, const nlohmann::json& param
 	return transport_->request(method, params, data, error);
 }
 
+void SSHFileBackend::setDisconnectCallback(std::function<void()> callback) {
+	transport_->setDisconnectCallback(std::move(callback));
+}
+
 bool SSHFileBackend::readFile(const std::string& path, std::vector<std::uint8_t>& bytes, std::string& error) {
 	nlohmann::json data;
 	if (!call("file/read", {{"path", path}}, data, error)) return false;
@@ -689,4 +753,38 @@ bool SSHFileBackend::createDirectories(const std::string& path, std::string& err
 		stat_cache_.erase(path);
 	}
 	return success;
+}
+
+bool SSHFileBackend::scanFiles(const std::string& rootPath, std::size_t maxFiles,
+							   std::vector<ScannedFile>& files, std::string& error) {
+	nlohmann::json data;
+	if (!call("file/scan", {{"path", rootPath}, {"maxFiles", maxFiles}}, data, error)) return false;
+	files.clear();
+	for (const auto& item : data.value("files", nlohmann::json::array())) {
+		files.push_back({
+			item.value("name", ""),
+			item.value("path", "")
+		});
+	}
+	return true;
+}
+
+bool SSHFileBackend::searchFiles(const std::vector<std::string>& filePaths,
+								 const std::string& searchTerm,
+								 std::vector<SearchedFile>& results, std::string& error) {
+	nlohmann::json data;
+	if (!call("file/search", {{"files", filePaths}, {"searchTerm", searchTerm}}, data, error)) return false;
+	results.clear();
+	for (const auto& item : data.value("results", nlohmann::json::array())) {
+		SearchedFile sf;
+		sf.path = item.value("path", "");
+		for (const auto& match : item.value("matches", nlohmann::json::array())) {
+			sf.matches.push_back({
+				match.value("line", 0),
+				match.value("content", "")
+			});
+		}
+		results.push_back(std::move(sf));
+	}
+	return true;
 }

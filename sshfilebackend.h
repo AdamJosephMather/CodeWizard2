@@ -5,9 +5,11 @@
 
 #include <cstdint>
 #include <chrono>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -41,14 +43,21 @@ public:
 	bool request(const std::string& method, const nlohmann::json& params, nlohmann::json& data, std::string& error);
 	void close();
 	bool connected() const;
+	void setDisconnectCallback(std::function<void()> callback);
 
 private:
 	bool writeAll(const void* data, std::size_t size, std::string& error);
 	bool readAll(void* data, std::size_t size, std::string& error);
 	bool readHandshake(SSHRemoteInfo& info, std::string& error);
+	void monitorProcess();
+	void fireDisconnect();
 
 	mutable std::mutex request_mutex_;
 	std::uint64_t next_request_id_ = 1;
+	std::function<void()> disconnect_callback_;
+	std::thread monitor_thread_;
+	bool monitor_stop_ = false;
+	std::mutex monitor_mutex_;
 
 #ifdef _WIN32
 	void* process_ = nullptr;
@@ -74,6 +83,7 @@ public:
 	std::string fromLspPath(const std::string& path) const override;
 	const SSHRemoteInfo& remoteInfo() const { return info_; }
 	const SSHConnectionOptions& connectionOptions() const { return options_; }
+	void setDisconnectCallback(std::function<void()> callback);
 
 	bool readFile(const std::string& path, std::vector<std::uint8_t>& bytes, std::string& error) override;
 	bool writeFile(const std::string& path, const std::vector<std::uint8_t>& bytes, std::string& error) override;
@@ -84,6 +94,12 @@ public:
 	bool remove(const std::string& path, std::string& error) override;
 	bool rename(const std::string& old_path, const std::string& new_path, std::string& error) override;
 	bool createDirectories(const std::string& path, std::string& error) override;
+
+	bool scanFiles(const std::string& rootPath, std::size_t maxFiles,
+				   std::vector<ScannedFile>& files, std::string& error) override;
+	bool searchFiles(const std::vector<std::string>& filePaths,
+					 const std::string& searchTerm,
+					 std::vector<SearchedFile>& results, std::string& error) override;
 
 private:
 	SSHFileBackend(std::shared_ptr<SSHTransport> transport, SSHRemoteInfo info, SSHConnectionOptions options);

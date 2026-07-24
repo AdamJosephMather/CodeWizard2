@@ -11,6 +11,7 @@ A rewrite of CodeWizard. CodeWizard2 is *probably not* a useful project to anybo
 3. It contains a custom LSP implementation originally written for CodeWizard.
 4. CodeWizard2 is *not* for the average person, there are a lot of undocumented features and key bindings. Which I am *not* changing right now.
 5. We use a 'panel' such that you can have whatever arrangement of elements you want.
+6. Native SSH connection to cwremote on windows and linux
 
 ## Screenshot(s)
 
@@ -97,3 +98,22 @@ Example languages.json
 ]
 }
 ```
+
+## To setup cwremote for remote SSH instances
+
+First, download the executable for the host machine.
+
+### Windows
+
+1. Move the exe file to a sutable location
+2. Edit your path to include that folder location
+3. Done! (I assume you can figure out ssh)
+
+### Linux
+
+1. Download the cwremote for linux
+2. Run `chmod +x cwremote`
+3. Run `./cwremote --install`
+4. You can now safely delete the downloaded file
+
+Step 3 just coppies the file to a folder on your pc so that it's accessable. To find it you can use `which cwremote`

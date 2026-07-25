@@ -40,24 +40,25 @@ func main() {
 		choice := ""
 		fmt.Print("Do you want to uninstall, update, or re-register? [uninstall/update/reregister (rere)]: ")
 		fmt.Scanln(&choice)
-		
+
 		if strings.ToLower(choice) == "uninstall" {
 			waitForCodeWizardClosed()
-		
+
 			fmt.Println("Uninstalling CodeWizard...")
-			fatalIf(destroyDir(installDir))   // <-- don't ignore errors
+			fatalIf(destroyDir(installDir)) // <-- don't ignore errors
 			fatalIf(unregister())
 			fmt.Println("Uninstalled CodeWizard.")
-		
+
 		} else if strings.ToLower(choice) == "update" {
 			waitForCodeWizardClosed()
-		
+
 			fmt.Println("Updating CodeWizard...")
 			fatalIf(destroyDir(filepath.Join(installDir, "CodeWizard"))) // <-- don't ignore errors
-		
+
 			zipPath, err := resolveBesideMe("CodeWizard.zip")
 			fatalIf(err)
 			fatalIf(extractZip(zipPath, installDir))
+			fatalIf(installVCRuntime(installDir))
 		} else if strings.ToLower(choice) == "reregister" || strings.ToLower(choice) == "rere" {
 			fmt.Println("Registering CodeWizard...")
 			register(installDir)
@@ -65,29 +66,30 @@ func main() {
 		} else {
 			fmt.Println("Unclear operation requested.")
 		}
-	}else {
+	} else {
 		choice := ""
 		fmt.Print("Do you want to install CodeWizard? ")
 		fmt.Scanln(&choice)
-		
+
 		if strings.ToLower(choice) == "yes" || strings.ToLower(choice) == "y" {
 			fmt.Println("Installing CodeWizard...")
 			zipPath, err := resolveBesideMe("CodeWizard.zip")
 			fatalIf(err)
 			fatalIf(extractZip(zipPath, installDir))
-			
+			fatalIf(installVCRuntime(installDir))
+
 			zipPath, err = resolveBesideMe("Extras.zip")
 			fatalIf(err)
 			fatalIf(extractZip(zipPath, installDir))
-			
+
 			register(installDir)
-		}else {
+		} else {
 			fmt.Println("No work was done.")
 		}
 	}
-	
+
 	fmt.Println("Done. Press enter to finish.")
-	waitEnter("");
+	waitEnter("")
 }
 
 var stdin = bufio.NewReader(os.Stdin)
@@ -196,6 +198,48 @@ func dirExists(path string) (bool, error) {
 	return false, err
 }
 
+func installVCRuntime(installDir string) error {
+	redistPath := filepath.Join(installDir, "CodeWizard", "vc_redist.x64.exe")
+	if _, err := os.Stat(redistPath); err != nil {
+		return fmt.Errorf("Visual C++ Redistributable not found at %q: %w", redistPath, err)
+	}
+
+	fmt.Println("Installing Microsoft Visual C++ Runtime (Windows may ask for permission)...")
+
+	// Start-Process with RunAs is required so a non-elevated per-user installer
+	// can display the normal UAC prompt. Passing the path through the environment
+	// avoids quoting problems when LOCALAPPDATA contains spaces or apostrophes.
+	const script = `
+$ErrorActionPreference = 'Stop'
+try {
+	$process = Start-Process -FilePath $env:CODEWIZARD_VC_REDIST -ArgumentList @('/install', '/quiet', '/norestart') -Verb RunAs -Wait -PassThru
+
+	# 0 = success, 1638 = another version is installed, 3010 = reboot required.
+	if ($process.ExitCode -notin @(0, 1638, 3010)) {
+		throw "VC++ Redistributable exited with code $($process.ExitCode)"
+	}
+} catch {
+	Write-Error $_
+	exit 1
+}
+`
+
+	cmd := exec.Command(
+		"powershell.exe",
+		"-NoProfile",
+		"-NonInteractive",
+		"-Command",
+		script,
+	)
+	cmd.Env = append(os.Environ(), "CODEWIZARD_VC_REDIST="+redistPath)
+	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("install Microsoft Visual C++ Runtime: %w", err)
+	}
+
+	return nil
+}
+
 func extractZip(zipPath, dest string) error {
 	r, err := zip.OpenReader(zipPath)
 	if err != nil {
@@ -218,7 +262,7 @@ func extractZip(zipPath, dest string) error {
 		if topLevel != "" && strings.HasPrefix(name, topLevel+"/") {
 			name = strings.TrimPrefix(name, topLevel+"/")
 		}
-		
+
 		relPath, err := sanitizeZipPath(name)
 		if err != nil {
 			return err
@@ -284,11 +328,17 @@ func register(installLoc string) error {
 	const subkey = `Software\Microsoft\Windows\CurrentVersion\App Paths\CodeWizard.exe`
 
 	k, _, err := registry.CreateKey(registry.CURRENT_USER, subkey, registry.WRITE|registry.SET_VALUE)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	defer k.Close()
 
-	if err := k.SetStringValue("", exe); err != nil { return err }
-	if err := k.SetStringValue("Path", filepath.Join(installLoc, "CodeWizard")); err != nil { return err }
+	if err := k.SetStringValue("", exe); err != nil {
+		return err
+	}
+	if err := k.SetStringValue("Path", filepath.Join(installLoc, "CodeWizard")); err != nil {
+		return err
+	}
 
 	// Start menu shortcut
 	fatalIf(createStartMenuShortcut("CodeWizard", exe, "", filepath.Dir(exe), exe))
@@ -377,7 +427,9 @@ func registerContextMenu(exePath string) error {
 	const base = `Software\Classes\*\shell\CodeWizard`
 
 	k, _, err := registry.CreateKey(registry.CURRENT_USER, base, registry.WRITE|registry.SET_VALUE)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	defer k.Close()
 
 	// Human-readable menu text
@@ -392,7 +444,9 @@ func registerContextMenu(exePath string) error {
 
 	// Now create the command subkey
 	cmdKey, _, err := registry.CreateKey(registry.CURRENT_USER, base+`\command`, registry.WRITE|registry.SET_VALUE)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	defer cmdKey.Close()
 
 	// "%1" = the selected file path

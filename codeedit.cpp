@@ -1326,12 +1326,12 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 		}
 		
 		if (App::activeLeafNode == renamebox && renamebox->parent == this) {
-			if (key == GLFW_KEY_ESCAPE) {
+			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE && (renamebox->mode == 'n' || !App::settings->getValue("use_vim", false))) {
 				App::RemoveWidgetFromParent(renamebox);
 				App::setActiveLeafNode(textedit);
 				DO_RENDER = 3;
 				return true;
-			}else if (key == GLFW_KEY_ENTER){
+			}else if (action == GLFW_PRESS && key == GLFW_KEY_ENTER){
 				App::RemoveWidgetFromParent(renamebox);
 				DO_RENDER = 3;
 				if (App::lsp_client_map[lsp]) {

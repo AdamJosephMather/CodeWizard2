@@ -1755,11 +1755,6 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 	bool is_control_held = ((mods & GLFW_MOD_CONTROL) != 0);
 	bool is_alt_held = ((mods & GLFW_MOD_ALT) != 0);
 	
-	if (mode == 'n' && key == GLFW_KEY_SEMICOLON) {
-		App::setActiveLeafNode(App::commandPalette);
-		return true;
-	}
-
 	if (key == GLFW_KEY_LEFT || key == GLFW_KEY_RIGHT || key == GLFW_KEY_UP || key == GLFW_KEY_DOWN || key == GLFW_KEY_HOME || key == GLFW_KEY_END || (key == GLFW_KEY_F && is_alt_held)) {
 		if (is_alt_held && key == GLFW_KEY_DOWN) {
 			insertNewCursorDown();
@@ -1951,14 +1946,19 @@ bool TextEdit::on_char_event(unsigned int codepoint) {
 	}
 
 	std::cout << "Char: " << codepoint << "\n";
-#endif	
+#endif
 
 	if (App::activeLeafNode != this) {
 		return false;
 	}
 
 	MST::u32 ch = static_cast<MST::u32>(codepoint);
-
+	
+	if (mode == 'n' && (ch == ';' || ch == ':')) {
+		App::setActiveLeafNode(App::commandPalette);
+		return true;
+	}
+	
 	// Whitespace is handled in key-down.
 	if (ch == U'\t' || ch == U' ' || ch == U'\n') {
 		return true;

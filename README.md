@@ -62,6 +62,17 @@ The release is installed into `build/windows-release`. Use
 `.\build.ps1 -Run` to build and launch it. The resulting executable uses the
 GNU Windows ABI and does not require the Visual C++ Redistributable.
 
+The Windows build also generates
+`build/windows-release/compile_commands.json` for clangd. Configure clangd with:
+
+```text
+clangd.exe --compile-commands-dir=<CodeWizard2>/build/windows-release
+```
+
+The database contains the Windows target, compile definitions, pinned
+dependency paths, and Zig libc/libc++ configuration used by the real build. It
+is refreshed automatically whenever `build.ps1` runs.
+
 Linux requires GCC, curl, Rust/rustup, and development packages for X11,
 OpenGL, curl, and OpenSSL:
 

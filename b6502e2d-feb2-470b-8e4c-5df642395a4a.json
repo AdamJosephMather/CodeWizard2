@@ -1,7 +1,7 @@
 {
 	"LSPs": {
 		"language_name_here": "lsp_command_here",
-		"c++": "C:/Users/adamj/OneDrive/Documents/LanguageServers/clangd_22.1.0/bin/clangd.exe"
+		"c++": "C:/Users/adamj/OneDrive/Documents/LanguageServers/clangd_22.1.0/bin/clangd.exe --compile-commands-dir=D:/Users/adamj/Documents/C/CodeWizard2/build/windows-release"
 	},
 	"build_command": "powershell -NoProfile -ExecutionPolicy Bypass -File D:\\Users\\adamj\\Documents\\C\\CodeWizard2\\build.ps1 -Target windows-release -Run"
 }

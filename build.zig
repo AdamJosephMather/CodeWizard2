@@ -268,6 +268,25 @@ pub fn build(b: *std.Build) !void {
     });
     exe.linkLibrary(ghostty.artifact("ghostty-vt-static"));
     module.addIncludePath(ghostty.path("include"));
+    if (is_windows) {
+        try installWindowsCompilationDatabase(
+            b,
+            cpp_flags.items,
+            &.{
+                b.pathFromRoot(""),
+                b.pathFromRoot("third_party/syntect_bridge/include"),
+                sioclient.path("src").getPath(b),
+                asio.path("asio/include").getPath(b),
+                rapidjson.path("include").getPath(b),
+                websocketpp.path("").getPath(b),
+                glfw_dep.path("include").getPath(b),
+                freetype_dep.path("include").getPath(b),
+                curl_dep.?.path("include").getPath(b),
+                stb_dep.path("").getPath(b),
+                ghostty.path("include").getPath(b),
+            },
+        );
+    }
 
     const glfw = b.addLibrary(.{
         .name = "glfw",
@@ -446,6 +465,123 @@ fn installRuntimeFiles(b: *std.Build) void {
         .install_dir = .prefix,
         .install_subdir = "cascadia",
     });
+}
+
+fn installWindowsCompilationDatabase(
+    b: *std.Build,
+    cpp_flags: []const []const u8,
+    include_paths: []const []const u8,
+) !void {
+    var contents: std.ArrayList(u8) = .empty;
+    try contents.appendSlice(b.allocator, "[\n");
+
+    for (app_cpp_sources, 0..) |source, index| {
+        const source_path = b.pathFromRoot(source);
+        if (index != 0) try contents.appendSlice(b.allocator, ",\n");
+        try contents.appendSlice(b.allocator, "  {\n    \"directory\": ");
+        try appendJsonString(&contents, b.allocator, b.pathFromRoot(""));
+        try contents.appendSlice(b.allocator, ",\n    \"file\": ");
+        try appendJsonString(&contents, b.allocator, source_path);
+        try contents.appendSlice(b.allocator, ",\n    \"arguments\": [");
+
+        // clangd parses this as a normal Clang-compatible invocation. All
+        // system paths and Zig libc++ configuration defines are explicit, so
+        // clangd does not need to execute the Zig driver.
+        try appendJsonString(&contents, b.allocator, b.graph.zig_exe);
+        for ([_][]const u8{
+            "--driver-mode=g++",
+            "--target=x86_64-windows-gnu",
+            "-x",
+            "c++",
+            "-nostdinc",
+            "-nostdinc++",
+            "-nobuiltininc",
+        }) |argument| {
+            try contents.appendSlice(b.allocator, ", ");
+            try appendJsonString(&contents, b.allocator, argument);
+        }
+        for (cpp_flags) |argument| {
+            try contents.appendSlice(b.allocator, ", ");
+            try appendJsonString(&contents, b.allocator, argument);
+        }
+        for (include_paths) |path| {
+            try contents.appendSlice(b.allocator, ", ");
+            try appendJsonString(&contents, b.allocator, "-I");
+            try contents.appendSlice(b.allocator, ", ");
+            try appendJsonString(&contents, b.allocator, path);
+        }
+        for ([_][]const u8{
+            b.pathFromRoot("zig-version/windows-x86_64/lib/libcxx/include"),
+            b.pathFromRoot("zig-version/windows-x86_64/lib/libcxxabi/include"),
+            b.pathFromRoot("zig-version/windows-x86_64/lib/include"),
+            b.pathFromRoot("zig-version/windows-x86_64/lib/libc/include/x86_64-windows-gnu"),
+            b.pathFromRoot("zig-version/windows-x86_64/lib/libc/include/generic-mingw"),
+            b.pathFromRoot("zig-version/windows-x86_64/lib/libc/include/x86_64-windows-any"),
+            b.pathFromRoot("zig-version/windows-x86_64/lib/libc/include/any-windows-any"),
+            b.pathFromRoot("zig-version/windows-x86_64/lib/libunwind/include"),
+        }) |path| {
+            try contents.appendSlice(b.allocator, ", ");
+            try appendJsonString(&contents, b.allocator, "-isystem");
+            try contents.appendSlice(b.allocator, ", ");
+            try appendJsonString(&contents, b.allocator, path);
+        }
+        for ([_][]const u8{
+            "-D__MSVCRT_VERSION__=0xE00",
+            "-D__MINGW_FORCE_SYS_INTRINS",
+            "-D__PRFCHWINTRIN_H",
+            "-D_LIBCPP_ABI_VERSION=1",
+            "-D_LIBCPP_ABI_NAMESPACE=__1",
+            "-D_LIBCPP_HAS_THREADS=1",
+            "-D_LIBCPP_HAS_MONOTONIC_CLOCK",
+            "-D_LIBCPP_HAS_TERMINAL",
+            "-D_LIBCPP_HAS_MUSL_LIBC=0",
+            "-D_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS",
+            "-D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS",
+            "-D_LIBCPP_HAS_VENDOR_AVAILABILITY_ANNOTATIONS=0",
+            "-D_LIBCPP_HAS_FILESYSTEM=1",
+            "-D_LIBCPP_HAS_RANDOM_DEVICE",
+            "-D_LIBCPP_HAS_LOCALIZATION",
+            "-D_LIBCPP_HAS_UNICODE",
+            "-D_LIBCPP_HAS_WIDE_CHARACTERS",
+            "-D_LIBCPP_HAS_NO_STD_MODULES",
+            "-D_LIBCPP_PSTL_BACKEND_SERIAL",
+            "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE",
+            "-D_LIBCPP_ENABLE_CXX17_REMOVED_UNEXPECTED_FUNCTIONS",
+        }) |argument| {
+            try contents.appendSlice(b.allocator, ", ");
+            try appendJsonString(&contents, b.allocator, argument);
+        }
+        try contents.appendSlice(b.allocator, ", ");
+        try appendJsonString(&contents, b.allocator, "-c");
+        try contents.appendSlice(b.allocator, ", ");
+        try appendJsonString(&contents, b.allocator, source_path);
+        try contents.appendSlice(b.allocator, "]\n  }");
+    }
+    try contents.appendSlice(b.allocator, "\n]\n");
+
+    const generated = b.addWriteFiles();
+    const database = generated.add("compile_commands.json", contents.items);
+    const install_database = b.addInstallFile(database, "compile_commands.json");
+    b.getInstallStep().dependOn(&install_database.step);
+}
+
+fn appendJsonString(
+    output: *std.ArrayList(u8),
+    allocator: std.mem.Allocator,
+    value: []const u8,
+) !void {
+    try output.append(allocator, '"');
+    for (value) |character| {
+        switch (character) {
+            '"' => try output.appendSlice(allocator, "\\\""),
+            '\\' => try output.appendSlice(allocator, "\\\\"),
+            '\n' => try output.appendSlice(allocator, "\\n"),
+            '\r' => try output.appendSlice(allocator, "\\r"),
+            '\t' => try output.appendSlice(allocator, "\\t"),
+            else => try output.append(allocator, character),
+        }
+    }
+    try output.append(allocator, '"');
 }
 
 fn curlSources(b: *std.Build, dependency: *std.Build.Dependency) ![]const []const u8 {

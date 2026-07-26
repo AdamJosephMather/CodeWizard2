@@ -58,7 +58,6 @@ func main() {
 			zipPath, err := resolveBesideMe("CodeWizard.zip")
 			fatalIf(err)
 			fatalIf(extractZip(zipPath, installDir))
-			fatalIf(installVCRuntime(installDir))
 		} else if strings.ToLower(choice) == "reregister" || strings.ToLower(choice) == "rere" {
 			fmt.Println("Registering CodeWizard...")
 			register(installDir)
@@ -76,7 +75,6 @@ func main() {
 			zipPath, err := resolveBesideMe("CodeWizard.zip")
 			fatalIf(err)
 			fatalIf(extractZip(zipPath, installDir))
-			fatalIf(installVCRuntime(installDir))
 
 			zipPath, err = resolveBesideMe("Extras.zip")
 			fatalIf(err)
@@ -196,105 +194,6 @@ func dirExists(path string) (bool, error) {
 		return false, nil
 	}
 	return false, err
-}
-
-func installVCRuntime(installDir string) error {
-	installed, err := isVCRuntimeInstalled()
-	if err != nil {
-		return err
-	}
-	if installed {
-		fmt.Println("Microsoft Visual C++ Runtime is already installed.")
-		return nil
-	}
-
-	redistPath := filepath.Join(installDir, "CodeWizard", "vc_redist.x64.exe")
-	if _, err := os.Stat(redistPath); err != nil {
-		return fmt.Errorf("Visual C++ Redistributable not found at %q: %w", redistPath, err)
-	}
-
-	fmt.Println("Installing Microsoft Visual C++ Runtime (Windows may ask for permission)...")
-
-	// Start-Process with RunAs is required so a non-elevated per-user installer
-	// can display the normal UAC prompt. Passing the path through the environment
-	// avoids quoting problems when LOCALAPPDATA contains spaces or apostrophes.
-	const script = `
-$ErrorActionPreference = 'Stop'
-try {
-	$process = Start-Process -FilePath $env:CODEWIZARD_VC_REDIST -ArgumentList @('/install', '/quiet', '/norestart') -Verb RunAs -Wait -PassThru
-} catch {
-	Write-Warning 'Microsoft Visual C++ Runtime installation was not permitted. CodeWizard installation will continue, but CodeWizard may not run until the runtime is installed.'
-	exit 0
-}
-
-# 0 = success, 1638 = another version is installed, 3010 = reboot required.
-if ($process.ExitCode -notin @(0, 1638, 3010)) {
-	Write-Error "VC++ Redistributable exited with code $($process.ExitCode)"
-	exit 1
-}
-`
-
-	cmd := exec.Command(
-		"powershell.exe",
-		"-NoProfile",
-		"-NonInteractive",
-		"-Command",
-		script,
-	)
-	cmd.Env = append(os.Environ(), "CODEWIZARD_VC_REDIST="+redistPath)
-	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("install Microsoft Visual C++ Runtime: %w", err)
-	}
-
-	return nil
-}
-
-func isVCRuntimeInstalled() (bool, error) {
-	const runtimeKey = `SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64`
-
-	key, err := registry.OpenKey(registry.LOCAL_MACHINE, runtimeKey, registry.QUERY_VALUE)
-	if err != nil {
-		if errors.Is(err, syscall.ERROR_FILE_NOT_FOUND) {
-			return false, nil
-		}
-		return false, fmt.Errorf("check Microsoft Visual C++ Runtime registry key: %w", err)
-	}
-	defer key.Close()
-
-	installed, _, err := key.GetIntegerValue("Installed")
-	if err != nil {
-		if errors.Is(err, syscall.ERROR_FILE_NOT_FOUND) {
-			return false, nil
-		}
-		return false, fmt.Errorf("read Microsoft Visual C++ Runtime status: %w", err)
-	}
-	if installed != 1 {
-		return false, nil
-	}
-
-	windowsDir := os.Getenv("WINDIR")
-	if windowsDir == "" {
-		return false, nil
-	}
-
-	// Checking the files as well as the registry prevents an old or damaged
-	// 14.x installation from being mistaken for the runtime this build needs.
-	requiredDLLs := []string{
-		"msvcp140.dll",
-		"vcruntime140.dll",
-		"vcruntime140_1.dll",
-	}
-	for _, name := range requiredDLLs {
-		if _, err := os.Stat(filepath.Join(windowsDir, "System32", name)); err != nil {
-			if os.IsNotExist(err) {
-				return false, nil
-			}
-			return false, fmt.Errorf("check Microsoft Visual C++ Runtime file %s: %w", name, err)
-		}
-	}
-
-	return true, nil
 }
 
 func extractZip(zipPath, dest string) error {

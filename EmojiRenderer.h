@@ -8,7 +8,6 @@
 #include <d2d1.h>
 #include <dwrite.h>
 #include <wincodec.h>
-#include <wrl/client.h>
 #endif
 
 #include <GL/gl.h>
@@ -35,9 +34,9 @@ private:
 
 #ifdef _WIN32
 	// Windows COM Pointers for offscreen rendering
-	Microsoft::WRL::ComPtr<ID2D1Factory> d2d_factory;
-	Microsoft::WRL::ComPtr<IDWriteFactory> dwrite_factory;
-	Microsoft::WRL::ComPtr<IWICImagingFactory> wic_factory;
+	ID2D1Factory* d2d_factory = nullptr;
+	IDWriteFactory* dwrite_factory = nullptr;
+	IWICImagingFactory* wic_factory = nullptr;
 
 	bool init_windows_api();
 #endif

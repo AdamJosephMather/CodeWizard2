@@ -1,0 +1,63 @@
+.{
+    .name = .codewizard,
+    .version = "0.1.0",
+    .fingerprint = 0x4feb23ecfb44d26f,
+    .minimum_zig_version = "0.15.2",
+    .dependencies = .{
+        .ghostty = .{
+            .url = "https://github.com/ghostty-org/ghostty/archive/53bd14fecfd68c6c0ab64d37b5943247299e2b40.zip",
+            .hash = "ghostty-1.3.2-dev-5UdBC8KeIAU_t8Ms32kWPyMeVZdoQmODUAhNrTjOORDr",
+        },
+        .sioclient = .{
+            .url = "https://github.com/socketio/socket.io-client-cpp/archive/3b7be7e4173b5bdeed393966e3274f65d513a280.tar.gz",
+            .hash = "N-V-__8AAFZcBgBwythW2vBw6LkQp3-mKpfa9Zoh9mmIu0wx",
+        },
+        .asio = .{
+            .url = "https://github.com/chriskohlhoff/asio/archive/230c0d2ae035c5ce1292233fcab03cea0d341264.tar.gz",
+            .hash = "N-V-__8AAHpEigCzifiT-K44uKC6oncfNfEHxvN3PkCYwyDO",
+        },
+        .rapidjson = .{
+            .url = "https://github.com/Tencent/rapidjson/archive/a36110e11874bcf35af854940e0ce910c19a8b49.zip",
+            .hash = "N-V-__8AAENeGwAoCTUx-5utfD9O1aIc3GqZ9PBkTWLF1QkE",
+        },
+        .websocketpp = .{
+            .url = "https://github.com/zaphoyd/websocketpp/archive/56123c87598f8b1dd471be83ca841ceae07f95ba.zip",
+            .hash = "N-V-__8AAFwfNQBT_u6HhCJI0QesFHaznxFuuBGeYQ66Ya3e",
+        },
+        .libgrapheme = .{
+            .url = "https://dl.suckless.org/libgrapheme/libgrapheme-2.0.2.tar.gz",
+            .hash = "N-V-__8AALJdVwBi5WxohsemgMcM0cK6Hf8vQoLA5EjgXiwZ",
+        },
+        .glfw = .{
+            .url = "https://github.com/glfw/glfw/archive/refs/tags/3.4.zip",
+            .hash = "N-V-__8AAL40TADEbrysYHBl-UIZO4KiG4chP8pLDVDINGH4",
+        },
+        .freetype = .{
+            .url = "https://deps.files.ghostty.org/freetype-1220b81f6ecfb3fd222f76cf9106fecfa6554ab07ec7fdc4124b9bb063ae2adf969d.tar.gz",
+            .hash = "N-V-__8AAKLKpwC4H27Ps_0iL3bPkQb-z6ZVSrB-x_3EEkub",
+        },
+        .curl = .{
+            .url = "https://github.com/curl/curl/archive/refs/tags/curl-8_14_1.zip",
+            .hash = "N-V-__8AACMNEwHG8kWZp7xu0MSafA9pkMRZCCVJrQxcS1J8",
+        },
+        .stb = .{
+            .url = "https://github.com/nothings/stb/archive/f75e8d1cad7d90d72ef7a4661f1b994ef78b4e31.zip",
+            .hash = "N-V-__8AAEcaTgDE_lpMTr7EAvXN7wi8JktW-wfyWRB9KwG6",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "*.c",
+        "*.cpp",
+        "*.h",
+        "*.hpp",
+        "*.ico",
+        "*.png",
+        "*.rc",
+        "build_needs",
+        "build_support",
+        "cascadia",
+        "third_party/syntect_bridge/include",
+    },
+}

@@ -11,10 +11,12 @@
 #include <iostream>
 #include <limits>
 #include <vector>
+#include <grapheme.h>
 
 #ifdef _WIN32
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0A00
+#endif
 #endif
 
 namespace {
@@ -98,6 +100,7 @@ std::string posixTerminalCommand(const std::vector<std::string>& arguments) {
 }
 #endif
 } // namespace
+#ifdef _WIN32
 #include <consoleapi2.h>
 #include <consoleapi3.h>
 #include <processthreadsapi.h>
@@ -142,11 +145,14 @@ inline std::string defaultShell() {
 }
 
 static std::string wstringToUtf8(const std::wstring& wstr) {
-	MST::MonoString u = MST::toMonoString(
-		reinterpret_cast<const UChar32*>(wstr.data()),
-		static_cast<int32_t>(wstr.size()));
 	std::string out;
-	u.toUTF8String(out);
+	out.reserve(wstr.size());
+	for (const wchar_t codepoint : wstr) {
+		char encoded[4];
+		const std::size_t length = grapheme_encode_utf8(
+			static_cast<uint_least32_t>(codepoint), encoded, sizeof(encoded));
+		out.append(encoded, length);
+	}
 	return out;
 }
 #endif

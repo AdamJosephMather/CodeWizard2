@@ -1,6 +1,5 @@
 #pragma once
 
-#include <unicode/umachine.h>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -11,6 +10,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+
+using UChar32 = int32_t;
 
 #ifdef _WIN32
 #ifndef _WIN32_WINNT

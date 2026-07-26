@@ -1,4 +1,5 @@
 #include "EmojiRenderer.h"
+#include <vector>
 
 #ifdef _WIN32
 #pragma comment(lib, "d2d1.lib")
@@ -17,6 +18,11 @@ EmojiRenderer::~EmojiRenderer() {
 		glDeleteTextures(1, &pair.second.id);
 	}
 	texture_cache.clear();
+#ifdef _WIN32
+	if (wic_factory) wic_factory->Release();
+	if (dwrite_factory) dwrite_factory->Release();
+	if (d2d_factory) d2d_factory->Release();
+#endif
 }
 
 void EmojiRenderer::draw_emoji(const std::string& emojiSeq, float x, float y, float size) {
@@ -97,14 +103,15 @@ EmojiTexture EmojiRenderer::get_or_create_texture(std::string emojiUtf8, float s
 	);
 
 	// 2. Create an offscreen WIC Bitmap (Premultiplied BGRA)
-	Microsoft::WRL::ComPtr<IWICBitmap> wic_bitmap;
-	wic_factory->CreateBitmap(
+	IWICBitmap* wic_bitmap = nullptr;
+	HRESULT hr = wic_factory->CreateBitmap(
 		newTex.width,
 		newTex.height,
 		GUID_WICPixelFormat32bppPBGRA,
 		WICBitmapCacheOnDemand,
 		&wic_bitmap
 	);
+	if (FAILED(hr) || !wic_bitmap) return newTex;
 
 	// 3. Create D2D Render Target mapping to the WIC Bitmap
 	D2D1_RENDER_TARGET_PROPERTIES rtProps = D2D1::RenderTargetProperties(
@@ -119,16 +126,20 @@ EmojiTexture EmojiRenderer::get_or_create_texture(std::string emojiUtf8, float s
 		D2D1_FEATURE_LEVEL_DEFAULT
 	);
 
-	Microsoft::WRL::ComPtr<ID2D1RenderTarget> render_target;
-	d2d_factory->CreateWicBitmapRenderTarget(
-		wic_bitmap.Get(),
+	ID2D1RenderTarget* render_target = nullptr;
+	hr = d2d_factory->CreateWicBitmapRenderTarget(
+		wic_bitmap,
 		&rtProps,
 		&render_target
 	);
+	if (FAILED(hr) || !render_target) {
+		wic_bitmap->Release();
+		return newTex;
+	}
 
 	// 4. Set up the Font
-	Microsoft::WRL::ComPtr<IDWriteTextFormat> text_format;
-	dwrite_factory->CreateTextFormat(
+	IDWriteTextFormat* text_format = nullptr;
+	hr = dwrite_factory->CreateTextFormat(
 		L"Segoe UI Emoji",
 		nullptr,
 		DWRITE_FONT_WEIGHT_NORMAL,
@@ -138,15 +149,26 @@ EmojiTexture EmojiRenderer::get_or_create_texture(std::string emojiUtf8, float s
 		L"en-us",
 		&text_format
 	);
+	if (FAILED(hr) || !text_format) {
+		render_target->Release();
+		wic_bitmap->Release();
+		return newTex;
+	}
 
 	text_format->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 	text_format->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
-	Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush;
-	render_target->CreateSolidColorBrush(
+	ID2D1SolidColorBrush* brush = nullptr;
+	hr = render_target->CreateSolidColorBrush(
 		D2D1::ColorF(D2D1::ColorF::White),
 		&brush
 	);
+	if (FAILED(hr) || !brush) {
+		text_format->Release();
+		render_target->Release();
+		wic_bitmap->Release();
+		return newTex;
+	}
 
 	// 5. Draw the Emoji
 	render_target->BeginDraw();
@@ -162,9 +184,9 @@ EmojiTexture EmojiRenderer::get_or_create_texture(std::string emojiUtf8, float s
 	render_target->DrawTextW(
 		utf16Str.c_str(),
 		(UINT32)utf16Str.length(),
-		text_format.Get(),
+		text_format,
 		layoutRect,
-		brush.Get(),
+		brush,
 		D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT
 	);
 
@@ -180,6 +202,11 @@ EmojiTexture EmojiRenderer::get_or_create_texture(std::string emojiUtf8, float s
 		(UINT)pixels.size(),
 		pixels.data()
 	);
+
+	brush->Release();
+	text_format->Release();
+	render_target->Release();
+	wic_bitmap->Release();
 
 	// 7. Upload to OpenGL
 	glGenTextures(1, &newTex.id);
@@ -212,14 +239,14 @@ bool EmojiRenderer::init_windows_api() {
 
 	hr = D2D1CreateFactory(
 		D2D1_FACTORY_TYPE_SINGLE_THREADED,
-		d2d_factory.GetAddressOf()
+		&d2d_factory
 	);
 	if (FAILED(hr)) return false;
 
 	hr = DWriteCreateFactory(
 		DWRITE_FACTORY_TYPE_SHARED,
 		__uuidof(IDWriteFactory),
-		reinterpret_cast<IUnknown**>(dwrite_factory.GetAddressOf())
+		reinterpret_cast<IUnknown**>(&dwrite_factory)
 	);
 	if (FAILED(hr)) return false;
 
@@ -227,7 +254,7 @@ bool EmojiRenderer::init_windows_api() {
 		CLSID_WICImagingFactory,
 		nullptr,
 		CLSCTX_INPROC_SERVER,
-		IID_PPV_ARGS(wic_factory.GetAddressOf())
+		IID_PPV_ARGS(&wic_factory)
 	);
 	if (FAILED(hr)) return false;
 

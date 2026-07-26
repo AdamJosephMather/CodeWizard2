@@ -44,10 +44,6 @@
 #include "label.h"
 #include "updatechecker.h"
 
-#include <unicode/ucsdet.h>
-#include <unicode/ucnv.h>
-#include <unicode/unistr.h>
-
 #include "Verify.hpp"
 
 int App::major_version = 2;
@@ -3226,69 +3222,116 @@ MST::MonoString App::readFileToMonoString(
 	worked = false;
 	if (!backend) backend = FileBackends::current();
 
-	auto errorString = [](const char* msg) -> MST::MonoString {
-		return MST::toMonoString(std::string(msg));
+	auto appendUtf8 = [](std::string& output, uint32_t codepoint) {
+		char encoded[4];
+		const size_t length = grapheme_encode_utf8(codepoint, encoded, sizeof(encoded));
+		if (length > 0) output.append(encoded, length);
 	};
 
-	auto convertBytesToMonoString = [](const std::vector<char>& buffer,
-	                                    const char* encodingName,
-	                                    MST::MonoString& out) -> bool {
-		if (buffer.empty() || !encodingName) {
-			return false;
+	auto isValidUtf8 = [](const std::uint8_t* data, size_t size) {
+		size_t offset = 0;
+		while (offset < size) {
+			const std::uint8_t first = data[offset];
+			size_t length = 0;
+			uint32_t minimum = 0;
+			uint32_t codepoint = 0;
+			if (first < 0x80) {
+				length = 1;
+				codepoint = first;
+			} else if ((first & 0xE0) == 0xC0) {
+				length = 2; minimum = 0x80; codepoint = first & 0x1F;
+			} else if ((first & 0xF0) == 0xE0) {
+				length = 3; minimum = 0x800; codepoint = first & 0x0F;
+			} else if ((first & 0xF8) == 0xF0) {
+				length = 4; minimum = 0x10000; codepoint = first & 0x07;
+			} else {
+				return false;
+			}
+			if (offset + length > size) return false;
+			for (size_t i = 1; i < length; ++i) {
+				if ((data[offset + i] & 0xC0) != 0x80) return false;
+				codepoint = (codepoint << 6) | (data[offset + i] & 0x3F);
+			}
+			if (codepoint < minimum || codepoint > 0x10FFFF ||
+				(codepoint >= 0xD800 && codepoint <= 0xDFFF)) return false;
+			offset += length;
+		}
+		return true;
+	};
+
+	auto decodeBytes = [&](const std::vector<std::uint8_t>& bytes, std::string& utf8) {
+		if (bytes.empty()) return true;
+
+		size_t offset = 0;
+		if (bytes.size() >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF) {
+			offset = 3;
+		}
+		if (offset != 0 || isValidUtf8(bytes.data(), bytes.size())) {
+			utf8.assign(reinterpret_cast<const char*>(bytes.data() + offset), bytes.size() - offset);
+			return true;
 		}
 
-		if (buffer.size() > static_cast<size_t>(std::numeric_limits<int32_t>::max())) {
-			return false;
+		const bool utf16le = bytes.size() >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE;
+		const bool utf16be = bytes.size() >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF;
+		if (utf16le || utf16be) {
+			for (size_t i = 2; i + 1 < bytes.size();) {
+				auto read16 = [&](size_t pos) -> uint16_t {
+					return utf16le
+						? static_cast<uint16_t>(bytes[pos] | (bytes[pos + 1] << 8))
+						: static_cast<uint16_t>((bytes[pos] << 8) | bytes[pos + 1]);
+				};
+				uint32_t cp = read16(i);
+				i += 2;
+				if (cp >= 0xD800 && cp <= 0xDBFF && i + 1 < bytes.size()) {
+					const uint32_t low = read16(i);
+					if (low >= 0xDC00 && low <= 0xDFFF) {
+						cp = 0x10000 + ((cp - 0xD800) << 10) + (low - 0xDC00);
+						i += 2;
+					}
+				}
+				appendUtf8(utf8, cp);
+			}
+			return true;
 		}
 
-		UErrorCode status = U_ZERO_ERROR;
-		UConverter* converter = ucnv_open(encodingName, &status);
-		if (U_FAILURE(status) || !converter) {
-			return false;
+		const bool utf32le = bytes.size() >= 4 &&
+			bytes[0] == 0xFF && bytes[1] == 0xFE && bytes[2] == 0x00 && bytes[3] == 0x00;
+		const bool utf32be = bytes.size() >= 4 &&
+			bytes[0] == 0x00 && bytes[1] == 0x00 && bytes[2] == 0xFE && bytes[3] == 0xFF;
+		if (utf32le || utf32be) {
+			for (size_t i = 4; i + 3 < bytes.size(); i += 4) {
+				uint32_t cp = utf32le
+					? static_cast<uint32_t>(bytes[i]) |
+						(static_cast<uint32_t>(bytes[i + 1]) << 8) |
+						(static_cast<uint32_t>(bytes[i + 2]) << 16) |
+						(static_cast<uint32_t>(bytes[i + 3]) << 24)
+					: (static_cast<uint32_t>(bytes[i]) << 24) |
+						(static_cast<uint32_t>(bytes[i + 1]) << 16) |
+						(static_cast<uint32_t>(bytes[i + 2]) << 8) |
+						static_cast<uint32_t>(bytes[i + 3]);
+				if (cp <= 0x10FFFF && !(cp >= 0xD800 && cp <= 0xDFFF)) appendUtf8(utf8, cp);
+			}
+			return true;
 		}
 
-		const int32_t sourceLength = static_cast<int32_t>(buffer.size());
-
-		// Preflight required UTF-16 length.
-		status = U_ZERO_ERROR;
-		int32_t requiredLength = ucnv_toUChars(
-			converter,
-			nullptr,
-			0,
-			buffer.data(),
-			sourceLength,
-			&status
-		);
-
-		if (status != U_BUFFER_OVERFLOW_ERROR && U_FAILURE(status)) {
-			ucnv_close(converter);
-			return false;
-		}
-
-		std::vector<UChar> utf16Buffer(static_cast<size_t>(requiredLength));
-
-		status = U_ZERO_ERROR;
-		int32_t actualLength = ucnv_toUChars(
-			converter,
-			utf16Buffer.data(),
-			requiredLength,
-			buffer.data(),
-			sourceLength,
-			&status
-		);
-
-		ucnv_close(converter);
-
-		if (U_FAILURE(status)) {
-			return false;
-		}
-
-		// Convert decoded UTF-16 to UTF-8, then feed your MonoString grapheme logic.
-		std::string utf8;
-		icu::UnicodeString temp(false, utf16Buffer.data(), actualLength);
-		temp.toUTF8String(utf8);
-
-		out = MST::toMonoString(utf8);
+#ifdef _WIN32
+		const int wideLength = MultiByteToWideChar(
+			CP_ACP, 0, reinterpret_cast<const char*>(bytes.data()),
+			static_cast<int>(bytes.size()), nullptr, 0);
+		if (wideLength <= 0) return false;
+		std::wstring wide(static_cast<size_t>(wideLength), L'\0');
+		MultiByteToWideChar(
+			CP_ACP, 0, reinterpret_cast<const char*>(bytes.data()),
+			static_cast<int>(bytes.size()), wide.data(), wideLength);
+		const int utf8Length = WideCharToMultiByte(
+			CP_UTF8, 0, wide.data(), wideLength, nullptr, 0, nullptr, nullptr);
+		if (utf8Length <= 0) return false;
+		utf8.resize(static_cast<size_t>(utf8Length));
+		WideCharToMultiByte(
+			CP_UTF8, 0, wide.data(), wideLength, utf8.data(), utf8Length, nullptr, nullptr);
+#else
+		for (const std::uint8_t byte : bytes) appendUtf8(utf8, byte);
+#endif
 		return true;
 	};
 
@@ -3298,116 +3341,21 @@ MST::MonoString App::readFileToMonoString(
 		if (!backend->readFile(filename, rawBuffer, backendError)) {
 			return MST::toMonoString("Failed to open file - " + backendError);
 		}
-		if (rawBuffer.size() > static_cast<std::size_t>(std::numeric_limits<int32_t>::max())) {
-			return errorString("Failed to open file - file too large for ICU converter");
-		}
-		std::vector<char> buffer(rawBuffer.begin(), rawBuffer.end());
 
 		// Empty file on disk -> try again in case another process is writing it.
-		if (buffer.empty()) {
+		if (rawBuffer.empty()) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(25));
 			continue;
 		}
 
-		UErrorCode status = U_ZERO_ERROR;
-
-		UCharsetDetector* detector = ucsdet_open(&status);
-		if (U_FAILURE(status) || !detector) {
-			return errorString("Failed to open file - couldn't create charset detector");
+		std::string utf8;
+		if (!decodeBytes(rawBuffer, utf8)) {
+			return MST::toMonoString("Failed to open file - unsupported text encoding");
 		}
-
-		ucsdet_setText(
-			detector,
-			buffer.data(),
-			static_cast<int32_t>(buffer.size()),
-			&status
-		);
-
-		if (U_FAILURE(status)) {
-			ucsdet_close(detector);
-			return errorString("Failed to open file - couldn't set input data for charset detector");
-		}
-
-		int32_t matchCount = 0;
-		const UCharsetMatch** matches = ucsdet_detectAll(detector, &matchCount, &status);
-
-		if (U_FAILURE(status) || matchCount == 0) {
-			ucsdet_close(detector);
-			return errorString("Failed to open file - no matches on charset detector");
-		}
-
-		MST::MonoString result;
-		bool conversionSucceeded = false;
-
-		// Try detected encodings first.
-		for (int32_t matchIndex = 0; matchIndex < matchCount && !conversionSucceeded; ++matchIndex) {
-			status = U_ZERO_ERROR;
-
-			const char* encodingName = ucsdet_getName(matches[matchIndex], &status);
-			if (U_FAILURE(status) || !encodingName) {
-				continue;
-			}
-
-			int32_t confidence = ucsdet_getConfidence(matches[matchIndex], &status);
-			if (U_FAILURE(status) || confidence < 10) {
-				continue;
-			}
-
-			conversionSucceeded = convertBytesToMonoString(buffer, encodingName, result);
-		}
-
-		ucsdet_close(detector);
-
-		// Fallback encodings.
-		if (!conversionSucceeded) {
-			const char* fallbackEncodings[] = {
-				"UTF-8",
-				"UTF-16",
-				"UTF-16BE",
-				"UTF-16LE",
-				"UTF-32",
-				"UTF-32BE",
-				"UTF-32LE",
-				"ISO-8859-1",
-				"Windows-1252",
-				"ASCII"
-			};
-
-			for (const char* enc : fallbackEncodings) {
-				if (convertBytesToMonoString(buffer, enc, result)) {
-					conversionSucceeded = true;
-					break;
-				}
-			}
-		}
-
-		// Final fallback: assume UTF-8 and sanity-check replacement chars.
-		if (!conversionSucceeded) {
-			std::string utf8(buffer.data(), buffer.size());
-			result = MST::toMonoString(utf8);
-
-			size_t replacementCount = 0;
-
-			for (size_t i = 0; i < result.length; ++i) {
-				if (result.data[i] == 0xFFFD) {
-					replacementCount++;
-				}
-			}
-
-			if (result.length > 0 && (replacementCount * 100 / result.length) < 5) {
-				conversionSucceeded = true;
-			}
-		}
-
-		// Normalize: strip CR on success.
-		if (conversionSucceeded) {
-			result = MST::replaceAll(result, MST::toMonoString("\r\n"), MST::toMonoString("\n"));
-		}
-
-		if (result.length != 0 || !conversionSucceeded) {
-			worked = conversionSucceeded;
-			return result;
-		}
+		MST::MonoString result = MST::toMonoString(utf8);
+		result = MST::replaceAll(result, MST::toMonoString("\r\n"), MST::toMonoString("\n"));
+		worked = true;
+		return result;
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(25));
 	}

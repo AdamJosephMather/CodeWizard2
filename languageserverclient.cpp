@@ -514,7 +514,8 @@ void LanguageServerClient::initialize(const std::string &rootUri)
 	
 	if (logCallback) {
 		std::string from = "CodeWizard    ";
-		App::rootelement->lspmessage(from, message.dump());
+		std::string dumpedMessage = message.dump();
+		App::rootelement->lspmessage(from, dumpedMessage);
 	}
 	
 	if (failedToStart) {

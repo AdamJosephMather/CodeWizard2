@@ -5,8 +5,6 @@
 #include "tinyfiledialogs.h"
 #include "helper_types.h"
 
-#include <unicode/regex.h>
-#include <unicode/stringoptions.h>
 
 Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 	POS_FUNC = positioner;

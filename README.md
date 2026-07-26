@@ -42,7 +42,49 @@ CodeWizard2 uses `widgets`, of which we have:
 
 ## Quick Note
 
-CodeWizard2 is only available for Windows. (though should be fairly easy to get compiling on Linux, emoji rendering is not implemented for Linux however) There is a modal option (which I quite enjoy but doesn't match any other editors) available in the settings.
+CodeWizard2 builds for Windows and Linux. Emoji rendering is not implemented on Linux. There is a modal option (which I quite enjoy but doesn't match any other editors) available in the settings.
+
+## Building
+
+The build is pinned to Zig 0.15.2, the version required by the selected Ghostty
+revision. The wrapper downloads and verifies that Zig release into
+`zig-version/` on first use. Zig builds CodeWizard, Ghostty, GLFW, FreeType,
+libgrapheme, curl on Windows, and the other native libraries. Cargo builds the
+small Syntect bridge.
+
+Windows requires PowerShell and a Rust toolchain installed with rustup:
+
+```powershell
+.\build.ps1
+```
+
+The release is installed into `build/windows-release`. Use
+`.\build.ps1 -Run` to build and launch it. The resulting executable uses the
+GNU Windows ABI and does not require the Visual C++ Redistributable.
+
+Linux requires GCC, curl, Rust/rustup, and development packages for X11,
+OpenGL, curl, and OpenSSL:
+
+```bash
+bash build.sh
+```
+
+The release is installed into `build/linux-release`. From Windows, the same
+build can be run through WSL with:
+
+```powershell
+.\build.ps1 -Target linux-release
+```
+
+After bootstrapping, the equivalent direct Zig commands are:
+
+```powershell
+.\zig-version\windows-x86_64\zig.exe build -Dtarget=x86_64-windows-gnu --release=fast --prefix build/windows-release
+```
+
+```bash
+./zig-version/linux-x86_64/zig build -Dtarget=x86_64-linux-gnu --libc /tmp/codewizard-zig-libc-$UID.conf --release=fast --prefix build/linux-release
+```
 
 ## Important Key Bindings:
 

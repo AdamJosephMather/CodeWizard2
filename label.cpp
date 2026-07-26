@@ -133,8 +133,8 @@ void Label::position(int x, int y, int w, int h) {
 			}
 		}
 		
-		int CHAR_WIDTH = MST::isEmoji(fulltext, ci) ? 2 : 1;
-		int newlen = linewidth + TextRenderer::get_text_width(CHAR_WIDTH);
+		const int character_width = MST::isEmoji(fulltext, ci) ? 2 : 1;
+		int newlen = linewidth + TextRenderer::get_text_width(character_width);
 		
 		if (c == U'\n' || newlen > most_allowed) {
 			drawlines.push_back(curline);
@@ -148,7 +148,7 @@ void Label::position(int x, int y, int w, int h) {
 			should_be_h += TextRenderer::get_text_height();
 			
 			linewidth = 0;
-			newlen = TextRenderer::get_text_width(CHAR_WIDTH);
+			newlen = TextRenderer::get_text_width(character_width);
 		}
 		
 		if (c != U'\n') {

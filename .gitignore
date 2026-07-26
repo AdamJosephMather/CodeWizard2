@@ -1,2 +1,11 @@
 build/
 libtorch/
+zig-version/
+.zig-cache/
+.zig-global-cache/
+.zig-cache-linux/
+.zig-global-cache-linux/
+.zig-*-extract/
+.zig-*-windows.zip
+.tmp*
+third_party/syntect_bridge/target/

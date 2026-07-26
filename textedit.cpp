@@ -5,8 +5,7 @@
 #include <chrono>
 #include <cctype>
 #include "helper_types.h"
-#include <unicode/brkiter.h>
-#include <unicode/uchar.h>
+#include <cwctype>
 #include "syntect_bridge.h"
 
 //#define DEBUG
@@ -2163,8 +2162,8 @@ inline bool is_tag_char(MST::u32 cp) {
 }
 
 inline bool looks_like_emoji_base(MST::u32 cp) {
-	return u_hasBinaryProperty(cp, UCHAR_EXTENDED_PICTOGRAPHIC) ||
-		   u_hasBinaryProperty(cp, UCHAR_EMOJI_PRESENTATION)    ||
+	return (cp >= 0x1F000 && cp <= 0x1FAFF) ||
+		   (cp >= 0x2600 && cp <= 0x27BF) ||
 		   is_regional_indicator(cp);
 }
 
@@ -2688,7 +2687,7 @@ MST::MonoString TextEdit::getCurrentWord(const MST::MonoString& blockText, int b
 	int start = blockPos - 1;
 	while (start >= 0) {
 		MST::u32 ch = MST::char32At(blockText, start);
-		if (u_isalnum(ch) || ch == U'_') {
+		if (std::iswalnum(static_cast<wint_t>(ch)) || ch == U'_') {
 			start -= 1;
 		} else {
 			break;

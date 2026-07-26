@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <thread>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -68,8 +69,11 @@ int main(int argc, char* argv[]) {
 
 	auto start = std::chrono::steady_clock::now();
 	
-	DWORD main_thread_id = GetCurrentThreadId();
-	std::cerr << "MAIN thread id=" << main_thread_id << "\n";
+#ifdef _WIN32
+	std::cerr << "MAIN thread id=" << GetCurrentThreadId() << "\n";
+#else
+	std::cerr << "MAIN thread id=" << std::this_thread::get_id() << "\n";
+#endif
 	
 	#ifdef _WIN32
 		HRESULT comHr = CoInitializeEx(

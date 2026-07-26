@@ -8,8 +8,6 @@
 
 #include <fstream>
 #include <set>
-#include <unicode/regex.h>
-#include <unicode/stringoptions.h>
 #include "editor.h"
 #include "curler.h"
 //#include "modelxrunner.h"

@@ -2,9 +2,14 @@
 
 #include "json.hpp"
 
+#ifdef _WIN32
+#include <windows.h>
+#include <bcrypt.h>
+#else
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <openssl/crypto.h>
+#endif
 
 #include <array>
 #include <vector>
@@ -53,18 +58,7 @@ public:
 			hex_to_bytes(cachedKeyHex, key.data());
 		} else {
 			// 2. Not in cache, calculate it
-			const int ok = PKCS5_PBKDF2_HMAC(
-				password.data(),
-				static_cast<int>(password.size()),
-				SALT.data(),
-				static_cast<int>(SALT.size()),
-				PBKDF2_ITERS,
-				EVP_sha1(),
-				KEY_LEN_BYTES,
-				key.data()
-			);
-	
-			if (ok != 1) {
+			if (!deriveKey(password, key)) {
 				return;
 			}
 	
@@ -76,12 +70,12 @@ public:
 		{
 			std::lock_guard<std::mutex> lock(s_keyMutex);
 			// overwrite any existing key
-			OPENSSL_cleanse(s_key.data(), s_key.size());
+			secureCleanse(s_key.data(), s_key.size());
 			s_key = key;
 			s_isReady = true;
 		}
 	
-		OPENSSL_cleanse(key.data(), key.size());
+		secureCleanse(key.data(), key.size());
 	}
 
 	static bool isSetup() {
@@ -261,6 +255,89 @@ private:
 		std::array<unsigned char, NONCE_LEN_BYTES>& nonceOut,
 		std::array<unsigned char, TAG_LEN_BYTES>& tagOut
 	) {
+#ifdef _WIN32
+		if (BCryptGenRandom(
+				nullptr,
+				nonceOut.data(),
+				static_cast<ULONG>(nonceOut.size()),
+				BCRYPT_USE_SYSTEM_PREFERRED_RNG
+			) < 0) {
+			return false;
+		}
+
+		std::array<unsigned char, KEY_LEN_BYTES> keyCopy{};
+		{
+			std::lock_guard<std::mutex> lock(s_keyMutex);
+			keyCopy = s_key;
+		}
+
+		BCRYPT_ALG_HANDLE algorithm = nullptr;
+		BCRYPT_KEY_HANDLE key = nullptr;
+		std::vector<unsigned char> keyObject;
+		bool ok = false;
+
+		do {
+			if (BCryptOpenAlgorithmProvider(&algorithm, BCRYPT_AES_ALGORITHM, nullptr, 0) < 0) break;
+			if (BCryptSetProperty(
+					algorithm,
+					BCRYPT_CHAINING_MODE,
+					reinterpret_cast<PUCHAR>(const_cast<wchar_t*>(BCRYPT_CHAIN_MODE_GCM)),
+					sizeof(BCRYPT_CHAIN_MODE_GCM),
+					0
+				) < 0) break;
+
+			ULONG objectLength = 0;
+			ULONG received = 0;
+			if (BCryptGetProperty(
+					algorithm,
+					BCRYPT_OBJECT_LENGTH,
+					reinterpret_cast<PUCHAR>(&objectLength),
+					sizeof(objectLength),
+					&received,
+					0
+				) < 0) break;
+
+			keyObject.resize(objectLength);
+			if (BCryptGenerateSymmetricKey(
+					algorithm,
+					&key,
+					keyObject.data(),
+					objectLength,
+					keyCopy.data(),
+					static_cast<ULONG>(keyCopy.size()),
+					0
+				) < 0) break;
+
+			BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO authInfo;
+			BCRYPT_INIT_AUTH_MODE_INFO(authInfo);
+			authInfo.pbNonce = nonceOut.data();
+			authInfo.cbNonce = static_cast<ULONG>(nonceOut.size());
+			authInfo.pbTag = tagOut.data();
+			authInfo.cbTag = static_cast<ULONG>(tagOut.size());
+
+			ciphertextOut.resize(plaintextLen);
+			ULONG written = 0;
+			if (BCryptEncrypt(
+					key,
+					const_cast<PUCHAR>(plaintext),
+					static_cast<ULONG>(plaintextLen),
+					&authInfo,
+					nullptr,
+					0,
+					ciphertextOut.data(),
+					static_cast<ULONG>(ciphertextOut.size()),
+					&written,
+					0
+				) < 0) break;
+			ciphertextOut.resize(written);
+			ok = true;
+		} while (false);
+
+		if (key) BCryptDestroyKey(key);
+		if (algorithm) BCryptCloseAlgorithmProvider(algorithm, 0);
+		secureCleanse(keyCopy.data(), keyCopy.size());
+		return ok;
+#else
 		// Random nonce
 		if (RAND_bytes(nonceOut.data(), static_cast<int>(nonceOut.size())) != 1) {
 			return false;
@@ -306,6 +383,7 @@ private:
 
 		EVP_CIPHER_CTX_free(ctx);
 		return ok;
+#endif
 	}
 
 	static bool aesGcmDecrypt(
@@ -314,6 +392,80 @@ private:
 		const std::vector<unsigned char>& tag,
 		std::vector<unsigned char>& plaintextOut
 	) {
+#ifdef _WIN32
+		std::array<unsigned char, KEY_LEN_BYTES> keyCopy{};
+		{
+			std::lock_guard<std::mutex> lock(s_keyMutex);
+			keyCopy = s_key;
+		}
+
+		BCRYPT_ALG_HANDLE algorithm = nullptr;
+		BCRYPT_KEY_HANDLE key = nullptr;
+		std::vector<unsigned char> keyObject;
+		bool ok = false;
+
+		do {
+			if (BCryptOpenAlgorithmProvider(&algorithm, BCRYPT_AES_ALGORITHM, nullptr, 0) < 0) break;
+			if (BCryptSetProperty(
+					algorithm,
+					BCRYPT_CHAINING_MODE,
+					reinterpret_cast<PUCHAR>(const_cast<wchar_t*>(BCRYPT_CHAIN_MODE_GCM)),
+					sizeof(BCRYPT_CHAIN_MODE_GCM),
+					0
+				) < 0) break;
+
+			ULONG objectLength = 0;
+			ULONG received = 0;
+			if (BCryptGetProperty(
+					algorithm,
+					BCRYPT_OBJECT_LENGTH,
+					reinterpret_cast<PUCHAR>(&objectLength),
+					sizeof(objectLength),
+					&received,
+					0
+				) < 0) break;
+
+			keyObject.resize(objectLength);
+			if (BCryptGenerateSymmetricKey(
+					algorithm,
+					&key,
+					keyObject.data(),
+					objectLength,
+					keyCopy.data(),
+					static_cast<ULONG>(keyCopy.size()),
+					0
+				) < 0) break;
+
+			BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO authInfo;
+			BCRYPT_INIT_AUTH_MODE_INFO(authInfo);
+			authInfo.pbNonce = const_cast<PUCHAR>(nonce.data());
+			authInfo.cbNonce = static_cast<ULONG>(nonce.size());
+			authInfo.pbTag = const_cast<PUCHAR>(tag.data());
+			authInfo.cbTag = static_cast<ULONG>(tag.size());
+
+			plaintextOut.resize(ciphertext.size());
+			ULONG written = 0;
+			if (BCryptDecrypt(
+					key,
+					const_cast<PUCHAR>(ciphertext.data()),
+					static_cast<ULONG>(ciphertext.size()),
+					&authInfo,
+					nullptr,
+					0,
+					plaintextOut.data(),
+					static_cast<ULONG>(plaintextOut.size()),
+					&written,
+					0
+				) < 0) break;
+			plaintextOut.resize(written);
+			ok = true;
+		} while (false);
+
+		if (key) BCryptDestroyKey(key);
+		if (algorithm) BCryptCloseAlgorithmProvider(algorithm, 0);
+		secureCleanse(keyCopy.data(), keyCopy.size());
+		return ok;
+#else
 		EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
 		if (!ctx) return false;
 
@@ -356,6 +508,56 @@ private:
 
 		EVP_CIPHER_CTX_free(ctx);
 		return ok;
+#endif
+	}
+
+	static bool deriveKey(
+		const std::string& password,
+		std::array<unsigned char, KEY_LEN_BYTES>& key
+	) {
+#ifdef _WIN32
+		BCRYPT_ALG_HANDLE algorithm = nullptr;
+		if (BCryptOpenAlgorithmProvider(
+				&algorithm,
+				BCRYPT_SHA1_ALGORITHM,
+				nullptr,
+				BCRYPT_ALG_HANDLE_HMAC_FLAG
+			) < 0) {
+			return false;
+		}
+		const NTSTATUS status = BCryptDeriveKeyPBKDF2(
+			algorithm,
+			reinterpret_cast<PUCHAR>(const_cast<char*>(password.data())),
+			static_cast<ULONG>(password.size()),
+			const_cast<PUCHAR>(SALT.data()),
+			static_cast<ULONG>(SALT.size()),
+			PBKDF2_ITERS,
+			key.data(),
+			static_cast<ULONG>(key.size()),
+			0
+		);
+		BCryptCloseAlgorithmProvider(algorithm, 0);
+		return status >= 0;
+#else
+		return PKCS5_PBKDF2_HMAC(
+			password.data(),
+			static_cast<int>(password.size()),
+			SALT.data(),
+			static_cast<int>(SALT.size()),
+			PBKDF2_ITERS,
+			EVP_sha1(),
+			KEY_LEN_BYTES,
+			key.data()
+		) == 1;
+#endif
+	}
+
+	static void secureCleanse(void* data, size_t size) {
+#ifdef _WIN32
+		SecureZeroMemory(data, size);
+#else
+		OPENSSL_cleanse(data, size);
+#endif
 	}
 
 	static std::string bytesToHex(const unsigned char* data, size_t len) { // chatgpt made this one

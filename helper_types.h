@@ -4,7 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #ifdef _WIN32
-#include <corecrt_io.h>
+#include <io.h>
 #include <process.h>
 #include <windows.h>
 #else

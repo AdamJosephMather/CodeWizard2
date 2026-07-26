@@ -222,22 +222,14 @@ func installVCRuntime(installDir string) error {
 $ErrorActionPreference = 'Stop'
 try {
 	$process = Start-Process -FilePath $env:CODEWIZARD_VC_REDIST -ArgumentList @('/install', '/quiet', '/norestart') -Verb RunAs -Wait -PassThru
-
-	# 0 = success, 1638 = another version is installed, 3010 = reboot required.
-	if ($process.ExitCode -notin @(0, 1638, 3010)) {
-		throw "VC++ Redistributable exited with code $($process.ExitCode)"
-	}
 } catch {
-	$exception = $_.Exception
-	while ($null -ne $exception) {
-		if ($exception -is [System.ComponentModel.Win32Exception] -and $exception.NativeErrorCode -eq 1223) {
-			Write-Warning 'Microsoft Visual C++ Runtime installation was declined. CodeWizard installation will continue, but CodeWizard may not run until the runtime is installed.'
-			exit 0
-		}
-		$exception = $exception.InnerException
-	}
+	Write-Warning 'Microsoft Visual C++ Runtime installation was not permitted. CodeWizard installation will continue, but CodeWizard may not run until the runtime is installed.'
+	exit 0
+}
 
-	Write-Error $_
+# 0 = success, 1638 = another version is installed, 3010 = reboot required.
+if ($process.ExitCode -notin @(0, 1638, 3010)) {
+	Write-Error "VC++ Redistributable exited with code $($process.ExitCode)"
 	exit 1
 }
 `

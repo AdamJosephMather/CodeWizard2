@@ -1726,55 +1726,54 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 	
 	if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
 		if (!replaying_macro) {
-			if (keyboard_events.size() == 0) {
+			if (keyboard_events.empty()) {
 				displayToast(MST::toMonoString("No Recorded Keystrokes"));
 				return;
 			}
+	
 			displayToast(MST::toMonoString("Replaying Macro Recording"));
-			
-			ON_STRING_GIVEN = [&](MST::MonoString str){
-				setActiveLeafNode(before_reps_request);
-				
-				if (str.length == 0) {
-					displayToast(MST::toMonoString("Canceled"));
-					return;
+	
+			requestString(
+				"Number of Repetitions (0 for Infinite)?",
+				"",
+				[&](MST::MonoString str) {
+					setActiveLeafNode(before_reps_request);
+	
+					if (str.length == 0) {
+						displayToast(MST::toMonoString("Canceled"));
+						return;
+					}
+	
+					try {
+						rep_count = std::stoi(MST::toString(str));
+					} catch (const std::invalid_argument&) {
+						displayToast(MST::toMonoString("Invalid Number, Canceled"));
+						return;
+					} catch (const std::out_of_range&) {
+						displayToast(MST::toMonoString("Number Too Large, Canceled"));
+						return;
+					}
+	
+					if (rep_count < 0) {
+						displayToast(MST::toMonoString("Invalid Number, Canceled"));
+						return;
+					}
+	
+					if (rep_count == 0) {
+						rep_count = -1;
+					}
+	
+					glfwSwapInterval(0); // Disable VSync during macro replay.
+					replaying_macro = true;
+					current_step = 0;
 				}
-				
-				std::string as_string = MST::toString(str);
-				
-				try {
-					rep_count = std::stoi(as_string);
-				}catch(const std::invalid_argument& e) {
-					displayToast(MST::toMonoString("Invalid Number, Canceled"));
-					return;
-				}
-				
-				if (rep_count < 0) {
-					displayToast(MST::toMonoString("Invalid Number, Canceled"));
-					return;
-				}else if (rep_count == 0) {
-					rep_count = -1;
-				}
-				
-				glfwSwapInterval(0); // Enable vsync
-				replaying_macro = true;
-				current_step = 0;
-			};
-			REQUESTING_STRING = true;
-			STRING_REQUEST_TEXTEDIT->setFullText(MST::MonoString{});
-			STRING_REQUEST_TEXTEDIT->mode = 'i';
-			STRING_REQUEST_LABEL->setFullText(MST::toMonoString("Number of Repetitions (0 for Infinite)?"));
-			MoveWidget(STRING_REQUEST_RECTANGLE, rootelement);
-			MoveWidget(STRING_REQUEST_TEXTEDIT, rootelement);
-			MoveWidget(STRING_REQUEST_LABEL, rootelement);
-			before_reps_request = activeLeafNode;
-			setActiveLeafNode(STRING_REQUEST_TEXTEDIT);
-			reclear = 3;
-		}else{
+			);
+		} else {
 			displayToast(MST::toMonoString("Stopped Macro Replay"));
-			glfwSwapInterval(1); // Enable vsync
+			glfwSwapInterval(1); // Re-enable VSync.
 			replaying_macro = false;
 		}
+	
 		return;
 	}
 	
@@ -2521,49 +2520,43 @@ static std::string makeTempCommitMessageFile(const std::string& message) {
 }
 
 void App::gitPush() {
-	ON_STRING_GIVEN = [&](MST::MonoString str){
-		if (str.length == 0) {
-			return;
+	requestString(
+		"Git Commit Message?",
+		"",
+		[&](MST::MonoString str) {
+			if (str.length == 0) {
+				return;
+			}
+
+			std::string mes = MST::toString(str);
+			std::string folder = settings->getValue("current_folder", getExecutableDir());
+
+			std::string commitFile = makeTempCommitMessageFile(mes);
+
+			if (commitFile.empty()) {
+				std::cerr << "Failed to create temporary commit message file\n";
+				return;
+			}
+
+#ifdef _WIN32
+			launchCommandNonBlocking(
+				"git -C " + quoteCmdPathWindows(folder) +
+				" add . && git -C " + quoteCmdPathWindows(folder) +
+				" commit -F " + quoteCmdPathWindows(commitFile) +
+				" && git -C " + quoteCmdPathWindows(folder) +
+				" push"
+			);
+#else
+			launchCommandNonBlocking(
+				"git -C " + quoteShellPathPosix(folder) +
+				" add . && git -C " + quoteShellPathPosix(folder) +
+				" commit -F " + quoteShellPathPosix(commitFile) +
+				" && git -C " + quoteShellPathPosix(folder) +
+				" push"
+			);
+#endif
 		}
-		
-		std::string mes = MST::toString(str);
-		std::string folder = settings->getValue("current_folder", getExecutableDir());
-		
-		std::string commitFile = makeTempCommitMessageFile(mes);
-		
-		if (commitFile.empty()) {
-			std::cerr << "Failed to create temporary commit message file\n";
-			return;
-		}
-		
-		#ifdef _WIN32
-		launchCommandNonBlocking(
-			"git -C " + quoteCmdPathWindows(folder) +
-			" add . && git -C " + quoteCmdPathWindows(folder) +
-			" commit -F " + quoteCmdPathWindows(commitFile) +
-			" && git -C " + quoteCmdPathWindows(folder) +
-			" push"
-		);
-		#else
-		launchCommandNonBlocking(
-			"git -C " + quoteShellPathPosix(folder) +
-			" add . && git -C " + quoteShellPathPosix(folder) +
-			" commit -F " + quoteShellPathPosix(commitFile) +
-			" && git -C " + quoteShellPathPosix(folder) +
-			" push"
-		);
-		#endif
-	};
-	
-	REQUESTING_STRING = true;
-	STRING_REQUEST_TEXTEDIT->setFullText(MST::MonoString{});
-	STRING_REQUEST_TEXTEDIT->mode = 'i';
-	STRING_REQUEST_LABEL->setFullText(MST::toMonoString("Git Commit Message?"));
-	MoveWidget(STRING_REQUEST_RECTANGLE, rootelement);
-	MoveWidget(STRING_REQUEST_TEXTEDIT, rootelement);
-	MoveWidget(STRING_REQUEST_LABEL, rootelement);
-	setActiveLeafNode(STRING_REQUEST_TEXTEDIT);
-	reclear = 3;
+	);
 }
 
 void App::gitPull() {

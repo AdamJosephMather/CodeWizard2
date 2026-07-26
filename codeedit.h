@@ -45,6 +45,10 @@ public:
 	
 	int TABID;
 	
+	MST::MonoString FPS = MST::toMonoString("N/A");
+	int drawn_frames = 0;
+	double fpsTime;
+	
 	std::atomic<bool> is_loading{false};
 	
 	App::PosFunction POS_FUNC = nullptr;

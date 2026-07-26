@@ -121,6 +121,7 @@ In these settings, the following are available as variables in your build comman
 	● Ctrl+Shift+Tab --- Next file tab
 	● Alt+Up ----------- Add another cursor up (esc to remove)
 	● Alt+Down --------- Add another cursor down (esc to remove)
+	● Alt+F ------------ Find text under cursor and place another cursor there
 	● Ctrl+M ----------- Toggle mark on selection/current line
 	● Alt+Right -------- Jump to next mark
 	● Alt+Left --------- Jump to prev mark

@@ -203,6 +203,8 @@ public:
 	bool handleDeleteKey(int key, int scancode, int action, int mods);
 	bool handleInsertKey(int key, int scancode, int action, int mods);
 	
+	Cursor findText(bool forwards, const MST::MonoString& tofind, bool case_sensitive, Cursor start);
+	
 	void applyMoveToAllCursors(int key, bool shift, bool control);
 	Cursor applyMoveToCursor(Cursor c, int key, bool shift, bool control);
 	void applyDeleteToAllCursors(int key, bool control);
@@ -224,6 +226,7 @@ public:
 	
 	void insertNewCursorDown();
 	void insertNewCursorUp();
+	void insertNewCursorFind();
 	void HandleOverlappingCursors();
 	
 	std::vector<History> undo_stack = {};

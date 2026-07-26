@@ -154,6 +154,168 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 	contextmenu->recalcButtonTexts();
 }
 
+Cursor TextEdit::findText(bool forwards, const MST::MonoString& tofind, bool case_sensitive, Cursor start) {
+	Cursor not_found = {-1, -1, -1, -1, -1};
+	
+	if (!tofind.data || tofind.length == 0) {
+		return not_found;
+	}
+
+	if (lines.empty()) {
+		return not_found;
+	}
+
+	const bool ignoreCase = !case_sensitive;
+
+	const int lineCount = static_cast<int>(lines.size());
+
+	int cur_line;
+	auto slelscec = _getCursSelec(start);
+
+	std::vector<MST::MonoString> findlines = MST::split(tofind, U'\n');
+
+	if (findlines.size() > 1) {
+		cur_line = slelscec.first.first;
+
+		for (int attempt = 0; attempt < lineCount + 1; attempt++) {
+			if (forwards) {
+				cur_line++;
+				if (cur_line >= lineCount) {
+					cur_line = 0;
+				}
+			} else {
+				cur_line--;
+				if (cur_line < 0) {
+					cur_line = lineCount - 1;
+				}
+			}
+
+			const MST::MonoString& text = lines[cur_line].line_text;
+
+			if (!MST::endsWith(text, findlines[0], ignoreCase)) {
+				continue;
+			}
+
+			bool matches = true;
+
+			for (size_t li = 1; li < findlines.size() - 1; li++) {
+				int idx = cur_line + static_cast<int>(li);
+
+				if (idx >= lineCount) {
+					matches = false;
+					break;
+				}
+
+				const MST::MonoString& t2 = lines[idx].line_text;
+
+				// Full-line match, case-sensitive or insensitive.
+				if (t2.length != findlines[li].length ||
+					!MST::startsWith(t2, findlines[li], ignoreCase)) {
+					matches = false;
+					break;
+				}
+			}
+
+			if (!matches) {
+				continue;
+			}
+
+			int final_idx = cur_line + static_cast<int>(findlines.size()) - 1;
+
+			if (final_idx >= lineCount) {
+				continue;
+			}
+
+			const MST::MonoString& final_text = lines[final_idx].line_text;
+
+			if (!MST::startsWith(final_text, findlines[findlines.size() - 1], ignoreCase)) {
+				continue;
+			}
+
+			Cursor c;
+			c.anchor_line = cur_line;
+			c.anchor_char = static_cast<int>(text.length - findlines[0].length);
+			c.head_line = final_idx;
+			c.head_char = static_cast<int>(findlines[findlines.size() - 1].length);
+			c.preffered_collumn = c.head_char;
+			
+			return c;
+		}
+	} else {
+		int start_char;
+
+		if (forwards) {
+			cur_line = slelscec.first.second;
+			start_char = slelscec.second.second;
+		} else {
+			cur_line = slelscec.first.first;
+			start_char = slelscec.second.first;
+		}
+
+		for (int attempt = 0; attempt < lineCount + 1; attempt++) {
+			const MST::MonoString& text = lines[cur_line].line_text;
+
+			size_t index = MST::NOT_FOUND;
+
+			if (forwards) {
+				size_t start = 0;
+
+				if (start_char > 0) {
+					start = static_cast<size_t>(start_char);
+				}
+
+				index = MST::index(text, start, tofind, ignoreCase);
+			} else {
+				size_t boundedStartChar = 0;
+
+				if (start_char > 0) {
+					boundedStartChar = static_cast<size_t>(start_char);
+				}
+
+				if (boundedStartChar > text.length) {
+					boundedStartChar = text.length;
+				}
+
+				// Match must fit entirely before start_char, matching old:
+				// lastIndexOf(tofind, 0, start_char)
+				if (boundedStartChar >= tofind.length) {
+					size_t startCandidate = boundedStartChar - tofind.length;
+					index = MST::indexBackwards(text, startCandidate, tofind, ignoreCase);
+				}
+			}
+
+			if (index != MST::NOT_FOUND) {
+				Cursor c;
+				c.anchor_line = cur_line;
+				c.anchor_char = static_cast<int>(index);
+				c.head_line = cur_line;
+				c.head_char = static_cast<int>(index + tofind.length);
+				c.preffered_collumn = c.head_char;
+				
+				return c;
+			}
+
+			if (forwards) {
+				start_char = 0;
+
+				cur_line++;
+				if (cur_line >= lineCount) {
+					cur_line = 0;
+				}
+			} else {
+				cur_line--;
+				if (cur_line < 0) {
+					cur_line = lineCount - 1;
+				}
+
+				start_char = static_cast<int>(lines[cur_line].line_text.length);
+			}
+		}
+	}
+	
+	return not_found;
+}
+
 void TextEdit::toggleMark() {
 	for (auto c : cursors) {
 		for (int l = fmin(c.head_line, c.anchor_line); l <= fmax(c.head_line, c.anchor_line); l++) {
@@ -1021,6 +1183,18 @@ void TextEdit::insertNewCursorUp() {
 	DO_POSITION = true;
 }
 
+void TextEdit::insertNewCursorFind() {
+	Cursor latest = cursors[cursors.size()-1];
+	
+	auto text = getSelectedText(latest);
+	auto next_spot = findText(true, text, false, latest);
+	
+	if (next_spot.head_char != -1) {
+		cursors.push_back(next_spot);
+		DO_POSITION = true;
+	}
+}
+
 void TextEdit::HandleOverlappingCursors() {
 	std::vector<Cursor> new_list = {};
 
@@ -1586,7 +1760,7 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 		return true;
 	}
 
-	if (key == GLFW_KEY_LEFT || key == GLFW_KEY_RIGHT || key == GLFW_KEY_UP || key == GLFW_KEY_DOWN || key == GLFW_KEY_HOME || key == GLFW_KEY_END) {
+	if (key == GLFW_KEY_LEFT || key == GLFW_KEY_RIGHT || key == GLFW_KEY_UP || key == GLFW_KEY_DOWN || key == GLFW_KEY_HOME || key == GLFW_KEY_END || (key == GLFW_KEY_F && is_alt_held)) {
 		if (is_alt_held && key == GLFW_KEY_DOWN) {
 			insertNewCursorDown();
 		}else if (is_alt_held && key == GLFW_KEY_UP) {
@@ -1595,6 +1769,8 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 			gotoPrevMark();
 		}else if (is_alt_held && key == GLFW_KEY_RIGHT) {
 			gotoNextMark();
+		}else if (is_alt_held && key == GLFW_KEY_F) {
+			insertNewCursorFind();
 		}else{
 			applyMoveToAllCursors(key, is_shift_held, is_control_held);
 		}

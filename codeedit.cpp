@@ -41,6 +41,8 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	POS_FUNC = positioner;
 	FUPDATER = fupdater;
 	
+	fpsTime = glfwGetTime();
+	
 	id = MST::toMonoString("CodeEdit");
 	
 	broken_state_menu = new BrokenStateMenu(nullptr, "Reload", "Overwrite", "File changed on disk.");
@@ -871,6 +873,23 @@ void CodeEdit::render() {
 		}
 	}
 	
+	double currentTime = glfwGetTime();
+	drawn_frames ++;
+	
+	if (currentTime - fpsTime >= 2.0) {
+		float fps = (double)drawn_frames/(currentTime-fpsTime);
+		FPS = doubleToMonoString_pretty(fps);
+		fpsTime = currentTime;
+		drawn_frames = 0;
+	}
+	
+	if (App::settings->getValue("show_fps", false)) {
+		int x = t_x+t_w-TextRenderer::get_text_width(FPS.length+2)-App::text_padding*2;
+		int y = t_y+TextRenderer::get_text_width(2);
+		App::DrawRoundedRect(x, y, TextRenderer::get_text_width(FPS.length)+App::text_padding*2, TextRenderer::get_text_height()+App::text_padding*2, App::text_padding, App::theme.extras_background_color, true);
+		TextRenderer::draw_text(x+App::text_padding, y+App::text_padding, FPS, App::theme.main_text_color);
+	}
+	
 	if (rounded) {
 		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
 		App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, App::text_padding);
@@ -1168,164 +1187,11 @@ void CodeEdit::activateReplace(bool forwards, MST::MonoString tofind, const MST:
 }
 
 void CodeEdit::activateFind(bool forwards, const MST::MonoString& tofind, bool case_sensitive) {
-	if (!tofind.data || tofind.length == 0) {
-		return;
-	}
-
-	if (textedit->lines.empty()) {
-		return;
-	}
-
-	const bool ignoreCase = !case_sensitive;
-
-	const int lineCount = static_cast<int>(textedit->lines.size());
-
-	int cur_line;
-	auto slelscec = textedit->_getCursSelec(textedit->cursors[0]);
-
-	std::vector<MST::MonoString> lines = MST::split(tofind, U'\n');
-
-	if (lines.size() > 1) {
-		cur_line = slelscec.first.first;
-
-		for (int attempt = 0; attempt < lineCount + 1; attempt++) {
-			if (forwards) {
-				cur_line++;
-				if (cur_line >= lineCount) {
-					cur_line = 0;
-				}
-			} else {
-				cur_line--;
-				if (cur_line < 0) {
-					cur_line = lineCount - 1;
-				}
-			}
-
-			const MST::MonoString& text = textedit->lines[cur_line].line_text;
-
-			if (!MST::endsWith(text, lines[0], ignoreCase)) {
-				continue;
-			}
-
-			bool matches = true;
-
-			for (size_t li = 1; li < lines.size() - 1; li++) {
-				int idx = cur_line + static_cast<int>(li);
-
-				if (idx >= lineCount) {
-					matches = false;
-					break;
-				}
-
-				const MST::MonoString& t2 = textedit->lines[idx].line_text;
-
-				// Full-line match, case-sensitive or insensitive.
-				if (t2.length != lines[li].length ||
-					!MST::startsWith(t2, lines[li], ignoreCase)) {
-					matches = false;
-					break;
-				}
-			}
-
-			if (!matches) {
-				continue;
-			}
-
-			int final_idx = cur_line + static_cast<int>(lines.size()) - 1;
-
-			if (final_idx >= lineCount) {
-				continue;
-			}
-
-			const MST::MonoString& final_text = textedit->lines[final_idx].line_text;
-
-			if (!MST::startsWith(final_text, lines[lines.size() - 1], ignoreCase)) {
-				continue;
-			}
-
-			Cursor c;
-			c.anchor_line = cur_line;
-			c.anchor_char = static_cast<int>(text.length - lines[0].length);
-			c.head_line = final_idx;
-			c.head_char = static_cast<int>(lines[lines.size() - 1].length);
-			c.preffered_collumn = c.head_char;
-
-			textedit->cursors = { c };
-			textedit->ensureCursorVisible(textedit->cursors[0]);
-			return;
-		}
-	} else {
-		int start_char;
-
-		if (forwards) {
-			cur_line = slelscec.first.second;
-			start_char = slelscec.second.second;
-		} else {
-			cur_line = slelscec.first.first;
-			start_char = slelscec.second.first;
-		}
-
-		for (int attempt = 0; attempt < lineCount + 1; attempt++) {
-			const MST::MonoString& text = textedit->lines[cur_line].line_text;
-
-			size_t index = MST::NOT_FOUND;
-
-			if (forwards) {
-				size_t start = 0;
-
-				if (start_char > 0) {
-					start = static_cast<size_t>(start_char);
-				}
-
-				index = MST::index(text, start, tofind, ignoreCase);
-			} else {
-				size_t boundedStartChar = 0;
-
-				if (start_char > 0) {
-					boundedStartChar = static_cast<size_t>(start_char);
-				}
-
-				if (boundedStartChar > text.length) {
-					boundedStartChar = text.length;
-				}
-
-				// Match must fit entirely before start_char, matching old:
-				// lastIndexOf(tofind, 0, start_char)
-				if (boundedStartChar >= tofind.length) {
-					size_t startCandidate = boundedStartChar - tofind.length;
-					index = MST::indexBackwards(text, startCandidate, tofind, ignoreCase);
-				}
-			}
-
-			if (index != MST::NOT_FOUND) {
-				Cursor c;
-				c.anchor_line = cur_line;
-				c.anchor_char = static_cast<int>(index);
-				c.head_line = cur_line;
-				c.head_char = static_cast<int>(index + tofind.length);
-				c.preffered_collumn = c.head_char;
-
-				textedit->cursors = { c };
-				textedit->ensureCursorVisible(textedit->cursors[0]);
-				return;
-			}
-
-			if (forwards) {
-				start_char = 0;
-
-				cur_line++;
-				if (cur_line >= lineCount) {
-					cur_line = 0;
-				}
-			} else {
-				cur_line--;
-				if (cur_line < 0) {
-					cur_line = lineCount - 1;
-				}
-
-				start_char = static_cast<int>(textedit->lines[cur_line].line_text.length);
-			}
-		}
+	auto location = textedit->findText(forwards, tofind, case_sensitive, textedit->cursors[0]);
+	
+	if (location.head_char != -1) {
+		textedit->cursors = { location };
+		textedit->ensureCursorVisible(textedit->cursors[0]);
 	}
 }
 
@@ -1351,7 +1217,7 @@ bool CodeEdit::on_char_event(unsigned int keycode) {
 			char utf8[5] = {};
 			int len = std::snprintf(utf8, sizeof(utf8), "%c", keycode);
 			if (len > 0) { // there is something printable
-				if (App::lsp_client_map[lsp] && file) { // lsp completion, much faster
+				if (App::lsp_client_map[lsp] && file) { // lsp completion, much faster (faster than what?)
 					completion_id = App::lsp_client_map[lsp]->requestCompletion(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
 				}
 				
@@ -1581,7 +1447,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 			triggerSaveAs();
 			lock.lock();
 			return true;
-		}else if (key == GLFW_KEY_F && is_press && (control_held || (App::activeLeafNode == textedit && textedit->mode == 'n'))) {
+		}else if (key == GLFW_KEY_F && is_press && (control_held || (App::activeLeafNode == textedit && textedit->mode == 'n')) && !alt_held) {
 			// open find menu and whatnot
 			find_menu_open = true;
 			DO_RENDER = 3;

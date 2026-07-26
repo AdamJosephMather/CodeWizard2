@@ -199,6 +199,15 @@ func dirExists(path string) (bool, error) {
 }
 
 func installVCRuntime(installDir string) error {
+	installed, err := isVCRuntimeInstalled()
+	if err != nil {
+		return err
+	}
+	if installed {
+		fmt.Println("Microsoft Visual C++ Runtime is already installed.")
+		return nil
+	}
+
 	redistPath := filepath.Join(installDir, "CodeWizard", "vc_redist.x64.exe")
 	if _, err := os.Stat(redistPath); err != nil {
 		return fmt.Errorf("Visual C++ Redistributable not found at %q: %w", redistPath, err)
@@ -219,6 +228,15 @@ try {
 		throw "VC++ Redistributable exited with code $($process.ExitCode)"
 	}
 } catch {
+	$exception = $_.Exception
+	while ($null -ne $exception) {
+		if ($exception -is [System.ComponentModel.Win32Exception] -and $exception.NativeErrorCode -eq 1223) {
+			Write-Warning 'Microsoft Visual C++ Runtime installation was declined. CodeWizard installation will continue, but CodeWizard may not run until the runtime is installed.'
+			exit 0
+		}
+		$exception = $exception.InnerException
+	}
+
 	Write-Error $_
 	exit 1
 }
@@ -238,6 +256,53 @@ try {
 	}
 
 	return nil
+}
+
+func isVCRuntimeInstalled() (bool, error) {
+	const runtimeKey = `SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64`
+
+	key, err := registry.OpenKey(registry.LOCAL_MACHINE, runtimeKey, registry.QUERY_VALUE)
+	if err != nil {
+		if errors.Is(err, syscall.ERROR_FILE_NOT_FOUND) {
+			return false, nil
+		}
+		return false, fmt.Errorf("check Microsoft Visual C++ Runtime registry key: %w", err)
+	}
+	defer key.Close()
+
+	installed, _, err := key.GetIntegerValue("Installed")
+	if err != nil {
+		if errors.Is(err, syscall.ERROR_FILE_NOT_FOUND) {
+			return false, nil
+		}
+		return false, fmt.Errorf("read Microsoft Visual C++ Runtime status: %w", err)
+	}
+	if installed != 1 {
+		return false, nil
+	}
+
+	windowsDir := os.Getenv("WINDIR")
+	if windowsDir == "" {
+		return false, nil
+	}
+
+	// Checking the files as well as the registry prevents an old or damaged
+	// 14.x installation from being mistaken for the runtime this build needs.
+	requiredDLLs := []string{
+		"msvcp140.dll",
+		"vcruntime140.dll",
+		"vcruntime140_1.dll",
+	}
+	for _, name := range requiredDLLs {
+		if _, err := os.Stat(filepath.Join(windowsDir, "System32", name)); err != nil {
+			if os.IsNotExist(err) {
+				return false, nil
+			}
+			return false, fmt.Errorf("check Microsoft Visual C++ Runtime file %s: %w", name, err)
+		}
+	}
+
+	return true, nil
 }
 
 func extractZip(zipPath, dest string) error {

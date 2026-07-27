@@ -1182,6 +1182,15 @@ void TextEdit::insertNewCursorUp() {
 	DO_POSITION = true;
 }
 
+//struct Cursor {
+//	int anchor_line = 0;
+//	int anchor_char = 0;
+//	int head_line = 0;
+//	int head_char = 0;
+//	
+//	int preffered_collumn = 0;
+//};
+
 void TextEdit::insertNewCursorFind() {
 	Cursor latest = cursors[cursors.size()-1];
 	
@@ -1189,7 +1198,18 @@ void TextEdit::insertNewCursorFind() {
 	auto next_spot = findText(true, text, false, latest);
 	
 	if (next_spot.head_char != -1) {
-		cursors.push_back(next_spot);
+		if (latest.head_line < latest.anchor_line || (latest.head_line == latest.anchor_line && latest.head_char < latest.anchor_char)) {
+			cursors.push_back({
+				next_spot.head_line,
+				next_spot.head_char,
+				next_spot.anchor_line,
+				next_spot.anchor_char,
+				next_spot.anchor_char
+			});
+		}else {
+			cursors.push_back(next_spot);
+		}
+		
 		DO_POSITION = true;
 	}
 }

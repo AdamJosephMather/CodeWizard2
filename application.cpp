@@ -8,9 +8,9 @@
 #include "codeedit.h"
 #include "editor.h"
 #include "helper_types.h"
+#include <unordered_set>
 #include <vector>
 #include <regex>
-#include <set>
 #include "panel_holder.h"
 //#include "modelxrunner.h"
 #include "terminalwidget.h"
@@ -2883,6 +2883,15 @@ void App::openFromCMD(std::string filepath, std::string filename, int line) {
 	}
 }
 
+#include <vector>
+#include <queue>
+#include <unordered_set>
+#include <string>
+#include <filesystem>
+#include <future>
+#include <thread>
+#include <algorithm>
+
 void App::indexFiles() {
 	std::string rootPath = settings->getValue("current_folder", getExecutableDir());
 	
@@ -2892,25 +2901,26 @@ void App::indexFiles() {
 	INDEXED_FILES.currentlyshowing.clear();
 	INDEXED_FILES.currentlyshowingtype.clear();
 	
-	std::size_t maxFiles              = settings->getValue("max_index_files", 2000);
-	std::size_t maxDisplayChars       = (commandPalette->t_w-text_padding*2)/TextRenderer::get_text_width(1)-1;
+	const std::size_t maxFiles          = settings->getValue("max_index_files", 15000);
+	const std::size_t maxDisplayChars  = (commandPalette->t_w - text_padding * 2) / TextRenderer::get_text_width(1) - 1;
 	
-	
-	std::queue<std::string> dirs;
-	dirs.push(rootPath);
-	
-	const std::size_t rootLen = rootPath.size() + 1; // for the ‘/’ or ‘\’
-	std::size_t seen = 0;
-	
-	std::set<std::string> dontshowagain;
+	static const std::vector<std::string> commands = {"Connect via SSH","Disconnect SSH","Git Push","Git Pull","Git Force Pull","Help","Save Theme Settings To File","Load Theme Settings From File","Restart Language Servers (LSPs)","Open `languages.json` file","Test Toast Box","Test Text Line","Run FixIt (Spaces to Tabs)","Undo FixIt (Tabs to Spaces)","How Many Widgets Currently?"}; 
+
+	// 1. Pre-allocate memory to prevent vector re-allocations
+	INDEXED_FILES.indexedNames.reserve(maxFiles + commands.size());
+	INDEXED_FILES.displayPaths.reserve(maxFiles + commands.size());
+	INDEXED_FILES.fullPaths.reserve(maxFiles + commands.size());
+
+	// 2. O(1) Hash Set instead of O(log N) tree set
+	std::unordered_set<std::string> dontshowagain;
 	
 	files_in_box = rootelement->getOpenFiles(false);
-	for (auto fInfo : files_in_box) {
-		if (fInfo[1] == "") {
-			continue;
-		}
+	dontshowagain.reserve(files_in_box.size());
+
+	for (const auto& fInfo : files_in_box) {
+		if (fInfo[1].empty()) continue;
 		
-		std::string absPath = fInfo[1];
+		const std::string& absPath = fInfo[1];
 		INDEXED_FILES.fullPaths.push_back(absPath);
 		INDEXED_FILES.displayPaths.push_back(MST::toMonoString(">" + fInfo[0]));
 		INDEXED_FILES.indexedNames.push_back(fInfo[0]);
@@ -2921,12 +2931,13 @@ void App::indexFiles() {
 		auto backend = FileBackends::current();
 		std::vector<ScannedFile> scanned;
 		std::string scan_error;
+		std::size_t seen = 0;
 		if (backend->scanFiles(rootPath, maxFiles, scanned, scan_error)) {
 			for (const auto& f : scanned) {
 				if (seen >= maxFiles) break;
 				if (dontshowagain.count(f.fullPath)) continue;
 				INDEXED_FILES.fullPaths.push_back(f.fullPath);
-				std::string rel = f.fullPath.size() > rootLen ? f.fullPath.substr(rootLen) : f.fullPath;
+				std::string rel = f.fullPath.size() > (rootPath.size() + 1) ? f.fullPath.substr(rootPath.size() + 1) : f.fullPath;
 				if (rel.size() > maxDisplayChars) {
 					rel = rel.substr(rel.size() - maxDisplayChars);
 					const auto slash = rel.find_first_of("/\\");
@@ -2938,58 +2949,90 @@ void App::indexFiles() {
 			}
 		}
 	}
-	
-	// 1) BFS through the tree, up to maxFiles files
-	while (!FileBackends::isRemote() && !dirs.empty() && seen < maxFiles) {
-		auto curDir = dirs.front(); 
-		dirs.pop();
-		
-		std::error_code dirEc;
-		std::filesystem::directory_iterator iter(curDir, dirEc);
-		if (dirEc) {
-			// Could be “permission denied”; just skip it
-			continue;
+
+	const std::size_t rootLen = rootPath.size() + 1;
+	std::size_t seen = 0;
+
+	auto getDisplayPath = [rootLen, maxDisplayChars](const std::string& absPath) {
+		std::string rel = absPath.size() > rootLen ? absPath.substr(rootLen) : absPath;
+		if (rel.size() > maxDisplayChars) {
+			rel = rel.substr(rel.size() - maxDisplayChars);
+			const auto slash = rel.find_first_of("/\\");
+			if (slash != std::string::npos) rel = rel.substr(slash);
 		}
-		
-		for (auto& entry : iter) {
-			if (seen >= maxFiles) break;
+		return MST::toMonoString(rel);
+	};
 
-			if (entry.is_directory()) {
-				if (entry.path().filename().string()[0] != '.') {
-					dirs.push(entry.path().string());
-				}
-			}else if (entry.is_regular_file()) {
-				std::string absPath = entry.path().string();
-				if (dontshowagain.count(absPath)) {
-					continue;
-				}
-				
-				INDEXED_FILES.fullPaths.push_back(absPath);
+	std::queue<std::string> dirs;
+	dirs.push(rootPath);
 
-				// Compute a relative display path, cropped to last maxDisplayChars
-				std::string rel = absPath.size() > rootLen
-								  ? absPath.substr(rootLen)
-								  : absPath;
-				if (rel.size() > maxDisplayChars) {
-					rel = rel.substr(rel.size() - maxDisplayChars);
-					// try to crop before the first slash so you don’t cut mid-folder
-					auto slash = rel.find_first_of("/\\");
-					if (slash != std::string::npos)
-						rel = rel.substr(slash);
-				}
-				INDEXED_FILES.displayPaths.push_back(MST::toMonoString(rel));
+	struct FileEntry {
+		std::string absPath;
+		std::string fileName;
+	};
 
-				// Store the bare file name
-				INDEXED_FILES.indexedNames.push_back(entry.path().filename().string());
+	struct DirBatchResult {
+		std::vector<std::string> subDirs;
+		std::vector<FileEntry> files;
+	};
+
+	const unsigned int concurrency = std::max(1u, std::thread::hardware_concurrency());
+
+	// 3. Parallel BFS preserving exact sequence order
+	while (!FileBackends::isRemote() && !dirs.empty() && seen < maxFiles) {
+		std::vector<std::string> currentBatch;
+		while (!dirs.empty() && currentBatch.size() < concurrency) {
+			currentBatch.push_back(dirs.front());
+			dirs.pop();
+		}
+
+		std::vector<std::future<DirBatchResult>> futures;
+		futures.reserve(currentBatch.size());
+
+		for (const auto& curDir : currentBatch) {
+			futures.push_back(std::async(std::launch::async, [curDir]() {
+				DirBatchResult result;
+				std::error_code dirEc;
+				std::filesystem::directory_iterator iter(curDir, dirEc);
+				if (dirEc) return result;
+
+				for (const auto& entry : iter) {
+					std::string absPath = entry.path().string();
+					auto slash = absPath.find_last_of("/\\");
+					std::string fileName = (slash != std::string::npos) ? absPath.substr(slash + 1) : absPath;
+
+					if (entry.is_directory()) {
+						if (!fileName.empty() && fileName[0] != '.') {
+							result.subDirs.push_back(std::move(absPath));
+						}
+					} else if (entry.is_regular_file()) {
+						result.files.push_back({std::move(absPath), std::move(fileName)});
+					}
+				}
+				return result;
+			}));
+		}
+
+		// Collect futures sequentially to enforce exact order
+		for (auto& fut : futures) {
+			DirBatchResult res = fut.get();
+
+			for (auto& sub : res.subDirs) {
+				dirs.push(std::move(sub));
+			}
+
+			for (auto& file : res.files) {
+				if (seen >= maxFiles) break;
+				if (dontshowagain.count(file.absPath)) continue;
+
+				INDEXED_FILES.fullPaths.push_back(file.absPath);
+				INDEXED_FILES.displayPaths.push_back(getDisplayPath(file.absPath));
+				INDEXED_FILES.indexedNames.push_back(std::move(file.fileName));
 
 				++seen;
 			}
 		}
 	}
-	
-	static const std::vector<std::string> commands = {
-		"Connect via SSH","Disconnect SSH","Git Push","Git Pull","Git Force Pull","Help","Save Theme Settings To File","Load Theme Settings From File","Restart Language Servers (LSPs)","Open `languages.json` file","Test Toast Box","Test Text Line","Run FixIt (Spaces to Tabs)","Undo FixIt (Tabs to Spaces)","How Many Widgets Currently?"
-	};
 
 	for (auto const& cmd : commands) {
 		std::string tagged = ":" + cmd;

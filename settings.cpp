@@ -231,7 +231,7 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 		makeInt(
 			"Max Files To Index",
 			"max_index_files",
-			2000
+			15000
 		),
 		makeString(
 			"AI Model ID",

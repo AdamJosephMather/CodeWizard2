@@ -1,3 +1,5 @@
+const enable_debug = false; // Set to true to output to stdout (console) and enable ASan
+
 const std = @import("std");
 
 const app_cpp_sources = [_][]const u8{
@@ -166,8 +168,13 @@ const freetype_sources = [_][]const u8{
 
 pub fn build(b: *std.Build) !void {
 	const target = b.standardTargetOptions(.{});
-	const optimize = b.standardOptimizeOption(.{ .preferred_optimize_mode = .ReleaseFast });
-
+	const optimize = b.standardOptimizeOption(.{
+		.preferred_optimize_mode = if (enable_debug)
+			.Debug
+		else
+			.ReleaseFast,
+	});
+	
 	const is_windows = target.result.os.tag == .windows;
 	const is_linux = target.result.os.tag == .linux;
 	if (!is_windows and !is_linux) @panic("CodeWizard currently supports Windows and Linux targets.");
@@ -177,14 +184,18 @@ pub fn build(b: *std.Build) !void {
 		.optimize = optimize,
 		.link_libc = true,
 		.link_libcpp = true,
+		.sanitize_c = if (enable_debug) .full else .off,
 	});
 	const exe = b.addExecutable(.{
 		.name = "CodeWizard",
 		.root_module = module,
 	});
-	if (is_windows) exe.subsystem = .Windows;
+	if (is_windows and !enable_debug) exe.subsystem = .Windows;
 
 	var cpp_flags: std.ArrayList([]const u8) = .empty;
+	if (enable_debug) {
+		try cpp_flags.appendSlice(b.allocator, &.{ "-fsanitize=address", "-fno-omit-frame-pointer" });
+	}
 	try cpp_flags.appendSlice(b.allocator, &.{
 		"-std=c++17",
 		"-DGHOSTTY_STATIC",
@@ -207,7 +218,11 @@ pub fn build(b: *std.Build) !void {
 		.files = &app_cpp_sources,
 		.flags = cpp_flags.items,
 	});
+
 	var c_flags: std.ArrayList([]const u8) = .empty;
+	if (enable_debug) {
+		try c_flags.appendSlice(b.allocator, &.{ "-fsanitize=address", "-fno-omit-frame-pointer" });
+	}
 	if (is_windows) try c_flags.appendSlice(b.allocator, &.{
 		"-DNOMINMAX",
 		"-D_CRT_SECURE_NO_WARNINGS",
@@ -428,6 +443,10 @@ pub fn build(b: *std.Build) !void {
 		"third_party/syntect_bridge/{s}/{s}/release/libsyntect_bridge.a",
 		.{ rust_target_dir, rust_target },
 	)) });
+	
+	if (is_windows and enable_debug) {
+		exe.addObjectFile(.{ .cwd_relative = "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\lib\\x64\\clang_rt.asan_dynamic-x86_64.lib" });
+	}
 
 	if (is_windows) {
 		for ([_][]const u8{
@@ -465,6 +484,13 @@ fn installRuntimeFiles(b: *std.Build) void {
 		.install_dir = .prefix,
 		.install_subdir = "cascadia",
 	});
+	
+//    if (enable_debug) { add to path instead
+//        b.installFile(
+//            "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\Hostx64\\x64\\clang_rt.asan_dynamic-x86_64.dll",
+//            "clang_rt.asan_dynamic-x86_64.dll",
+//        );
+//    }
 }
 
 fn installWindowsCompilationDatabase(
@@ -484,9 +510,6 @@ fn installWindowsCompilationDatabase(
 		try appendJsonString(&contents, b.allocator, source_path);
 		try contents.appendSlice(b.allocator, ",\n    \"arguments\": [");
 
-		// clangd parses this as a normal Clang-compatible invocation. All
-		// system paths and Zig libc++ configuration defines are explicit, so
-		// clangd does not need to execute the Zig driver.
 		try appendJsonString(&contents, b.allocator, b.graph.zig_exe);
 		for ([_][]const u8{
 			"--driver-mode=g++",

@@ -3,6 +3,8 @@
 #include "text_renderer.h"
 
 ListBox::ListBox(Widget* parent, App::PosFunction pf) : Widget(parent) {
+	background_color = App::theme.extras_background_color;
+	
 	id = MST::toMonoString("ListBox");
 	pFunc = pf;
 }
@@ -27,9 +29,9 @@ void ListBox::render() {
 	elementalPositions.clear();
 	
 	if (rounded) {
-		App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.extras_background_color);
+		App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, background_color);
 	}else{
-		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
+		App::DrawRect(t_x, t_y, t_w, t_h, background_color);
 	}
 	
 	int th = TextRenderer::get_text_height()+App::text_padding;

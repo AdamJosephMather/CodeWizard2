@@ -226,7 +226,7 @@ public:
 	
 	void insertNewCursorDown();
 	void insertNewCursorUp();
-	void insertNewCursorFind();
+	void insertNewCursorFind(bool captials);
 	void HandleOverlappingCursors();
 	
 	std::vector<History> undo_stack = {};

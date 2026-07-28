@@ -65,13 +65,14 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 	filesAddList->ONCLICK = [&](Widget* w, int idx) {
 		std::string message = textstoadd[idx];
 		Label* te = new Label(this);
-		te->background_color = App::theme.extras_background_color;
+		te->background_color = App::theme.overlay_background_color;
 		te->setFullText(MST::toMonoString(message));
 		te->rounded = true;
 		message_te.push_back(te);
 		from_user.push_back(true);
 		filesAddList->is_visible_layered = false;
 	};
+	filesAddList->background_color = App::theme.overlay_background_color;
 }
 
 void Chat::position(int x, int y, int width, int height) {
@@ -344,7 +345,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 		if (key == GLFW_KEY_ENTER && action == GLFW_PRESS && !shift_held && !running) {
 			Label* te = new Label(this);
 			auto message = querybox->getFullText();
-			te->background_color = App::theme.extras_background_color;
+			te->background_color = App::theme.overlay_background_color;
 			te->setFullText(message);
 			te->rounded = true;
 			

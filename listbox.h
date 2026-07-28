@@ -37,5 +37,7 @@ public:
 	
 	int selected_id = 0;
 	std::vector<MST::MonoString> elements;
+	
+	Color* background_color;
 private:
 };

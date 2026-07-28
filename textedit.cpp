@@ -1191,11 +1191,11 @@ void TextEdit::insertNewCursorUp() {
 //	int preffered_collumn = 0;
 //};
 
-void TextEdit::insertNewCursorFind() {
+void TextEdit::insertNewCursorFind(bool capitals) {
 	Cursor latest = cursors[cursors.size()-1];
 	
 	auto text = getSelectedText(latest);
-	auto next_spot = findText(true, text, false, latest);
+	auto next_spot = findText(true, text, capitals, latest);
 	
 	if (next_spot.head_char != -1) {
 		if (latest.head_line < latest.anchor_line || (latest.head_line == latest.anchor_line && latest.head_char < latest.anchor_char)) {
@@ -1784,7 +1784,7 @@ bool TextEdit::handleNavKey(int key, int scancode, int action, int mods) {
 		}else if (is_alt_held && key == GLFW_KEY_RIGHT) {
 			gotoNextMark();
 		}else if (is_alt_held && key == GLFW_KEY_F) {
-			insertNewCursorFind();
+			insertNewCursorFind(is_shift_held);
 		}else{
 			applyMoveToAllCursors(key, is_shift_held, is_control_held);
 		}

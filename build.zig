@@ -1,4 +1,5 @@
 const enable_debug = false; // Set to true to output to stdout (console) and enable ASan
+const enable_console = false;
 
 const std = @import("std");
 
@@ -190,7 +191,7 @@ pub fn build(b: *std.Build) !void {
 		.name = "CodeWizard",
 		.root_module = module,
 	});
-	if (is_windows and !enable_debug) exe.subsystem = .Windows;
+	if (is_windows and !enable_debug and !enable_console) exe.subsystem = .Windows;
 
 	var cpp_flags: std.ArrayList([]const u8) = .empty;
 	if (enable_debug) {

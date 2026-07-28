@@ -198,6 +198,72 @@ bool LocalFileBackend::readFile(const std::string& path, std::vector<std::uint8_
 	return true;
 }
 
+bool LocalFileBackend::readFilePartial(const std::string& path, 
+                                       std::vector<std::uint8_t>& bytes, 
+                                       std::size_t maxBytes, 
+                                       std::string& error) 
+{
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
+        error = "could not open file";
+        return false;
+    }
+
+    bytes.resize(maxBytes);
+    file.read(reinterpret_cast<char*>(bytes.data()), maxBytes);
+    
+    // gcount() gets the actual number of bytes read
+    const std::streamsize bytesRead = file.gcount();
+    
+    if (bytesRead < 0) {
+        error = "could not read file";
+        bytes.clear();
+        return false;
+    }
+
+    bytes.resize(static_cast<std::size_t>(bytesRead));
+    return true;
+}
+
+bool LocalFileBackend::isBinary(const std::string& path, bool& result, std::string& error) {
+    constexpr std::size_t kMaxCheckBytes = 4096;
+    
+    std::vector<std::uint8_t> bytes;
+    if (!readFilePartial(path, bytes, kMaxCheckBytes, error)) {
+        return false;
+    }
+
+    if (bytes.empty()) {
+        result = false; // Empty file is treated as non-binary
+        return true;
+    }
+
+    const std::size_t count = bytes.size();
+    std::size_t controls = 0;
+
+    for (std::size_t i = 0; i < count; ++i) {
+        const auto c = bytes[i];
+        
+        // Null byte indicates binary content immediately
+        if (c == 0) {
+            result = true;
+            return true;
+        }
+        
+        // Count unprintable control characters (excluding tab \t, LF \n, CR \r, etc.)
+        if (c < 9 || (c > 13 && c < 32)) {
+            ++controls;
+            if (controls > count / 100) {
+                result = true;
+                return true;
+            }
+        }
+    }
+
+    result = false;
+    return true;
+}
+
 bool LocalFileBackend::writeFile(const std::string& path, const std::vector<std::uint8_t>& bytes, std::string& error) {
 	return atomicWriteLocal(std::filesystem::path(path), bytes, error);
 }

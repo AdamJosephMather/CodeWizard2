@@ -75,7 +75,9 @@ public:
 	char pathSeparator() const override;
 	std::string homeDirectory() const override;
 
+	bool isBinary(const std::string& path, bool& result, std::string& error);
 	bool readFile(const std::string& path, std::vector<std::uint8_t>& bytes, std::string& error) override;
+	bool readFilePartial(const std::string& path, std::vector<std::uint8_t>& bytes, std::size_t maxBytes, std::string& error);
 	bool writeFile(const std::string& path, const std::vector<std::uint8_t>& bytes, std::string& error) override;
 	bool stat(const std::string& path, BackendFileStat& result, std::string& error) override;
 	bool listDirectory(const std::string& path, std::vector<BackendDirectoryEntry>& entries, std::string& error) override;

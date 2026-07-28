@@ -103,7 +103,7 @@ void Editor::createNew(FileInfo* fn) {
 	if (fn && is_image(fn->filepath)) {
 		ImageView* imgv = new ImageView(this);
 		editors[ti.id] = imgv;
-	}else if (fn && fileExists(fn->filepath) && isBinaryFile(fn->filepath)){
+	}else if (fn && isBinaryFile(fn->filepath)){
 		HexEditor* hexe = new HexEditor(this);
 		editors[ti.id] = hexe;
 	}else{

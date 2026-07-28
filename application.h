@@ -79,6 +79,22 @@ struct StoredSearch {
 	int line;
 };
 
+struct MatchInfo {
+	int linenum;
+	std::string path;
+	std::string text;
+};
+
+struct SharedProgress {
+	std::mutex mtx;
+	std::vector<MatchInfo> storedsearches;
+	std::string searchterm;
+	std::vector<std::string> torun;
+	bool updateSomething = false;
+	std::string toptext = "";
+	int added_already = 0;
+};
+
 struct KeyboardEvent {
 	bool character_callback = false;
 	
@@ -193,7 +209,7 @@ public:
 	static void openLanguagesFile();
 	
 	static FileIndexResult INDEXED_FILES;
-	static std::vector<StoredSearch> storedsearches;
+	static SharedProgress storedsearches;
 	
 	static bool rerender;
 	static int time_till_regular;
@@ -309,7 +325,7 @@ public:
 	static void fillCmdBox();
 	static void indexFiles();
 	static std::vector<std::string> extractStringWords(std::string word);
-	static SearchResult searchAcrossFiles(const std::string& searchTerm);
+	static void searchAcrossFiles(const std::string& searchTerm);
 	
 	static void openMenu(int x_offset);
 	static void closeMenu();

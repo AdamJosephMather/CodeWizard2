@@ -40,11 +40,6 @@ static void SetClipboardText(const std::string& text) {
 #include <system_error>
 #include <algorithm>
 
-using SearchFileKey  = std::pair<std::string, std::string>;
-using SearchMatch    = std::pair<int, std::string>;
-using SearchMatchVec = std::vector<SearchMatch>;
-using SearchResult   = std::map<SearchFileKey, SearchMatchVec>;
-
 struct ImageInfo {
 	GLuint tex;
 	int imgW;

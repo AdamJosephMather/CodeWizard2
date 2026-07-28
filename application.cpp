@@ -99,7 +99,9 @@ Label* STRING_REQUEST_LABEL = nullptr;
 SettingsManager* App::settings = new SettingsManager();
 std::mutex App::canMakeChanges;
 FileIndexResult App::INDEXED_FILES = FileIndexResult();
-std::vector<StoredSearch> App::storedsearches = {};
+SharedProgress App::storedsearches = {};
+std::thread searchWorker;
+std::atomic<bool>* searchStopFlag = new std::atomic<bool>(false);
 
 Widget* App::commandPalette = nullptr;
 Widget* App::filesButton = nullptr;
@@ -1273,6 +1275,27 @@ void App::DoFullRenderWithoutInput() {
 	rendering_add_rect = false;
 	rendering_rem_rect = false;
 	
+	{
+		std::lock_guard<std::mutex> lock(storedsearches.mtx);
+		if (storedsearches.updateSomething) {
+			if (ListBox* lb = dynamic_cast<ListBox*>(commandBox)) {
+				for (int i = storedsearches.added_already; i < storedsearches.storedsearches.size(); i++) {
+					lb->elements.push_back(MST::toMonoString(storedsearches.storedsearches[i].text));
+					INDEXED_FILES.currentlyshowingtype.push_back(2);
+					INDEXED_FILES.currentlyshowing.push_back(i);
+				}
+				
+				if (lb->elements.size() != 0) {
+					lb->elements[0] = MST::toMonoString(storedsearches.toptext);
+				}
+			}
+			
+			storedsearches.added_already = storedsearches.storedsearches.size();
+			storedsearches.updateSomething = false;
+			time_till_regular = 2;
+		}
+	}
+	
 	expectedCursorType = -1; // must be reset every position call
 	std::unique_lock<std::mutex> lock(canMakeChanges); // this prevents separate threads (the lsp clients) from messing with shit while positioning/rendering
 	
@@ -1318,7 +1341,7 @@ void App::DoFullRenderWithoutInput() {
 		}else {
 			lastUpdate = currentTime;
 		}
-		
+
 		return;
 	}
 	
@@ -2390,6 +2413,8 @@ void App::win_button() {
 }
 
 void App::commandUnfocused() {
+	searchStopFlag->store(true, std::memory_order_relaxed);
+	
 	if (auto com_p = dynamic_cast<TextEdit*>(commandPalette)) {
 		if (auto editor = dynamic_cast<Editor*>(activeEditor)) {
 			com_p->setFullText(editor->getPaletteName());
@@ -2725,10 +2750,19 @@ void App::executeCommandPaletteAction() {
 			setActiveLeafNode(beforeCommandLeafNode);
 		}
 		
-		auto itm = storedsearches[cur_sel];
+		if (cur_sel < 0 || cur_sel >= storedsearches.storedsearches.size()) {
+			return;
+		}
+		
+		std::lock_guard<std::mutex> lock(storedsearches.mtx);
+		auto itm = storedsearches.storedsearches[cur_sel];
+		
+		if (itm.path == "") {
+			return;
+		}
 		
 		std::filesystem::path p(itm.path);
-		openFromCMD(itm.path, p.filename().string(), itm.line);
+		openFromCMD(itm.path, p.filename().string(), itm.linenum-1);
 		return;
 	}
 	
@@ -2995,42 +3029,61 @@ void App::fillCmdBox() {
 	auto cb = dynamic_cast<ListBox*>(commandBox);
 	auto cp = dynamic_cast<TextEdit*>(commandPalette);
 	
+	
+	
 	INDEXED_FILES.currentlyshowing.clear();
 	INDEXED_FILES.currentlyshowingtype.clear();
-	storedsearches.clear();
+	
+	
+	searchStopFlag->store(true, std::memory_order_relaxed);
+	{
+		std::lock_guard<std::mutex> searchLock(storedsearches.mtx);
+		storedsearches.storedsearches.clear();
+		storedsearches.torun.clear();
+		storedsearches.updateSomething = false;
+	}
 	
 	std::vector<MST::MonoString> els;
 	
 	MST::MonoString searchfor = cp->getFullText();
 	
-	if (searchfor.length >= 3 && MST::char32At(searchfor, 0) == U'&') {
-		std::string loweredSearchfor = MST::toString(searchfor);
-		loweredSearchfor = loweredSearchfor.substr(1);
-		SearchResult res = searchAcrossFiles(loweredSearchfor);
+	// thinking is that we want fewer results back and forth, single chars are common, pairs of 3 chars is less common. thus less data
+	if (((searchfor.length >= 2 && !FileBackends::isRemote()) || (searchfor.length >= 4 && FileBackends::isRemote())) && MST::char32At(searchfor, 0) == U'&') {
+		els.push_back(MST::MonoString()); // for the top text
+		INDEXED_FILES.currentlyshowingtype.push_back(2);
+		INDEXED_FILES.currentlyshowing.push_back(-1);
 		
-		for (const auto& [key, matches] : res) {
-			const auto& [filePath, fileName] = key;
-			
-			std::filesystem::path p(filePath);
-			
-			els.push_back(MST::toMonoString(p.filename().string()));
-			
-			StoredSearch itm = {filePath, 0};
-			storedsearches.push_back(itm);
-			
-			INDEXED_FILES.currentlyshowing.push_back(storedsearches.size()-1);
-			INDEXED_FILES.currentlyshowingtype.push_back(2);
-			
-			for (const auto& [lineNum, text] : matches) {
-				els.push_back(MST::toMonoString("    "+text));
-				
-				StoredSearch itm = {filePath, lineNum-1};
-				storedsearches.push_back(itm);
-				
-				INDEXED_FILES.currentlyshowing.push_back(storedsearches.size()-1);
-				INDEXED_FILES.currentlyshowingtype.push_back(2);
-			}
-		}
+		std::string loweredSearchfor = MST::toString(searchfor);
+		loweredSearchfor = loweredSearchfor.substr(1); // remove the &
+		
+		searchAcrossFiles(loweredSearchfor);
+		
+//		for (const auto& [key, matches] : res) {
+//			const auto& [filePath, fileName] = key;
+//			
+//			std::filesystem::path p(filePath);
+//			
+//			els.push_back(MST::toMonoString(p.filename().string()));
+//			
+//			StoredSearch itm = {filePath, 0};
+//			storedsearches.push_back(itm);
+//			
+//			INDEXED_FILES.currentlyshowing.push_back(storedsearches.size()-1);
+//			INDEXED_FILES.currentlyshowingtype.push_back(2);
+//			
+//			for (const auto& [lineNum, text] : matches) {
+//				els.push_back(MST::toMonoString("    "+text));
+//				
+//				StoredSearch itm = {filePath, lineNum-1};
+//				storedsearches.push_back(itm);
+//				
+//				INDEXED_FILES.currentlyshowing.push_back(storedsearches.size()-1);
+//				INDEXED_FILES.currentlyshowingtype.push_back(2);
+//			}
+//		}
+		
+		cb->setElements(els);
+		return;
 	}
 	
 	auto res = calcExpression(searchfor);
@@ -3039,7 +3092,6 @@ void App::fillCmdBox() {
 		INDEXED_FILES.currentlyshowingtype.push_back(1);
 		els.push_back(doubleToMonoString_pretty(res.second));
 	}
-	
 	
 	std::string str = MST::toString(searchfor);
 	
@@ -3402,30 +3454,94 @@ void App::launchCommandNonBlocking(const std::string& command) {
 #endif
 }
 
-void searchTheseFiles(const std::string& st, std::vector<std::string> files, SearchResult* res) {
+void searchTheseFiles(std::atomic<bool>& stopFlag, SharedProgress& data) {
+	std::string st = data.searchterm;
+	
+	if (FileBackends::isRemote()) {
+		std::vector<std::string> searchPaths;
+		
+		{
+			int maxlen = 300 < data.torun.size() ? 300 : data.torun.size();
+			
+			std::lock_guard<std::mutex> lock(data.mtx);
+			searchPaths = std::vector<std::string>(
+				data.torun.begin(),
+				data.torun.begin() + maxlen
+			);
+			data.toptext = "Request sent... ("+std::to_string(searchPaths.size())+" files)";
+			data.updateSomething = true;
+		}
+		std::vector<SearchedFile> remoteResults;
+		std::string search_error;
+		if (FileBackends::current()->searchFiles(searchPaths, st, remoteResults, search_error)) {
+			std::lock_guard<std::mutex> lock(data.mtx);
+			
+			for (const auto& sf : remoteResults) {
+				if (stopFlag.load(std::memory_order_relaxed)) { return; }
+				
+				data.storedsearches.push_back({
+					1, // line 1 for some reason...
+					sf.path,
+					FileBackends::current()->filename(sf.path) // text to show
+				});
+				
+				for (const auto& match : sf.matches) {
+					data.storedsearches.push_back({
+						match.line,
+						sf.path,
+						"    "+match.content
+					});
+				}
+			}
+			data.toptext = "Search Complete ("+std::to_string(searchPaths.size())+" files searched)";
+			data.updateSomething = true;
+		}else{
+			std::lock_guard<std::mutex> lock(data.mtx);
+			data.toptext = "Request failed.";
+			data.updateSomething = true;
+		}
+		
+		return;
+	}
+	
 	unsigned char frstchr = st[0];
 	bool works;
 	unsigned char hc;
 	int stlen = (int)st.size();
 	
-	for (size_t idx = 0; idx < files.size(); ++idx) {
-		const auto& path = files[idx];
-		if (isBinaryFile(path))
-			continue;
+	for (size_t idx = 0; idx < data.torun.size(); ++idx) {
+		if (stopFlag.load(std::memory_order_relaxed)) { return; }
+		
+		auto path = data.torun[idx];
+		
+		{
+			std::lock_guard<std::mutex> lock(data.mtx);
+			data.toptext = "Working... " + std::to_string(idx+1) + "/" + std::to_string(data.torun.size()) + " (" + FileBackends::current()->filename(path) + ")";
+			data.updateSomething = true;
+		}
+		
+		
+		if (isBinaryFile(path)) { continue; }
 		
 		std::vector<std::uint8_t> bytes;
-		std::string read_error;
-		if (!FileBackends::current()->readFile(path, bytes, read_error)) continue;
+		std::string err;
+		if (!FileBackends::current()->readFile(path, bytes, err)) { continue; }
+		
+		if (stopFlag.load(std::memory_order_relaxed)) { return; }
+		
 		std::string buf(bytes.begin(), bytes.end());
 		
 		int buflen = (int)buf.size();
 		
-		SearchMatchVec matches;
 		int lineNum = 1;
 		int lineStart = 0;
 		bool waitingforline = false;
 		
+		bool firstInFile = true;
+		
 		for (int i1 = 0; i1 < buflen-stlen+1; i1++) {
+			if (stopFlag.load(std::memory_order_relaxed)) { return; }
+			
 			hc = ToLower[static_cast<unsigned char>(buf[i1])];
 			
 			if (hc == '\n') {
@@ -3450,71 +3566,80 @@ void searchTheseFiles(const std::string& st, std::vector<std::string> files, Sea
 					endLine = buflen;
 				}
 				
-				matches.emplace_back(lineNum, trim(buf.substr(lineStart, endLine-lineStart)));
+				
+				std::lock_guard<std::mutex> lock(data.mtx);
+				
+				if (stopFlag.load(std::memory_order_relaxed)) { return; }
+				
+				if (firstInFile) {
+					data.storedsearches.push_back({
+						1, // line 1 for some reason...
+						path,
+						FileBackends::current()->filename(path) // text to show
+					});
+					firstInFile = false;
+				}
+				
+				data.storedsearches.push_back({
+					lineNum,
+					path,
+					"    "+trim(buf.substr(lineStart, endLine-lineStart))
+				});
+				data.updateSomething = true;
+				
 				waitingforline = true;
 				works = false;
 			}
 		}
-		
-		if (!matches.empty()) {
-			res->emplace(std::make_pair(path, files[idx]), std::move(matches));
-		}
 	}
+	
+	std::lock_guard<std::mutex> lock(data.mtx);
+	if (stopFlag.load(std::memory_order_relaxed)) { return; }
+	data.toptext = "Search Complete ("+std::to_string(data.torun.size())+" files searched)";
+	data.updateSomething = true;
 }
 
-SearchResult App::searchAcrossFiles(const std::string& searchTerm) {
-	SearchResult out;
-	
+void App::searchAcrossFiles(const std::string& searchTerm) {
 	auto st = toLower(searchTerm);
 	
-	// limit to first 300 (or fewer) files
-	size_t maxlen = std::min<size_t>(300, INDEXED_FILES.fullPaths.size());
+	searchStopFlag->store(true, std::memory_order_relaxed);
 	
-	if (FileBackends::isRemote()) {
-		std::vector<std::string> searchPaths(
-			INDEXED_FILES.fullPaths.begin(),
-			INDEXED_FILES.fullPaths.begin() + maxlen);
-		std::vector<SearchedFile> remoteResults;
-		std::string search_error;
-		if (FileBackends::current()->searchFiles(searchPaths, searchTerm, remoteResults, search_error)) {
-			for (const auto& sf : remoteResults) {
-				SearchMatchVec matches;
-				for (const auto& m : sf.matches) {
-					matches.emplace_back(m.line, m.content);
-				}
-				out[{sf.path, sf.path}] = std::move(matches);
-			}
-		}
-		return out;
-	}
+	std::lock_guard<std::mutex> lock(storedsearches.mtx);
 	
-	std::vector<std::string>  torun;
-	std::vector<std::thread>  threads;
-	std::vector<SearchResult*> reses;
+	storedsearches.storedsearches.clear();
+	storedsearches.torun.clear();
+	storedsearches.searchterm = st;
+	storedsearches.updateSomething = true;
+	storedsearches.added_already = 0;
+	storedsearches.toptext = "Working... 0/" + std::to_string(INDEXED_FILES.fullPaths.size());
 	
-	for (size_t idx = 0; idx < maxlen; ++idx) { // we're going to separate this into different groups of files to search
-		if (torun.size() == 30) {
-			reses.push_back(new SearchResult());
-			threads.emplace_back(searchTheseFiles, st, torun, reses.back());
-			torun.clear();
-		}
-		torun.push_back(INDEXED_FILES.fullPaths[idx]);
-	}
-	if (torun.size() != 0) {
-		reses.push_back(new SearchResult());
-		threads.emplace_back(searchTheseFiles, st, torun, reses.back());
-		torun.clear();
-	}
-
-	for (int i = 0; i < threads.size(); i++) {
-		threads[i].join();
-		for (const auto& pair : *reses[i]) {
-			out[pair.first] = pair.second;
-		}
-		delete reses[i];
-	}
+//	if (FileBackends::isRemote()) {
+//		std::vector<std::string> searchPaths(
+//			INDEXED_FILES.fullPaths.begin(),
+//			INDEXED_FILES.fullPaths.begin() + maxlen);
+//		std::vector<SearchedFile> remoteResults;
+//		std::string search_error;
+//		if (FileBackends::current()->searchFiles(searchPaths, searchTerm, remoteResults, search_error)) {
+//			for (const auto& sf : remoteResults) {
+//				SearchMatchVec matches;
+//				for (const auto& m : sf.matches) {
+//					matches.emplace_back(m.line, m.content);
+//				}
+//				out[{sf.path, sf.path}] = std::move(matches);
+//			}
+//		}
+//		
+//		return out;
+//	}
 	
-	return out;
+	storedsearches.torun = INDEXED_FILES.fullPaths;
+	
+	// replace it with a new one
+	searchStopFlag = new std::atomic<bool>(false);
+	searchStopFlag->store(false, std::memory_order_relaxed);
+	
+	searchWorker = std::thread(searchTheseFiles, std::ref(*searchStopFlag), std::ref(storedsearches));
+	searchWorker.detach();
 }
 
 void App::setTintedColor(Color* tint_c, Color* c, float b, float s) {

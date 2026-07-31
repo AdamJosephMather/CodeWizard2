@@ -1245,9 +1245,13 @@ void App::DrawShip(int x, int y, int s, double r, Color* color, bool drawfire) {
 }
 
 void App::DoFullRenderWithoutInput() {
+#ifdef _WIN32
 	if (curr_adding_panel || curr_removing_panel) {
 		reclear = 3;
 	}
+#else
+	reclear = 2;
+#endif
 	
 	double currentTime = glfwGetTime();
 	frameCount++;

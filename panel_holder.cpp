@@ -14,6 +14,7 @@
 #include "filetree.h"
 #include "text_renderer.h"
 #include "statusbar.h"
+#include "typingtest.h"
 
 PanelHolder::PanelHolder(Widget *parent) : Widget(parent) {
 	id = MST::toMonoString("Panel holder");
@@ -351,6 +352,8 @@ void PanelHolder::setState(nlohmann::json state) {
 			new GraphWindow(this);
 		}else if (c == "StatusBar"){
 			new StatusBar(this);
+		}else if (c == "TypingTest"){
+			new TypingTest(this);
 		}else { // any unknown, or editor
 			new Editor(this);
 		}
@@ -392,6 +395,8 @@ nlohmann::json PanelHolder::saveConfiguration() {
 			thisitm["children"][i] = "GraphWindow";
 		}else if (auto pe = dynamic_cast<StatusBar*>(c)){
 			thisitm["children"][i] = "StatusBar";
+		}else if (auto pe = dynamic_cast<TypingTest*>(c)){
+			thisitm["children"][i] = "TypingTest";
 		}else {
 			thisitm["children"][i] = "Ehhhhh";
 		}

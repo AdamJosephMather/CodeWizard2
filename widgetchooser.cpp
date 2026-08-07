@@ -13,6 +13,7 @@
 #include "application.h"
 #include "terminalwidgettabbed.h"
 #include "statusbar.h"
+#include "typingtest.h"
 
 WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 	id = MST::toMonoString("Widgetchooser");
@@ -150,6 +151,18 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		App::deleteWidget(this);
 	});
 	b11->rounded = true;
+	
+	auto text12 = MST::toMonoString("Typing Test");
+	b12 = new Button(this, text12, [&](Button* button, int x, int y, int w, int h, int tw, int th){
+		button->t_x = t_x+t_w/2-tw/2;
+		button->t_y = b11->t_y+b11->t_h+App::text_padding/2;
+		button->t_h = th-App::text_padding;
+	}, [&](Button* button) {
+		App::ReplaceWith(this, new TypingTest(nullptr));
+		std::cout << "Creating typing test\n";
+		App::deleteWidget(this);
+	});
+	b12->rounded = true;
 }
 
 void WidgetChooser::render() {

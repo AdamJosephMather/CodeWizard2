@@ -22,6 +22,7 @@ const app_cpp_sources = [_][]const u8{
 	"linenumbers.cpp",
 	"textedit.cpp",
 	"brokenstatemenu.cpp",
+	"typingtest.cpp",
 	"checkbox.cpp",
 	"settingsmanager.cpp",
 	"languageserverclient.cpp",

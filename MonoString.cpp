@@ -1239,36 +1239,51 @@ public:
 	
 	static MonoString removeSnippetPlaceholders(
 		const MonoString& input,
-		int& firstIndex
+		int& firstLine,
+		int& firstChar
 	) {
-#ifdef DEBUG_MONOSTRING
-			std::cout << "static MonoString removeSnippetPlaceholders(const MonoString& input, int& firstIndex )\n";
-#endif
+	#ifdef DEBUG_MONOSTRING
+		std::cout << "static MonoString removeSnippetPlaceholders(const MonoString& input, int& firstLine, int& firstChar)\n";
+	#endif
 		
-		firstIndex = -1;
-	
+		firstLine = -1;
+		firstChar = -1;
+		
 		if (!input.data || input.length == 0) {
 			return MonoString{};
 		}
-	
+		
 		std::vector<u32> vctr;
 		vctr.reserve(input.length);
-	
+		
+		int currentLine = 0;
+		int currentChar = 0;
+		
 		for (size_t i = 0; i < input.length; ) {
 			size_t placeholderEnd = i;
-	
+			
 			if (snippetPlaceholderAt(input, i, placeholderEnd)) {
-				if (firstIndex == -1) {
-					firstIndex = static_cast<int>(vctr.size());
+				if (firstLine == -1) {
+					firstLine = currentLine;
+					firstChar = currentChar;
 				}
 				i = placeholderEnd;
 				continue;
 			}
-	
-			vctr.push_back(input.data[i]);
+			
+			u32 ch = input.data[i];
+			vctr.push_back(ch);
+			
+			if (ch == '\n') {
+				currentLine++;
+				currentChar = 0;
+			} else {
+				currentChar++;
+			}
+			
 			i++;
 		}
-	
+		
 		return fromVector(vctr);
 	}
 	

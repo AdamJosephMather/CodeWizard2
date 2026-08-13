@@ -15,7 +15,7 @@ void ListBox::fillElementalPositions() {
 	int th = TextRenderer::get_text_height()+App::text_padding;
 	
 	int y = t_y;
-	for (int indx = scrolled_to; indx < fmin(elements.size(), scrolled_to+toshow); indx++) {
+		for (int indx = scrolled_to; indx < fmin(elements.size(), scrolled_to+toshow); indx++) {
 		elementalPositions.push_back({t_x, y, t_w, th, indx});
 		y += th;
 	}

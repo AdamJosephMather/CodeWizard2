@@ -1771,7 +1771,7 @@ void CodeEdit::completionRecieved(std::vector<std::string> completions, int rec_
 	
 	if (rec_id != completion_id) { return; }
 	
-	if (textedit->cursors.size() > 1) {
+	if (textedit->cursors.size() != 1) {
 		completionbox->is_visible_layered = false;
 		DO_RENDER = 3;
 		return;
@@ -1827,7 +1827,7 @@ void CodeEdit::renameReceived(int id, json resp) {
 }
 
 void CodeEdit::activateCompletion() {
-	if (completionbox->elements.size() == 0 || textedit->cursors.size() > 1) {
+	if (completionbox->elements.size() == 0 || textedit->cursors.size() != 1) {
 		return;
 	}
 
@@ -1856,16 +1856,27 @@ void CodeEdit::activateCompletion() {
 	textedit->cursors[0].anchor_line = textedit->cursors[0].head_line;
 
 	int startchar = textedit->cursors[0].anchor_char;
+	int startline = textedit->cursors[0].anchor_line;
 
-	int firstIndex = -1;
-	selected = MST::removeSnippetPlaceholders(selected, firstIndex);
-
+	int firstChar = -1;
+	int firstLine = -1;
+	selected = MST::removeSnippetPlaceholders(selected, firstLine, firstChar);
+	
 	textedit->applyInsertToAllCursors(selected);
 
-	if (firstIndex != -1) {
-		textedit->cursors[0].head_char = startchar + firstIndex;
-		textedit->cursors[0].anchor_char = startchar + firstIndex;
-		textedit->cursors[0].preffered_collumn = startchar + firstIndex;
+	if (firstChar != -1 && firstLine != -1) {
+		if (firstLine == 0) {
+			textedit->cursors[0].head_char = startchar + firstChar;
+		}else {
+			textedit->cursors[0].head_char = firstChar;
+		}
+		
+		textedit->cursors[0].head_line = startline + firstLine;
+		
+		textedit->cursors[0].anchor_char = textedit->cursors[0].head_char;
+		textedit->cursors[0].preffered_collumn = textedit->cursors[0].head_char;
+		
+		textedit->cursors[0].anchor_line = textedit->cursors[0].head_line;
 	}
 }
 

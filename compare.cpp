@@ -264,7 +264,6 @@ void Compare::reload() {
 	}
 	
 	textedit->setFullText(text);
-	textedit->position(t_x, t_y, t_w, t_h);
 	
 	for (int i = 0; i < textedit->lines.size(); i++) {
 		auto c = calcDiff[i];
@@ -278,6 +277,8 @@ void Compare::reload() {
 		textedit->lines[i].changed = false;
 		textedit->lines[i].highlightinguptodate = true;
 	}
+	
+	textedit->position(t_x, t_y, t_w, t_h);
 }
 
 void Compare::render() {

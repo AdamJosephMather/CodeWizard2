@@ -303,11 +303,16 @@ void Compare::render() {
 		textedit->render();
 	});
 	
+	Color* borderCol = App::theme.border;
+	if (App::activeLeafNode == this) {
+		borderCol = App::theme.active_color;
+	}
+	
 	if (rounded) {
 		App::DrawInverseRoundedRect(t_x, textedit->t_y, t_w, textedit->t_h, App::text_padding, App::theme.main_background_color);
-		App::DrawRoundBorder(t_x, textedit->t_y, t_w, textedit->t_h, App::theme.border, 5, App::text_padding);
+		App::DrawRoundBorder(t_x, textedit->t_y, t_w, textedit->t_h, borderCol, 5, App::text_padding);
 	}else{
-		App::DrawBorder(t_x, textedit->t_y, t_w, textedit->t_h, App::theme.border);
+		App::DrawBorder(t_x, textedit->t_y, t_w, textedit->t_h, borderCol);
 	}
 }
 
@@ -336,6 +341,10 @@ bool Compare::on_key_event(int key, int scancode, int action, int mods) {
 }
 
 bool Compare::on_mouse_button_event(int button, int action, int mods) {
+	if (cursor_in_this && App::activeLeafNode != this) {
+		App::setActiveLeafNode(this);
+	}
+	
 	if (f1Button->on_mouse_button_event(button, action, mods)) { return true; }
 	if (f2Button->on_mouse_button_event(button, action, mods)) { return true; }
 	if (cb1Button->on_mouse_button_event(button, action, mods)) { return true; }

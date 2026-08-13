@@ -21,6 +21,13 @@ void CheckBox::position(int x, int y, int width, int height) {
 	t_y = y;
 	
 	POSITIONER(this, t_x, t_y, t_w, t_h);
+	
+	const int mx = App::mouseX;
+	const int my = App::mouseY;
+	
+	if (t_x <= mx && t_x+t_w >= mx && t_y <= my && t_y+t_h >= my && (!parent || parent->cursor_in_this)) {
+		App::expectedCursorType = 3;
+	}
 }
 
 bool CheckBox::on_mouse_button_event(int button, int action, int mods) {

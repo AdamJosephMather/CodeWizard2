@@ -251,6 +251,7 @@ public:
 	Color* getColorFromToken(const CW_HighlightToken& token);
 	
 	void setFullText(MST::MonoString text);
+	void setFullLines(std::vector<MST::MonoString> lns);
 	MST::MonoString getFullText();
 	
 	Cursor getCursorForMousePosition(int mx, int my, bool* gottoit = nullptr);

@@ -174,21 +174,9 @@ void Compare::setOnlyTo(FileInfo* f, int num) {
 		if (!worked) { textedit->setFullText(MST::toMonoString("Failed to open file: " + f->filepath)); return; }
 	}
 	
-	auto lines = MST::split(txt, U'\n');
+	auto ready = MST::toMonoString("++ ")+MST::replaceAll(txt, MST::toMonoString("\n"), MST::toMonoString("\n++"));
 	
-	MST::MonoString text;
-	const MST::MonoString newlinechar = MST::toMonoString(U'\n');
-	
-	for (int i = 0; i < lines.size(); i++) {
-		text += MST::toMonoString("++ ")+lines[i];
-		
-		if (i < lines.size()-1) {
-			text += newlinechar;
-		}
-	}
-	
-	textedit->setFullText(text);
-	textedit->position(t_x, t_y, t_w, t_h);
+	textedit->setFullText(ready);
 	
 	for (int i = 0; i < textedit->lines.size(); i++) {
 		CW_HighlightToken col;
@@ -201,6 +189,8 @@ void Compare::setOnlyTo(FileInfo* f, int num) {
 		textedit->lines[i].changed = false;
 		textedit->lines[i].highlightinguptodate = true;
 	}
+	
+	textedit->position(t_x, t_y, t_w, t_h);
 }
 
 void Compare::reload() {
@@ -242,28 +232,23 @@ void Compare::reload() {
 	
 	auto calcDiff = calculateDifferences(l1, l2);
 	
-	MST::MonoString text;
-	const MST::MonoString newlinechar = MST::toMonoString(U'\n');
+	std::vector<MST::MonoString> lines;
 	
 	for (int i = 0; i < calcDiff.size(); i++) {
 		auto c = calcDiff[i];
 		
 		if (c.first == 2) {
-			text += MST::toMonoString("== ")+c.second;
+			lines.push_back(MST::toMonoString("== ")+c.second);
 		}
 		if (c.first == 1) {
-			text += MST::toMonoString("-- ")+c.second;
+			lines.push_back(MST::toMonoString("-- ")+c.second);
 		}
 		if (c.first == 0) {
-			text += MST::toMonoString("++ ")+c.second;
-		}
-		
-		if (i < calcDiff.size()-1) {
-			text += newlinechar;
+			lines.push_back(MST::toMonoString("++ ")+c.second);
 		}
 	}
 	
-	textedit->setFullText(text);
+	textedit->setFullLines(lines);
 	
 	for (int i = 0; i < textedit->lines.size(); i++) {
 		auto c = calcDiff[i];

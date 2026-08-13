@@ -258,12 +258,11 @@ static int analyzeForFixit(const std::vector<MST::MonoString>& lines) {
 	}
 }
 
-static MST::MonoString run_fixit_on_lines(const std::vector<MST::MonoString>& lines) {
+static std::vector<MST::MonoString> run_fixit_on_lines(const std::vector<MST::MonoString>& lines) {
 	int indent = analyzeForFixit(lines);
-	if (indent == 0) return MST::join(lines, MST::toMonoString(U'\n'));
+	if (indent == 0) return lines;
 	
 	const MST::MonoString tabUnit = MST::toMonoString(U'\t');
-	const MST::MonoString newline = MST::toMonoString(U'\n');
 	
 	std::vector<MST::MonoString> parts;
 	
@@ -288,12 +287,11 @@ static MST::MonoString run_fixit_on_lines(const std::vector<MST::MonoString>& li
 		parts.push_back(fixedPrefix+rest);
 	}
 	
-	return MST::join(parts, newline);
+	return parts;
 }
 
-static MST::MonoString undo_fixit_on_lines(std::vector<MST::MonoString> lines) {
+static std::vector<MST::MonoString> undo_fixit_on_lines(std::vector<MST::MonoString> lines) {
 	const MST::MonoString spaceUnit = MST::toMonoString("    ");
-	const MST::MonoString newline = MST::toMonoString(U'\n');
 	
 	std::vector<MST::MonoString> parts;
 	
@@ -321,11 +319,11 @@ static MST::MonoString undo_fixit_on_lines(std::vector<MST::MonoString> lines) {
 		parts.push_back(fixedPrefix+rest);
 	}
 	
-	return MST::join(parts, newline);
+	return parts;
 }
 
 static MST::MonoString run_fixit_on_text(MST::MonoString text) {
-	return run_fixit_on_lines( MST::split(text, U'\n') );
+	return MST::join( run_fixit_on_lines( MST::split(text, U'\n') ), MST::toMonoString("\n") );
 }
 
 static bool areSameFile(const std::string& path1, const std::string& path2) {

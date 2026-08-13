@@ -418,7 +418,10 @@ int TextEdit::getVisLen(const MST::MonoString& line) {
 
 void TextEdit::setFullText(MST::MonoString text) {
 	auto lns = MST::split(text, U'\n');
-	
+	setFullLines(lns);
+}
+
+void TextEdit::setFullLines(std::vector<MST::MonoString> lns) {
 	lines.clear();
 	
 	for (auto l : lns) {

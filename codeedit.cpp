@@ -586,7 +586,7 @@ void CodeEdit::run_fixit() {
 		lns.push_back(l.line_text);
 	}
 	
-	textedit->setFullText(run_fixit_on_lines(lns));
+	textedit->setFullLines(run_fixit_on_lines(lns));
 	onTextChanged(textedit);
 }
 
@@ -596,7 +596,7 @@ void CodeEdit::undo_fixit() {
 		lns.push_back(l.line_text);
 	}
 	
-	textedit->setFullText(undo_fixit_on_lines(lns));
+	textedit->setFullLines(undo_fixit_on_lines(lns));
 	onTextChanged(textedit);
 }
 

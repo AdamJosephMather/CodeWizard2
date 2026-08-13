@@ -795,11 +795,13 @@ void CodeEdit::render() {
 	
 	if (DO_RENDER == 0 && App::reclear == 0) {
 		renderFindBox();
-		renderExtras();
+		
 		// needs to happen because otherwise we don't get hovering when mouse moves this is so scuffed
 		textedit->scrollbar_h->render();
 		textedit->scrollbar_v->render();
 		textedit->contextmenu->render();
+		
+		renderExtras();
 		
 		if (rounded) {
 			App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);

@@ -136,6 +136,10 @@ struct Theme {
 	
 	Color* add_panel;
 	Color* remove_panel;
+	
+	Color* transparent;
+	
+	Color* temp;
 };
 
 #ifdef _WIN32

@@ -74,6 +74,10 @@ using pfnSetWindowCompositionAttribute =
 	BOOL (WINAPI*)(HWND, WINDOWCOMPOSITIONATTRIBDATA*);
 #endif
 
+struct Vec2 {
+	float x, y;
+};
+
 struct StoredSearch {
 	std::string path;
 	int line;
@@ -124,7 +128,7 @@ public:
 
 	static int splashW;
 	static int splashH;
-	static GLuint splashTexture;
+	static std::vector<Vec2> splashTexture;
 	
 	static ImageInfo prepareTexture(std::string imagepath, std::shared_ptr<FileBackend> backend = nullptr);
 	static void renderColorlessTexture(GLuint texID, int x, int y, int w, int h, Color* foreground, Color* background);
@@ -256,6 +260,9 @@ public:
 	
 	static GLFWwindow* window;
 	
+	static Color* MixColors(const Color* bg, const Color* fg, float factor);
+	static Color* MakeTransparentColor(const Color* fg, float factor);
+	
 	static void DrawRect(int x, int y, int w, int h, Color* color);
 	static void DrawRect(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b);
 	static void DrawCircle(int x, int y, int radius, int segments, Color* color);
@@ -270,6 +277,7 @@ public:
 	static void DrawRoundBorder(int x, int y, int w, int h, Color* color, int segments, double radius);
 	static void DrawAsteroid(int x, int y, int s, double r, Color* color, int type);
 	static void DrawShip(int x, int y, int s, double r, Color* color, bool drawfire);
+	static void DrawSVG(const std::vector<Vec2>& vertices, int x, int y, int w, int h, Color* color, double r=0);
 	
 	static void setTheme(Theme theme);
 	

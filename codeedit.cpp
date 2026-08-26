@@ -783,6 +783,49 @@ void CodeEdit::renderFindBox() {
 	}
 }
 
+bool CodeEdit::renderTheSplashIfNeeded() {
+	if (!file && textedit->lines.size() == 1 && textedit->lines[0].line_text.length == 0) {
+		if (splash_transparency != 1) {
+			splash_transparency += 0.1 * App::settings->getValue("anim_speed", 1.0f);
+			App::time_till_regular = 2;
+			DO_RENDER = 3;
+			
+			if (splash_transparency > 1) {
+				splash_transparency = 1;
+			}
+		}
+	}else if (splash_transparency != 0) {
+		splash_transparency -= 0.1 * App::settings->getValue("anim_speed", 1.0f);
+		App::time_till_regular = 2;
+		DO_RENDER = 3;
+		
+		if (splash_transparency < 0) {
+			splash_transparency = 0;
+		}
+	}
+	
+	if (splash_transparency != 0) {
+		int sW = t_w*.6;
+		int sH = sW;
+		
+		if (sH > t_h*.6) {
+			double change = (double)(t_h*.6) / sH;
+			sW *= change;
+			sH *= change;
+		}
+		
+		int sx = t_x + (t_w-sW)/2;
+		int sy = t_y + (t_h-sH)/2;
+		
+		
+		Color* to_use = App::MakeTransparentColor(App::theme.hover_background_color, splash_transparency); // we don't own the pointer here, it gets reused by everybody. Seems insane, it's actually genius.
+		App::DrawSVG(App::splashTexture, sx, sy, sW, sH, to_use);
+		return true;
+	}
+	
+	return false;
+}
+
 void CodeEdit::render() {
 	if (textedit->DID_POSITION || findTextEdit->DID_POSITION || replaceTextEdit->DID_POSITION || renamebox->DID_POSITION || hoverbox->DID_POSITION || FILE_BROKEN_STATE || REQUESTING_FIXIT) {
 		DO_RENDER = 3;
@@ -794,6 +837,8 @@ void CodeEdit::render() {
 	}
 	
 	if (DO_RENDER == 0 && App::reclear == 0) {
+		renderTheSplashIfNeeded();
+		
 		renderFindBox();
 		
 		// needs to happen because otherwise we don't get hovering when mouse moves this is so scuffed
@@ -832,46 +877,8 @@ void CodeEdit::render() {
 			renderExtras();
 		});
 		
-		if (!file && textedit->lines.size() == 1 && textedit->lines[0].line_text.length == 0) {
-			if (splash_transparency != 1) {
-				splash_transparency += 0.1 * App::settings->getValue("anim_speed", 1.0f);
-				App::time_till_regular = 2;
-				DO_RENDER = 3;
-				
-				if (splash_transparency > 1) {
-					splash_transparency = 1;
-				}
-			}
-		}else if (splash_transparency != 0) {
-			splash_transparency -= 0.1 * App::settings->getValue("anim_speed", 1.0f);
-			App::time_till_regular = 2;
-			DO_RENDER = 3;
-			
-			if (splash_transparency < 0) {
-				splash_transparency = 0;
-			}
-		}
-		
-		if (splash_transparency != 0) {
-			int sW = App::splashW;
-			int sH = App::splashH;
-			
-			if (sW > textedit->t_w*.6) {
-				double change = (double)(textedit->t_w*.6) / sW;
-				sW *= change;
-				sH *= change;
-			}
-			
-			if (sH > textedit->t_h*.6) {
-				double change = (double)(textedit->t_h*.6) / sH;
-				sW *= change;
-				sH *= change;
-			}
-			
-			int sx = textedit->t_x + (textedit->t_w-sW)/2;
-			int sy = textedit->t_y + (textedit->t_h-sH)/2;
-			
-			App::renderTexture(App::splashTexture, sx, sy, sW, sH, App::theme.darker_background_color, splash_transparency);
+		if (renderTheSplashIfNeeded()) {
+			textedit->contextmenu->render(); // again after textedit because of the splash
 		}
 	}
 	

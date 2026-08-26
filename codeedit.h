@@ -115,6 +115,7 @@ public:
 	void render();
 	void renderExtras();
 	void renderFindBox();
+	bool renderTheSplashIfNeeded();
 	
 	void triggerSaveAs();
 	

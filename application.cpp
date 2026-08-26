@@ -48,13 +48,11 @@
 
 int App::major_version = 2;
 int App::minor_version = 5;
-int App::patch_version = 15; // 🚀 (we now support emojis)
+int App::patch_version = 16; // 🚀 (we now support emojis)
 
 const std::vector<int> version = {App::major_version, App::minor_version, App::patch_version};
 
-int App::splashW = 0;
-int App::splashH = 0;
-GLuint App::splashTexture = 0;
+std::vector<Vec2> App::splashTexture = {};
 
 std::function<bool()> App::doMipmapThing = [](){ return false; };
 
@@ -259,6 +257,25 @@ void App::fixUpLanguages() {
 	settings->saveLanguages(langs);
 }
 
+std::vector<Vec2> LoadSVGTriangles(const std::string& filename) {
+	std::ifstream file(filename);
+	if (!file.is_open()) return {};
+
+	int numTriangles;
+	if (!(file >> numTriangles)) return {};
+
+	std::vector<Vec2> vertices;
+	vertices.reserve(numTriangles * 3);
+
+	for (int i = 0; i < numTriangles * 3; ++i) {
+		float x, y;
+		file >> x >> y;
+		// Shift [0.0, 1.0] to [-0.5, 0.5] for origin-centered transformation
+		vertices.push_back({ x - 0.5f, y - 0.5f });
+	}
+	return vertices;
+}
+
 bool App::Init() {
 	std::cout << "Init...\n";
 	
@@ -331,7 +348,7 @@ bool App::Init() {
 		return false;
 	}
 	
-//	glfwWindowHint(GLFW_SAMPLES, 4); // request 4 samples
+	glfwWindowHint(GLFW_SAMPLES, 4); // Request 4x MSAA (or 2, 8, 16 depending on GPU support)
 	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 	
 	glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
@@ -372,7 +389,7 @@ bool App::Init() {
 	
 	glfwMakeContextCurrent(window);
 	
-//	glEnable(GL_MULTISAMPLE);
+	glEnable(GL_MULTISAMPLE); // this makes a noticable difference in image quality (also reduced fps from 800 to 620 on my laptop at half screen width)
 	
 	glfwSwapInterval(1); // Enable vsync
 	
@@ -489,10 +506,12 @@ bool App::Init() {
 	
 	// load splashscreen texture
 	
-	auto stuff = prepareTexture(getExecutableDir()+"/splashscreen.png");
-	splashTexture = stuff.tex;
-	splashW = stuff.imgW;
-	splashH = stuff.imgH;
+	splashTexture = LoadSVGTriangles(getExecutableDir()+"/splashscreen.txt");
+	
+//	auto stuff = prepareTexture(getExecutableDir()+"/splashscreen.png");
+//	splashTexture = stuff.tex;
+//	splashW = stuff.imgW;
+//	splashH = stuff.imgH;
 	
 	// restore full screened
 	
@@ -1211,6 +1230,40 @@ void App::DrawAsteroid(int x, int y, int s, double r, Color* color, int type) {
 	}
 	glEnd();
 
+	glPopMatrix();
+}
+
+Color* App::MixColors(const Color* bg, const Color* fg, float factor) {
+	theme.temp -> r = bg->r * (1.0f - factor) + fg->r * factor;
+	theme.temp -> g = bg->g * (1.0f - factor) + fg->g * factor;
+	theme.temp -> b = bg->b * (1.0f - factor) + fg->b * factor;
+	theme.temp -> a = bg->a * (1.0f - factor) + fg->a * factor;
+	return theme.temp;
+}
+
+Color* App::MakeTransparentColor(const Color* fg, float factor) {
+	theme.temp -> r = fg->r;
+	theme.temp -> g = fg->g;
+	theme.temp -> b = fg->b;
+	theme.temp -> a = fg->a * factor;
+	return theme.temp;
+}
+
+void App::DrawSVG(const std::vector<Vec2>& vertices, int x, int y, int w, int h, Color* color, double r) {
+	glPushMatrix();
+
+	glTranslatef(x + w / 2.0f, y + h / 2.0f, 0.0f);
+	glRotatef(r * (180.0f / 3.14159265f), 0.0f, 0.0f, 1.0f);
+	glScalef((float)w, (float)h, 1.0f);
+
+	glColor4f(color->r, color->g, color->b, color->a);
+
+	glBegin(GL_TRIANGLES);
+	for (const auto& v : vertices) {
+		glVertex2f(v.x, v.y);
+	}
+	glEnd();
+	
 	glPopMatrix();
 }
 

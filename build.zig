@@ -480,7 +480,8 @@ fn installRuntimeFiles(b: *std.Build) void {
 	b.installFile("app.png", "app.png");
 	b.installFile("fileIcon.png", "fileIcon.png");
 	b.installFile("folderIcon.png", "folderIcon.png");
-	b.installFile("build_needs/splashscreen.png", "splashscreen.png");
+//    b.installFile("build_needs/splashscreen.png", "splashscreen.png");
+	b.installFile("build_needs/splashscreen.txt", "splashscreen.txt");
 	b.installDirectory(.{
 		.source_dir = b.path("cascadia"),
 		.install_dir = .prefix,

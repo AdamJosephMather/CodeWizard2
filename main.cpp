@@ -117,6 +117,8 @@ int main(int argc, char* argv[]) {
 	theme.darker_background_color = MakeColor(0.0274509804, 0.0470588235, 0.0549019608);
 	theme.overlay_background_color = MakeColor(0.1, 0.15, 0.2);
 	theme.border = MakeColor(0.8, 0.8, 0.8);
+	theme.temp = MakeColor(1, 1, 1);
+	theme.transparent = MakeColor(1.0, 0.0, 0.0, false, 0.0);
 	
 	theme.error_color = MakeColor(1.0, 0.3, 0.3);
 	theme.warning_color = MakeColor(1.0, 0.6431372549, 0.21);

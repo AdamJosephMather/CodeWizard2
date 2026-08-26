@@ -506,7 +506,7 @@ bool App::Init() {
 	
 	// load splashscreen texture
 	
-	splashTexture = LoadSVGTriangles(getExecutableDir()+"/splashscreen.txt");
+	splashTexture = LoadSVGTriangles(getExecutableDir()+"/splashscreen.triangles");
 	
 //	auto stuff = prepareTexture(getExecutableDir()+"/splashscreen.png");
 //	splashTexture = stuff.tex;

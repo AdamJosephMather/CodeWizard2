@@ -342,6 +342,7 @@ public:
 	static void gitPush();
 	static void gitPull();
 	static void gitForcePull();
+	static void gitStatus();
 	static void fixIt();
 	static void undoFixIt();
 	static void loadThemeFromFile();

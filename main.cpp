@@ -342,6 +342,11 @@ int main(int argc, char* argv[]) {
 			App::gitForcePull();
 		});
 		
+		menu->addToMenu(MST::toMonoString("Git Status"), [](Button*){
+			App::closeMenu();
+			App::gitStatus();
+		});
+		
 		menu->addSeparaterToMenu();
 		
 		menu->addToMenu(MST::toMonoString("Run FixIt\t(Spaces->Tabs)"), [](Button*){

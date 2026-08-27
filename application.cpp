@@ -2641,6 +2641,15 @@ void App::gitPush() {
 	);
 }
 
+void App::gitStatus() {
+	std::string folder = settings->getValue("current_folder", getExecutableDir());
+#ifdef _WIN32
+		launchCommandNonBlocking("cd /d "+quoteCmdPathWindows(folder)+" && git status");
+#else
+		launchCommandNonBlocking("cd "+quoteShellPathPosix(folder)+" && git status");
+#endif
+}
+
 void App::gitPull() {
 	std::string folder = settings->getValue("current_folder", getExecutableDir());
 #ifdef _WIN32
@@ -2863,6 +2872,8 @@ void App::executeCommandPaletteAction() {
 			gitPull();
 		}else if (filepath == ":Git Force Pull") {
 			gitForcePull();
+		}else if (filepath == ":Git Status") {
+			gitStatus();
 		}else if (filepath == ":Help") {
 			MoveWidget(helpMenu, rootelement);
 			reclear = 3;
@@ -2965,7 +2976,7 @@ void App::indexFiles() {
 	const std::size_t maxFiles          = settings->getValue("max_index_files", 15000);
 	const std::size_t maxDisplayChars  = (commandPalette->t_w - text_padding * 2) / TextRenderer::get_text_width(1) - 1;
 	
-	static const std::vector<std::string> commands = {"Connect via SSH","Disconnect SSH","Git Push","Git Pull","Git Force Pull","Help","Save Theme Settings To File","Load Theme Settings From File","Restart Language Servers (LSPs)","Open `languages.json` file","Test Toast Box","Test Text Line","Run FixIt (Spaces to Tabs)","Undo FixIt (Tabs to Spaces)","How Many Widgets Currently?"}; 
+	static const std::vector<std::string> commands = {"Connect via SSH","Disconnect SSH","Git Push","Git Pull","Git Force Pull","Git Status","Help","Save Theme Settings To File","Load Theme Settings From File","Restart Language Servers (LSPs)","Open `languages.json` file","Test Toast Box","Test Text Line","Run FixIt (Spaces to Tabs)","Undo FixIt (Tabs to Spaces)","How Many Widgets Currently?"}; 
 
 	// 1. Pre-allocate memory to prevent vector re-allocations
 	INDEXED_FILES.indexedNames.reserve(maxFiles + commands.size());

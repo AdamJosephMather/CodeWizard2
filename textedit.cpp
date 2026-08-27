@@ -1192,15 +1192,6 @@ void TextEdit::insertNewCursorUp() {
 	DO_POSITION = true;
 }
 
-//struct Cursor {
-//	int anchor_line = 0;
-//	int anchor_char = 0;
-//	int head_line = 0;
-//	int head_char = 0;
-//	
-//	int preffered_collumn = 0;
-//};
-
 void TextEdit::insertNewCursorFind(bool capitals) {
 	Cursor latest = cursors[cursors.size()-1];
 	

@@ -253,6 +253,20 @@ int main(int argc, char* argv[]) {
 	}, [&](Button* button) {
 		menu->clearMenu();
 		
+		menu->addToMenu(MST::toMonoString("New File\t(Ctrl+N)"), [](Button*){
+			App::closeMenu();
+			
+			Editor* e = dynamic_cast<Editor*>(App::activeEditor);
+			if (e == nullptr) {
+				e = dynamic_cast<Editor*>(App::rootelement->getFirstEditor());
+				if (e == nullptr) {
+					App::displayToast(MST::toMonoString("No open Editor widgets"));
+				}
+			}
+			
+			e->createNew(nullptr);
+		});
+		
 		menu->addToMenu(MST::toMonoString("Open File\t(Ctrl+O)"), [](Button*){
 			App::closeMenu();
 			

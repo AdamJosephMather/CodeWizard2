@@ -48,7 +48,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 5;
-int App::patch_version = 16; // 🚀 (we now support emojis)
+int App::patch_version = 17; // 🚀 (we now support emojis)
 
 const std::vector<int> version = {App::major_version, App::minor_version, App::patch_version};
 
@@ -1915,8 +1915,12 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		return;
 	}else if (action == GLFW_PRESS && key == GLFW_KEY_S && control && !shift) {
 		displayText(MST::toMonoString("Saving..."));
-		save();
+		std::thread([&]() {
+			std::lock_guard<std::mutex> lock(canMakeChanges);
+			save();
+		}).detach();
 	}else if (action == GLFW_PRESS && key == GLFW_KEY_F5) {
+		std::lock_guard<std::mutex> lock(canMakeChanges);
 		displayText(MST::toMonoString("Saving..."));
 		save();
 		std::string build_command = settings->getProjectBuild();

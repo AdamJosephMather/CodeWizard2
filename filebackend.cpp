@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <system_error>
+#include <thread>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -132,13 +133,30 @@ bool FileBackend::isBinary(const std::string& path, bool& result, std::string& e
 }
 
 bool FileBackend::modificationTime(const std::string& path, std::int64_t& result, std::string& error) {
+	// A failed stat is often transient (sharing violations, AV/indexers briefly
+	// holding the file right after an atomic rename, etc), especially on Windows.
+	// Retry a few times: two immediate attempts, then 1ms sleeps. A file that
+	// genuinely does not exist is NOT an error condition and returns immediately.
 	BackendFileStat info;
-	if (!stat(path, info, error) || !info.exists) {
-		if (error.empty()) error = "file does not exist";
-		return false;
+	for (int attempt = 0; attempt < 4; ++attempt) {
+		error.clear();
+		info = {};
+		if (stat(path, info, error)) {
+			if (!info.exists) {
+				if (error.empty()) error = "file does not exist";
+				return false;
+			}
+			result = info.mtime;
+			return true;
+		}
+		if (attempt < 2) {
+			std::this_thread::yield();
+		}else {
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
 	}
-	result = info.mtime;
-	return true;
+	if (error.empty()) error = "stat failed repeatedly";
+	return false;
 }
 
 bool FileBackend::fileSize(const std::string& path, std::uintmax_t& result, std::string& error) {
@@ -287,7 +305,11 @@ bool LocalFileBackend::stat(const std::string& path, BackendFileStat& result, st
 		if (ec) ec.clear();
 	}
 	const auto modified = std::filesystem::last_write_time(path, ec);
-	if (!ec) result.mtime = unixSeconds(modified);
+	if (ec) {
+		error = errorMessage(ec);
+		return false;
+	}
+	result.mtime = unixSeconds(modified);
 	return true;
 }
 

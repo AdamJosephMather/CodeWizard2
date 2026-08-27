@@ -1135,7 +1135,14 @@ int TextEdit::_mapFromVisualToReal(int line, int c) {
 	
 	if (MST::skipIdx(str, c)) {
 		auto info = MST::getCharInfo(str, c);
-		return info.first;
+		
+		float center = (float)(info.first+info.second)/2.0f;
+		float corrected = ((float)c + (float)App::text_padding/TextRenderer::get_text_width(1));
+		if (corrected > center){
+			return info.second;
+		}else{
+			return info.first;
+		}
 	}
 	
 	return c;

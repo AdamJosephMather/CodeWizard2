@@ -235,7 +235,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	
 	textedit->contextmenu->addSeparaterToMenu();
 	
-	textedit->contextmenu->addToMenu(MST::toMonoString("Comment Out Lines (Alt+3)"),   [&](Widget* w){
+	textedit->contextmenu->addToMenu(MST::toMonoString("Comment Out Lines\t(Alt+3)"),   [&](Widget* w){
 		setComments();
 		textedit->contextmenu->is_visible_2 = false;
 	});

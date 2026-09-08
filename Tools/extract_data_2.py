@@ -9,7 +9,7 @@ from shapely.ops import unary_union
 import pickle
 
 
-load = False
+load = True
 
 if not load:
 	countries = gpd.read_file(
@@ -68,12 +68,13 @@ for line in lines:
 
 	lon_rad = np.radians(coords[:, 0])
 	lat_rad = np.radians(coords[:, 1])
-
-	theta = lon_rad
+	
+	x = np.cos(lat_rad) * np.cos(lon_rad)
+	y = np.cos(lat_rad) * np.sin(lon_rad)
 	z = -np.sin(lat_rad)
 
 	drawable_boundaries.append(
-		np.column_stack((theta, z))
+		np.column_stack((x, y, z))
 	)
 
 print("Lines:", len(drawable_boundaries))

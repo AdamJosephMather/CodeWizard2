@@ -24,27 +24,16 @@ std::vector<Line3d> loadGlobeBorders(const std::string& filename) {
 
 	std::vector<Line3d> lines(num_lines);
 	
-	std::vector<FilePoint> fileline = {};
-	
 	for (uint32_t i = 0; i < num_lines; ++i) {
 		uint32_t num_points = 0;
 		file.read(reinterpret_cast<char*>(&num_points), sizeof(num_points));
 		
 		lines[i].points.resize(num_points);
-		fileline.resize(num_points);
 		
 		file.read(
-			reinterpret_cast<char*>(fileline.data()),
-			num_points * sizeof(FilePoint)
+			reinterpret_cast<char*>(lines[i].points.data()),
+			num_points * sizeof(Vec3)
 		);
-		
-		for (int j = 0; j < num_points; j++) {
-			lines[i].points[j] = {
-				fileline[j].theta,
-				fileline[j].z,
-				std::sqrt(1-fileline[j].z*fileline[j].z)
-			};
-		}
 	}
 
 	return lines;
@@ -54,7 +43,6 @@ Globe::Globe(Widget *parent) : Widget(parent) {
 	id = MST::toMonoString("Globe");
 	
 	// longitudinal lines (top to bottom)
-	// they should go from rotation.xyz (north pole) to  -rotation.xyz which is south pole, with resolution stops along the way.
 	
 	for (int i = 0; i < line_count_long; i++) {
 		Line3d l;
@@ -64,14 +52,17 @@ Globe::Globe(Widget *parent) : Widget(parent) {
 		for (int j = 0; j < resolution_long; j++) {
 			float theta_2 = ((float)j/(float)(resolution_long-1)) * M_PI; // we only want half the thing, from 0 to pi/2 not to 2 pi
 			
+			
+			// get xy and z
+			
+			float x = std::cos(theta_1) * std::cos(M_PI/2.0 - theta_2);
+			float y = std::sin(theta_1) * std::cos(M_PI/2.0 - theta_2);
 			float z = std::sin(M_PI/2.0 - theta_2);
 			
-			float length = std::sqrt(1-z*z);
-			
-			Point p = {
-				theta_1,
-				z,
-				length
+			Vec3 p = {
+				x,
+				y,
+				z
 			};
 			
 			l.points.push_back(p);
@@ -90,12 +81,13 @@ Globe::Globe(Widget *parent) : Widget(parent) {
 		for (int j = 0; j < resolution_lat; j++) {
 			float theta_1 = ((float)j/(float)(resolution_lat-1)) * 2 * M_PI; // we only want half the thing, from 0 to pi/2 not to 2 pi
 			
-			float length = std::sqrt(1-z*z);
+			float x = std::cos(theta_1) * std::cos(M_PI/2.0 - theta_2);
+			float y = std::sin(theta_1) * std::cos(M_PI/2.0 - theta_2);
 			
-			Point p = {
-				theta_1,
-				z,
-				length
+			Vec3 p = {
+				x,
+				y,
+				z
 			};
 			
 			l.points.push_back(p);
@@ -107,17 +99,23 @@ Globe::Globe(Widget *parent) : Widget(parent) {
 	borders = loadGlobeBorders(getExecutableDir()+"/globe_borders.bin");
 }
 
-Vec3 rotate(const Point& p, float theta, float cos_rot_x, float sin_rot_x, int scale) {
-	const float fulltheta = theta + p.theta;
-	const float scalelength = scale * p.length;
-	const float x = scalelength * std::cos(fulltheta);
-	const float y = scalelength * std::sin(fulltheta);
-	const float z = p.z * scale;
+Matrix makeRotMatrix(float theta_z, float theta_x, float s) {
+	return {
+		{s*std::cos(theta_z), s*-std::sin(theta_z), s*0},
+		{s*std::cos(theta_x)*std::sin(theta_z), s*std::cos(theta_x)*std::cos(theta_z), s*-std::sin(theta_x)},
+		{s*std::sin(theta_x)*std::sin(theta_z), s*std::sin(theta_x)*std::cos(theta_z), s*std::cos(theta_x)}
+	};
+}
+
+Vec3 rotate(const Vec3& p, Matrix matrix) {
+	const float x = p.x*matrix.r1.x + p.y*matrix.r1.y + p.z*matrix.r1.z;
+	const float y = p.x*matrix.r2.x + p.y*matrix.r2.y + p.z*matrix.r2.z;
+	const float z = p.x*matrix.r3.x + p.y*matrix.r3.y + p.z*matrix.r3.z;
 	
 	return {
 		x,
-		y*cos_rot_x - z*sin_rot_x,
-		y*sin_rot_x + z*cos_rot_x
+		y,
+		z
 	};
 }
 
@@ -140,15 +138,15 @@ bool Globe::on_scroll_event(double xchange, double ychange) {
 	return false;
 }
 
-void renderLine(int x, int y, int scale, Line3d line, float rotation_z, float cos_rot_y, float sin_rot_y, Color* color) {
+void renderLine(int x, int y, Line3d line, Matrix matrix, Color* color) {
 	if (line.points.size() < 2) {
 		return;
 	}
 	
-	Vec3 last = rotate(line.points[0], rotation_z, cos_rot_y, sin_rot_y, scale);
+	Vec3 last = rotate(line.points[0], matrix);
 	
 	for (int i = 1; i < line.points.size(); i++) {
-		Vec3 next = rotate(line.points[i], rotation_z, cos_rot_y, sin_rot_y, scale);
+		Vec3 next = rotate(line.points[i], matrix);
 		
 		if (next.y <= 0 && last.y <= 0) {
 			App::DrawLine(last.x + x, last.z + y, next.x + x, next.z + y, 1, color);
@@ -183,16 +181,18 @@ void Globe::render() {
 	
 	// first let's draw the longitudinal and lateral lines
 	
+	Matrix matrix = makeRotMatrix(rotation_z, rotation_x, scale);
+	
 	for (const auto& line : longitudinal_lines) {
-		renderLine(centerx, centery, scale, line, rotation_z, std::cos(rotation_x), std::sin(rotation_x), App::theme.lesser_text_color);
+		renderLine(centerx, centery, line, matrix, App::theme.lesser_text_color);
 	}
 	
 	for (const auto& line : lateral_lines) {
-		renderLine(centerx, centery, scale, line, rotation_z, std::cos(rotation_x), std::sin(rotation_x), App::theme.lesser_text_color);
+		renderLine(centerx, centery, line, matrix, App::theme.lesser_text_color);
 	}
 	
 	for (const auto& line : borders) {
-		renderLine(centerx, centery, scale, line, rotation_z, std::cos(rotation_x), std::sin(rotation_x), App::theme.main_text_color);
+		renderLine(centerx, centery, line, matrix, App::theme.main_text_color);
 	}
 	
 	App::DrawRoundBorder(centerx-scale, centery-scale, scale*2, scale*2, App::theme.main_text_color, resolution_long/2, scale);

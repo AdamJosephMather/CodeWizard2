@@ -10,25 +10,21 @@ struct OldGlobeRenderState {
 	int t_h = -1;
 };
 
-struct FilePoint {
-	float theta = 0;
-	float z = 0;
-};
-
-struct Point {
-	float theta = 0;
-	float z = 0;
-	float length = 0;
-};
-
 struct Vec3 {
 	float x = 0;
 	float y = 0;
 	float z = 0;
 };
 
+
+struct Matrix {
+	Vec3 r1 = {};
+	Vec3 r2 = {};
+	Vec3 r3 = {};
+};
+
 struct Line3d {
-	std::vector<Point> points = {};
+	std::vector<Vec3> points = {};
 };
 
 class Globe : public Widget {

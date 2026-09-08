@@ -107,24 +107,17 @@ Globe::Globe(Widget *parent) : Widget(parent) {
 	borders = loadGlobeBorders(getExecutableDir()+"/globe_borders.bin");
 }
 
-Vec3 rotate(const Point& p, float theta, int scale, bool cull=false) {
-	float fulltheta = std::fmod(theta + p.theta, 2 * M_PI);
-	if (fulltheta < 0) {
-		fulltheta += 2 * M_PI;
-	}
-	
-	if (cull && fulltheta < M_PI) {
-		return {1, 1, 1};
-	}
-	
+Vec3 rotate(const Point& p, float theta, float cos_rot_x, float sin_rot_x, int scale) {
+	const float fulltheta = theta + p.theta;
 	const float scalelength = scale * p.length;
 	const float x = scalelength * std::cos(fulltheta);
 	const float y = scalelength * std::sin(fulltheta);
+	const float z = p.z * scale;
 	
 	return {
 		x,
-		y,
-		p.z * scale
+		y*cos_rot_x - z*sin_rot_x,
+		y*sin_rot_x + z*cos_rot_x
 	};
 }
 
@@ -147,15 +140,15 @@ bool Globe::on_scroll_event(double xchange, double ychange) {
 	return false;
 }
 
-void renderLine(int x, int y, int scale, Line3d line, float rotation, Color* color) {
+void renderLine(int x, int y, int scale, Line3d line, float rotation_z, float cos_rot_y, float sin_rot_y, Color* color) {
 	if (line.points.size() < 2) {
 		return;
 	}
 	
-	Vec3 last = rotate(line.points[0], rotation, scale, true);
+	Vec3 last = rotate(line.points[0], rotation_z, cos_rot_y, sin_rot_y, scale);
 	
 	for (int i = 1; i < line.points.size(); i++) {
-		Vec3 next = rotate(line.points[i], rotation, scale, true);
+		Vec3 next = rotate(line.points[i], rotation_z, cos_rot_y, sin_rot_y, scale);
 		
 		if (next.y <= 0 && last.y <= 0) {
 			App::DrawLine(last.x + x, last.z + y, next.x + x, next.z + y, 1, color);
@@ -191,15 +184,15 @@ void Globe::render() {
 	// first let's draw the longitudinal and lateral lines
 	
 	for (const auto& line : longitudinal_lines) {
-		renderLine(centerx, centery, scale, line, rotation, App::theme.lesser_text_color);
+		renderLine(centerx, centery, scale, line, rotation_z, std::cos(rotation_x), std::sin(rotation_x), App::theme.lesser_text_color);
 	}
 	
 	for (const auto& line : lateral_lines) {
-		renderLine(centerx, centery, scale, line, rotation, App::theme.lesser_text_color);
+		renderLine(centerx, centery, scale, line, rotation_z, std::cos(rotation_x), std::sin(rotation_x), App::theme.lesser_text_color);
 	}
 	
 	for (const auto& line : borders) {
-		renderLine(centerx, centery, scale, line, rotation, App::theme.main_text_color);
+		renderLine(centerx, centery, scale, line, rotation_z, std::cos(rotation_x), std::sin(rotation_x), App::theme.main_text_color);
 	}
 	
 	App::DrawRoundBorder(centerx-scale, centery-scale, scale*2, scale*2, App::theme.main_text_color, resolution_long/2, scale);
@@ -212,7 +205,8 @@ bool Globe::on_mouse_button_event(int button, int action, int mods) {
 	
 	if (cursor_in_this && action == GLFW_PRESS) {
 		dragging = true;
-		was_at = App::mouseX;
+		was_at_x = App::mouseX;
+		was_at_y = App::mouseY;
 	}else if (action == GLFW_RELEASE) {
 		dragging = false;
 	}
@@ -228,13 +222,24 @@ bool Globe::on_mouse_move_event() {
 	}
 	
 	if (dragging) {
-		int diff = App::mouseX - was_at;
+		int diff_z = App::mouseX - was_at_x;
+		rotation_z += ((float)(diff_z) / (float)(t_w)) * Mouse_Speed_Constant;
 		
-		rotation += ((float)(diff) / (float)(t_w)) * Mouse_Speed_Constant;
+		int diff_y = was_at_y - App::mouseY;
+		rotation_x += ((float)(diff_y) / (float)(t_w)) * Mouse_Speed_Constant;
+		
+		if (rotation_x < -M_PI/2) {
+			rotation_x = -M_PI/2;
+		}else if (rotation_x > M_PI/2) {
+			rotation_x = M_PI/2;
+		}
+		
+		
 		rerender = true;
 		App::time_till_regular = 2;
 		
-		was_at = App::mouseX;
+		was_at_x = App::mouseX;
+		was_at_y = App::mouseY;
 	}
 	
 	return Widget::on_mouse_move_event();

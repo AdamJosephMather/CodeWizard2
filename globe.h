@@ -46,12 +46,14 @@ public:
 	void executeAction(WidgetActionType typ) override;
 	
 	bool dragging = false;
-	int was_at = 0;
+	int was_at_x = 0;
+	int was_at_y = 0;
 	
 	OldGlobeRenderState OLDSTATE = {};
 	bool rerender = true;
 	
-	float rotation = 0;
+	float rotation_z = 0;
+	float rotation_x = 0;
 	
 	std::vector<Line3d> longitudinal_lines = {};
 	std::vector<Line3d> lateral_lines = {};

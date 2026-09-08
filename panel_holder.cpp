@@ -5,6 +5,7 @@
 #include "chat.h"
 #include "compare.h"
 #include "editor.h"
+#include "globe.h"
 #include "lspdebug.h"
 #include "mathwindow.h"
 #include "graphwindow.h"
@@ -354,6 +355,8 @@ void PanelHolder::setState(nlohmann::json state) {
 			new StatusBar(this);
 		}else if (c == "TypingTest"){
 			new TypingTest(this);
+		}else if (c == "Globe"){
+			new Globe(this);
 		}else { // any unknown, or editor
 			new Editor(this);
 		}
@@ -397,6 +400,8 @@ nlohmann::json PanelHolder::saveConfiguration() {
 			thisitm["children"][i] = "StatusBar";
 		}else if (auto pe = dynamic_cast<TypingTest*>(c)){
 			thisitm["children"][i] = "TypingTest";
+		}else if (auto pe = dynamic_cast<Globe*>(c)){
+			thisitm["children"][i] = "Globe";
 		}else {
 			thisitm["children"][i] = "Ehhhhh";
 		}

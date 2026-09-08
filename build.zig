@@ -50,6 +50,7 @@ const app_cpp_sources = [_][]const u8{
 	"hexeditor.cpp",
 	"MonoString.cpp",
 	"statusbar.cpp",
+	"globe.cpp"
 };
 
 const app_c_sources = [_][]const u8{
@@ -482,6 +483,7 @@ fn installRuntimeFiles(b: *std.Build) void {
 	b.installFile("folderIcon.png", "folderIcon.png");
 //    b.installFile("build_needs/splashscreen.png", "splashscreen.png");
 	b.installFile("build_needs/splashscreen.triangles", "splashscreen.triangles");
+	b.installFile("build_needs/globe_borders.bin", "globe_borders.bin");
 	b.installDirectory(.{
 		.source_dir = b.path("cascadia"),
 		.install_dir = .prefix,

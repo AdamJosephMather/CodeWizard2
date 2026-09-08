@@ -29,4 +29,5 @@ private:
 	Button* b10;
 	Button* b11;
 	Button* b12;
+	Button* b13;
 };

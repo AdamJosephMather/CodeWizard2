@@ -4,6 +4,7 @@
 #include "compare.h"
 #include "editor.h"
 #include "filetree.h"
+#include "globe.h"
 #include "lspdebug.h"
 #include "settings.h"
 #include "mathwindow.h"
@@ -163,6 +164,18 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		App::deleteWidget(this);
 	});
 	b12->rounded = true;
+	
+	auto text13 = MST::toMonoString("Globe");
+	b13 = new Button(this, text13, [&](Button* button, int x, int y, int w, int h, int tw, int th){
+		button->t_x = t_x+t_w/2-tw/2;
+		button->t_y = b12->t_y+b12->t_h+App::text_padding/2;
+		button->t_h = th-App::text_padding;
+	}, [&](Button* button) {
+		App::ReplaceWith(this, new Globe(nullptr));
+		std::cout << "Creating globe\n";
+		App::deleteWidget(this);
+	});
+	b13->rounded = true;
 }
 
 void WidgetChooser::render() {

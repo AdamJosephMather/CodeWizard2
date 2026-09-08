@@ -1,6 +1,7 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
+#include "button.h"
 #include "widget.h"
 
 struct OldGlobeRenderState {
@@ -39,7 +40,12 @@ public:
 	bool on_key_event(int key, int scancode, int action, int mods) override;
 	void position(int x, int y, int w, int h) override;
 	
+	void updateGlobeData();
+	
 	void executeAction(WidgetActionType typ) override;
+	
+	Button* pyramid;
+	bool currently_pyramid = false;
 	
 	bool dragging = false;
 	int was_at_x = 0;
@@ -53,6 +59,7 @@ public:
 	
 	std::vector<Line3d> longitudinal_lines = {};
 	std::vector<Line3d> lateral_lines = {};
+	std::vector<Line3d> bright_edges = {};
 	
 	std::vector<Line3d> borders = {};
 	

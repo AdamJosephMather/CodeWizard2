@@ -101,19 +101,23 @@ std::vector<Line3d> loadGlobeBorders(const std::string& filename) {
 	return lines;
 }
 
-Vec3 findPyramid(const Vec3& point) {
+// Casts a ray from the origin in direction `dir` and returns the point where
+// it exits the pyramid (the nearest of the five bounding planes). `dir` is
+// already in "pyramid space" (see findPyramid for the z-shift that gets a
+// sphere point into that space).
+Vec3 projectRayToPyramid(const Vec3& dir) {
 	float t = std::numeric_limits<float>::infinity();
 
 	// Check intersection with the base plane z = 1
-	if (point.z > 0.0f) {
-		float t_base = 1.0f / point.z;
+	if (dir.z > 0.0f) {
+		float t_base = 1.0f / dir.z;
 		if (t_base < t) {
 			t = t_base;
 		}
 	}
 
 	// Check intersection with X slant planes (2|x| - z = 1)
-	float denom_x = 2.0f * std::abs(point.x) - point.z;
+	float denom_x = 2.0f * std::abs(dir.x) - dir.z;
 	if (denom_x > 0.0f) {
 		float t_x = 1.0f / denom_x;
 		if (t_x < t) {
@@ -122,7 +126,7 @@ Vec3 findPyramid(const Vec3& point) {
 	}
 
 	// Check intersection with Y slant planes (2|y| - z = 1)
-	float denom_y = 2.0f * std::abs(point.y) - point.z;
+	float denom_y = 2.0f * std::abs(dir.y) - dir.z;
 	if (denom_y > 0.0f) {
 		float t_y = 1.0f / denom_y;
 		if (t_y < t) {
@@ -135,7 +139,57 @@ Vec3 findPyramid(const Vec3& point) {
 		return Vec3{0.0f, 0.0f, 0.0f};
 	}
 
-	return Vec3{point.x * t, point.y * t, point.z * t};
+	return Vec3{dir.x * t, dir.y * t, dir.z * t};
+}
+
+Vec3 findPyramid(const Vec3& point) {
+	return projectRayToPyramid(Vec3{point.x, point.y, point.z + 0.3f});
+}
+
+uint32_t firstPyramidFace(uint32_t faces) {
+	const uint32_t allFaces[] = {
+		PYRAMID_BASE,
+		PYRAMID_POS_X,
+		PYRAMID_NEG_X,
+		PYRAMID_POS_Y,
+		PYRAMID_NEG_Y
+	};
+
+	for (uint32_t face : allFaces) {
+		if (faces & face) {
+			return face;
+		}
+	}
+
+	return 0;
+}
+
+// Given two pyramid-space points that lie on different faces (faceA and
+// faceB), finds the point where the straight interpolation between them
+// crosses the shared edge, so a line can be drawn along the corner instead
+// of cutting straight across it.
+//
+// Both faces are planes of the form n . p = 1. Along p(t) = lerp(a, b, t),
+// the crossing is where n_A . p(t) == n_B . p(t), which is linear in t.
+Vec3 findPyramidEdgePoint(const Vec3& a, const Vec3& b, uint32_t faceA, uint32_t faceB) {
+	Vec3 nA = pyramidFaceNormal(faceA);
+	Vec3 nB = pyramidFaceNormal(faceB);
+
+	Vec3 nDiff = {nA.x - nB.x, nA.y - nB.y, nA.z - nB.z};
+	Vec3 delta = {b.x - a.x, b.y - a.y, b.z - a.z};
+
+	float denom = nDiff.x * delta.x + nDiff.y * delta.y + nDiff.z * delta.z;
+
+	float t = 0.5f;
+	if (std::abs(denom) > 1e-8f) {
+		float numer = -(nDiff.x * a.x + nDiff.y * a.y + nDiff.z * a.z);
+		t = numer / denom;
+		if (t < 0.0f) t = 0.0f;
+		if (t > 1.0f) t = 1.0f;
+	}
+
+	Vec3 dir = {a.x + t * delta.x, a.y + t * delta.y, a.z + t * delta.z};
+	return projectRayToPyramid(dir);
 }
 
 void updateToPyramid(std::vector<Line3d>* globular) {
@@ -317,25 +371,6 @@ bool pyramidFaceVisible(uint32_t face, Matrix matrix) {
 	return normal.y <= 0.0f;
 }
 
-bool pyramidPointVisible(const Vec3& p, Matrix matrix) {
-	uint32_t faces = getPyramidFaces(p);
-
-	const uint32_t allFaces[] = {
-		PYRAMID_BASE,
-		PYRAMID_POS_X,
-		PYRAMID_NEG_X,
-		PYRAMID_POS_Y,
-		PYRAMID_NEG_Y
-	};
-
-	for (uint32_t face : allFaces) {
-		if ((faces & face) && pyramidFaceVisible(face, matrix))
-			return true;
-	}
-
-	return false;
-}
-
 bool Globe::on_key_event(int key, int scancode, int action, int mods) {
 	return Widget::on_key_event(key, scancode, action, mods);
 }
@@ -366,11 +401,18 @@ void renderLine(int x, int y, Line3d line, Matrix matrix, Color* color, bool pyr
 		Vec3 nextOriginal = line.points[i];
 		Vec3 next = rotate(nextOriginal, matrix);
 
-		bool draw = false;
-
 		if (!pyramid) {
 			// Existing sphere behaviour
-			draw = (next.y <= 0 && last.y <= 0);
+			if (next.y <= 0 && last.y <= 0) {
+				App::DrawLine(
+					last.x + x,
+					last.z + y,
+					next.x + x,
+					next.z + y,
+					1,
+					color
+				);
+			}
 		}
 		else {
 			uint32_t lastFaces = getPyramidFaces(lastOriginal);
@@ -389,6 +431,7 @@ void renderLine(int x, int y, Line3d line, Matrix matrix, Color* color, bool pyr
 					PYRAMID_NEG_Y
 				};
 
+				bool draw = false;
 				for (uint32_t face : allFaces) {
 					if ((sharedFaces & face) &&
 						pyramidFaceVisible(face, matrix)) {
@@ -396,31 +439,57 @@ void renderLine(int x, int y, Line3d line, Matrix matrix, Color* color, bool pyr
 						break;
 					}
 				}
+
+				if (draw) {
+					App::DrawLine(
+						last.x + x,
+						last.z + y,
+						next.x + x,
+						next.z + y,
+						1,
+						color
+					);
+				}
 			}
 			else {
 				/*
-				 * This mainly happens to globe-border segments that
-				 * happen to cross a pyramid edge between two sampled
-				 * points.
-				 *
-				 * Requiring both ends to be on visible surfaces avoids
-				 * drawing a short segment around onto the back.
+				 * The segment crosses a pyramid edge between two sampled
+				 * points (this mainly happens to globe-border lines).
+				 * Rather than drawing one straight chord that cuts the
+				 * corner, or dropping the segment entirely, find where it
+				 * actually crosses the edge and draw each half against
+				 * the face it belongs to.
 				 */
-				draw =
-					pyramidPointVisible(lastOriginal, matrix) &&
-					pyramidPointVisible(nextOriginal, matrix);
-			}
-		}
+				uint32_t faceA = firstPyramidFace(lastFaces);
+				uint32_t faceB = firstPyramidFace(nextFaces);
 
-		if (draw) {
-			App::DrawLine(
-				last.x + x,
-				last.z + y,
-				next.x + x,
-				next.z + y,
-				1,
-				color
-			);
+				if (faceA != 0 && faceB != 0) {
+					Vec3 edgeOriginal = findPyramidEdgePoint(lastOriginal, nextOriginal, faceA, faceB);
+					Vec3 edge = rotate(edgeOriginal, matrix);
+
+					if (pyramidFaceVisible(faceA, matrix)) {
+						App::DrawLine(
+							last.x + x,
+							last.z + y,
+							edge.x + x,
+							edge.z + y,
+							1,
+							color
+						);
+					}
+
+					if (pyramidFaceVisible(faceB, matrix)) {
+						App::DrawLine(
+							edge.x + x,
+							edge.z + y,
+							next.x + x,
+							next.z + y,
+							1,
+							color
+						);
+					}
+				}
+			}
 		}
 
 		lastOriginal = nextOriginal;

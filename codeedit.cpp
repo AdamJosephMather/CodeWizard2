@@ -1198,6 +1198,9 @@ void CodeEdit::activateReplace(bool forwards, MST::MonoString tofind, const MST:
 void CodeEdit::activateFind(bool forwards, const MST::MonoString& tofind, bool case_sensitive) {
 	auto location = textedit->findText(forwards, tofind, case_sensitive, textedit->cursors[0]);
 	
+	std::cout << location.head_line << "," << location.head_char << "\n";
+	std::cout << "  " << location.anchor_line << "," << location.anchor_char << "\n";
+	
 	if (location.head_char != -1) {
 		textedit->cursors = { location };
 		textedit->ensureCursorVisible(textedit->cursors[0]);

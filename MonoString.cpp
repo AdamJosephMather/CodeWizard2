@@ -1002,12 +1002,12 @@ public:
 			std::cout << "static bool startsWith(const MonoString& inpt, const MonoString& searchfor, bool ignoreCase = false)\n";
 #endif
 		
-		if (!inpt.data) {
-			return false;
-		}
-		
 		if (!searchfor.data) {
 			return true;
+		}
+		
+		if (!inpt.data) {
+			return false;
 		}
 	
 		if (searchfor.length > inpt.length) {
@@ -1048,12 +1048,12 @@ public:
 			std::cout << "static bool endsWith(const MonoString& inpt, const MonoString& searchfor, bool ignoreCase = false)\n";
 #endif
 		
-		if (!inpt.data) {
-			return false;
-		}
-	
 		if (!searchfor.data) {
 			return true;
+		}
+		
+		if (!inpt.data) {
+			return false;
 		}
 	
 		if (searchfor.length > inpt.length) {

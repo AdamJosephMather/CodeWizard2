@@ -194,9 +194,9 @@ Cursor TextEdit::findText(bool forwards, const MST::MonoString& tofind, bool cas
 			if (!MST::endsWith(text, findlines[0], ignoreCase)) {
 				continue;
 			}
-
+			
 			bool matches = true;
-
+			
 			for (size_t li = 1; li < findlines.size() - 1; li++) {
 				int idx = cur_line + static_cast<int>(li);
 
@@ -214,23 +214,23 @@ Cursor TextEdit::findText(bool forwards, const MST::MonoString& tofind, bool cas
 					break;
 				}
 			}
-
+			
 			if (!matches) {
 				continue;
 			}
-
+			
 			int final_idx = cur_line + static_cast<int>(findlines.size()) - 1;
-
+			
 			if (final_idx >= lineCount) {
 				continue;
 			}
-
+			
 			const MST::MonoString& final_text = lines[final_idx].line_text;
-
+			
 			if (!MST::startsWith(final_text, findlines[findlines.size() - 1], ignoreCase)) {
 				continue;
 			}
-
+			
 			Cursor c;
 			c.anchor_line = cur_line;
 			c.anchor_char = static_cast<int>(text.length - findlines[0].length);

@@ -181,6 +181,8 @@ public:
 	void setComments();
 	void removeComments();
 	
+	void bureaucracyCheckPython();
+	
 	int DO_RENDER = 3;
 private:
 };

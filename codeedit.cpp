@@ -6,6 +6,9 @@
 #include "linenumbers.h"
 #include "tinyfiledialogs.h"
 
+#include <regex>
+#include <unordered_map>
+#include <unordered_set>
 #include <fstream>
 #include <set>
 #include "editor.h"
@@ -231,7 +234,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	textedit->contextmenu->is_visible_3 = true;
 	textedit->borderColor = nullptr;
 	textedit->activeBorderColor = nullptr;
-	textedit->id = MST::toMonoString("code edit text edit");
+	textedit->id = MST::toMonoString("CodeEdit TextEdit");
 	
 	textedit->contextmenu->addSeparaterToMenu();
 	
@@ -267,6 +270,11 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 			renamebox->setFullText(MST::MonoString());
 		}
 		
+		textedit->contextmenu->is_visible_2 = false;
+	});
+	
+	textedit->contextmenu->addToMenu(MST::toMonoString("Bureaucracy Check\t(Python)"),   [&](Widget* w){
+		bureaucracyCheckPython();
 		textedit->contextmenu->is_visible_2 = false;
 	});
 	
@@ -2302,5 +2310,1115 @@ void CodeEdit::applyEditsToTextedit(TextEdit* te, const std::vector<EditSection>
 		}
 		
 		te->insertTextAtCursor(c, MST::toMonoString(s.newText));
+	}
+}
+
+void CodeEdit::bureaucracyCheckPython() {
+	if (!textedit) {
+		return;
+	}
+	
+	textedit->DO_POSITION = true;
+	
+	// Rename this one line if your vector has a different member name.
+	auto& lines = textedit->lines;
+
+	if (lines.empty()) {
+		return;
+	}
+
+	// -------------------------------------------------------------------------
+	// Marking
+	// -------------------------------------------------------------------------
+
+	// For now the reason is deliberately discarded, but every mark has one.
+	//
+	// Later this can become something like:
+	//
+	// lines[lineIndex].diagnostics.push_back(
+	//     LineDiagnostic{ ..., reason }
+	// );
+	//
+	auto markLine = [&](size_t lineIndex, const std::string& reason) {
+		if (lineIndex >= lines.size()) {
+			return;
+		}
+
+		lines[lineIndex].isMarked = true;
+		lines[lineIndex].markComment = MST::toMonoString(reason);
+	};
+
+	textedit->clearMarks();
+	
+	std::vector<std::string> source;
+	source.reserve(lines.size());
+	
+	for (const Line& line : lines) {
+		source.push_back(MST::toString(line.line_text));
+	}
+	
+	// -------------------------------------------------------------------------
+	// Small string helpers
+	// -------------------------------------------------------------------------
+
+	auto ltrim = [](const std::string& s) -> std::string {
+		size_t start = 0;
+
+		while (
+			start < s.size() &&
+			std::isspace(static_cast<unsigned char>(s[start]))
+		) {
+			start++;
+		}
+
+		return s.substr(start);
+	};
+
+	auto rtrim = [](const std::string& s) -> std::string {
+		size_t end = s.size();
+
+		while (
+			end > 0 &&
+			std::isspace(static_cast<unsigned char>(s[end - 1]))
+		) {
+			end--;
+		}
+
+		return s.substr(0, end);
+	};
+
+	auto trim = [&](const std::string& s) -> std::string {
+		return rtrim(ltrim(s));
+	};
+
+	auto indentation = [](const std::string& s) -> int {
+		int indent = 0;
+
+		for (char c : s) {
+			if (c == ' ') {
+				indent++;
+			}
+			else if (c == '\t') {
+				// Doesn't have to exactly match Python's interpretation.
+				// This is only being used to compare indentation levels.
+				indent += 4;
+			}
+			else {
+				break;
+			}
+		}
+
+		return indent;
+	};
+
+	auto startsWith = [](const std::string& s, const std::string& prefix) -> bool {
+		return
+			s.size() >= prefix.size() &&
+			s.compare(0, prefix.size(), prefix) == 0;
+	};
+
+	auto startsWithDocstring = [&](const std::string& s) -> bool {
+		std::string t = ltrim(s);
+
+		return
+			startsWith(t, "\"\"\"") ||
+			startsWith(t, "'''");
+	};
+
+	// Finds a # which is actually a comment, rather than a # inside
+	// "a string like this #".
+	auto commentPosition = [](const std::string& s) -> size_t {
+		char quote = '\0';
+		bool escaped = false;
+
+		for (size_t i = 0; i < s.size(); i++) {
+			char c = s[i];
+
+			if (quote != '\0') {
+				if (escaped) {
+					escaped = false;
+					continue;
+				}
+
+				if (c == '\\') {
+					escaped = true;
+					continue;
+				}
+
+				if (c == quote) {
+					quote = '\0';
+				}
+
+				continue;
+			}
+
+			if (c == '\'' || c == '"') {
+				quote = c;
+				continue;
+			}
+
+			if (c == '#') {
+				return i;
+			}
+		}
+
+		return std::string::npos;
+	};
+
+	auto removeComment = [&](const std::string& s) -> std::string {
+		size_t pos = commentPosition(s);
+
+		if (pos == std::string::npos) {
+			return s;
+		}
+
+		return s.substr(0, pos);
+	};
+
+	auto isBlankOrComment = [&](const std::string& s) -> bool {
+		std::string t = trim(s);
+
+		return t.empty() || startsWith(t, "#");
+	};
+
+	auto isAllCapsIdentifier = [](const std::string& name) -> bool {
+		if (name.empty()) {
+			return false;
+		}
+
+		bool hasLetter = false;
+
+		for (char c : name) {
+			unsigned char uc = static_cast<unsigned char>(c);
+
+			if (std::isalpha(uc)) {
+				hasLetter = true;
+
+				if (!std::isupper(uc)) {
+					return false;
+				}
+			}
+			else if (!std::isdigit(uc) && c != '_') {
+				return false;
+			}
+		}
+
+		return hasLetter;
+	};
+
+	auto looksLikeCamelCaseClass = [](const std::string& name) -> bool {
+		if (name.empty()) {
+			return false;
+		}
+
+		if (!std::isupper(static_cast<unsigned char>(name[0]))) {
+			return false;
+		}
+
+		// Course requirement calls for CamelCase class names.
+		if (name.find('_') != std::string::npos) {
+			return false;
+		}
+
+		return true;
+	};
+
+	// Functions
+	
+	struct ParsedFunctionDefinition {
+		bool valid = false;
+		size_t endLine = 0;
+		std::string name;
+		std::string arguments;
+	};
+	
+	auto parseFunctionDefinition = [&](size_t startLine) -> ParsedFunctionDefinition {
+		ParsedFunctionDefinition result;
+	
+		if (startLine >= source.size()) {
+			return result;
+		}
+	
+		std::string first = trim(removeComment(source[startLine]));
+	
+		// Must begin with "def ".
+		if (!startsWith(first, "def ")) {
+			return result;
+		}
+	
+		// Extract function name.
+		size_t nameStart = 4;
+		size_t parenPos = first.find('(', nameStart);
+	
+		if (parenPos == std::string::npos) {
+			return result;
+		}
+	
+		std::string name = trim(
+			first.substr(nameStart, parenPos - nameStart)
+		);
+	
+		if (name.empty()) {
+			return result;
+		}
+	
+		// Basic identifier check.
+		if (
+			!(
+				std::isalpha(static_cast<unsigned char>(name[0])) ||
+				name[0] == '_'
+			)
+		) {
+			return result;
+		}
+	
+		for (char c : name) {
+			if (
+				!std::isalnum(static_cast<unsigned char>(c)) &&
+				c != '_'
+			) {
+				return result;
+			}
+		}
+	
+		std::string arguments;
+	
+		int parenDepth = 0;
+		bool foundOpeningParen = false;
+		bool finishedArguments = false;
+	
+		char quote = '\0';
+		bool escaped = false;
+	
+		for (size_t lineIndex = startLine; lineIndex < source.size(); lineIndex++) {
+			std::string code = removeComment(source[lineIndex]);
+	
+			size_t charStart = 0;
+	
+			if (lineIndex == startLine) {
+				charStart = code.find('(');
+	
+				if (charStart == std::string::npos) {
+					return result;
+				}
+			}
+	
+			for (size_t j = charStart; j < code.size(); j++) {
+				char c = code[j];
+	
+				if (quote != '\0') {
+					if (escaped) {
+						escaped = false;
+					}
+					else if (c == '\\') {
+						escaped = true;
+					}
+					else if (c == quote) {
+						quote = '\0';
+					}
+	
+					if (foundOpeningParen && parenDepth > 0) {
+						arguments += c;
+					}
+	
+					continue;
+				}
+	
+				if (c == '\'' || c == '"') {
+					quote = c;
+	
+					if (foundOpeningParen && parenDepth > 0) {
+						arguments += c;
+					}
+	
+					continue;
+				}
+	
+				if (c == '(') {
+					if (!foundOpeningParen) {
+						foundOpeningParen = true;
+						parenDepth = 1;
+						continue;
+					}
+	
+					parenDepth++;
+					arguments += c;
+					continue;
+				}
+	
+				if (c == ')') {
+					if (!foundOpeningParen) {
+						continue;
+					}
+	
+					parenDepth--;
+	
+					if (parenDepth == 0) {
+						finishedArguments = true;
+	
+						result.valid = true;
+						result.endLine = lineIndex;
+						result.name = name;
+						result.arguments = trim(arguments);
+	
+						return result;
+					}
+	
+					arguments += c;
+					continue;
+				}
+	
+				if (foundOpeningParen && parenDepth > 0) {
+					arguments += c;
+				}
+			}
+	
+			// Preserve separation between lines so things don't accidentally
+			// become one token.
+			if (foundOpeningParen && !finishedArguments) {
+				arguments += " ";
+			}
+		}
+	
+		return result;
+	};
+	
+	// -------------------------------------------------------------------------
+	// Regexes for the very simple structural cases
+	// -------------------------------------------------------------------------
+
+	const std::regex classRegex(
+		R"(^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*\([^)]*\))?\s*:\s*$)"
+	);
+
+	const std::regex assignmentRegex(
+		R"(^([A-Za-z_][A-Za-z0-9_]*)\s*(?::[^=]+)?\s*=(?:[^=].*|$))"
+	);
+
+	struct Definition {
+		size_t line = 0;
+		size_t headerEndLine = 0;
+	
+		int indent = 0;
+		std::string name;
+		std::string arguments;
+		bool isClass = false;
+	};
+
+	std::vector<Definition> functions;
+	std::vector<Definition> classes;
+
+	// -------------------------------------------------------------------------
+	// Argument counting
+	// -------------------------------------------------------------------------
+
+	// Counts:
+	//
+	//     a, b, thing=(1, 2), another={"x": 4}
+	//
+	// as four arguments instead of six.
+	auto countArguments = [&](const std::string& arguments) -> int {
+		std::string args = trim(arguments);
+
+		if (args.empty()) {
+			return 0;
+		}
+
+		int count = 1;
+		int nesting = 0;
+
+		char quote = '\0';
+		bool escaped = false;
+
+		for (size_t i = 0; i < args.size(); i++) {
+			char c = args[i];
+
+			if (quote != '\0') {
+				if (escaped) {
+					escaped = false;
+				}
+				else if (c == '\\') {
+					escaped = true;
+				}
+				else if (c == quote) {
+					quote = '\0';
+				}
+
+				continue;
+			}
+
+			if (c == '\'' || c == '"') {
+				quote = c;
+				continue;
+			}
+
+			if (c == '(' || c == '[' || c == '{') {
+				nesting++;
+			}
+			else if (c == ')' || c == ']' || c == '}') {
+				nesting--;
+			}
+			else if (c == ',' && nesting == 0) {
+				count++;
+			}
+		}
+
+		return count;
+	};
+
+	// -------------------------------------------------------------------------
+	// Pass 1: comments and obvious line-level problems
+	// -------------------------------------------------------------------------
+
+	for (size_t i = 0; i < source.size(); i++) {
+		const std::string& raw = source[i];
+		std::string t = trim(raw);
+
+		if (t.empty()) {
+			continue;
+		}
+
+		size_t commentPos = commentPosition(raw);
+
+		if (commentPos != std::string::npos) {
+			std::string before = raw.substr(0, commentPos);
+
+			if (trim(before).empty()) {
+				// Full-line/block comments are supposed to be "# blah".
+				//
+				// Ignore common shebang and encoding forms.
+				std::string comment = ltrim(raw);
+
+				if (
+					comment != "#" &&
+					!startsWith(comment, "# ") &&
+					!startsWith(comment, "#!") &&
+					!startsWith(comment, "# -*-")
+				) {
+					markLine(
+						i,
+						"Block comments should normally begin with '# '."
+					);
+				}
+			}
+			else {
+				// Inline comments are supposed to have >= 2 spaces before #.
+				size_t spaces = 0;
+				size_t p = commentPos;
+
+				while (p > 0 && raw[p - 1] == ' ') {
+					spaces++;
+					p--;
+				}
+
+				if (spaces < 2) {
+					markLine(
+						i,
+						"Inline comments should be separated from code by at least two spaces."
+					);
+				}
+			}
+		}
+	}
+
+	// -------------------------------------------------------------------------
+	// Pass 2: definitions, imports, globals, class names, nested functions
+	// -------------------------------------------------------------------------
+
+	enum class ScopeType {
+		Function,
+		Class
+	};
+
+	struct Scope {
+		int indent;
+		ScopeType type;
+	};
+
+	std::vector<Scope> scopeStack;
+
+	bool hasParameterlessMain = false;
+
+	for (size_t i = 0; i < source.size(); i++) {
+		std::string code = trim(removeComment(source[i]));
+
+		if (code.empty()) {
+			continue;
+		}
+
+		int indent = indentation(source[i]);
+
+		while (
+			!scopeStack.empty() &&
+			indent <= scopeStack.back().indent
+		) {
+			scopeStack.pop_back();
+		}
+
+		// Imports must be global.
+		if (
+			startsWith(code, "import ") ||
+			startsWith(code, "from ")
+		) {
+			if (indent != 0) {
+				markLine(
+					i,
+					"Import statements should be defined globally."
+				);
+			}
+		}
+
+		std::smatch match;
+		
+		if (std::regex_match(code, match, classRegex)) {
+			std::string className = match[1].str();
+		
+			classes.push_back({
+				i,
+				i,
+				indent,
+				className,
+				"",
+				true
+			});
+		
+			if (!looksLikeCamelCaseClass(className)) {
+				markLine(
+					i,
+					"Class names should use CamelCaseNaming."
+				);
+			}
+		
+			scopeStack.push_back({
+				indent,
+				ScopeType::Class
+			});
+		
+			continue;
+		}
+		
+		// ---------------------------------------------------------------------
+		// Function definition -- supports multiline definitions
+		// ---------------------------------------------------------------------
+		
+		ParsedFunctionDefinition parsedFunction =
+			parseFunctionDefinition(i);
+		
+		if (parsedFunction.valid) {
+			std::string functionName = parsedFunction.name;
+			std::string arguments = parsedFunction.arguments;
+		
+			bool insideFunction =
+				!scopeStack.empty() &&
+				scopeStack.back().type == ScopeType::Function;
+		
+			if (insideFunction) {
+				markLine(
+					i,
+					"User-defined functions should not be nested inside other functions."
+				);
+			}
+		
+			int argumentCount = countArguments(arguments);
+		
+			if (argumentCount > 5) {
+				markLine(
+					i,
+					"User-defined functions should have five or fewer arguments."
+				);
+			}
+		
+			if (
+				indent == 0 &&
+				functionName == "main" &&
+				trim(arguments).empty()
+			) {
+				hasParameterlessMain = true;
+			}
+		
+			functions.push_back({
+				i,
+				parsedFunction.endLine,
+				indent,
+				functionName,
+				arguments,
+				false
+			});
+		
+			scopeStack.push_back({
+				indent,
+				ScopeType::Function
+			});
+		
+			// Skip the remaining physical lines making up the declaration.
+			//
+			// For:
+			//
+			// def thing(
+			//     a,
+			//     b,
+			// ):
+			//
+			// we don't want "a", "b", or ")" processed as ordinary code.
+			i = parsedFunction.endLine;
+		
+			continue;
+		}
+
+		// Simple top-level assignment:
+		//
+		//     thing = ...
+		//
+		// is considered a suspicious global unless THING is uppercase.
+		if (indent == 0 && std::regex_search(code, match, assignmentRegex)) {
+			std::string identifier = match[1].str();
+
+			if (!isAllCapsIdentifier(identifier)) {
+				markLine(
+					i,
+					"Non-constant global identifiers should be initialized inside a function."
+				);
+			}
+		}
+	}
+
+	// -------------------------------------------------------------------------
+	// Missing parameterless main()
+	// -------------------------------------------------------------------------
+
+	if (!hasParameterlessMain) {
+		// There is no definition line to mark, so mark the first meaningful line.
+		for (size_t i = 0; i < source.size(); i++) {
+			if (!isBlankOrComment(source[i])) {
+				markLine(
+					i,
+					"Program does not appear to contain a parameterless main() function."
+				);
+				break;
+			}
+		}
+	}
+
+	// -------------------------------------------------------------------------
+	// Module/program docstring
+	// -------------------------------------------------------------------------
+
+	for (size_t i = 0; i < source.size(); i++) {
+		if (isBlankOrComment(source[i])) {
+			continue;
+		}
+
+		if (!startsWithDocstring(source[i])) {
+			markLine(
+				i,
+				"Program should begin with a program docstring."
+			);
+		}
+
+		break;
+	}
+
+	// -------------------------------------------------------------------------
+	// Function/class docstrings
+	// -------------------------------------------------------------------------
+
+	auto checkDefinitionDocstring = [&](const Definition& def) {
+		for (size_t j = def.headerEndLine + 1; j < source.size(); j++) {
+			if (trim(source[j]).empty()) {
+				continue;
+			}
+
+			std::string t = trim(source[j]);
+
+			// Allow comments before the docstring for purposes of this heuristic.
+			if (startsWith(t, "#")) {
+				continue;
+			}
+
+			int childIndent = indentation(source[j]);
+
+			if (childIndent <= def.indent) {
+				markLine(
+					def.line,
+					def.isClass
+						? "Class appears to be missing a class docstring."
+						: "Function appears to be missing a function docstring."
+				);
+
+				return;
+			}
+
+			if (!startsWithDocstring(source[j])) {
+				markLine(
+					def.line,
+					def.isClass
+						? "Class appears to be missing a class docstring."
+						: "Function appears to be missing a function docstring."
+				);
+			}
+
+			return;
+		}
+
+		// Definition at EOF with no body/docstring.
+		markLine(
+			def.line,
+			def.isClass
+				? "Class appears to be missing a class docstring."
+				: "Function appears to be missing a function docstring."
+		);
+	};
+
+	for (const Definition& def : functions) {
+		checkDefinitionDocstring(def);
+	}
+
+	for (const Definition& def : classes) {
+		checkDefinitionDocstring(def);
+	}
+
+	// -------------------------------------------------------------------------
+	// Function length -- approximate the course's "12 code lines" rule
+	// -------------------------------------------------------------------------
+
+	for (const Definition& function : functions) {
+		int statementLines = 0;
+
+		bool foundFirstBodyStatement = false;
+		bool inLeadingDocstring = false;
+		std::string docstringDelimiter;
+
+		for (
+			size_t j = function.headerEndLine + 1;
+			j < source.size();
+			j++
+		) {
+			std::string rawTrimmed = trim(source[j]);
+
+			if (rawTrimmed.empty()) {
+				continue;
+			}
+
+			int currentIndent = indentation(source[j]);
+
+			// Once indentation returns to the definition's level, the
+			// function is over.
+			if (
+				!inLeadingDocstring &&
+				currentIndent <= function.indent
+			) {
+				break;
+			}
+
+			if (inLeadingDocstring) {
+				size_t closing =
+					source[j].find(docstringDelimiter);
+
+				if (closing != std::string::npos) {
+					inLeadingDocstring = false;
+				}
+
+				continue;
+			}
+
+			if (startsWith(rawTrimmed, "#")) {
+				continue;
+			}
+
+			if (!foundFirstBodyStatement) {
+				foundFirstBodyStatement = true;
+
+				if (startsWith(rawTrimmed, "\"\"\"")) {
+					docstringDelimiter = "\"\"\"";
+
+					if (
+						rawTrimmed.find(
+							"\"\"\"",
+							3
+						) == std::string::npos
+					) {
+						inLeadingDocstring = true;
+					}
+
+					continue;
+				}
+
+				if (startsWith(rawTrimmed, "'''")) {
+					docstringDelimiter = "'''";
+
+					if (
+						rawTrimmed.find(
+							"'''",
+							3
+						) == std::string::npos
+					) {
+						inLeadingDocstring = true;
+					}
+
+					continue;
+				}
+			}
+
+			// This intentionally counts physical code lines rather than
+			// constructing a Python AST, which is reasonably close to the
+			// rubric's wording.
+			statementLines++;
+		}
+
+		if (statementLines > 12) {
+			markLine(
+				function.line,
+				"Function appears to contain more than twelve code statements/lines."
+			);
+		}
+	}
+
+	// -------------------------------------------------------------------------
+	// Adjacent duplicate lines
+	// -------------------------------------------------------------------------
+
+	std::string previousCode;
+	size_t previousLine = 0;
+	bool havePrevious = false;
+
+	for (size_t i = 0; i < source.size(); i++) {
+		std::string code = trim(removeComment(source[i]));
+
+		if (code.empty()) {
+			havePrevious = false;
+			continue;
+		}
+
+		if (havePrevious && code == previousCode) {
+			// Mark both, since either may be the line the user wants to inspect.
+			markLine(
+				previousLine,
+				"Adjacent duplicate code may be replaceable by repetition."
+			);
+
+			markLine(
+				i,
+				"Adjacent duplicate code may be replaceable by repetition."
+			);
+		}
+
+		previousCode = code;
+		previousLine = i;
+		havePrevious = true;
+	}
+
+	// -------------------------------------------------------------------------
+	// Repeated numeric literals
+	//
+	// The rubric exempts:
+	//     0, 1, 2, -1, 0.0
+	//
+	// Rather than attempting to fully tokenize Python, we recognize ordinary
+	// decimal numeric literals while ignoring strings and comments.
+	// -------------------------------------------------------------------------
+
+	std::unordered_map<std::string, std::vector<size_t>> numericLiteralLines;
+
+	bool insideTripleString = false;
+	char tripleQuoteCharacter = '\0';
+
+	for (size_t lineIndex = 0; lineIndex < source.size(); lineIndex++) {
+		const std::string& s = source[lineIndex];
+
+		char quote = '\0';
+		bool escaped = false;
+
+		for (size_t i = 0; i < s.size();) {
+			// We entered a """ or ''' on an earlier line.
+			if (insideTripleString) {
+				if (
+					i + 2 < s.size() &&
+					s[i] == tripleQuoteCharacter &&
+					s[i + 1] == tripleQuoteCharacter &&
+					s[i + 2] == tripleQuoteCharacter
+				) {
+					insideTripleString = false;
+					tripleQuoteCharacter = '\0';
+					i += 3;
+				}
+				else {
+					i++;
+				}
+
+				continue;
+			}
+
+			char c = s[i];
+
+			if (quote != '\0') {
+				if (escaped) {
+					escaped = false;
+					i++;
+					continue;
+				}
+
+				if (c == '\\') {
+					escaped = true;
+					i++;
+					continue;
+				}
+
+				if (c == quote) {
+					quote = '\0';
+				}
+
+				i++;
+				continue;
+			}
+
+			if (c == '#') {
+				break;
+			}
+
+			if (
+				(c == '\'' || c == '"') &&
+				i + 2 < s.size() &&
+				s[i + 1] == c &&
+				s[i + 2] == c
+			) {
+				insideTripleString = true;
+				tripleQuoteCharacter = c;
+				i += 3;
+				continue;
+			}
+
+			if (c == '\'' || c == '"') {
+				quote = c;
+				i++;
+				continue;
+			}
+
+			bool startsNumber =
+				std::isdigit(static_cast<unsigned char>(c));
+
+			if (
+				c == '-' &&
+				i + 1 < s.size() &&
+				std::isdigit(
+					static_cast<unsigned char>(s[i + 1])
+				)
+			) {
+				startsNumber = true;
+			}
+
+			if (!startsNumber) {
+				i++;
+				continue;
+			}
+
+			// Don't treat "foo2" as the literal 2.
+			if (i > 0) {
+				char previous = s[i - 1];
+
+				if (
+					std::isalnum(
+						static_cast<unsigned char>(previous)
+					) ||
+					previous == '_'
+				) {
+					i++;
+					continue;
+				}
+			}
+
+			size_t start = i;
+
+			if (s[i] == '-') {
+				i++;
+			}
+
+			while (
+				i < s.size() &&
+				std::isdigit(static_cast<unsigned char>(s[i]))
+			) {
+				i++;
+			}
+
+			if (
+				i < s.size() &&
+				s[i] == '.'
+			) {
+				i++;
+
+				while (
+					i < s.size() &&
+					std::isdigit(
+						static_cast<unsigned char>(s[i])
+					)
+				) {
+					i++;
+				}
+			}
+
+			if (
+				i < s.size() &&
+				(s[i] == 'e' || s[i] == 'E')
+			) {
+				size_t exponentStart = i;
+				i++;
+
+				if (
+					i < s.size() &&
+					(s[i] == '+' || s[i] == '-')
+				) {
+					i++;
+				}
+
+				size_t digitStart = i;
+
+				while (
+					i < s.size() &&
+					std::isdigit(
+						static_cast<unsigned char>(s[i])
+					)
+				) {
+					i++;
+				}
+
+				if (digitStart == i) {
+					// Invalid exponent; leave the e/E alone.
+					i = exponentStart;
+				}
+			}
+
+			std::string literal = s.substr(start, i - start);
+
+			if (
+				literal == "0" ||
+				literal == "1" ||
+				literal == "2" ||
+				literal == "-1" ||
+				literal == "0.0"
+			) {
+				continue;
+			}
+
+			numericLiteralLines[literal].push_back(lineIndex);
+		}
+	}
+
+	for (const auto& [literal, occurrences] : numericLiteralLines) {
+		if (occurrences.size() <= 1) {
+			continue;
+		}
+
+		std::unordered_set<size_t> markedLines;
+
+		for (size_t lineIndex : occurrences) {
+			if (!markedLines.insert(lineIndex).second) {
+				continue;
+			}
+
+			markLine(
+				lineIndex,
+				"Numeric literal '" + literal +
+				"' appears more than once; consider assigning it to a named value."
+			);
+		}
 	}
 }

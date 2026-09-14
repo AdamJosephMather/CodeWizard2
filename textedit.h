@@ -43,6 +43,8 @@ struct Line {
 	
 	std::vector<LineDiagnostic> diagnostics = {};
 	bool isMarked = false;
+	
+	MST::MonoString markComment;
 
 	Line() = default;
 	~Line() = default;
@@ -189,6 +191,7 @@ public:
 	std::vector<std::vector<Color*>> draw_color;
 	std::vector<DiagnosticUnderline> draw_diagnostics;
 	std::vector<bool>                draw_mark;
+	std::vector<MST::MonoString>     mark_reason;
 	std::vector<CursorScreen>        draw_cursor;
 	std::vector<CursorSelect>        draw_selection;
 	

@@ -344,6 +344,7 @@ public:
 	static void gitForcePull();
 	static void gitStatus();
 	static void fixIt();
+	static void runBureaucracyCheck();
 	static void undoFixIt();
 	static void loadThemeFromFile();
 	static void saveThemeToFile();

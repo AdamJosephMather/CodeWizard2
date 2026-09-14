@@ -46,6 +46,7 @@ TextEdit::TextEdit(Widget* parent, App::PosFunction fnct) : Widget(parent) {
 	draw_cursor = {};
 	draw_diagnostics = {};
 	draw_mark = {false};
+	mark_reason = {MST::MonoString{}};
 	
 	scrollbar_v = new Scrollbar(this);
 	scrollbar_v->getScrollInfo = [&](){
@@ -319,6 +320,9 @@ void TextEdit::toggleMark() {
 	for (auto c : cursors) {
 		for (int l = fmin(c.head_line, c.anchor_line); l <= fmax(c.head_line, c.anchor_line); l++) {
 			lines[l].isMarked = !lines[l].isMarked;
+			if (!lines[l].isMarked) {
+				lines[l].markComment = MST::MonoString{};
+			}
 		}
 	}
 	DO_POSITION = true;
@@ -326,7 +330,10 @@ void TextEdit::toggleMark() {
 
 void TextEdit::clearMarks() {
 	for (int l = 0; l < lines.size(); l++) {
-		lines[l].isMarked = false;
+		if (lines[l].isMarked) {
+			lines[l].isMarked = false;
+			lines[l].markComment = MST::MonoString{};
+		}
 	}
 	DO_POSITION = true;
 }
@@ -2126,6 +2133,20 @@ void TextEdit::render() {
 		}
 	}
 	
+	cury = start_y+t_y+App::text_padding;
+	
+	for (int ln_ren = 0; ln_ren < draw_errors.size(); ln_ren++) {
+		if (draw_mark[ln_ren] && mark_reason[ln_ren].length != 0) {
+			auto text_width = TextRenderer::get_text_width(mark_reason[ln_ren].length);
+			
+			int full_width = text_width+App::text_padding*2;
+			int farleft = t_x+t_w-full_width-TextRenderer::get_text_width(1);
+			
+			TextRenderer::draw_text(farleft+App::text_padding, cury, mark_reason[ln_ren], App::theme.warning_color);
+		}
+		cury += TextRenderer::get_text_height();
+	}
+	
 	for (int y : drawMarkLines) {
 		App::DrawRect(t_x, y, t_w, 1, App::theme.active_color);
 	}
@@ -2310,6 +2331,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 	draw_selection.clear();
 	draw_diagnostics.clear();
 	draw_mark.clear();
+	mark_reason.clear();
 
 	line_start = floor(scrolled_to_vert);
 	char_start = floor(scrolled_to_horz);
@@ -2494,6 +2516,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 		
 		draw_color.push_back(draw_color_thisline);
 		draw_mark.push_back(lines[ln_num].isMarked);
+		mark_reason.push_back(lines[ln_num].markComment);
 	}
 	
 	// cursors

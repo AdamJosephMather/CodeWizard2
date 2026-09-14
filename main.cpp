@@ -359,6 +359,11 @@ int main(int argc, char* argv[]) {
 			App::undoFixIt();
 		});
 		
+		menu->addToMenu(MST::toMonoString("Python Bureaucracy Check\t(Software Quality Check)"), [](Button*){
+			App::closeMenu();
+			App::runBureaucracyCheck();
+		});
+		
 		menu->addSeparaterToMenu();
 		
 		menu->addToMenu(MST::toMonoString("Toggle Macro Recording\t(F12)"), [](Button*){

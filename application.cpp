@@ -48,7 +48,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 5;
-int App::patch_version = 19; // 🚀 (we now support emojis)
+int App::patch_version = 20; // 🚀 (we now support emojis)
 
 const std::vector<int> version = {App::major_version, App::minor_version, App::patch_version};
 
@@ -2709,6 +2709,21 @@ void App::fixIt() {
 	}
 }
 
+void App::runBureaucracyCheck() {
+	if (!activeEditor) {
+		displayToast(MST::toMonoString("No editor active."));
+	}else{
+		Editor* edtr = (Editor*)activeEditor;
+		auto wdgt = edtr->editors[edtr->tab_bar->selected_id];
+		if (auto cdet = dynamic_cast<CodeEdit*>(wdgt)) {
+			cdet->bureaucracyCheckPython();
+			displayToast(MST::toMonoString("Done"));
+		}else{
+			displayToast(MST::toMonoString("Active Editor is not a CodeEdit."));
+		}
+	}
+}
+
 void App::saveThemeToFile() {
 	const char * fp = tinyfd_saveFileDialog(
 		"Save as?", // dialog title
@@ -2895,6 +2910,8 @@ void App::executeCommandPaletteAction() {
 			undoFixIt();
 		}else if (filepath == ":How Many Widgets Currently?") {
 			displayToast(MST::toMonoString("There are: " + std::to_string(all_widgets.size())+" open widgets."));
+		}else if (filepath == ":Run Bureaucracy Check (Python Software Quality)") {
+			runBureaucracyCheck();
 		}
 		
 		return;
@@ -2976,7 +2993,7 @@ void App::indexFiles() {
 	const std::size_t maxFiles          = settings->getValue("max_index_files", 15000);
 	const std::size_t maxDisplayChars  = (commandPalette->t_w - text_padding * 2) / TextRenderer::get_text_width(1) - 1;
 	
-	static const std::vector<std::string> commands = {"Connect via SSH","Disconnect SSH","Git Push","Git Pull","Git Force Pull","Git Status","Help","Save Theme Settings To File","Load Theme Settings From File","Restart Language Servers (LSPs)","Open `languages.json` file","Test Toast Box","Test Text Line","Run FixIt (Spaces to Tabs)","Undo FixIt (Tabs to Spaces)","How Many Widgets Currently?"}; 
+	static const std::vector<std::string> commands = {"Connect via SSH","Disconnect SSH","Git Push","Git Pull","Git Force Pull","Git Status","Help","Save Theme Settings To File","Load Theme Settings From File","Restart Language Servers (LSPs)","Open `languages.json` file","Test Toast Box","Test Text Line","Run FixIt (Spaces to Tabs)","Undo FixIt (Tabs to Spaces)","Run Bureaucracy Check (Python Software Quality)","How Many Widgets Currently?"}; 
 
 	// 1. Pre-allocate memory to prevent vector re-allocations
 	INDEXED_FILES.indexedNames.reserve(maxFiles + commands.size());

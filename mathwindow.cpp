@@ -1,6 +1,7 @@
 #include "mathwindow.h"
 #include "application.h"
 #include "text_renderer.h"
+#include "MathParser.hpp"
 
 MathWindow::MathWindow(Widget *parent) : Widget(parent) {
 	id = MST::toMonoString("MathWindow");
@@ -19,69 +20,18 @@ MathWindow::MathWindow(Widget *parent) : Widget(parent) {
 	mathInput->ontextchange = [&](Widget* w){
 		results.clear();
 		results.reserve(mathInput->lines.size());
-		MST::MonoString lastCalc = MST::toMonoString("_");
 		
-		std::unordered_map<std::string, MST::MonoString> vars;
-		MST::MonoString alphabet = MST::toMonoString("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+		MathParser parser;
+		auto dict = parser.setup();
 		
 		for (auto& line : mathInput->lines) {
-			std::string varname = "";
-			MST::MonoString expression{};
+			std::string str = MST::toString(line.line_text);
 			
-			auto splt = MST::split(line.line_text, U'=');
+			auto res = parser.RunLine(str, dict);
 			
-			if (splt.size() > 2) {
-				results.push_back(MST::MonoString());
-				continue;
-			}else if(splt.size() == 2){
-				varname = MST::toString(MST::stripOfChar(splt.at(0), U' '));
-				expression = splt.at(1);
-			}else{
-				expression = line.line_text;
-			}
-			
-			MST::MonoString done_str;
-			MST::MonoString current;
-			
-			for (int i = 0; i < expression.length; i++) {
-				MST::u32 c = MST::char32At(expression, i);
-				if (MST::index(alphabet, 0, c) != -1) {
-					current += MST::substring(expression, i, i+1);
-				}else{
-					if (current.length != 0) {
-						std::string cur = MST::toString(current);
-						auto it = vars.find(cur);
-						if (it != vars.end()) {
-							current = MST::toMonoString(U'(')+it->second+MST::toMonoString(U')');
-						}
-						done_str += current;
-						current = {};
-					}
-					done_str += MST::substring(expression, i, i+1);
-				}
-			}
-			
-			if (current.length != 0) {
-				std::string cur = MST::toString(current);
-				auto it = vars.find(cur);
-				if (it != vars.end()) {
-					current = MST::toMonoString(U'(')+it->second+MST::toMonoString(U')');
-				}
-				done_str += current;
-				current = {};
-			}
-			
-			auto modded = MST::replaceAll(done_str, MST::toMonoString("_"), lastCalc);
-			
-			auto res = calcExpression(modded);
-			if (res.first){
-				results.push_back(doubleToMonoString_pretty(res.second));
-				
-				auto out = doubleToMonoString(res.second);
-				lastCalc = out;
-				if (varname != "") {
-					vars[varname] = out;
-				}
+			if (res.worked) {
+				double result = res.value;
+				results.push_back(doubleToMonoString_pretty(result));
 			}else{
 				results.push_back(MST::MonoString());
 			}

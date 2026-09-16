@@ -23,6 +23,7 @@
 #include "toast.h"
 #include "filetree.h"
 #include "sshfilebackend.h"
+#include "MathParser.hpp"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -3218,11 +3219,15 @@ void App::fillCmdBox() {
 		return;
 	}
 	
-	auto res = calcExpression(searchfor);
-	if (res.first){
+	MathParser parser;
+	auto dict = parser.setup();
+	
+	auto res = parser.RunLine(MST::toString(searchfor), dict);
+	
+	if (res.worked){
 		INDEXED_FILES.currentlyshowing.push_back(0);
 		INDEXED_FILES.currentlyshowingtype.push_back(1);
-		els.push_back(doubleToMonoString_pretty(res.second));
+		els.push_back(doubleToMonoString_pretty(res.value));
 	}
 	
 	std::string str = MST::toString(searchfor);

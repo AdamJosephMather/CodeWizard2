@@ -49,7 +49,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 5;
-int App::patch_version = 20; // 🚀 (we now support emojis)
+int App::patch_version = 21; // 🚀 (we now support emojis)
 
 const std::vector<int> version = {App::major_version, App::minor_version, App::patch_version};
 

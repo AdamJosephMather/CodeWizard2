@@ -2,7 +2,6 @@
 #include <GLFW/glfw3.h>
 #include <queue>
 #include <random>
-#include <cstring>
 #include <syntect_bridge.h>
 #include <iostream>
 #include "scrollnotify.h"
@@ -66,28 +65,9 @@ std::vector<Widget*> App::all_widgets = {};
 
 #ifdef _WIN32
 HWND App::window_handle = nullptr;
-
-// A transparent OpenGL framebuffer depends on the console display's DWM
-// composition path.  That path can disappear while the desktop itself stays
-// alive (for example, when a laptop lid is closed and the machine is accessed
-// through VNC).  In that state DWM may still draw the blur backdrop but omit
-// the OpenGL surface, leaving a fully interactive, invisible UI.
-static bool consoleDisplayOn = true;
-static bool lidOpen = true;
-static bool lidStateKnown = false;
-static HPOWERNOTIFY consoleDisplayNotification = nullptr;
-static HPOWERNOTIFY lidNotification = nullptr;
-
-static constexpr GUID CONSOLE_DISPLAY_STATE_GUID = {
-	0x6fe69556, 0x704a, 0x47a0, {0x8f, 0x24, 0xc2, 0x8d, 0x93, 0x6f, 0xda, 0x47}
-};
-static constexpr GUID LIDSWITCH_STATE_CHANGE_GUID = {
-	0xba3e0f4d, 0xb817, 0x4094, {0xa2, 0xd1, 0xd5, 0x63, 0x79, 0xe6, 0xa0, 0xf3}
-};
 #endif
 
 bool App::last_transparency_w_clear = false;
-static bool transparencyEffective = false;
 int App::reclear = 3;
 bool App::darkmode = true;
 std::string App::empty = "";
@@ -371,19 +351,21 @@ bool App::Init() {
 	
 	glfwWindowHint(GLFW_SAMPLES, 4); // Request 4x MSAA (or 2, 8, 16 depending on GPU support)
 	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+	
 	glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
-	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 	
 	window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE.c_str(), nullptr, nullptr);
+	g_main_window = window;
+	
+	glfwSetWindowSizeLimits(window, 500, 250, GLFW_DONT_CARE, GLFW_DONT_CARE);
+	
+	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 
 	if (!window) {
 		std::cerr << "Failed to create window\n";
 		glfwTerminate();
 		return false;
 	}
-
-	g_main_window = window;
-	glfwSetWindowSizeLimits(window, 500, 250, GLFW_DONT_CARE, GLFW_DONT_CARE);
 	
 	regularCursor = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
 	if (!regularCursor) {
@@ -478,19 +460,6 @@ bool App::Init() {
 	// Chain your custom proc
 	originalWndProc = (WNDPROC)SetWindowLongPtr(window_handle, GWLP_WNDPROC, (LONG_PTR)CustomWndProc);
 
-	// Windows sends the current value shortly after registration, so this also
-	// handles an application first opened after the laptop lid was closed.
-	consoleDisplayNotification = RegisterPowerSettingNotification(
-		window_handle,
-		&CONSOLE_DISPLAY_STATE_GUID,
-		DEVICE_NOTIFY_WINDOW_HANDLE
-	);
-	lidNotification = RegisterPowerSettingNotification(
-		window_handle,
-		&LIDSWITCH_STATE_CHANGE_GUID,
-		DEVICE_NOTIFY_WINDOW_HANDLE
-	);
-
 	// Grab the existing style
 	LONG_PTR style = GetWindowLongPtr(window_handle, GWL_STYLE);
 
@@ -580,13 +549,7 @@ bool App::Init() {
 }
 
 void App::updateTransparency(bool transparent) {
-	bool effective = transparent;
 #ifdef _WIN32
-	effective = transparent && consoleDisplayOn && (!lidStateKnown || lidOpen);
-	transparencyEffective = effective;
-	reclear = 3;
-	rerender = true;
-
 	HMODULE hUser = GetModuleHandleW(L"user32.dll");
 	if (!hUser) return;
 
@@ -596,7 +559,7 @@ void App::updateTransparency(bool transparent) {
 	if (!setWCA) return;
 
 	ACCENT_POLICY accent = {};
-	if (effective) {
+	if (transparent) {
 		accent.accentState = ACCENT_ENABLE_BLURBEHIND;
 	} else {
 		accent.accentState = ACCENT_DISABLED;
@@ -608,8 +571,6 @@ void App::updateTransparency(bool transparent) {
 	data.SizeOfData = sizeof(accent);
 
 	setWCA(window_handle, &data);
-#else
-	transparencyEffective = effective;
 #endif
 }
 
@@ -698,36 +659,6 @@ void App::nada_panel() {
 #ifdef _WIN32
 LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
-		case WM_POWERBROADCAST: {
-			if (wParam != PBT_POWERSETTINGCHANGE || !lParam) {
-				break;
-			}
-
-			auto* setting = reinterpret_cast<POWERBROADCAST_SETTING*>(lParam);
-			if (setting->DataLength < sizeof(DWORD)) {
-				break;
-			}
-
-			DWORD value = 0;
-			std::memcpy(&value, setting->Data, sizeof(value));
-			bool changed = false;
-			if (IsEqualGUID(setting->PowerSetting, CONSOLE_DISPLAY_STATE_GUID)) {
-				// PowerMonitorDim still has a live local composition target.
-				consoleDisplayOn = value != 0;
-				changed = true;
-			} else if (IsEqualGUID(setting->PowerSetting, LIDSWITCH_STATE_CHANGE_GUID)) {
-				lidOpen = value != 0;
-				lidStateKnown = true;
-				changed = true;
-			}
-
-			if (changed) {
-				updateTransparency(settings->getValue("use_transparency", false));
-				InvalidateRect(hwnd, nullptr, FALSE);
-				return TRUE;
-			}
-			break;
-		}
 		case WM_NCHITTEST: {
 			POINT pt = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
 			ScreenToClient(hwnd, &pt);
@@ -1486,14 +1417,14 @@ void App::DoFullRenderWithoutInput() {
 	
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // we need to overwrite everything now (rgb and a)
 	
-	if (transparencyEffective) {
+	if (settings->getValue("use_transparency", false)) {
 		glClearColor(bgcolor->r, bgcolor->g, bgcolor->b, settings->getValue("opacity", 0.65f)); // reduce opacity to "opacity"
 	}else{
 		glClearColor(bgcolor->r, bgcolor->g, bgcolor->b, 1.0f);
 	}
 	
 	
-	if (transparencyEffective != last_transparency_w_clear) {
+	if (settings->getValue("use_transparency", false) != last_transparency_w_clear) {
 		reclear = 3;
 	}
 	
@@ -1501,7 +1432,7 @@ void App::DoFullRenderWithoutInput() {
 	if (reclear != 0) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		last_transparency_w_clear = transparencyEffective;
+		last_transparency_w_clear = settings->getValue("use_transparency", false);
 		// change reclear to false later
 	}
 	
@@ -1754,17 +1685,6 @@ void App::Run() {
 		settings->setValue("window_height", h);
 	}
 	
-	#ifdef _WIN32
-	if (consoleDisplayNotification) {
-		UnregisterPowerSettingNotification(consoleDisplayNotification);
-		consoleDisplayNotification = nullptr;
-	}
-	if (lidNotification) {
-		UnregisterPowerSettingNotification(lidNotification);
-		lidNotification = nullptr;
-	}
-	#endif
-
 	glfwDestroyWindow(window);
 	glfwTerminate();
 }

@@ -1,0 +1,57 @@
+%YAML 1.2
+---
+# Syntect 5.x cannot load Sublime Text's current inherited TypeScript/TSX
+# grammars. Layer the TypeScript constructs that affect parser state over the
+# compatible JSX grammar. In particular, generic calls must win over JSX tags.
+name: TSX
+scope: source.tsx
+file_extensions:
+  - tsx
+
+variables:
+  ts_identifier: '[A-Za-z_$][A-Za-z0-9_$]*'
+  ts_qualified_name: '{{ts_identifier}}(?:\s*\.\s*{{ts_identifier}})*'
+  ts_simple_type: '(?:any|unknown|never|void|string|number|boolean|symbol|bigint|object|[A-Z][A-Za-z0-9_$]*)'
+
+contexts:
+  main:
+    - match: ''
+      push: scope:source.jsx
+      with_prototype:
+        - include: ts-generic-call
+        - include: ts-type-annotation
+        - include: ts-keywords
+
+  # The preceding identifier/member and following call parenthesis distinguish
+  # foo<Type>(...) from JSX such as <Component>...</Component>.
+  ts-generic-call:
+    - match: |-
+        (?x)
+        (?<=[A-Za-z0-9_$.)\]])
+        (<)
+        (\s*{{ts_qualified_name}}
+          (?:
+            \s*(?:\[\])?
+            \s*(?:[|&,]\s*{{ts_qualified_name}}(?:\s*\[\])?)*
+            | \s*<[^<>]*>
+          )?
+        \s*)
+        (>)
+        (?=\s*\()
+      captures:
+        1: punctuation.definition.generic.begin.ts
+        2: entity.name.type.ts
+        3: punctuation.definition.generic.end.ts
+
+  # Keep this deliberately conservative so object literal key/value pairs are
+  # not mistaken for annotations. It covers primitives and conventional
+  # PascalCase type names in parameters, return types and declarations.
+  ts-type-annotation:
+    - match: '(:)(\s*)({{ts_simple_type}}(?:\s*\[\])?)(?=\s*(?:=>|[,)=;{]))'
+      captures:
+        1: punctuation.separator.type.ts
+        3: entity.name.type.ts
+
+  ts-keywords:
+    - match: '\b(?:interface|type|enum|namespace|declare|abstract|implements|readonly|public|private|protected|override|satisfies|keyof|infer|unknown|never)\b'
+      scope: storage.type.ts

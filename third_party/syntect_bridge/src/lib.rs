@@ -542,3 +542,147 @@ pub extern "C" fn cw_syntect_destroy_tokens(
 pub extern "C" fn cw_syntect_role_count() -> u32 {
 	CW_ROLE_COUNT
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn embedded_jsx_syntax_parses_nested_markup() {
+		let syntax_set = load_embedded_syntax_set(false).expect("embedded syntax dump should load");
+		let syntax = syntax_set
+			.find_syntax_by_extension("jsx")
+			.expect("JSX syntax should be embedded");
+		assert_eq!(syntax.name, "JSX");
+		let tsx_syntax = syntax_set
+			.find_syntax_by_extension("tsx")
+			.expect("TSX syntax should be embedded");
+		assert_eq!(tsx_syntax.name, "TSX");
+
+		let tag_selector = selectors("entity.name.tag");
+		let string_selector = selectors("string.quoted");
+		let mut state = ParseState::new(syntax);
+		let mut stack = ScopeStack::new();
+		let mut saw_component_tag = false;
+		let mut saw_attribute_string = false;
+
+		for line in [
+			"const view = <Panel title=\"Hello\">",
+			"  {items.map(item => <Badge key={item.id}>{item.name}</Badge>)}",
+			"</Panel>;",
+		] {
+			let ops = state
+				.parse_line(line, &syntax_set)
+				.expect("representative JSX should parse");
+
+			for (text, operation) in ScopeRegionIterator::new(&ops, line) {
+				stack.apply(operation).expect("scope operations should balance");
+				if matches!(text, "Panel" | "Badge")
+					&& tag_selector.does_match(stack.as_slice()).is_some()
+				{
+					saw_component_tag = true;
+				}
+				if text == "Hello" && string_selector.does_match(stack.as_slice()).is_some() {
+					saw_attribute_string = true;
+				}
+			}
+		}
+
+		assert!(saw_component_tag, "component names should receive a tag scope");
+		assert!(saw_attribute_string, "quoted JSX attributes should receive a string scope");
+	}
+
+	#[test]
+	fn jsx_sibling_tags_remain_in_jsx_after_a_closing_tag() {
+		let syntax_set = load_embedded_syntax_set(false).expect("embedded syntax dump should load");
+		let syntax = syntax_set
+			.find_syntax_by_extension("jsx")
+			.expect("JSX syntax should be embedded");
+		let mut state = ParseState::new(syntax);
+		let mut stack = ScopeStack::new();
+		let regexp_selector = selectors("string.regexp");
+		let tag_selector = selectors("entity.name.tag");
+		let mut saw_sibling_div = false;
+
+		for line in [
+			"import './App.css'",
+			"function App() {",
+			"  return (",
+			"    <>",
+			"      <section id=\"center\">",
+			"        <div className=\"hero\">",
+			"          <img src={heroImg} className=\"base\" width=\"170\" height=\"179\" alt=\"\" />",
+			"          <span style={{ color: \"red\" }}>{heroImg}</span>",
+			"        </div>",
+			"        <div>",
+			"          <h1>Get started</h1>",
+			"          <p>",
+		] {
+			let ops = state.parse_line(line, &syntax_set).expect("JSX line should parse");
+			for (text, operation) in ScopeRegionIterator::new(&ops, line) {
+				stack.apply(operation).expect("scope operations should balance");
+				assert!(
+					regexp_selector.does_match(stack.as_slice()).is_none(),
+					"JSX closing tags must not be parsed as JavaScript regular expressions"
+				);
+				if line.trim() == "<div>"
+					&& text == "div"
+					&& tag_selector.does_match(stack.as_slice()).is_some()
+				{
+					saw_sibling_div = true;
+				}
+			}
+		}
+
+		assert!(saw_sibling_div, "a sibling tag after </div> should still parse as JSX");
+	}
+
+	#[test]
+	fn tsx_generic_call_does_not_enter_jsx() {
+		let syntax_set = load_embedded_syntax_set(false).expect("embedded syntax dump should load");
+		let syntax = syntax_set
+			.find_syntax_by_extension("tsx")
+			.expect("TSX syntax should be embedded");
+		let mut state = ParseState::new(syntax);
+		let mut stack = ScopeStack::new();
+		let comment_selector = selectors("comment");
+		let type_selector = selectors("entity.name.type");
+		let jsx_selector = selectors("meta.jsx");
+		let mut saw_second_comment = false;
+		let mut saw_generic_type = false;
+		let mut saw_return_type = false;
+
+		for line in [
+			"export default function Counter({ initialCount = 0, label }: CounterProps) {",
+			"  // first comment",
+			"  const [count, setCount] = useState<number>(initialCount);",
+			"  // second comment",
+			"  const handleIncrement = (): void => {",
+			"    setCount((prevCount) => prevCount + 1);",
+		] {
+			let ops = state.parse_line(line, &syntax_set).expect("TSX line should parse");
+			for (text, operation) in ScopeRegionIterator::new(&ops, line) {
+				stack.apply(operation).expect("scope operations should balance");
+				if text.contains("second comment")
+					&& comment_selector.does_match(stack.as_slice()).is_some()
+				{
+					saw_second_comment = true;
+				}
+				if text.trim() == "number" && type_selector.does_match(stack.as_slice()).is_some() {
+					saw_generic_type = true;
+				}
+				if text == "void" && type_selector.does_match(stack.as_slice()).is_some() {
+					saw_return_type = true;
+				}
+			}
+			assert!(
+				jsx_selector.does_match(stack.as_slice()).is_none(),
+				"TypeScript generic calls must not leave the parser in JSX markup"
+			);
+		}
+
+		assert!(saw_second_comment, "comments after generic calls should remain comments");
+		assert!(saw_generic_type, "generic call arguments should receive a type scope");
+		assert!(saw_return_type, "function return annotations should receive a type scope");
+	}
+}

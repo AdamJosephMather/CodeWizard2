@@ -1,0 +1,147 @@
+%YAML 1.2
+---
+# Syntect 5.x implements the Sublime Text 3 syntax format, but not the
+# `extends`, `meta_prepend`, `branch` and `fail` features used by Sublime's
+# current version-2 JSX grammar. Keep this definition self-contained and
+# compose it with syntect's bundled JavaScript grammar instead.
+name: JSX
+scope: source.jsx
+file_extensions:
+  - jsx
+
+variables:
+  jsx_name: '[A-Za-z_$][A-Za-z0-9_$.-]*'
+  jsx_attribute: '[A-Za-z_:][A-Za-z0-9_:.-]*'
+
+contexts:
+  main:
+    # Push JavaScript with JSX as a prototype so tag openers are considered in
+    # every nested JavaScript context, not only at the file's top level.
+    - match: ''
+      push: scope:source.js
+      with_prototype:
+        - include: jsx-tag
+
+  jsx-tag:
+    - match: '<(?=\s*(?:{{jsx_name}}|>))'
+      scope: punctuation.definition.tag.begin.js
+      push: jsx-tag-name
+
+  jsx-tag-name:
+    - meta_include_prototype: false
+    - meta_scope: meta.tag.js
+    - match: '{{jsx_name}}'
+      scope: entity.name.tag.component.js entity.name.type.js
+      set: jsx-tag-attributes
+    - match: '(?=>)'
+      set: jsx-tag-attributes
+    - match: '\s+'
+    - match: '\S'
+      scope: invalid.illegal.tag-name.js
+
+  jsx-tag-attributes:
+    - meta_include_prototype: false
+    - meta_scope: meta.tag.js
+    - match: '/\s*>'
+      scope: punctuation.definition.tag.end.js
+      pop: true
+    - match: '>'
+      scope: punctuation.definition.tag.end.js
+      set: jsx-body
+    - match: '{{jsx_attribute}}'
+      scope: entity.other.attribute-name.js variable.other.attribute.js
+    - match: '='
+      scope: punctuation.separator.key-value.js
+    - match: '"'
+      scope: punctuation.definition.string.begin.js
+      push: jsx-double-quoted-string
+    - match: "'"
+      scope: punctuation.definition.string.begin.js
+      push: jsx-single-quoted-string
+    - include: jsx-interpolation
+    - match: '\s+'
+    - match: '\S'
+      scope: invalid.illegal.attribute.js
+
+  jsx-double-quoted-string:
+    - meta_include_prototype: false
+    - meta_scope: string.quoted.double.js
+    - match: '"'
+      scope: punctuation.definition.string.end.js
+      pop: true
+    - include: jsx-entity
+
+  jsx-single-quoted-string:
+    - meta_include_prototype: false
+    - meta_scope: string.quoted.single.js
+    - match: "'"
+      scope: punctuation.definition.string.end.js
+      pop: true
+    - include: jsx-entity
+
+  jsx-body:
+    - meta_include_prototype: false
+    - meta_scope: meta.jsx.js
+    - match: '(</)(\s*{{jsx_name}}\s*)(>)'
+      captures:
+        1: punctuation.definition.tag.begin.js
+        2: entity.name.tag.component.js entity.name.type.js
+        3: punctuation.definition.tag.end.js
+      pop: true
+    - match: '(</)(\s*)(>)'
+      captures:
+        1: punctuation.definition.tag.begin.js
+        3: punctuation.definition.tag.end.js
+      pop: true
+    - include: jsx-tag
+    - include: jsx-interpolation
+    - include: jsx-entity
+    - match: '[^<{&]+'
+      scope: text.html.jsx
+    - match: '[<&]'
+      scope: invalid.illegal.unclosed.js
+
+  jsx-interpolation:
+    - match: '\{'
+      scope: punctuation.section.interpolation.begin.js
+      push: jsx-interpolation-body
+
+  jsx-interpolation-body:
+    - meta_include_prototype: false
+    - meta_content_scope: source.js.embedded.jsx
+    - match: '\}'
+      scope: punctuation.section.interpolation.end.js
+      pop: true
+    - match: ''
+      push: scope:source.js
+      with_prototype:
+        - match: '\{'
+          scope: punctuation.section.block.begin.js
+          push: jsx-interpolation-nested-brace
+        # Return control to this context without consuming the closing brace.
+        - match: '(?=\})'
+          pop: true
+        - include: jsx-tag
+
+  jsx-interpolation-nested-brace:
+    - meta_include_prototype: false
+    - meta_content_scope: source.js.embedded.jsx
+    - match: '\}'
+      scope: punctuation.section.block.end.js
+      pop: true
+    - match: ''
+      push: scope:source.js
+      with_prototype:
+        - match: '\{'
+          scope: punctuation.section.block.begin.js
+          push: jsx-interpolation-nested-brace
+        - match: '(?=\})'
+          pop: true
+        - include: jsx-tag
+
+  jsx-entity:
+    - match: '(&)#?[A-Za-z0-9]+(;)'
+      scope: constant.character.entity.js
+      captures:
+        1: punctuation.definition.entity.begin.js
+        2: punctuation.definition.entity.end.js

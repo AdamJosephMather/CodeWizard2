@@ -1307,6 +1307,19 @@ void App::DoFullRenderWithoutInput() {
 	reclear = 2;
 #endif
 	
+	// Sync to the live client size. During restore/un-minimize Windows can deliver
+	// an intermediate WM_SIZE before the final maximized size, and the WM_PAINT
+	// path renders before the final GLFW size-callback is processed. Querying the
+	// real size here keeps WINDOW_WIDTH/HEIGHT, the viewport, and the projection
+	// correct for every frame regardless of message ordering.
+	if (window) {
+		int liveW = 0, liveH = 0;
+		glfwGetFramebufferSize(window, &liveW, &liveH);
+		if (liveW > 0 && liveH > 0 && (liveW != WINDOW_WIDTH || liveH != WINDOW_HEIGHT)) {
+			resize_callback(window, liveW, liveH);
+		}
+	}
+	
 	double currentTime = glfwGetTime();
 	frameCount++;
 	

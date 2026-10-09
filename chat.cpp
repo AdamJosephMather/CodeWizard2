@@ -403,6 +403,7 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 						te->setFullText(trimMonoAscii(segment.content));
 						te->DONT_SCROLL_VERT_CURS = true;
 						te->rounded = true;
+						te->allow_edits = false;
 						
 						App::setTextEditHighlighter(te, segment.name);
 						

@@ -155,6 +155,8 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 	textedit->scrollbar_vertical = true;
 	textedit->scrollbar_horizontal = true;
 	textedit->alreadyHighlighted = true;
+	textedit->allow_edits = false;
+	textedit->contextmenu->is_visible_3 = true;
 	
 	line_numbers->setTextedit(textedit);
 }
@@ -289,7 +291,7 @@ void Compare::render() {
 	});
 	
 	Color* borderCol = App::theme.border;
-	if (App::activeLeafNode == this) {
+	if (App::activeLeafNode == textedit) {
 		borderCol = App::theme.active_color;
 	}
 	
@@ -317,25 +319,17 @@ void Compare::position(int x, int y, int w, int h) {
 	textedit->position(t_x, t_y, t_w, t_h);
 }
 
-bool Compare::on_char_event(unsigned int keycode) {
-	return false;
-}
-
-bool Compare::on_key_event(int key, int scancode, int action, int mods) {
-	return false;
-}
-
 bool Compare::on_mouse_button_event(int button, int action, int mods) {
 	if (cursor_in_this && App::activeLeafNode != this) {
-		App::setActiveLeafNode(this);
+		App::setActiveLeafNode(textedit);
 	}
 	
 	if (f1Button->on_mouse_button_event(button, action, mods)) { return true; }
 	if (f2Button->on_mouse_button_event(button, action, mods)) { return true; }
 	if (cb1Button->on_mouse_button_event(button, action, mods)) { return true; }
 	if (cb2Button->on_mouse_button_event(button, action, mods)) { return true; }
-	if (textedit->scrollbar_v->on_mouse_button_event(button, action, mods)) { return true; }
-	if (textedit->scrollbar_h->on_mouse_button_event(button, action, mods)) { return true; }
+	if (textedit->on_mouse_button_event(button, action, mods)) { return true; }
+	
 	return false;
 }
 

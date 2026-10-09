@@ -630,6 +630,8 @@ void TextEdit::updateUndoHistory() {
 }
 
 void TextEdit::activateUndo() {
+	if (!allow_edits) { return; }
+
 	updateUndoHistory();
 	
 	if (undo_stack.empty()) {
@@ -685,6 +687,8 @@ void TextEdit::activateUndo() {
 }
 
 void TextEdit::activateRedo() {
+	if (!allow_edits) { return; }
+
 	updateUndoHistory();
 	
 	if (redo_stack.empty()) {
@@ -1296,6 +1300,8 @@ std::pair<int,int> TextEdit::_handleSectionAdded(int l, int c, int sl, int sc, i
 }
 
 void TextEdit::deleteTextAtCursor(Cursor c, int key, bool control) {
+	if (!allow_edits) { return; }
+
 	auto curs_sel = _getCursSelec(c);
 
 	int sl = curs_sel.first.first;
@@ -1712,6 +1718,8 @@ void TextEdit::applyInsertToAllCursors(const MST::MonoString& to_insert) {
 }
 
 void TextEdit::insertTextAtCursor(Cursor c, const MST::MonoString& insert_text) {
+	if (!allow_edits) { return; }
+
 	auto sel = _getCursSelec(c);
 
 	if (sel.first.first != sel.first.second || sel.second.first != sel.second.second) {

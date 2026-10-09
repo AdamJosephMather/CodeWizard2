@@ -16,8 +16,6 @@ public:
 	TextEdit* textedit;
 	LineNumbers* line_numbers;
 	
-	virtual bool on_key_event(int key, int scancode, int action, int mods);
-	virtual bool on_char_event(unsigned int keycode);
 	virtual bool on_mouse_button_event(int button, int action, int mods);
 	
 	FileInfo* file1 = nullptr;

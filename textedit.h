@@ -133,6 +133,8 @@ public:
 	
 	TextEdit(Widget* parent, App::PosFunction fnct);
 	
+	bool allow_edits = false;
+	
 	bool scrollbar_vertical = false;
 	Scrollbar* scrollbar_v = nullptr;
 	bool scrollbar_horizontal = false;

@@ -185,6 +185,11 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			true
 		),
 		makeBool(
+			"Use Auto Close",
+			"use_autoclose",
+			true
+		),
+		makeBool(
 			"Invert Scroll Vertical",
 			"invert_scroll_v",
 			false

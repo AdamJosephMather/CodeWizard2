@@ -1490,7 +1490,7 @@ bool TextEdit::handleInsertKey(int key, int scancode, int action, int mods) {
 //	bool is_alt_held = ((mods & GLFW_MOD_ALT) != 0);
 
 	largereditblock = true;
-	bool donesomthing = false;
+	bool donesomething = false;
 
 	if (key == GLFW_KEY_TAB) {
 		if (cursors.size() == 1) {
@@ -1505,44 +1505,81 @@ bool TextEdit::handleInsertKey(int key, int scancode, int action, int mods) {
 			applyInsertToAllCursors(MST::toMonoString("\t"));
 		}
 		
-		donesomthing = true;
+		donesomething = true;
 	}else if (key == GLFW_KEY_SPACE) {
 		applyInsertToAllCursors(MST::toMonoString(" "));
-		donesomthing = true;
+		donesomething = true;
 	}else if (key == GLFW_KEY_ENTER) {
 		applyInsertToAllCursors(MST::toMonoString("\n"));
-		donesomthing = true;
+		donesomething = true;
+	}
+	
+	if (key == GLFW_KEY_9 && !is_control_held && is_shift_held) {
+		applyInsertToAllCursors(MST::toMonoString("("));
+		if (App::settings->getValue("use_autoclose", true)) {
+			applyInsertToAllCursors(MST::toMonoString(")"));
+			applyMoveToAllCursors(GLFW_KEY_LEFT, false, false);
+		}
+		donesomething = true;
+	}else if (key == GLFW_KEY_LEFT_BRACKET && !is_control_held && !is_shift_held) {
+		applyInsertToAllCursors(MST::toMonoString("["));
+		if (App::settings->getValue("use_autoclose", true)) {
+			applyInsertToAllCursors(MST::toMonoString("]"));
+			applyMoveToAllCursors(GLFW_KEY_LEFT, false, false);
+		}
+		donesomething = true;
+	}else if (key == GLFW_KEY_APOSTROPHE && !is_control_held && !is_shift_held) {
+		applyInsertToAllCursors(MST::toMonoString("'"));
+		if (App::settings->getValue("use_autoclose", true)) {
+			applyInsertToAllCursors(MST::toMonoString("'"));
+			applyMoveToAllCursors(GLFW_KEY_LEFT, false, false);
+		}
+		donesomething = true;
+	}else if (key == GLFW_KEY_APOSTROPHE && !is_control_held && is_shift_held) {
+		applyInsertToAllCursors(MST::toMonoString("\""));
+		if (App::settings->getValue("use_autoclose", true)) {
+			applyInsertToAllCursors(MST::toMonoString("\""));
+			applyMoveToAllCursors(GLFW_KEY_LEFT, false, false);
+		}
+		donesomething = true;
+	}else if (key == GLFW_KEY_LEFT_BRACKET && !is_control_held && is_shift_held) {
+		applyInsertToAllCursors(MST::toMonoString("{"));
+		if (App::settings->getValue("use_autoclose", true)) {
+			applyInsertToAllCursors(MST::toMonoString("}"));
+			applyMoveToAllCursors(GLFW_KEY_LEFT, false, false);
+		}
+		donesomething = true;
 	}
 
 	if (key == GLFW_KEY_V && (is_control_held || mode == 'n')) {
 		paste();
-		donesomthing = true;
+		donesomething = true;
 	}else if (key == GLFW_KEY_C && (is_control_held || mode == 'n')) {
 		copy();
-		donesomthing = true;
+		donesomething = true;
 	}else if (key == GLFW_KEY_X && (is_control_held || mode == 'n')) {
 		cut();
-		donesomthing = true;
+		donesomething = true;
 	}else if (key == GLFW_KEY_Z && !is_shift_held && (is_control_held || mode == 'n')) {
 		activateUndo();
-		donesomthing = true;
+		donesomething = true;
 	}else if (key == GLFW_KEY_U && mode == 'n') {
 		activateUndo();
-		donesomthing = true;
+		donesomething = true;
 	}else if (key == GLFW_KEY_Z && is_shift_held && (is_control_held || mode == 'n')) {
 		activateRedo();
-		donesomthing = true;
+		donesomething = true;
 	}else if (key == GLFW_KEY_LEFT_BRACKET && is_control_held) { // this one has to be control because it's a common mistake for typing otherwise
 		applyIndentChangeToAllCursors(-1);
-		donesomthing = true;
+		donesomething = true;
 	}else if (key == GLFW_KEY_RIGHT_BRACKET && is_control_held) { // this one has to be control because it's a common mistake for typing otherwise
 		applyIndentChangeToAllCursors(1);
-		donesomthing = true;
+		donesomething = true;
 	}
 
 	largereditblock = false;
 
-	if (donesomthing && ontextchange) {
+	if (donesomething && ontextchange) {
 		ontextchange(this);
 		return true;
 	}
@@ -1986,8 +2023,8 @@ bool TextEdit::on_char_event(unsigned int codepoint) {
 		return true;
 	}
 	
-	// Whitespace is handled in key-down.
-	if (ch == U'\t' || ch == U' ' || ch == U'\n') {
+	// Whitespace and brackets is handled in key-down.
+	if (ch == U'\t' || ch == U' ' || ch == U'\n' || ch == '(' || ch == '[' || ch == '{' || ch == '"' || ch == '\'') {
 		return true;
 	}
 

@@ -55,22 +55,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	};
 	broken_state_menu->const_parent = this;
 	
-	fixit_request_menu = new BrokenStateMenu(nullptr, "Yes", "No", "Detected space based indenting, Fixit?");
-	fixit_request_menu->first_callback = [&](){
-		App::RemoveWidgetFromParent(fixit_request_menu);
-		run_fixit();
-		REQUESTING_FIXIT = false;
-		DO_RENDER = 3;
-		App::setActiveLeafNode(textedit);
-	};
-	fixit_request_menu->second_callback = [&](){
-		App::RemoveWidgetFromParent(fixit_request_menu);
-		REQUESTING_FIXIT = false;
-		DO_RENDER = 3;
-		App::setActiveLeafNode(textedit);
-	};
-	fixit_request_menu->const_parent = this;
-	
 	renamecursor = Cursor();
 	renamebox = new TextEdit(nullptr, [&](Widget* w){
 		if (renamecursor.head_line > textedit->lines.size() && renamebox->parent == this) {
@@ -608,16 +592,6 @@ void CodeEdit::undo_fixit() {
 	onTextChanged(textedit);
 }
 
-int CodeEdit::analyzeForFixit_on_lines(const std::vector<Line>& lines) {
-	std::vector<MST::MonoString> lines_new;
-	
-	for (auto& l : lines) {
-		lines_new.push_back(l.line_text);
-	}
-	
-	return analyzeForFixit(lines_new);
-}
-
 void CodeEdit::openFile(FileInfo* f) {
 	madeChangeBetweenSaves = false;
 	was_in_a_file = true;
@@ -627,11 +601,7 @@ void CodeEdit::openFile(FileInfo* f) {
 	file = f; // set it after the locks are in place
 	if (file && !file->backend) file->backend = FileBackends::current();
 	
-	REQUESTING_FIXIT = false;
 	DO_RENDER = 3;
-	if (fixit_request_menu->parent == this) {
-		App::RemoveWidgetFromParent(fixit_request_menu);
-	}
 	std::string path = file->filepath;
 	App::setActiveLeafNode(textedit);
 	
@@ -669,14 +639,6 @@ void CodeEdit::openFile(FileInfo* f) {
 		onTextChanged(textedit);
 		madeChangeBetweenSaves = false;
 		
-		int indt = analyzeForFixit_on_lines(textedit->lines);
-		if (indt != 0) {
-			REQUESTING_FIXIT = true;
-			DO_RENDER = 3;
-			App::MoveWidget(fixit_request_menu, this);
-			App::setActiveLeafNode(fixit_request_menu);
-		}
-		
 		if (App::lsp_client_map[lsp]) {
 			std::string str = MST::toBastardizedStringUtf16Aligned(text);
 			App::lsp_client_map[lsp]->openDocument(file->filepath, App::languagemap[language].name, str);
@@ -692,9 +654,10 @@ void CodeEdit::openFile(FileInfo* f) {
 	if (file) file->is_opening = false;
 }
 
-int CodeEdit::indentIdentifierAfterLine(MST::MonoString line, MST::MonoString nextline) {
+int CodeEdit::indentIdentifierAfterLine(MST::MonoString line, MST::MonoString nextline, int indentWidth) {
 	bool in_meat = false;
 	int indent_levels = 0;
+	int indent_spaces = 0;
 	int openers = 0;
 	MST::u32 lastChar = U' ';
 	
@@ -708,6 +671,8 @@ int CodeEdit::indentIdentifierAfterLine(MST::MonoString line, MST::MonoString ne
 		if (!in_meat) {
 			if (c == U'\t') {
 				indent_levels += 1;
+			}else if (c == U' ') {
+				++indent_spaces;
 			}else{
 				in_meat = true;
 			}
@@ -723,7 +688,7 @@ int CodeEdit::indentIdentifierAfterLine(MST::MonoString line, MST::MonoString ne
 		}
 	}
 	
-	indent_levels += std::max(0, openers);
+	indent_levels += indent_spaces / indentWidth + std::max(0, openers);
 	
 	if (lastChar == U':') {
 		indent_levels ++;
@@ -835,7 +800,7 @@ bool CodeEdit::renderTheSplashIfNeeded() {
 }
 
 void CodeEdit::render() {
-	if (textedit->DID_POSITION || findTextEdit->DID_POSITION || replaceTextEdit->DID_POSITION || renamebox->DID_POSITION || hoverbox->DID_POSITION || FILE_BROKEN_STATE || REQUESTING_FIXIT) {
+	if (textedit->DID_POSITION || findTextEdit->DID_POSITION || replaceTextEdit->DID_POSITION || renamebox->DID_POSITION || hoverbox->DID_POSITION || FILE_BROKEN_STATE) {
 		DO_RENDER = 3;
 	}
 	
@@ -869,9 +834,6 @@ void CodeEdit::render() {
 	if (FILE_BROKEN_STATE) {
 		// we don't need to run with skiz because this is already skizzed in that size
 		broken_state_menu->render();
-	}else if (REQUESTING_FIXIT){
-		// we don't need to run with skiz because this is already skizzed in that size
-		fixit_request_menu->render();
 	}else {
 		renderFindBox();
 		
@@ -930,13 +892,6 @@ void CodeEdit::position(int x, int y, int w, int h) {
 			App::setActiveLeafNode(broken_state_menu);
 		}
 		broken_state_menu->position(t_x, t_y, t_w, t_h);
-		return;
-	}else if (REQUESTING_FIXIT) {
-		if (fixit_request_menu->parent == nullptr) {
-			App::MoveWidget(fixit_request_menu, this);
-			App::setActiveLeafNode(fixit_request_menu);
-		}
-		fixit_request_menu->position(t_x, t_y, t_w, t_h);
 		return;
 	}
 	
@@ -1221,7 +1176,6 @@ bool CodeEdit::on_char_event(unsigned int keycode) {
 	}
 	
 	if (FILE_BROKEN_STATE) { return broken_state_menu->on_char_event(keycode); }
-	if (REQUESTING_FIXIT) { return fixit_request_menu->on_char_event(keycode); }
 	
 	std::lock_guard<std::mutex> lock(saving_lock);
 	
@@ -1548,8 +1502,6 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 	
 	if (FILE_BROKEN_STATE){
 		return broken_state_menu->on_key_event(key, scancode, action, mods);
-	}else if (REQUESTING_FIXIT){
-		return fixit_request_menu->on_key_event(key, scancode, action, mods);
 	}else{
 		bool wrkd = Widget::on_key_event(key, scancode, action, mods);
 		
@@ -1628,8 +1580,6 @@ void CodeEdit::removeComments() {
 bool CodeEdit::on_mouse_button_event(int button, int action, int mods) {
 	if (FILE_BROKEN_STATE) {
 		return broken_state_menu->on_mouse_button_event(button, action, mods);
-	}else if (REQUESTING_FIXIT) {
-		return fixit_request_menu->on_mouse_button_event(button, action, mods);
 	}else{
 		int mx = App::mouseX;
 		int my = App::mouseY;
@@ -1674,8 +1624,6 @@ bool CodeEdit::hoveringCompletionBox(int mx, int my, int padding) {
 bool CodeEdit::on_mouse_move_event() {
 	if (FILE_BROKEN_STATE) {
 		return broken_state_menu->on_mouse_move_event();
-	}else if (REQUESTING_FIXIT) {
-		return fixit_request_menu->on_mouse_move_event();
 	}else {
 		int mx = App::mouseX;
 		int my = App::mouseY;

@@ -155,7 +155,7 @@ public:
 	SyntectStatePtr highlighter_initial_state = nullptr;
 	bool alreadyHighlighted = false;
 	
-	using IndentIdentifier = std::function<int(MST::MonoString line, MST::MonoString nextline)>;
+	using IndentIdentifier = std::function<int(MST::MonoString line, MST::MonoString nextline, int indentWidth)>;
 	
 	int getVisLen(const MST::MonoString& line);
 	
@@ -282,7 +282,13 @@ public:
 	bool DID_POSITION = false;
 	
 	int tabWidth = 4;
+	bool useTabs = true;
+	int indentWidth = 4;
 private:
+	void detectIndentation(const std::vector<MST::MonoString>& lns);
+	static std::pair<bool, int> identifyIndentation(const std::vector<MST::MonoString>& lns);
+	MST::MonoString indentationUnit() const;
+	MST::MonoString preparePastedText(const MST::MonoString& text) const;
 	std::pair<int,int> _handleSectionRemoved(int l, int c, int sl, int el, int sc, int ec);
 	std::pair<int,int> _handleSectionAdded(int l, int c, int sl, int sc, int nl, int nc);
 	int _findNextWord(Cursor c, int dir);

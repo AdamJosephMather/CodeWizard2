@@ -67,7 +67,7 @@ public:
 	std::thread hoverthread;
 //	std::thread chauffeurthread;
 	
-	static int indentIdentifierAfterLine(MST::MonoString line, MST::MonoString nextline);
+	static int indentIdentifierAfterLine(MST::MonoString line, MST::MonoString nextline, int indentWidth);
 	
 	int completion_id = -1;
 	int goto_id = -1;
@@ -127,8 +127,6 @@ public:
 	
 	bool FILE_BROKEN_STATE = false;
 	BrokenStateMenu* broken_state_menu = nullptr;
-	bool REQUESTING_FIXIT = false;
-	BrokenStateMenu* fixit_request_menu = nullptr;
 	
 	void overwrite_file();
 	void reload_file();
@@ -154,7 +152,6 @@ public:
 	
 	void run_fixit();
 	void undo_fixit();
-	int analyzeForFixit_on_lines(const std::vector<Line>&);
 	
 	void completionRecieved(std::vector<std::string> completions, int id);
 	void publishDiagnostics(std::string file, std::vector<std::string> messages, std::vector<int> startC, std::vector<int> startL, std::vector<int> endC, std::vector<int> endL, std::vector<int> severities);

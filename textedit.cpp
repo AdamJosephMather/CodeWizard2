@@ -429,6 +429,7 @@ void TextEdit::setFullText(MST::MonoString text) {
 }
 
 void TextEdit::setFullLines(std::vector<MST::MonoString> lns) {
+	detectIndentation(lns);
 	lines.clear();
 	
 	for (auto l : lns) {
@@ -456,6 +457,92 @@ void TextEdit::setFullLines(std::vector<MST::MonoString> lns) {
 	
 	DO_POSITION = true;
 	contextmenu->is_visible_2 = false;
+}
+
+void TextEdit::detectIndentation(const std::vector<MST::MonoString>& lns) {
+	auto detected = identifyIndentation(lns);
+	useTabs = detected.first;
+	indentWidth = detected.second;
+}
+
+std::pair<bool, int> TextEdit::identifyIndentation(const std::vector<MST::MonoString>& lns) {
+	int width = 4;
+	int tabLines = 0;
+	int spaceLines = 0;
+	int aligned[5] = {};
+	int steps[5] = {};
+	int previousSpaces = 0;
+	for (const auto& line : lns) {
+		int spaces = 0;
+		bool hasTab = false;
+		size_t i = 0;
+		for (; i < line.length; ++i) {
+			if (MST::skipIdx(line, i)) continue;
+			auto ch = MST::char32At(line, i);
+			if (ch == U' ') ++spaces;
+			else if (ch == U'\t') hasTab = true;
+			else break;
+		}
+		// Blank lines (including CRLF endings) provide no indentation evidence.
+		if (i == line.length || (i + 1 == line.length && MST::char32At(line, i) == U'\r')) continue;
+		if (hasTab) {
+			++tabLines;
+			previousSpaces = 0;
+			continue;
+		}
+		if (spaces >= 2) {
+			++spaceLines;
+			for (int width = 2; width <= 4; ++width) {
+				if (spaces % width == 0) ++aligned[width];
+			}
+		}
+		int difference = std::abs(spaces - previousSpaces);
+		if (difference >= 2 && difference <= 4) ++steps[difference];
+		previousSpaces = spaces;
+	}
+	if (spaceLines <= tabLines) return {true, 4};
+	// Score aligned lines and observed one-level changes. The latter carry more
+	// weight so an occasional continuation line does not halve the indent width.
+	// Four spaces wins when the evidence cannot distinguish the candidates.
+	for (int candidate = 2; candidate <= 3; ++candidate) {
+		if (aligned[candidate] + 2 * steps[candidate] > aligned[width] + 2 * steps[width]) {
+			width = candidate;
+		}
+	}
+	return {false, width};
+}
+
+MST::MonoString TextEdit::indentationUnit() const {
+	return useTabs ? MST::toMonoString("\t") : MST::toMonoString(std::string(indentWidth, ' '));
+}
+
+MST::MonoString TextEdit::preparePastedText(const MST::MonoString& text) const {
+	auto normalized = MST::replaceAll(text, MST::toMonoString("\r\n"), MST::toMonoString("\n"));
+	auto pastedLines = MST::split(normalized, U'\n');
+	const int sourceWidth = identifyIndentation(pastedLines).second;
+	for (auto& line : pastedLines) {
+		MST::MonoString prefix;
+		int spaces = 0;
+		size_t i = 0;
+		for (; i < line.length; ++i) {
+			if (MST::skipIdx(line, i)) continue;
+			auto ch = MST::char32At(line, i);
+			if (ch != U' ' && ch != U'\t') break;
+			if (useTabs && ch == U' ') {
+				if (++spaces == sourceWidth) {
+					prefix += MST::toMonoString("\t");
+					spaces = 0;
+				}
+			} else {
+				prefix += MST::toMonoString(std::string(spaces, ' '));
+				spaces = 0;
+				prefix += ch == U'\t' ? indentationUnit() : MST::toMonoString(" ");
+			}
+		}
+		prefix += MST::toMonoString(std::string(spaces, ' '));
+		line = prefix + MST::substring(line, i, line.length);
+	}
+	return MST::join(pastedLines, MST::toMonoString("\n"));
 }
 
 History TextEdit::createHistory() {
@@ -1311,7 +1398,19 @@ void TextEdit::deleteTextAtCursor(Cursor c, int key, bool control) {
 
 	if (sl == el && sc == ec) { // if there's no selection - let's fix that.
 		if (key == GLFW_KEY_BACKSPACE) {
-			c = applyMoveToCursor(c, GLFW_KEY_LEFT, true, control);
+			int deleteSpaces = 0;
+			if (!control && !useTabs && sc >= indentWidth && sc % indentWidth == 0) {
+				bool inIndent = true;
+				for (int i = 0; i < sc; ++i) {
+					if (MST::char32At(lines[sl].line_text, i) != U' ') {
+						inIndent = false;
+						break;
+					}
+				}
+				if (inIndent) deleteSpaces = indentWidth;
+			}
+			if (deleteSpaces) c.head_char -= deleteSpaces;
+			else c = applyMoveToCursor(c, GLFW_KEY_LEFT, true, control);
 		}else{ // delete
 			c = applyMoveToCursor(c, GLFW_KEY_RIGHT, true, control);
 		}
@@ -1411,8 +1510,7 @@ void TextEdit::applyIndentChangeToCursor(Cursor c, int change_by) {
 	int sl = sel.first.first;
 	int el = sel.first.second;
 
-	MST::u32 tab_char = U'\t';
-	MST::MonoString tab_string = MST::toMonoString(tab_char);
+	MST::MonoString tab_string = indentationUnit();
 
 	MST::MonoString new_text;
 	if (change_by > 0) {
@@ -1432,20 +1530,22 @@ void TextEdit::applyIndentChangeToCursor(Cursor c, int change_by) {
 			insertTextAtCursor(c, new_text);
 		}else{
 			auto line_text = lines[line].line_text;
+			int columns = 0;
+			const int width = useTabs ? tabWidth : indentWidth;
 			for (int c_indx = 0; c_indx < line_text.length; c_indx++){
-				if (c_indx >= -change_by*tabWidth) {
-					break;
-				}
-				
 				if (MST::skipIdx(line_text, c_indx)) {
 					c.head_char ++;
 					continue;
 				}
-				
-				auto ch = MST::char32At(line_text, c_indx);
-				if (ch != tab_char) {
+				if (columns >= -change_by*width) {
 					break;
 				}
+				
+				auto ch = MST::char32At(line_text, c_indx);
+				if (ch != U'\t' && ch != U' ') {
+					break;
+				}
+				columns += ch == U'\t' ? width : 1;
 				c.head_char ++;
 			}
 			if (c.head_char != 0) {
@@ -1499,16 +1599,16 @@ bool TextEdit::handleInsertKey(int key, int scancode, int action, int mods) {
 	bool donesomething = false;
 
 	if (key == GLFW_KEY_TAB) {
-		if (cursors.size() == 1) {
-			if (is_shift_held) {
-				applyIndentChangeToAllCursors(-1);
-			}else if (getSelectedText(cursors[0]).length == 0) {
-				applyInsertToAllCursors(MST::toMonoString("\t"));
+		if (is_shift_held) {
+			applyIndentChangeToAllCursors(-1);
+		}else if (cursors.size() == 1) {
+			if (getSelectedText(cursors[0]).length == 0) {
+				applyInsertToAllCursors(indentationUnit());
 			}else{
 				applyIndentChangeToAllCursors(1);
 			}
 		}else{
-			applyInsertToAllCursors(MST::toMonoString("\t"));
+			applyInsertToAllCursors(indentationUnit());
 		}
 		
 		donesomething = true;
@@ -1629,11 +1729,11 @@ void TextEdit::copy(){
 void TextEdit::paste(){
 	if (coppiedText.size() == cursors.size()) {
 		for (int ci = 0; ci < cursors.size(); ci++) {
-			insertTextAtCursor(cursors[ci], coppiedText[ci]);
+			insertTextAtCursor(cursors[ci], preparePastedText(coppiedText[ci]));
 		}
 	}else{
 		std::string clipboard_text = GetClipboardText();
-		applyInsertToAllCursors(run_fixit_on_text(MST::toMonoString(clipboard_text)));
+		applyInsertToAllCursors(preparePastedText(MST::toMonoString(clipboard_text)));
 	}
 	tryingToEnsureCursorPos = true;
 }
@@ -1735,10 +1835,10 @@ void TextEdit::insertTextAtCursor(Cursor c, const MST::MonoString& insert_text) 
 		MST::MonoString line = MST::substring(lines[sl].line_text, 0, sc);
 		MST::MonoString nextline = MST::substring(lines[sl].line_text, sc, lines[sl].line_text.length);
 
-		int indentation_level = getIndentationLevelAfterLine(line, nextline);
+		int indentation_level = getIndentationLevelAfterLine(line, nextline, indentWidth);
 
 		for (int i = 0; i < indentation_level; i++) {
-			insert_lines[insert_lines.size()-1] += MST::toMonoString(U'\t');
+			insert_lines[insert_lines.size()-1] += indentationUnit();
 		}
 	}
 	

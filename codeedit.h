@@ -41,7 +41,11 @@ struct EditSection {
 
 class CodeEdit : public Widget {
 public:
-	CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::UpdateFInfoFunction fupdater);
+	CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::UpdateFInfoFunction fupdater, bool virtualDocument = false);
+	// Notebook cells use the regular editing/LSP machinery without owning a disk file.
+	bool virtual_document = false;
+	double virtual_hover_deadline = 0;
+	void openVirtualDocument(FileInfo* info, const MST::MonoString& content);
 	
 	int TABID;
 	
@@ -106,7 +110,7 @@ public:
 	FileInfo* file = nullptr;
 	std::string language = "";
 	std::string lsp = "";
-	void detectLanguage();
+	void detectLanguage(bool closeCurrent = true);
 	
 	TextEdit* hoverbox = nullptr;
 	Cursor hoverCrsr = Cursor();

@@ -98,6 +98,31 @@ CodeWizard requires a few things:
 In these settings, the following are available as variables in your build commands: %FILE_LOCATION%, %FILE_NAME%, %FILE_NAME_NO_EXT%, and %INSTALL_DIR%
 ):"),
 		},{
+			MST::toMonoString("Jupyter Notebooks"),
+			MST::toMonoString(R":(Open a .ipynb file normally to use the notebook editor (Jupyter nbformat 4). File > New Jupyter File creates a notebook with one empty Python cell.
+
+Cells:
+	Code cells use Python highlighting; Markdown cells use Markdown highlighting in a plain text editor. Raw cells are preserved. Sources grow and shrink with their contents, with scrolling handled by the notebook. Shift+wheel scrolls the notebook horizontally for wide lines. Outputs keep their own scrollbars. Click a cell to select it. Use + Code / + Markdown to insert after it, Type to switch between code and Markdown, Up / Down to reorder, and Delete to remove it. Structural edits are disabled while code is running.
+
+Find and Replace:
+	Ctrl+F opens one find/replace bar across all cell sources. Enter finds the next match; Shift+Enter finds the previous match. Holding Enter repeats the search. Enter in the replacement field replaces the selected match and finds the next one. Ctrl+Enter inserts a newline in either field. The checkbox enables case sensitivity (off by default). All replaces matches across the notebook. Shift+Tab switches between find and replace. Opening find copies the selected text. In Vim normal mode, F also opens find; Escape first leaves insert mode, then closes the bar. Without Vim, Escape closes it immediately. Text replacements support each cell's undo history.
+
+Language Servers:
+	Each source cell is an in-memory document using the normal language settings and project-specific server overrides. Python cells support the same diagnostics, completion (Tab to accept), hover (Ctrl+P), go to definition (Ctrl+G), rename (Ctrl+R), and code actions (Alt+Enter) as regular code files. Cell documents are never written as separate files. Analysis is per cell: imports and variables in other cells are not included in that cell's language-server context. The execution kernel still shares variables across cells.
+
+Running Python:
+	Run, Shift+Enter, or F5 runs the selected code cell. Ctrl+Enter runs it and selects the next cell. Run all or Ctrl+Shift+Enter runs code cells in order and stops on an error. A persistent kernel shares variables between cells. The working directory is the notebook's directory. Interrupt stops running code; Restart discards kernel state and reconnects. Opening a file never executes notebook code.
+
+Kernel Setup:
+	Install Python and run: python -m pip install jupyter_client ipykernel
+	Register a kernel if needed: python -m ipykernel install --user --name python3
+	CodeWizard checks the notebook's kernelspec and shows a toast if Python, the Jupyter client, or that Python kernel is unavailable. Under the simple section of settings.json, jupyter_python can specify a Python executable path (including a virtual environment), and jupyter_kernel can override the kernel name. Restart after changing these settings.
+
+Outputs and Saving:
+	Text results, stdout/stderr and tracebacks appear beneath code cells. Output capture is limited per execution (256 KiB, 2,000 stream lines, or 256 messages). A truncation notice appears when a limit is reached; code keeps running until it finishes or you click Interrupt. Rich outputs are preserved in the file with a plain text fallback in the viewer. Interactive stdin prompts and rich HTML/image rendering are not supported. Clear outputs removes stored results. Notebook edits and outputs use the normal save/autosave flow. Metadata and attachments are preserved. If the file changes externally, saving pauses with a toast and a Reload / Overwrite menu. Reload discards local edits; Overwrite saves them over the disk version.
+	Remote notebooks support editing and saving, with kernel execution disabled.
+):"),
+		},{
 			MST::toMonoString("KeyMaps"),
 			MST::toMonoString(R":(General:
 	● Ctrl+Shift+O ----- Open Folder

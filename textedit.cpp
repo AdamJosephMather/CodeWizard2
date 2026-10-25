@@ -1768,6 +1768,7 @@ MST::MonoString TextEdit::getSelectedText(Cursor c) {
 }
 
 void TextEdit::ensureCursorVisible(Cursor c) {
+	if (fit_content) { DO_POSITION = true; return; }
 	double line_start = scrolled_to_vert;
 	double char_start = scrolled_to_horz;
 
@@ -2360,6 +2361,10 @@ void TextEdit::position(int x, int y, int w, int h) {
 //#endif
 	
 	flushPendingCharInput();
+	if (fit_content) {
+		scrolled_to_vert = scrolled_to_horz = 0;
+		scroll_vertical_change = scroll_horizontal_change = 0;
+	}
 	
 	int old_x = t_x;
 	int old_y = t_y;
@@ -2698,6 +2703,7 @@ void TextEdit::position(int x, int y, int w, int h) {
 }
 
 bool TextEdit::on_scroll_event(double xchange, double ychange) {
+	if (fit_content) return false;
 	if (glfwGetKey(App::window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(App::window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
 		xchange = ychange;
 		ychange = 0;

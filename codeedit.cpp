@@ -17,7 +17,7 @@
 
 std::set<MST::u32> whitespace_before_comment = {U'\t', U' '};
 
-CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::UpdateFInfoFunction fupdater) : Widget(parent) {
+CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::UpdateFInfoFunction fupdater, bool virtualDocument) : Widget(parent), virtual_document(virtualDocument) {
 	before_self_close = [&]() {
 		save();
 		
@@ -305,13 +305,16 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 			return;
 		}
 		
-		if (!App::lsp_client_map[lsp]->supportsIncrementalChanges) {
+		if (virtual_document || !App::lsp_client_map[lsp]->supportsIncrementalChanges) {
 			onTextChanged(textedit);
 		}
 	};
 	
 	textedit->onlinechange = [&](EditType typ, int lineindex){
 		madeChangeBetweenSaves = true;
+		// Notebook sources are small virtual documents. Send one full snapshot
+		// after each edit, including multiline replace/undo and the last-line delete.
+		if (virtual_document) return;
 		
 		if (hoverbox->parent == this) {
 			App::RemoveWidgetFromParent(hoverbox);
@@ -344,7 +347,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	
 	line_numbers->setTextedit(textedit);
 	
-	hoverthread = std::thread([&]() {
+	if (!virtual_document) hoverthread = std::thread([&]() {
 		while (true){
 			if (closing) {
 				return;
@@ -460,9 +463,9 @@ void CodeEdit::gotoerror(int s) {
 	textedit->tryingToEnsureCursorPos = true;
 }
 
-void CodeEdit::detectLanguage() {
+void CodeEdit::detectLanguage(bool closeCurrent) {
 	if (App::lsp_client_map[lsp]) {
-		if (file) {
+		if (file && closeCurrent) {
 			App::lsp_client_map[lsp]->closeDocument(file->filepath);
 		}
 		for (int i = static_cast<int>(App::lsp_client_map[lsp]->connected_edits.size())-1; i >= 0; i--) {
@@ -592,6 +595,28 @@ void CodeEdit::undo_fixit() {
 	onTextChanged(textedit);
 }
 
+void CodeEdit::openVirtualDocument(FileInfo* info, const MST::MonoString& content) {
+	// Close the previous URI before changing a cell's type/path.
+	if (file && App::lsp_client_map[lsp]) App::lsp_client_map[lsp]->closeDocument(file->filepath);
+	file = nullptr;
+	completion_id = hover_id = goto_id = rename_id = code_actions_id = -1;
+	completionbox->is_visible_layered = errorMenu->is_visible_layered = false;
+	errorMenu->setElements({});
+	errorlines.clear();
+	if (showErrorsButton->parent == this) App::RemoveWidgetFromParent(showErrorsButton);
+	virtual_hover_deadline = 0;
+	for (auto* popup : {hoverbox,renamebox}) if (popup->parent == this) App::RemoveWidgetFromParent(popup);
+	textedit->setFullText(content);
+	file = info;
+	file->is_opening = false;
+	detectLanguage(false);
+	if (App::lsp_client_map[lsp]) {
+		App::lsp_client_map[lsp]->openDocument(file->filepath, App::languagemap[language].name,
+			MST::toBastardizedStringUtf16Aligned(textedit->getFullText()));
+	}
+	madeChangeBetweenSaves = false;
+}
+
 void CodeEdit::openFile(FileInfo* f) {
 	madeChangeBetweenSaves = false;
 	was_in_a_file = true;
@@ -705,7 +730,11 @@ void CodeEdit::renderExtras() {
 		errorMenu->render();
 	});
 	if (showErrorsButton->parent == this) {
-		App::runWithSKIZ(showErrorsButton->t_x, showErrorsButton->t_y, showErrorsButton->t_w, showErrorsButton->t_h, [&](){
+		const int x = virtual_document ? textedit->t_x : showErrorsButton->t_x;
+		const int y = virtual_document ? textedit->t_y : showErrorsButton->t_y;
+		const int w = virtual_document ? textedit->t_w : showErrorsButton->t_w;
+		const int h = virtual_document ? textedit->t_h : showErrorsButton->t_h;
+		App::runWithSKIZ(x,y,w,h, [&](){
 			showErrorsButton->render();
 		});
 	}
@@ -884,6 +913,18 @@ void CodeEdit::position(int x, int y, int w, int h) {
 	t_h = h;
 	
 	POS_FUNC(this);
+	if (virtual_document && virtual_hover_deadline > 0 && glfwGetTime() >= virtual_hover_deadline) {
+		virtual_hover_deadline = 0;
+		if (is_visible && textedit->cursor_in_this && file && App::lsp_client_map[lsp]) {
+			bool got = false;
+			auto cursor = textedit->getCursorForMousePosition(App::mouseX, App::mouseY, &got);
+			if (got) {
+				hoverCrsr = cursor;
+				should_move_mouse_hover = false;
+				hover_id = App::lsp_client_map[lsp]->requestHover(file->filepath, cursor.head_line, cursor.head_char);
+			}
+		}
+	}
 	
 	if (FILE_BROKEN_STATE) {
 		// ensure that the broken state dialog is shown
@@ -920,7 +961,7 @@ void CodeEdit::position(int x, int y, int w, int h) {
 	
 	if (App::activeLeafNode != renamebox && renamebox->parent == this) {
 		App::RemoveWidgetFromParent(renamebox);
-		App::setActiveLeafNode(textedit);
+		if (!virtual_document) App::setActiveLeafNode(textedit);
 		DO_RENDER = 3;
 	}
 	if (renamebox->parent == this) {
@@ -929,6 +970,7 @@ void CodeEdit::position(int x, int y, int w, int h) {
 }
 
 void CodeEdit::triggerSaveAs() {
+	if (virtual_document) return;
 	std::string default_path = "";
 	
 	if (file) {
@@ -1045,6 +1087,7 @@ void CodeEdit::reload_file() {
 }
 
 void CodeEdit::save() {
+	if (virtual_document) return;
 	std::lock_guard<std::mutex> lock(saving_lock);
 	
 	if (file && !file->is_opening) {
@@ -1248,7 +1291,7 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 	
 	Cursor svdCrsr = textedit->cursors[0];
 	
-	if (parent == App::activeEditor) {
+	if (parent == App::activeEditor || (virtual_document && widgetexists(App::activeLeafNode))) {
 //		if (is_press && timeuntilchauffeur != App::settings->getValue("chauffeur_time", 1000)) {
 //			if (key == GLFW_KEY_ESCAPE || timeuntilchauffeur <= 0) {
 //				timeuntilchauffeur = 0;
@@ -1622,6 +1665,10 @@ bool CodeEdit::hoveringCompletionBox(int mx, int my, int padding) {
 }
 
 bool CodeEdit::on_mouse_move_event() {
+	if (virtual_document && (!is_visible || (!cursor_in_this && !textedit->is_selecting_text_with_mouse && !hoveringHoverbox(App::mouseX,App::mouseY) && !hoveringCompletionBox(App::mouseX,App::mouseY)))) {
+		virtual_hover_deadline = 0;
+		return false;
+	}
 	if (FILE_BROKEN_STATE) {
 		return broken_state_menu->on_mouse_move_event();
 	}else {
@@ -1663,6 +1710,7 @@ bool CodeEdit::on_mouse_move_event() {
 				}
 			}
 			
+			if (virtual_document && (mx != last_mouse_x || my != last_mouse_y)) virtual_hover_deadline = glfwGetTime()+0.4;
 			last_mouse_x = mx;
 			last_mouse_y = my;
 			
@@ -1737,7 +1785,7 @@ void CodeEdit::actionsReceived(int id, json resp) {
 void CodeEdit::completionRecieved(std::vector<std::string> completions, int rec_id) {
 	std::lock_guard<std::mutex> lock(App::canMakeChanges);
 	
-	if (rec_id != completion_id) { return; }
+	if (rec_id != completion_id || (virtual_document && App::activeLeafNode != textedit)) { return; }
 	
 	if (textedit->cursors.size() != 1) {
 		completionbox->is_visible_layered = false;
@@ -1968,7 +2016,9 @@ void CodeEdit::gotoDef(int id, int line1, int character1, int line, int characte
 		textedit->cursors = { { line1, character1, line, character, character } };
 		textedit->tryingToEnsureCursorPos = true;
 	}else {
-		if (auto edtr = dynamic_cast<Editor*>(parent)) {
+		Editor* edtr = nullptr;
+		for (auto* ancestor = parent; ancestor && !edtr; ancestor = ancestor->parent) edtr = dynamic_cast<Editor*>(ancestor);
+		if (edtr) {
 			FileInfo* finfo = new FileInfo();
 			finfo->filepath = pointing_to;
 			finfo->filename = FileBackends::current()->filename(pointing_to);
@@ -1982,6 +2032,7 @@ void CodeEdit::gotoDef(int id, int line1, int character1, int line, int characte
 }
 
 void CodeEdit::hoverRecieved(std::string content, std::string type, int id) {
+	if (virtual_document && !textedit->cursor_in_this && !widgetexists(App::activeLeafNode)) return;
 	if (id != hover_id || textedit->contextmenu->is_visible_2) {
 		return;
 	}

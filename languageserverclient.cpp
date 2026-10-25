@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cerrno>
 
 // Global variables (keeping same structure as original)
 std::string langID;
@@ -169,6 +170,8 @@ bool Process::start(const std::string& program, const std::vector<std::string>& 
 	
 	CloseHandle(impl->hChildStdOutWr);
 	CloseHandle(impl->hChildStdInRd);
+	impl->hChildStdOutWr = nullptr;
+	impl->hChildStdInRd = nullptr;
 	impl->running = true;
 
 	// Start reader thread
@@ -246,7 +249,7 @@ bool Process::start(const std::string& program, const std::vector<std::string>& 
 				pollfd pfd = {impl->stdout_pipe[0], POLLIN, 0};
 				int result = poll(&pfd, 1, 100); // 100ms timeout
 				
-				if (result > 0 && (pfd.revents & POLLIN)) {
+				if (result > 0 && (pfd.revents & (POLLIN | POLLHUP))) {
 					ssize_t bytesRead = read(impl->stdout_pipe[0], buffer, sizeof(buffer));
 					if (bytesRead > 0) {
 						{
@@ -260,6 +263,7 @@ bool Process::start(const std::string& program, const std::vector<std::string>& 
 						break; // EOF
 					}
 				}
+				if (result > 0 && (pfd.revents & (POLLERR | POLLNVAL))) break;
 			}
 
 			if (impl->running) {
@@ -267,7 +271,7 @@ bool Process::start(const std::string& program, const std::vector<std::string>& 
 				int status;
 				int exitCode = -1;
 				ExitStatus exitStatus = CrashExit;
-				if (waitpid(impl->pid, &status, WNOHANG) >= 0) {
+				if (waitpid(impl->pid, &status, WNOHANG) > 0) {
 					if (WIFEXITED(status)) {
 						exitCode = WEXITSTATUS(status);
 						exitStatus = NormalExit;
@@ -343,9 +347,14 @@ bool Process::waitForFinished(int timeout) {
 	}
 #else
 	if (impl->pid > 0) {
-		int status;
-		pid_t result = waitpid(impl->pid, &status, WNOHANG);
-		return result == impl->pid;
+		const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout);
+		do {
+			int status;
+			pid_t result = waitpid(impl->pid, &status, WNOHANG);
+			if (result == impl->pid || (result < 0 && errno == ECHILD)) return true;
+			if (std::chrono::steady_clock::now() >= deadline) break;
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		} while (true);
 	}
 #endif
 	return false;
@@ -360,6 +369,36 @@ void Process::close() {
 #else
 	if (impl->stdin_pipe[1] != -1) ::close(impl->stdin_pipe[1]);
 	if (impl->stdout_pipe[0] != -1) ::close(impl->stdout_pipe[0]);
+#endif
+}
+
+void Process::dispose() {
+#ifdef _WIN32
+	terminate();
+#else
+	// The reader or waitForFinished may already have reaped this child. Avoid
+	// signalling an old PID, and reap a bridge terminated during startup.
+	int status;
+	if (impl->pid > 0 && waitpid(impl->pid, &status, WNOHANG) == 0) {
+		terminate();
+		if (!waitForFinished(500)) { kill(); waitForFinished(500); }
+	} else impl->running = false;
+#endif
+	if (impl->readerThread.joinable()) impl->readerThread.join();
+	close();
+#ifdef _WIN32
+	if (impl->hChildStdOutWr) CloseHandle(impl->hChildStdOutWr);
+	if (impl->hChildStdInRd) CloseHandle(impl->hChildStdInRd);
+	impl->hChildStdOutWr = nullptr;
+	impl->hChildStdInRd = nullptr;
+	impl->hChildStdInWr = nullptr;
+	impl->hChildStdOutRd = nullptr;
+	impl->piProcInfo.hProcess = nullptr;
+	impl->piProcInfo.hThread = nullptr;
+#else
+	impl->stdin_pipe[1] = -1;
+	impl->stdout_pipe[0] = -1;
+	impl->pid = -1;
 #endif
 }
 

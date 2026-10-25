@@ -267,6 +267,17 @@ int main(int argc, char* argv[]) {
 			e->createNew(nullptr);
 		});
 		
+		menu->addToMenu(MST::toMonoString("New Jupyter File"), [](Button*){
+			App::closeMenu();
+			auto* editor = dynamic_cast<Editor*>(App::activeEditor);
+			if (!editor) editor = dynamic_cast<Editor*>(App::rootelement->getFirstEditor());
+			if (!editor) {
+				App::displayToast(MST::toMonoString("No open Editor widgets"));
+				return;
+			}
+			editor->createNewNotebook();
+		});
+
 		menu->addToMenu(MST::toMonoString("Open File\t(Ctrl+O)"), [](Button*){
 			App::closeMenu();
 			
@@ -359,7 +370,7 @@ int main(int argc, char* argv[]) {
 			App::undoFixIt();
 		});
 		
-		menu->addToMenu(MST::toMonoString("Python Bureaucracy Check\t(Software Quality Check)"), [](Button*){
+		menu->addToMenu(MST::toMonoString("Python Bureaucracy Check"), [](Button*){
 			App::closeMenu();
 			App::runBureaucracyCheck();
 		});

@@ -41,6 +41,8 @@ public:
 	bool waitForStarted(int timeout = 30000);
 	bool waitForFinished(int timeout = 30000);
 	void close();
+	// Join the reader before releasing handles; used by restartable notebook bridges.
+	void dispose();
 	std::string errorString() const;
 	
 	enum ProcessError {

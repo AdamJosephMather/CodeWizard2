@@ -277,6 +277,8 @@ public:
 	Color* background_color = App::theme.darker_background_color;
 	
 	bool DONT_SCROLL_VERT_CURS = false;
+	// Content-sized notebook sources delegate both scroll axes to their container.
+	bool fit_content = false;
 	bool DO_POSITION = false;
 	bool WAS_ACTIVE = false;
 	bool DID_POSITION = false;

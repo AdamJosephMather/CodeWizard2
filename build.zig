@@ -19,6 +19,7 @@ const app_cpp_sources = [_][]const u8{
 	"tabs.cpp",
 	"settings.cpp",
 	"codeedit.cpp",
+	"jupyteredit.cpp",
 	"linenumbers.cpp",
 	"textedit.cpp",
 	"brokenstatemenu.cpp",

@@ -1,6 +1,7 @@
 #include "editor.h"
 #include "application.h"
 #include "codeedit.h"
+#include "jupyteredit.h"
 #include "hexeditor.h"
 #include "tinyfiledialogs.h"
 #include "imageview.h"
@@ -60,6 +61,8 @@ void Editor::tabinfoclicked(TabInfo info) {
 			if (auto ce = dynamic_cast<CodeEdit*>(it.second)) {
 				App::setActiveLeafNode(ce->textedit);
 				ce->splash_transparency = oldalpha;
+			}else if (auto nb = dynamic_cast<JupyterEdit*>(it.second)) {
+				nb->focusCell();
 			}else if (auto iv = dynamic_cast<ImageView*>(it.second)) {
 				App::setActiveLeafNode(iv);
 			}else if (auto he = dynamic_cast<HexEditor*>(it.second)) {
@@ -86,6 +89,45 @@ bool Editor::is_image(std::string path) {
 	   std::string(path).find(".gif") != std::string::npos;
 }
 
+void Editor::createNewNotebook() {
+	auto backend = FileBackends::current();
+	const std::string folder = App::settings->getValue("current_folder", backend->homeDirectory());
+	const std::string defaultPath = backend->join(folder, "Untitled.ipynb");
+	auto create = [this, backend](MST::MonoString selected) {
+		std::string path = MST::toString(selected);
+		if (path.empty()) { App::commandUnfocused(); return; }
+		std::string extension = std::filesystem::u8path(path).extension().string();
+		std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c) { return std::tolower(c); });
+		if (extension != ".ipynb") path += ".ipynb";
+		bool exists = false;
+		std::string error;
+		if (!backend->exists(path, exists, error)) {
+			App::displayToast(MST::toMonoString("Cannot create notebook: "+error));
+			return;
+		}
+		// Choosing an existing notebook opens it without replacing its contents.
+		if (!exists) {
+			const std::string contents = R"({"nbformat":4,"nbformat_minor":5,"metadata":{"kernelspec":{"name":"python3","display_name":"Python 3","language":"python"},"language_info":{"name":"python"}},"cells":[{"id":"cell-1","cell_type":"code","metadata":{},"execution_count":null,"outputs":[],"source":[]}]})";
+			if (!backend->writeFile(path, std::vector<std::uint8_t>(contents.begin(), contents.end()), error)) {
+				App::displayToast(MST::toMonoString("Cannot create notebook: "+error));
+				return;
+			}
+		}
+		auto* info = new FileInfo();
+		info->filepath = path;
+		info->filename = backend->filename(path);
+		info->backend = backend;
+		fileOpenRequested(info);
+	};
+	if (backend->isRemote()) {
+		App::requestString("New notebook path?", defaultPath, create);
+	} else {
+		const char* filters[] = {"*.ipynb"};
+		const char* path = tinyfd_saveFileDialog("New Jupyter File", defaultPath.c_str(), 1, filters, "Jupyter notebooks");
+		create(MST::toMonoString(path ? path : ""));
+	}
+}
+
 void Editor::createNew(FileInfo* fn) {
 	auto ti = TabInfo();
 	
@@ -100,7 +142,11 @@ void Editor::createNew(FileInfo* fn) {
 	tab_bar->addTab(ti);
 	tabid ++;
 	
-	if (fn && is_image(fn->filepath)) {
+	std::string extension = fn ? std::filesystem::u8path(fn->filepath).extension().string() : "";
+	std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c) { return std::tolower(c); });
+	if (fn && extension == ".ipynb") {
+		editors[ti.id] = new JupyterEdit(this);
+	}else if (fn && is_image(fn->filepath)) {
 		ImageView* imgv = new ImageView(this);
 		editors[ti.id] = imgv;
 	}else if (fn && isBinaryFile(fn->filepath)){
@@ -159,6 +205,8 @@ void Editor::createNew(FileInfo* fn) {
 	if (fn) {
 		if (auto ce = dynamic_cast<CodeEdit*>(edtr)) {
 			ce->openFile(fn);
+		}else if (auto nb = dynamic_cast<JupyterEdit*>(edtr)) {
+			nb->openFile(fn);
 		}else if (auto iv = dynamic_cast<ImageView*>(edtr)) {
 			iv->openFile(fn);
 		}else if (auto he = dynamic_cast<HexEditor*>(edtr)) {
@@ -182,6 +230,11 @@ void Editor::render() {
 }
 
 void Editor::position(int x, int y, int w, int h) {
+	// Running notebooks continue collecting output and dispatching Run All even
+	// when another tab is selected.
+	for (const auto& entry : editors) {
+		if (auto nb = dynamic_cast<JupyterEdit*>(entry.second)) nb->updateKernel();
+	}
 	t_x = x;
 	t_y = y;
 	t_w = w;
@@ -255,6 +308,14 @@ void Editor::fileOpenRequested(FileInfo* f, int lns, int chrs, int ln, int chr) 
 	}
 	
 	for (auto itm : tab_bar->tabs_list) {
+		if (auto nb = dynamic_cast<JupyterEdit*>(editors[itm.id])) {
+			if (nb->file && areSameFile(nb->file->filepath, f->filepath)) {
+				tab_bar->selected_id = itm.id;
+				tabinfoclicked(itm);
+				App::commandUnfocused();
+				return;
+			}
+		}
 		if (auto te = dynamic_cast<CodeEdit*>(editors[itm.id])) {
 			if (te->file && areSameFile(te->file->filepath, f->filepath)) {
 				tab_bar->selected_id = itm.id;
@@ -356,6 +417,9 @@ bool Editor::on_key_event(int key, int scancode, int action, int mods) {
 }
 
 MST::MonoString Editor::getPaletteName() {
+	if (auto nb = dynamic_cast<JupyterEdit*>(editors[tab_bar->selected_id])) {
+		return MST::toMonoString(nb->file ? nb->file->filename : "Notebook");
+	}
 	if (auto ce = dynamic_cast<CodeEdit*>(editors[tab_bar->selected_id])) {
 		if (!ce->file || ce->file->filename == "") {
 			return MST::toMonoString("Untitled");
@@ -377,6 +441,9 @@ MST::MonoString Editor::getPaletteName() {
 
 Widget* Editor::fileOpen(std::string fname) { // this is a widget function to find an editor which has a filename already open (let's not re-open it, no reason to.)
 	for (auto itm : tab_bar->tabs_list) {
+		if (auto nb = dynamic_cast<JupyterEdit*>(editors[itm.id])) {
+			if (nb->file && areSameFile(nb->file->filepath, fname)) return this;
+		}
 		if (auto te = dynamic_cast<CodeEdit*>(editors[itm.id])) {
 			if (te->file && areSameFile(te->file->filepath, fname)) {
 				return this;
@@ -402,6 +469,11 @@ std::vector<std::vector<std::string>> Editor::getOpenFiles(bool includeText) {
 	std::vector<std::vector<std::string>> out = {};
 	
 	for (auto itm : tab_bar->tabs_list) {
+		if (auto nb = dynamic_cast<JupyterEdit*>(editors[itm.id])) {
+			std::vector<std::string> result = {nb->file ? nb->file->filename : "Notebook", nb->file ? nb->file->filepath : "", "NOTEBOOK"};
+			if (includeText) result.push_back(nb->notebookText());
+			out.push_back(std::move(result));
+		}
 		if (auto te = dynamic_cast<CodeEdit*>(editors[itm.id])) {
 			std::vector<std::string> res;
 			if (te->file) {

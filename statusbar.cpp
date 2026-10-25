@@ -1,5 +1,6 @@
 #include "statusbar.h"
 #include "codeedit.h"
+#include "jupyteredit.h"
 #include "editor.h"
 #include "graphwindow.h"
 #include "hexeditor.h"
@@ -109,6 +110,13 @@ void StatusBar::render() {
 					filename = MST::toMonoString("Untitled*");
 				}
 				side = 1.2; // center side, ideally farther left
+			}else if (auto nb = dynamic_cast<JupyterEdit*>(w->second)) {
+				if (nb->file) {
+					filename = MST::toMonoString(nb->file->filename + (nb->dirty ? "*" : ""));
+					filepath = nb->file->filepath;
+					file_backend = nb->file->backend;
+				}
+				side = 1.2;
 			}else if (auto iv = dynamic_cast<ImageView*>(w->second)) {
 				if (iv->file && iv->file->filename != "") {
 					filename = MST::toMonoString(iv->file->filename);

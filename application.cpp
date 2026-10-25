@@ -6,6 +6,7 @@
 #include <iostream>
 #include "scrollnotify.h"
 #include "codeedit.h"
+#include "jupyteredit.h"
 #include "editor.h"
 #include "helper_types.h"
 #include <unordered_set>
@@ -1937,6 +1938,15 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action, in
 		std::lock_guard<std::mutex> lock(canMakeChanges);
 		displayText(MST::toMonoString("Saving..."));
 		save();
+		if (auto editor = dynamic_cast<Editor*>(activeEditor)) {
+			auto entry = editor->editors.find(editor->tab_bar->selected_id);
+			if (entry != editor->editors.end()) {
+				if (auto notebook = dynamic_cast<JupyterEdit*>(entry->second)) {
+					notebook->on_key_event(key, scancode, action, mods);
+					return;
+				}
+			}
+		}
 		std::string build_command = settings->getProjectBuild();
 		if (build_command != "") {
 			launchCommandNonBlocking(build_command);

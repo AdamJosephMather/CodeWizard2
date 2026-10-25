@@ -24,6 +24,7 @@ public:
 	
 	void position(int x, int y, int w, int h) override;
 	void createNew(FileInfo* fn);
+	void createNewNotebook();
 	void closeFile(int file_id);
 	
 	void executeAction(WidgetActionType typ) override;

@@ -161,6 +161,41 @@ class BridgeTests(unittest.TestCase):
         self.assertLessEqual(len(self.outputs(messages, 'clear_output')), 256)
         self.assertEqual(sum('Output truncated' in c['text'] for c in self.outputs(messages, 'stream')), 1)
 
+    def test_matplotlib_show_emits_png_in_output_order(self):
+        import importlib.util
+        if importlib.util.find_spec('matplotlib') is None:
+            self.skipTest('Install matplotlib to exercise real plot output')
+        messages = self.execute("import matplotlib.pyplot as plt\nprint('before plot')\nplt.plot([0, 1, 2], [0, 1, 4])\nplt.show()\nprint('after plot')")
+        outputs = [m for m in messages if m.get('kind') in ('stream', 'display_data')]
+        image_index = next(i for i, m in enumerate(outputs) if 'image/png' in m['content'].get('data', {}))
+        self.assertIn('before plot', ''.join(m['content'].get('text', '') for m in outputs[:image_index]))
+        self.assertIn('after plot', ''.join(m['content'].get('text', '') for m in outputs[image_index+1:]))
+        import base64
+        png = base64.b64decode(outputs[image_index]['content']['data']['image/png'])
+        self.assertTrue(png.startswith(b'\x89PNG\r\n\x1a\n'))
+        self.assertFalse(self.outputs(messages, 'error'))
+
+    def test_image_display_update_and_clear(self):
+        import importlib.util
+        if importlib.util.find_spec('PIL') is None:
+            self.skipTest('Install Pillow to exercise image updates')
+        messages = self.execute("from IPython.display import display, clear_output\nfrom PIL import Image\nh = display(Image.new('RGB', (300, 120), 'red'), display_id=True)\nh.update(Image.new('RGB', (100, 80), 'green'))\nclear_output(wait=True)")
+        first = self.outputs(messages, 'display_data')[0]
+        update = self.outputs(messages, 'update_display_data')[0]
+        self.assertEqual(first['transient']['display_id'], update['transient']['display_id'])
+        self.assertNotEqual(first['data']['image/png'], update['data']['image/png'])
+        self.assertEqual(self.outputs(messages, 'clear_output'), [{'wait': True}])
+        import base64, io
+        from PIL import Image
+        with Image.open(io.BytesIO(base64.b64decode(update['data']['image/png']))) as image:
+            self.assertEqual(image.size, (100, 80))
+            self.assertEqual(image.getpixel((0, 0)), (0, 128, 0))
+
+    def test_image_payload_has_separate_budget_from_streams(self):
+        messages = self.execute("from IPython.display import display\ndisplay({'image/png': 'A' * 400000, 'text/plain': 'large plot'}, raw=True)\nprint('after image')")
+        self.assertEqual(len(self.outputs(messages, 'display_data')[0]['data']['image/png']), 400000)
+        self.assertIn('after image', ''.join(c['text'] for c in self.outputs(messages, 'stream')))
+
     def test_missing_client_emits_actionable_fatal(self):
         result = subprocess.run([sys.executable, "-S", "-u", "-c", BRIDGE], input="", text=True,
                                 capture_output=True, timeout=10)

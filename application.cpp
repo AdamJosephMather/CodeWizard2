@@ -50,7 +50,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 6;
-int App::patch_version = 0; // 🚀 (we now support emojis)
+int App::patch_version = 1; // 🚀 (we now support emojis)
 
 const std::vector<int> version = {App::major_version, App::minor_version, App::patch_version};
 
@@ -889,33 +889,7 @@ void App::DrawRect(int x, int y, int w, int h, Color* color) {
 	glEnd();
 }
 
-ImageInfo App::prepareTexture(std::string imagepath, std::shared_ptr<FileBackend> backend) {
-	int channels;
-	int imgW;
-	int imgH;
-	
-	unsigned char* data = nullptr;
-	std::vector<std::uint8_t> remote_bytes;
-	if (backend && backend->isRemote()) {
-		std::string error;
-		if (backend->readFile(imagepath, remote_bytes, error) &&
-			remote_bytes.size() <= static_cast<std::size_t>(std::numeric_limits<int>::max())) {
-			data = stbi_load_from_memory(
-				remote_bytes.data(), static_cast<int>(remote_bytes.size()),
-				&imgW, &imgH, &channels, STBI_rgb_alpha);
-		}
-	} else {
-		data = stbi_load(
-			imagepath.c_str(),
-			&imgW, &imgH, &channels,
-			STBI_rgb_alpha
-		);
-	}
-	
-	if (!data) {
-		return {(GLuint)-1, 0, 0};
-	}
-	
+static ImageInfo uploadImageTexture(unsigned char* data, int imgW, int imgH) {
 	// Premultiply alpha to prevent bright/white edges (halo artifact) during filtering/mipmapping.
 	// Optimized using fast integer math and branch short-circuiting.
 	int numPixels = imgW * imgH;
@@ -959,7 +933,7 @@ ImageInfo App::prepareTexture(std::string imagepath, std::shared_ptr<FileBackend
 	// Build mip chain so minification samples a lower-res level instead
 	// of point/linear-sampling the full-res image (avoids shimmering/aliasing
 	// when the texture is drawn smaller than its source size).
-	bool mipmapped = doMipmapThing();
+	bool mipmapped = App::doMipmapThing();
 	
 	if (mipmapped) {
 		// Trilinear filtering: smooth blend between mip levels and within each level.
@@ -978,6 +952,47 @@ ImageInfo App::prepareTexture(std::string imagepath, std::shared_ptr<FileBackend
 	stbi_image_free(data);
 	
 	return {texID, imgW, imgH};
+}
+
+
+ImageInfo App::prepareTexture(std::string imagepath, std::shared_ptr<FileBackend> backend) {
+	int channels;
+	int imgW;
+	int imgH;
+
+	unsigned char* data = nullptr;
+	std::vector<std::uint8_t> remote_bytes;
+	if (backend && backend->isRemote()) {
+		std::string error;
+		if (backend->readFile(imagepath, remote_bytes, error) &&
+			remote_bytes.size() <= static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+			data = stbi_load_from_memory(
+				remote_bytes.data(), static_cast<int>(remote_bytes.size()),
+				&imgW, &imgH, &channels, STBI_rgb_alpha);
+		}
+	} else {
+		data = stbi_load(
+			imagepath.c_str(),
+			&imgW, &imgH, &channels,
+			STBI_rgb_alpha
+		);
+	}
+
+	if (!data) {
+		return {(GLuint)-1, 0, 0};
+	}
+
+	return uploadImageTexture(data, imgW, imgH);
+}
+
+ImageInfo App::prepareTexture(const std::vector<std::uint8_t>& bytes) {
+    if (bytes.empty() || bytes.size() > 16*1024*1024) return {(GLuint)-1,0,0};
+    int width = 0, height = 0, channels = 0;
+    if (!stbi_info_from_memory(bytes.data(), (int)bytes.size(), &width, &height, &channels) ||
+        width <= 0 || height <= 0 || (std::uint64_t)width*height > 16*1024*1024) return {(GLuint)-1,0,0};
+    auto* data = stbi_load_from_memory(bytes.data(), (int)bytes.size(), &width, &height, &channels, STBI_rgb_alpha);
+    if (!data) return {(GLuint)-1,0,0};
+    return uploadImageTexture(data,width,height);
 }
 
 void App::renderColorlessTexture(GLuint texID, int x, int y, int w, int h, Color* foreground, Color* background) {

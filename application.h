@@ -131,6 +131,7 @@ public:
 	static std::vector<Vec2> splashTexture;
 	
 	static ImageInfo prepareTexture(std::string imagepath, std::shared_ptr<FileBackend> backend = nullptr);
+	static ImageInfo prepareTexture(const std::vector<std::uint8_t>& bytes);
 	static void renderColorlessTexture(GLuint texID, int x, int y, int w, int h, Color* foreground, Color* background);
 	static void renderTexture(GLuint texID, int x, int y, int w, int h, const Color* background, float alpha=1.0f);
 	

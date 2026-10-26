@@ -8,6 +8,22 @@ ImageView::ImageView(Widget* parent) : Widget(parent) {
 	id = MST::toMonoString("ImageView");
 }
 
+ImageView::~ImageView() {
+	if (hasTexture) glDeleteTextures(1, &texID);
+}
+
+bool ImageView::setImageData(const std::vector<std::uint8_t>& bytes) {
+	if (bytes == imageData) return imgW > 0 && imgH > 0;
+	int width = 0, height = 0, channels = 0;
+	if (bytes.empty() || bytes.size() > 16*1024*1024 ||
+		!stbi_info_from_memory(bytes.data(), (int)bytes.size(), &width, &height, &channels) ||
+		width <= 0 || height <= 0 || (std::uint64_t)width*height > 16*1024*1024) return false;
+	imageData = bytes;
+	imgW = width; imgH = height;
+	pendingTexture = true;
+	return true;
+}
+
 void ImageView::position(int x, int y, int width, int height) {
 	t_x = x;
 	t_y = y;
@@ -17,6 +33,7 @@ void ImageView::position(int x, int y, int width, int height) {
 
 void ImageView::openFile(FileInfo* f) {
 	file = f;
+	imageData.clear(); pendingTexture = false;
 	
 	App::setActiveLeafNode(this);
 	
@@ -46,6 +63,15 @@ void ImageView::openFile(FileInfo* f) {
 
 void ImageView::render() {
 	if (!is_visible) return;
+	// Notebook output can change while collecting messages. Upload only when
+	// drawing, on the thread with the current OpenGL context.
+	if (pendingTexture) {
+		if (hasTexture) glDeleteTextures(1, &texID);
+		auto info = App::prepareTexture(imageData);
+		hasTexture = info.tex != (GLuint)-1;
+		texID = info.tex;
+		pendingTexture = false;
+	}
 	
 	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
 
@@ -62,7 +88,10 @@ void ImageView::render() {
 		float offsetY = t_y + (t_h - dispH) * 0.5f;
 		
 		App::renderTexture(texID, offsetX, offsetY, dispW, dispH, App::theme.darker_background_color);
-	}
+	} else if (!imageData.empty()) {
+        TextRenderer::draw_text(t_x+App::text_padding,t_y+App::text_padding,
+            MST::toMonoString("[Image could not be decoded]"),App::theme.lesser_text_color);
+    }
 	
 	Color* borderC = App::theme.border;
 	if (this == App::activeLeafNode) {

@@ -38,7 +38,9 @@ def worker():
             with lock:
                 if manager is None:
                     manager = KernelManager(kernel_name=request['kernel'])
-                    manager.start_kernel(cwd=request['cwd'])
+                    environment = dict(os.environ)
+                    environment.setdefault('MPLBACKEND', 'module://matplotlib_inline.backend_inline')
+                    manager.start_kernel(cwd=request['cwd'], env=environment)
                     client = manager.client()
                     client.start_channels()
                     client.wait_for_ready(timeout=30)
@@ -48,6 +50,7 @@ def worker():
             # Bound captured output per execution, including clear/display loops.
             # Keep draining IOPub after truncation so interrupts and idle arrive.
             remaining_bytes, remaining_lines, remaining_events = 262144, 2000, 256
+            remaining_rich_bytes = 16*1024*1024
             truncated = False
             stream_name, stream_text = None, ''
             last_flush = time.monotonic()
@@ -102,10 +105,15 @@ def worker():
                     # Execution counts and failures are lifecycle information.
                     if kind not in ('execute_input', 'error'):
                         size = len(json.dumps(content).encode('utf-8'))
-                        if truncated or remaining_events <= 0 or size > remaining_bytes:
+                        rich = kind in ('execute_result', 'display_data', 'update_display_data')
+                        budget = remaining_rich_bytes if rich else remaining_bytes
+                        if truncated or remaining_events <= 0 or size > budget:
                             truncate()
                             continue
-                        remaining_bytes -= size
+                        if rich:
+                            remaining_rich_bytes -= size
+                        else:
+                            remaining_bytes -= size
                         remaining_events -= 1
                     if kind == 'error':
                         content['traceback'] = [line[:4096] for line in content.get('traceback', [])[:32]]

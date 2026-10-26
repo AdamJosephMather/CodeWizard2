@@ -1,6 +1,9 @@
 #include "jupyteredit.h"
 #include "jupyterbridge.h"
 #include "codeedit.h"
+#include "imageview.h"
+#include <array>
+#include <cctype>
 #include "text_renderer.h"
 #include <algorithm>
 #include <chrono>
@@ -13,6 +16,30 @@ std::string textValue(const json& value) {
     std::string result;
     if (value.is_array()) for (const auto& line : value) result += line.get<std::string>();
     return result;
+}
+// Notebook image MIME values may be strings or arrays of base64 lines.
+std::vector<std::uint8_t> notebookImageBytes(const json& value) {
+    const std::string encoded = textValue(value);
+    if (encoded.size() > 24*1024*1024) return {};
+    static const auto table = [] {
+        std::array<int,256> values; values.fill(-1);
+        const std::string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        for (int i=0; i<64; ++i) values[(unsigned char)alphabet[i]]=i;
+        return values;
+    }();
+    std::vector<std::uint8_t> bytes;
+    std::uint32_t accumulator = 0;
+    int bits = 0;
+    bool padding = false;
+    for (unsigned char ch : encoded) {
+        if (std::isspace(ch)) continue;
+        if (ch == '=') { padding=true; continue; }
+        if (padding || table[ch] < 0) return {};
+        accumulator=(accumulator<<6)|(std::uint32_t)table[ch]; bits+=6;
+        if (bits>=8) { bits-=8; bytes.push_back((accumulator>>bits)&255); }
+    }
+    if (bits == 6) return {};
+    return bytes;
 }
 json sourceLines(const std::string& text) {
     auto lines = json::array();
@@ -108,6 +135,7 @@ JupyterEdit::JupyterEdit(Widget* parent) : Widget(parent) {
         stopBridge();
         for (auto& c : cells) {
             App::RemoveWidgetFromParent(c.editor); App::deleteWidget(c.editor);
+            clearOutputWidgets(c);
             App::RemoveWidgetFromParent(c.output); App::deleteWidget(c.output);
         }
         cells.clear(); valid=false; dirty=false; conflictReported=false; selected=0; scroll=0;
@@ -314,6 +342,7 @@ void JupyterEdit::deleteCell() {
     auto cell = cells[selected];
     cells.erase(cells.begin()+selected);
     App::RemoveWidgetFromParent(cell.editor); App::deleteWidget(cell.editor);
+    clearOutputWidgets(cell);
     App::RemoveWidgetFromParent(cell.output); App::deleteWidget(cell.output);
     dirty = true;
     focusCell();
@@ -339,27 +368,78 @@ void JupyterEdit::changeCellType() {
     updateOutput(selected); dirty = true;
 }
 
+void JupyterEdit::clearOutputWidgets(Cell& cell) {
+    for (auto* widget : cell.outputParts) if (widget != cell.output) {
+        if (containsFocus(widget)) App::setActiveLeafNode(cell.source);
+        App::RemoveWidgetFromParent(widget); App::deleteWidget(widget);
+    }
+    cell.outputParts.clear();
+}
+
+int JupyterEdit::outputHeight(Widget* widget, int width) const {
+    const int pad=App::text_padding, line=TextRenderer::get_text_height();
+    if (auto* image=dynamic_cast<ImageView*>(widget))
+        return std::max(1,(int)(image->imgH*std::min(1.0,(double)std::max(1,width-pad*2)/image->imgW)))+pad*2;
+    auto* text=static_cast<TextEdit*>(widget);
+    return line*std::clamp((int)text->lines.size(),1,16)+pad*2;
+}
+
 void JupyterEdit::updateOutput(int index) {
     auto& c = cells[index];
+    auto previous = std::move(c.outputParts);
+    c.outputParts.clear();
+    bool usedFirstText = false;
     std::string text;
+    auto flushText = [&] {
+        if (text.empty()) return;
+        TextEdit* editor = nullptr;
+        if (!usedFirstText) { editor=c.output; usedFirstText=true; }
+        else if (c.outputParts.size()<previous.size()) editor=dynamic_cast<TextEdit*>(previous[c.outputParts.size()]);
+        if (!editor || (editor==c.output &&
+            std::find(c.outputParts.begin(),c.outputParts.end(),editor)!=c.outputParts.end()))
+            editor=new TextEdit(this,[](Widget*) {});
+        editor->allow_edits=false; editor->rounded=true;
+        editor->scrollbar_horizontal=editor->scrollbar_vertical=true;
+        static const std::regex ansi("\x1b\\[[0-?]*[ -/]*[@-~]");
+        text=std::regex_replace(text,ansi,"");
+        const double vertical=editor->scrolled_to_vert, horizontal=editor->scrolled_to_horz;
+        editor->setFullText(MST::toMonoString(text));
+        editor->scrolled_to_vert=std::min(vertical,(double)std::max(0,(int)editor->lines.size()-1));
+        editor->scrolled_to_horz=horizontal;
+        c.outputParts.push_back(editor); text.clear();
+    };
     if (c.data.contains("outputs")) for (auto& out : c.data["outputs"]) {
-        std::string type = out.value("output_type", "");
-        if (type == "stream") text += textValue(out.value("text", json("")));
-        else if (type == "error") {
-            if (out.contains("traceback")) for (auto& line : out["traceback"]) text += line.get<std::string>()+"\n";
-            else text += out.value("ename", "Error")+": "+out.value("evalue", "")+"\n";
+        std::string type=out.value("output_type","");
+        if (type=="stream") text+=textValue(out.value("text",json("")));
+        else if (type=="error") {
+            if (out.contains("traceback")) for (auto& line : out["traceback"]) text+=line.get<std::string>()+"\n";
+            else text+=out.value("ename","Error")+": "+out.value("evalue","")+"\n";
         } else if (out.contains("data")) {
-            if (out["data"].contains("text/plain")) text += textValue(out["data"]["text/plain"])+"\n";
-            else text += "[Rich output preserved in notebook]\n";
+            bool displayed=false;
+            const auto& data=out["data"];
+            for (const auto* mime : {"image/png","image/jpeg","image/gif"}) if (data.contains(mime)) {
+                auto bytes=notebookImageBytes(data[mime]);
+                // Flush text first so stdout, plots, and later text retain order.
+                flushText();
+                ImageView* image=c.outputParts.size()<previous.size() ? dynamic_cast<ImageView*>(previous[c.outputParts.size()]) : nullptr;
+                bool created=!image;
+                if (created) image=new ImageView(this);
+                if (image->setImageData(bytes)) { c.outputParts.push_back(image); displayed=true; break; }
+                if (created) { App::RemoveWidgetFromParent(image); App::deleteWidget(image); }
+            }
+            if (!displayed) {
+                if (data.contains("text/plain")) text+=textValue(data["text/plain"])+"\n";
+                else text+="[Rich output preserved in notebook]\n";
+            }
         }
     }
-    static const std::regex ansi("\x1b\\[[0-?]*[ -/]*[@-~]");
-    text = std::regex_replace(text, ansi, "");
-    const double vertical = c.output->scrolled_to_vert;
-    const double horizontal = c.output->scrolled_to_horz;
-    c.output->setFullText(MST::toMonoString(text));
-    c.output->scrolled_to_vert = std::min(vertical,(double)std::max(0,(int)c.output->lines.size()-1));
-    c.output->scrolled_to_horz = horizontal;
+    flushText();
+    c.output->is_visible=false;
+    if (!usedFirstText && containsFocus(c.output)) App::setActiveLeafNode(c.source);
+    for (auto* widget : previous) if (widget!=c.output && std::find(c.outputParts.begin(),c.outputParts.end(),widget)==c.outputParts.end()) {
+        if (containsFocus(widget)) App::setActiveLeafNode(c.source);
+        App::RemoveWidgetFromParent(widget); App::deleteWidget(widget);
+    }
 }
 
 void JupyterEdit::reveal(int index) {
@@ -638,8 +718,8 @@ void JupyterEdit::position(int x, int y, int w, int h) {
         int sourceHeight = pad*2+line*std::max(1,(int)c.source->lines.size());
         for (const auto& textLine : c.source->lines)
             contentWidth=std::max(contentWidth,c.source->getVisLen(textLine.line_text)*TextRenderer::get_text_width(1)+pad*3);
-        bool output = c.data.contains("outputs") && !c.data["outputs"].empty();
-        c.height = line+pad+sourceHeight+pad+(output ? line*std::clamp((int)c.output->lines.size(),1,16)+pad*2 : 0)+pad;
+        c.height = line+pad+sourceHeight+pad*2;
+        for (auto* output : c.outputParts) c.height+=outputHeight(output,sourceWidth)+pad;
         total+=c.height;
     }
     contentHeight=total;
@@ -652,12 +732,19 @@ void JupyterEdit::position(int x, int y, int w, int h) {
         int cy=viewportTop+c.top-(int)scroll;
         int sourceHeight=pad*2+line*std::max(1,(int)c.source->lines.size());
         bool visible=cy+c.height > viewportTop && cy < viewportBottom;
-        bool output=c.data.contains("outputs") && !c.data["outputs"].empty();
         c.source->is_visible=visible;
         c.editor->is_visible=visible;
-        c.output->is_visible=visible && output;
+        c.output->is_visible=false;
         c.editor->position(x+pad*2-(int)horizontalScroll,cy+line+pad,contentWidth,sourceHeight);
-        c.output->position(x+pad*2,cy+line+pad+sourceHeight+pad,std::max(1,w-pad*5-12),std::max(1,c.height-line-sourceHeight-pad*4));
+        int outputY=cy+line+pad+sourceHeight+pad;
+        for (auto* output : c.outputParts) {
+            const int height=outputHeight(output,sourceWidth);
+            output->position(x+pad*2,outputY,sourceWidth,height);
+            output->is_visible=visible && outputY+height>viewportTop && outputY<viewportBottom;
+            output->cursor_in_this=output->is_visible && cursor_in_this && App::mouseY>=std::max(viewportTop,outputY) &&
+                App::mouseY<std::min(viewportBottom,outputY+height) && App::mouseX>=output->t_x && App::mouseX<output->t_x+output->t_w;
+            outputY+=height+pad;
+        }
         // Cells are clipped at the notebook viewport, including hit testing.
         c.source->cursor_in_this = visible && cursor_in_this && App::mouseY >= viewportTop && App::mouseY < viewportBottom && App::mouseX >= c.source->t_x && App::mouseX < c.source->t_x+c.source->t_w && App::mouseY >= c.source->t_y && App::mouseY < c.source->t_y+c.source->t_h;
         c.editor->cursor_in_this = c.source->cursor_in_this;
@@ -667,7 +754,6 @@ void JupyterEdit::position(int x, int y, int w, int h) {
             c.editor->completionbox->is_visible_layered=false;
             if (c.editor->hoverbox->parent == c.editor) App::RemoveWidgetFromParent(c.editor->hoverbox);
         }
-        c.output->cursor_in_this = visible && output && cursor_in_this && App::mouseY >= viewportTop && App::mouseY < viewportBottom && App::mouseX >= c.output->t_x && App::mouseX < c.output->t_x+c.output->t_w && App::mouseY >= c.output->t_y && App::mouseY < c.output->t_y+c.output->t_h;
     }
     scrollArea->t_x=x+pad; scrollArea->t_y=viewportTop; scrollArea->t_w=w-pad*2; scrollArea->t_h=viewportBottom-viewportTop+(horizontal ? TextRenderer::get_text_width(1)*2 : 0);
     scrollbar->position(x,viewportTop,w,viewportBottom-viewportTop);
@@ -709,7 +795,8 @@ void JupyterEdit::render() {
             if (c.data["cell_type"] == "code") label+=" ["+(running==i ? std::string("*") : c.data.value("execution_count",json()).is_null() ? std::string(" ") : c.data["execution_count"].dump())+"]";
             TextRenderer::draw_text(t_x+pad*2,cy,MST::toMonoString(label),i==selected ? App::theme.main_text_color : App::theme.lesser_text_color);
             App::runWithSKIZ(c.source->t_x,c.source->t_y,c.source->t_w,c.source->t_h,[&] { c.source->render(); });
-            if (c.output->is_visible) App::runWithSKIZ(c.output->t_x,c.output->t_y,c.output->t_w,c.output->t_h,[&] { c.output->render(); });
+            for (auto* output : c.outputParts) if (output->is_visible)
+                App::runWithSKIZ(output->t_x,output->t_y,output->t_w,output->t_h,[&] { output->render(); });
         }
         // LSP menus must overlay the following cells, rather than being clipped
         // to the source editor's (possibly one-line) rectangle.
@@ -735,7 +822,8 @@ bool JupyterEdit::on_key_event(int key,int scancode,int action,int mods) {
     const bool vim=App::settings->getValue("use_vim",false);
     auto* activeText=dynamic_cast<TextEdit*>(App::activeLeafNode);
     bool inCell=false;
-    for (const auto& cell : cells) if (activeText==cell.source || activeText==cell.output) { inCell=true; break; }
+    for (const auto& cell : cells) if (activeText && (activeText==cell.source ||
+        std::find(cell.outputParts.begin(),cell.outputParts.end(),activeText)!=cell.outputParts.end())) { inCell=true; break; }
     if (findOpen && key == GLFW_KEY_ENTER && (activeText == findEdit || activeText == replaceEdit)) {
         // Ctrl+Enter belongs to the text field, including repeats. Keep it
         // away from the notebook's execution shortcuts below.
@@ -809,7 +897,7 @@ bool JupyterEdit::on_mouse_button_event(int button,int action,int mods) {
     if (horizontalScrollbar->is_visible && horizontalScrollbar->on_mouse_button_event(button,action,mods)) return true;
     for (auto& c : cells) {
         if (c.editor->is_visible && c.editor->on_mouse_button_event(button,action,mods)) return true;
-        if (c.output->is_visible && c.output->on_mouse_button_event(button,action,mods)) return true;
+        for (auto* output : c.outputParts) if (output->is_visible && output->on_mouse_button_event(button,action,mods)) return true;
     }
     return false;
 }
@@ -822,7 +910,7 @@ bool JupyterEdit::on_mouse_move_event() {
     scrollArea->on_mouse_move_event();
     for (auto& cell : cells) {
         cell.editor->on_mouse_move_event();
-        if (cell.output->is_visible) cell.output->on_mouse_move_event();
+        for (auto* output : cell.outputParts) if (output->is_visible) output->on_mouse_move_event();
     }
     if (findOpen) for (auto* widget : findWidgets) widget->on_mouse_move_event();
     return false;
@@ -836,7 +924,8 @@ bool JupyterEdit::on_scroll_event(double x,double y) {
     for (auto& c : cells) {
         if (c.editor->is_visible && c.editor->hoveringCompletionBox(App::mouseX,App::mouseY) && c.editor->completionbox->on_scroll_event(x,y)) return true;
         if (c.editor->is_visible && c.editor->hoveringHoverbox(App::mouseX,App::mouseY) && c.editor->hoverbox->on_scroll_event(x,y)) return true;
-        if ((x != 0 || c.output->lines.size() > 16) && c.output->is_visible && c.output->on_scroll_event(x,y)) return true;
+        for (auto* output : c.outputParts) if (auto* text=dynamic_cast<TextEdit*>(output))
+            if ((x!=0 || text->lines.size()>16) && text->is_visible && text->on_scroll_event(x,y)) return true;
     }
     if (App::mouseY < viewportTop || App::mouseY >= viewportBottom) return false;
     if (glfwGetKey(App::window,GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(App::window,GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {

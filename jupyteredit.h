@@ -35,6 +35,7 @@ private:
         CodeEdit* editor = nullptr;
         std::shared_ptr<FileInfo> virtualFile;
         TextEdit* output = nullptr;
+        std::vector<Widget*> outputParts;
         int top = 0;
         int height = 0;
         bool clearPending = false;
@@ -82,6 +83,8 @@ private:
     void moveCell(int direction);
     void changeCellType();
     void updateOutput(int index);
+    void clearOutputWidgets(Cell& cell);
+    int outputHeight(Widget* widget, int width) const;
     void configureCellLanguage(Cell& cell);
     bool containsFocus(Widget* widget) const;
     void revealCursor();

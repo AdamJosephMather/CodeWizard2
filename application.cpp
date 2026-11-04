@@ -50,7 +50,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 6;
-int App::patch_version = 1; // 🚀 (we now support emojis)
+int App::patch_version = 2; // 🚀 (we now support emojis)
 
 const std::vector<int> version = {App::major_version, App::minor_version, App::patch_version};
 
@@ -191,6 +191,13 @@ int App::h_nb_current = 0;
 
 bool App::rendering_add_rect = false;
 bool App::rendering_rem_rect = false;
+
+namespace {
+// Windows can dispatch paint messages synchronously from GLFW/driver calls.
+// Only enter the renderer after setup, and never recursively while holding its mutex.
+bool renderReady = false;
+bool renderInProgress = false;
+}
 
 #ifdef _WIN32
 static void EnablePerMonitorDpiAwareness() {
@@ -354,19 +361,17 @@ bool App::Init() {
 	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 	
 	glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 	
 	window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE.c_str(), nullptr, nullptr);
 	g_main_window = window;
 	
-	glfwSetWindowSizeLimits(window, 500, 250, GLFW_DONT_CARE, GLFW_DONT_CARE);
-	
-	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
-
 	if (!window) {
 		std::cerr << "Failed to create window\n";
 		glfwTerminate();
 		return false;
 	}
+	glfwSetWindowSizeLimits(window, 500, 250, GLFW_DONT_CARE, GLFW_DONT_CARE);
 	
 	regularCursor = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
 	if (!regularCursor) {
@@ -408,6 +413,16 @@ bool App::Init() {
 	glfwSetScrollCallback(window, scroll_callback);
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetWindowSizeCallback(window, resize_callback);
+	glfwSetFramebufferSizeCallback(window, [](GLFWwindow* win, int, int) {
+		int width, height;
+		glfwGetWindowSize(win, &width, &height);
+		resize_callback(win, width, height);
+	});
+	glfwSetWindowRefreshCallback(window, [](GLFWwindow*) {
+		rerender = true;
+		time_till_regular = std::max(time_till_regular, 2);
+		DoFullRenderWithoutInput();
+	});
 	glfwSetCharCallback(window, character_callback);
 	
 	glMatrixMode(GL_PROJECTION);
@@ -464,12 +479,15 @@ bool App::Init() {
 	// Grab the existing style
 	LONG_PTR style = GetWindowLongPtr(window_handle, GWL_STYLE);
 
-	// Re-add the bits Windows needs for snapping + Win+Arrows:
-	style |= (WS_THICKFRAME    // sizing border
+	// Keep native caption/move/restore semantics, with our client-drawn frame.
+	// An undecorated GLFW window starts as WS_POPUP; merely adding a resize
+	// border leaves it with different shell behavior from a normal app window.
+	style |= (WS_CAPTION
+			 | WS_THICKFRAME    // sizing border
 			 | WS_MINIMIZEBOX 
 			 | WS_MAXIMIZEBOX 
 			 | WS_SYSMENU );    // optional, for system menu
-	style &= ~WS_CAPTION;
+	style &= ~WS_POPUP;
 
 	SetWindowLongPtr(window_handle, GWL_STYLE, style);
 
@@ -550,6 +568,9 @@ bool App::Init() {
 }
 
 void App::updateTransparency(bool transparent) {
+	rerender = true;
+	reclear = 3;
+	time_till_regular = std::max(time_till_regular, 2);
 #ifdef _WIN32
 	HMODULE hUser = GetModuleHandleW(L"user32.dll");
 	if (!hUser) return;
@@ -668,12 +689,15 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 			GetClientRect(hwnd, &rect);
 			int windowWidth = rect.right - rect.left;
 			int windowHeight = rect.bottom - rect.top;
+			if (pt.x < 0 || pt.y < 0 || pt.x >= windowWidth || pt.y >= windowHeight) {
+				return HTNOWHERE;
+			}
 			
 			const int BORDER_THICKNESS = 8;
 			
 			bool isZoomed = IsZoomed(hwnd);
 			
-			if ((pt.y > BORDER_THICKNESS || isZoomed) && pt.y < tb->t_h && tb->is_out_of_child(pt.x)) {
+			if (tb && (pt.y > BORDER_THICKNESS || isZoomed) && pt.y < tb->t_h && tb->is_out_of_child(pt.x)) {
 				return HTCAPTION;
 			}
 			
@@ -711,9 +735,13 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 		}
 		
 		case WM_PAINT: {
+			// Validate before drawing: presentation may synchronously dispatch messages.
+			PAINTSTRUCT paint{};
+			BeginPaint(hwnd, &paint);
+			EndPaint(hwnd, &paint);
 			rerender = true;
+			time_till_regular = std::max(time_till_regular, 2);
 			DoFullRenderWithoutInput();
-			ValidateRect(hwnd, NULL);
 			return 0;
 		}
 
@@ -740,50 +768,49 @@ LRESULT CALLBACK App::CustomWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 			return TRUE;
 		} case WM_NCCALCSIZE: {
 			if (!wParam) { break; }
+			if (IsZoomed(hwnd)) {
+				// Windows may place the maximized resize frame outside the work
+				// area. Our custom client area must exclude that invisible border.
+				// Clip the proposed bounds instead of subtracting a fixed 8px:
+				// this also handles DPI changes and already-correct bounds.
+				auto* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
+				MONITORINFO monitor{};
+				monitor.cbSize = sizeof(monitor);
+				HMONITOR target = MonitorFromRect(&params->rgrc[0], MONITOR_DEFAULTTONEAREST);
+				RECT client{};
+				if (GetMonitorInfoW(target, &monitor) &&
+					IntersectRect(&client, &params->rgrc[0], &monitor.rcWork)) {
+					params->rgrc[0] = client;
+				}
+			}
 			return 0;
 		}case WM_GETMINMAXINFO: {
-			auto* mmi = reinterpret_cast<MINMAXINFO*>(lParam);
-		
-			HMONITOR hm = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-			MONITORINFO mi = {};
-			mi.cbSize = sizeof(mi);
-			GetMonitorInfoW(hm, &mi);
-		
-			const RECT& rcWork = mi.rcWork;
-			const RECT& rcMon  = mi.rcMonitor;
-		
-			mmi->ptMaxPosition.x = rcWork.left - rcMon.left;
-			mmi->ptMaxPosition.y = rcWork.top  - rcMon.top;
-		
-			mmi->ptMaxSize.x = rcWork.right  - rcWork.left;
-			mmi->ptMaxSize.y = rcWork.bottom - rcWork.top;
-			
-			mmi->ptMinTrackSize.x = 500;
-			mmi->ptMinTrackSize.y = 100;
-		
-			mmi->ptMaxTrackSize = mmi->ptMaxSize;
-			return 0;
-		}case WM_MOVING: {
-		}case WM_SIZING: {
-			CallWindowProc(originalWndProc, hwnd, uMsg, wParam, lParam);
-		
-			RECT* rc = reinterpret_cast<RECT*>(lParam);
-			int newW = rc->right  - rc->left;
-			int newH = rc->bottom - rc->top;
-		
-			App::resize_callback(App::window, newW, newH);
+			// GLFW already supplies the monitor work area for maximizing and the
+			// configured minimum size. Leave Windows' maximum tracking size intact:
+			// it covers the virtual desktop, not just whichever monitor is nearest.
+			// Clamping it to one monitor can resize a large restored window when
+			// dragging it across the corner of a smaller monitor.
+			break;
+		}case WM_MOVING:
+		case WM_SIZING: {
+			// These RECTs describe proposed outer bounds, not the actual client size.
+			// Let GLFW's WM_SIZE handling report the committed size instead.
+			rerender = true;
+			time_till_regular = std::max(time_till_regular, 2);
 			InvalidateRect(hwnd, NULL, FALSE);
-		
-			return TRUE;
+			break;
+		}case WM_WINDOWPOSCHANGED:
+		case WM_DISPLAYCHANGE:
+		case WM_EXITSIZEMOVE: {
+			rerender = true;
+			time_till_regular = std::max(time_till_regular, 2);
+			InvalidateRect(hwnd, NULL, FALSE);
+			break;
 		}case WM_DPICHANGED: {
-			const RECT* suggested = reinterpret_cast<const RECT*>(lParam);
-			SetWindowPos(hwnd, NULL,
-				suggested->left,
-				suggested->top,
-				suggested->right - suggested->left,
-				suggested->bottom - suggested->top,
-				SWP_NOZORDER | SWP_NOACTIVATE);
-			return 0;
+			// GLFW applies the suggested bounds and updates its content-scale state.
+			rerender = true;
+			time_till_regular = std::max(time_till_regular, 2);
+			break;
 		}case WM_NCMOUSEMOVE: {
 			POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 			ScreenToClient(hwnd, &pt);
@@ -1315,25 +1342,33 @@ void App::DrawShip(int x, int y, int s, double r, Color* color, bool drawfire) {
 }
 
 void App::DoFullRenderWithoutInput() {
-#ifdef _WIN32
-	if (curr_adding_panel || curr_removing_panel) {
-		reclear = 3;
+	if (!renderReady || !window) {
+		return;
 	}
-#else
-	reclear = 2;
-#endif
-	
-	// Sync to the live client size. During restore/un-minimize Windows can deliver
-	// an intermediate WM_SIZE before the final maximized size, and the WM_PAINT
-	// path renders before the final GLFW size-callback is processed. Querying the
-	// real size here keeps WINDOW_WIDTH/HEIGHT, the viewport, and the projection
-	// correct for every frame regardless of message ordering.
-	if (window) {
-		int liveW = 0, liveH = 0;
-		glfwGetFramebufferSize(window, &liveW, &liveH);
-		if (liveW > 0 && liveH > 0 && (liveW != WINDOW_WIDTH || liveH != WINDOW_HEIGHT)) {
-			resize_callback(window, liveW, liveH);
+	if (renderInProgress) {
+		rerender = true;
+		time_till_regular = std::max(time_till_regular, 2);
+		return;
+	}
+	struct RenderGuard {
+		RenderGuard() { renderInProgress = true; }
+		~RenderGuard() { renderInProgress = false; }
+	} renderGuard;
+
+	// Query committed client dimensions, including paint during native move/size loops.
+	int liveW = 0, liveH = 0, framebufferW = 0, framebufferH = 0;
+	glfwGetWindowSize(window, &liveW, &liveH);
+	glfwGetFramebufferSize(window, &framebufferW, &framebufferH);
+	if (liveW <= 0 || liveH <= 0 || framebufferW <= 0 || framebufferH <= 0 ||
+		glfwGetWindowAttrib(window, GLFW_ICONIFIED)) {
+		// The main loop still polls events while minimized; avoid a busy spin.
+		if (forceWaitTime) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(140));
 		}
+		return;
+	}
+	if (liveW != WINDOW_WIDTH || liveH != WINDOW_HEIGHT) {
+		resize_callback(window, liveW, liveH);
 	}
 	
 	double currentTime = glfwGetTime();
@@ -1417,7 +1452,8 @@ void App::DoFullRenderWithoutInput() {
 	//render
 	
 	
-	if (!rerender && time_till_regular == 0) {
+	if (!rerender && time_till_regular == 0 && reclear == 0) {
+		lock.unlock();
 		if (forceWaitTime && !replaying_macro) { // we don't want to hold up operations happening over multiple frames (think highlighting out of view lines that we don't need to re-render for)
 			int time = 10;
 			
@@ -1444,6 +1480,12 @@ void App::DoFullRenderWithoutInput() {
 	
 	lastUpdate = currentTime;
 	
+	// A swapped default back buffer has undefined contents. Rebuild every frame
+	// that we present, including widgets that normally skip unchanged content.
+	// The idle path above still avoids both drawing and swapping.
+	reclear = std::max(reclear, 1);
+	glViewport(0, 0, framebufferW, framebufferH);
+	glDisable(GL_SCISSOR_TEST);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // we need to overwrite everything now (rgb and a)
 	
 	if (settings->getValue("use_transparency", false)) {
@@ -1453,17 +1495,8 @@ void App::DoFullRenderWithoutInput() {
 	}
 	
 	
-	if (settings->getValue("use_transparency", false) != last_transparency_w_clear) {
-		reclear = 3;
-	}
-	
-	
-	if (reclear != 0) {
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-		last_transparency_w_clear = settings->getValue("use_transparency", false);
-		// change reclear to false later
-	}
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	last_transparency_w_clear = settings->getValue("use_transparency", false);
 	
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE); // don't let anything else touch alpha
 	
@@ -1645,6 +1678,7 @@ void App::Run() {
 	commandUnfocused(); // sets the command bar text to start with
 	
 	// Main loop
+	renderReady = true;
 	while (!glfwWindowShouldClose(window)) {
 		// Handle input/events
 		rerender = false;
@@ -1686,6 +1720,7 @@ void App::Run() {
 		}
 		DoFullRenderWithoutInput();
 	}
+	renderReady = false;
 	
 	std::cout << "Saving..." << std::endl;
 	
@@ -2444,13 +2479,16 @@ void App::scroll_callback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 void App::resize_callback(GLFWwindow* window, int width, int height) {
+	if (width <= 0 || height <= 0) { return; }
 	reclear = 3;
 	
 	WINDOW_WIDTH = width;
 	WINDOW_HEIGHT = height;
 	
 	 // 1) Update the viewport to cover the whole new window:
-	glViewport(0, 0, width, height);
+	int framebufferW, framebufferH;
+	glfwGetFramebufferSize(window, &framebufferW, &framebufferH);
+	glViewport(0, 0, framebufferW, framebufferH);
 
 	// 2) Rebuild your projection matrix:
 	glMatrixMode(GL_PROJECTION);

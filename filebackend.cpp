@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <system_error>
@@ -42,6 +43,32 @@ std::wstring widenUtf8(const std::string& input) {
 }
 #endif
 
+// Rename the staging file directly, without ReplaceFileW's extra ~RF*.TMP.
+// POSIX semantics also allow replacing files held open by mapped readers.
+#ifdef _WIN32
+bool replaceLocalFile(const std::filesystem::path& temp, const std::filesystem::path& target) {
+	const auto source = widenUtf8(temp.string());
+	const auto destination = widenUtf8(std::filesystem::absolute(target).string());
+	const HANDLE handle = CreateFileW(source.c_str(), DELETE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+		nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+	if (handle == INVALID_HANDLE_VALUE) return false;
+	const auto name_bytes = destination.size() * sizeof(wchar_t);
+	std::vector<std::uint8_t> buffer(sizeof(FILE_RENAME_INFO) + name_bytes, 0);
+	auto* info = reinterpret_cast<FILE_RENAME_INFO*>(buffer.data());
+	info->Flags = FILE_RENAME_FLAG_REPLACE_IF_EXISTS | FILE_RENAME_FLAG_POSIX_SEMANTICS;
+	info->FileNameLength = static_cast<DWORD>(name_bytes);
+	std::memcpy(info->FileName, destination.data(), name_bytes);
+	const bool renamed = SetFileInformationByHandle(handle, FileRenameInfoEx, info, static_cast<DWORD>(buffer.size())) != 0;
+	const auto code = GetLastError();
+	CloseHandle(handle);
+	if (!renamed && (code == ERROR_INVALID_PARAMETER || code == ERROR_NOT_SUPPORTED || code == ERROR_INVALID_FUNCTION)) {
+		return MoveFileExW(source.c_str(), destination.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+	}
+	SetLastError(code);
+	return renamed;
+}
+#endif
+
 bool atomicWriteLocal(const std::filesystem::path& target, const std::vector<std::uint8_t>& bytes, std::string& error) {
 	std::error_code ec;
 	if (!target.parent_path().empty()) {
@@ -69,20 +96,24 @@ bool atomicWriteLocal(const std::filesystem::path& target, const std::vector<std
 		std::filesystem::remove(temp, ec);
 		return false;
 	}
-	std::fflush(file);
+	bool flushed = std::fflush(file) == 0;
 #ifdef _WIN32
-	_commit(_fileno(file));
+	if (_commit(_fileno(file)) != 0) flushed = false;
 #else
-	fsync(fileno(file));
+	if (fsync(fileno(file)) != 0) flushed = false;
 #endif
-	std::fclose(file);
+	if (std::fclose(file) != 0) flushed = false;
+	if (!flushed) {
+		error = "could not flush temporary file";
+		std::filesystem::remove(temp, ec);
+		return false;
+	}
 
 #ifdef _WIN32
-	const auto source = widenUtf8(temp.string());
-	const auto destination = widenUtf8(target.string());
-	if (!ReplaceFileW(destination.c_str(), source.c_str(), nullptr, REPLACEFILE_WRITE_THROUGH, nullptr, nullptr) &&
-		!MoveFileExW(source.c_str(), destination.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
-		error = "could not replace destination file";
+	if (!replaceLocalFile(temp, target)) {
+		const auto code = GetLastError();
+		error = "could not replace destination file: " +
+			std::error_code(static_cast<int>(code), std::system_category()).message();
 		std::filesystem::remove(temp, ec);
 		return false;
 	}

@@ -613,55 +613,16 @@ static std::wstring widen(const std::string& s) {
 #endif
 
 inline bool atomicWriteReplace(const std::filesystem::path& target,
-							   const std::string& bytes,
-							   std::string* err = nullptr)
+                               const std::string& bytes,
+                               std::string* err = nullptr)
 {
-	std::error_code ec;
-	auto dir  = target.parent_path();
-	auto base = target.filename().string();
-	auto tmp  = dir / (base + ".tmp~" + std::to_string(::getpid()));
-
-	// 1) write tmp (C stdio to get a portable fd for fsync/_commit)
-	{
-		std::FILE* f = std::fopen(tmp.string().c_str(), "wb");
-		if (!f) { if (err) *err = "open tmp failed"; return false; }
-		if (bytes.size() && std::fwrite(bytes.data(), 1, bytes.size(), f) != bytes.size()) {
-			if (err) *err = "write tmp failed";
-			std::fclose(f); std::filesystem::remove(tmp, ec);
-			return false;
-		}
-		std::fflush(f);
-	#ifdef _WIN32
-		_commit(_fileno(f));
-	#else
-		fsync(fileno(f));
-	#endif
-		std::fclose(f);
-	}
-
-#ifdef _WIN32
-	std::wstring wtmp = widen(tmp.string());
-	std::wstring wdst = widen(target.string());
-	if (!ReplaceFileW(wdst.c_str(), wtmp.c_str(), nullptr,
-					  REPLACEFILE_WRITE_THROUGH, nullptr, nullptr)) {
-		// Fallback: MoveFileExW
-		if (!MoveFileExW(wtmp.c_str(), wdst.c_str(),
-						 MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
-			if (err) *err = "ReplaceFile/MoveFileEx failed";
-			std::filesystem::remove(tmp, ec);
-			return false;
-		}
-	}
-#else
-	std::filesystem::rename(tmp, target, ec);
-	if (ec) {
-		if (err) *err = "rename failed: " + ec.message();
-		std::filesystem::remove(tmp, ec);
-		return false;
-	}
-#endif
-	
-	return true;
+	// Settings and themes are local even while editing a remote workspace.
+	LocalFileBackend backend;
+	std::string error;
+	const bool written = backend.writeFile(target.string(),
+		std::vector<std::uint8_t>(bytes.begin(), bytes.end()), error);
+	if (err) *err = error;
+	return written;
 }
 
 static std::vector<std::uint8_t> loadFileBytes(const std::string& filename, bool& worked) {

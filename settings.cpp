@@ -2,6 +2,7 @@
 #include "text_renderer.h"
 #include "application.h"
 #include "Verify.hpp"
+#include <algorithm>
 
 SettingsFloat* Settings::makeFloat(std::string name, std::string key, float default_value) {
 	auto f = new SettingsFloat();
@@ -382,12 +383,28 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 }
 
 void Settings::position(int x, int y, int w, int h) {
+	if (scroll_change != 0) {
+		double value = App::settings->getValue("smooth_scroll", 0.2f) * App::settings->getValue("anim_speed", 1.0f);
+		double change = scroll_change * value;
+		if (scroll_change < 0.1 && scroll_change > -0.1) change = scroll_change;
+		scrolled_to += change;
+		scroll_change -= change;
+		App::time_till_regular = 2;
+	}
 	before = nullptr;
 	Widget::position(x, y, w, h);
-	max_scroll = fmax(0, (before->t_y+before->t_h+scrolled_to-t_y) - (t_h-tab_bar->t_h));
+	max_scroll = before ? std::max(0, (before->t_y+before->t_h+(int)scrolled_to-t_y) - (t_h-tab_bar->t_h)) : 0;
+	double clamped = std::clamp(scrolled_to, 0.0, (double)max_scroll);
+	if (clamped != scrolled_to) {
+		scrolled_to = clamped;
+		before = nullptr;
+		Widget::position(x, y, w, h);
+	}
+	scroll_change = std::clamp(scrolled_to + scroll_change, 0.0, (double)max_scroll) - scrolled_to;
 }
 
 void Settings::handleChildren() {
+	scroll_change = 0;
 	edits_to_element.clear();
 	elements_to_edit.clear();
 	
@@ -409,7 +426,7 @@ void Settings::handleChildren() {
 			if (before != nullptr) {
 				y = before->t_y+before->t_h; // all that just to get the y location... maybe there's a problem with my system. Oh well, it's too late now y'all
 			}else{
-				y = tab_bar->t_h+tab_bar->t_y+App::text_padding-scrolled_to;
+				y = tab_bar->t_h+tab_bar->t_y+App::text_padding-(int)scrolled_to;
 			}
 			
 			t->t_y = y+TextRenderer::get_text_height()+App::text_padding;
@@ -579,17 +596,12 @@ bool Settings::on_scroll_event(double xchange, double ychange) {
 		return true;
 	}
 	
-	if (!cursor_in_this) {
+	if (!cursor_in_this || !is_visible) {
 		return false;
 	}
 	
-	scrolled_to += ychange*40;
-	
-	if (scrolled_to < 0) {
-		scrolled_to = 0;
-	}else if (scrolled_to > max_scroll) {
-		scrolled_to = max_scroll;
-	}
+	scroll_change = std::clamp(scrolled_to + scroll_change + ychange * 6 * TextRenderer::get_text_height(), 0.0, (double)max_scroll) - scrolled_to;
+	App::time_till_regular = 2;
 	return true;
 }
 

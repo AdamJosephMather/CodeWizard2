@@ -121,14 +121,14 @@ JupyterEdit::JupyterEdit(Widget* parent) : Widget(parent) {
         double total = std::max(1, contentHeight);
         return std::vector<double>{scroll/total, std::min(1.0, (scroll+viewportBottom-viewportTop)/total)};
     };
-    scrollbar->scrollTo = [this](double fraction) { scroll = fraction*contentHeight; App::reclear = 3; };
+    scrollbar->scrollTo = [this](double fraction) { scroll = fraction*contentHeight; scrollChange=0; App::reclear = 3; };
     horizontalScrollbar = new Scrollbar(scrollArea);
     horizontalScrollbar->horizontal = true;
     horizontalScrollbar->getScrollInfo = [this] {
         const double width = std::max(1, contentWidth);
         return std::vector<double>{horizontalScroll/width, std::min(1.0, (horizontalScroll+std::max(1,t_w-App::text_padding*5-12))/width)};
     };
-    horizontalScrollbar->scrollTo = [this](double fraction) { horizontalScroll=fraction*contentWidth; App::reclear=3; };
+    horizontalScrollbar->scrollTo = [this](double fraction) { horizontalScroll=fraction*contentWidth; horizontalScrollChange=0; App::reclear=3; };
     conflictMenu = new BrokenStateMenu(this, "Reload", "Overwrite", "Notebook changed on disk. Reload discards edits; Overwrite keeps them.");
     conflictMenu->hide();
     conflictMenu->first_callback = [this] {
@@ -139,6 +139,7 @@ JupyterEdit::JupyterEdit(Widget* parent) : Widget(parent) {
             App::RemoveWidgetFromParent(c.output); App::deleteWidget(c.output);
         }
         cells.clear(); valid=false; dirty=false; conflictReported=false; selected=0; scroll=0;
+        scrollChange=0; horizontalScroll=0; horizontalScrollChange=0;
         conflictMenu->hide(); pythonAttempt=0; kernelName.clear();
         openFile(file); App::reclear=3;
     };
@@ -457,13 +458,13 @@ void JupyterEdit::revealCursor() {
     const int line = TextRenderer::get_text_height(), pad = App::text_padding;
     const double top = cell.top+line+pad*2+cursor.head_line*line;
     const int height = std::max(line,viewportBottom-viewportTop);
-    if (top < scroll+pad) scroll=std::max(0.0,top-pad);
-    else if (top+line > scroll+height-pad) scroll=top+line-height+pad;
+    if (top < scroll+pad) { scroll=std::max(0.0,top-pad); scrollChange=0; }
+    else if (top+line > scroll+height-pad) { scroll=top+line-height+pad; scrollChange=0; }
     auto prefix = MST::substring(cell.source->lines[cursor.head_line].line_text,0,cursor.head_char);
     const double left = cell.source->getVisLen(prefix)*TextRenderer::get_text_width(1);
     const int width = std::max(1,t_w-pad*5-12);
-    if (left < horizontalScroll) horizontalScroll=left;
-    else if (left+pad*3 > horizontalScroll+width) horizontalScroll=left+pad*3-width;
+    if (left < horizontalScroll) { horizontalScroll=left; horizontalScrollChange=0; }
+    else if (left+pad*3 > horizontalScroll+width) { horizontalScroll=left+pad*3-width; horizontalScrollChange=0; }
 }
 
 void JupyterEdit::find(bool forward, bool replace) {
@@ -725,6 +726,19 @@ void JupyterEdit::position(int x, int y, int w, int h) {
     contentHeight=total;
     const bool horizontal = contentWidth>sourceWidth;
     if (horizontal) viewportBottom=std::max(viewportTop+1,viewportBottom-TextRenderer::get_text_width(1)*2);
+    auto animateScroll = [](double& offset, double& pending, double maximum) {
+        offset=std::clamp(offset,0.0,maximum);
+        pending=std::clamp(offset+pending,0.0,maximum)-offset;
+        if (pending == 0) return;
+        double value=App::settings->getValue("smooth_scroll",0.2f)*App::settings->getValue("anim_speed",1.0f);
+        double change=pending*value;
+        if (pending < 0.1 && pending > -0.1) change=pending;
+        offset+=change;
+        pending-=change;
+        App::time_till_regular=2;
+    };
+    animateScroll(scroll,scrollChange,(double)std::max(0,total-(viewportBottom-viewportTop)));
+    animateScroll(horizontalScroll,horizontalScrollChange,(double)std::max(0,contentWidth-sourceWidth));
     if (!cells.empty() && cells[selected].source->tryingToEnsureCursorPos) revealCursor();
     scroll=std::clamp(scroll,0.0,(double)std::max(0,total-(viewportBottom-viewportTop)));
     horizontalScroll=std::clamp(horizontalScroll,0.0,(double)std::max(0,contentWidth-sourceWidth));
@@ -931,10 +945,9 @@ bool JupyterEdit::on_scroll_event(double x,double y) {
     if (glfwGetKey(App::window,GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(App::window,GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
         x+=y; y=0;
     }
-    horizontalScroll+=x*TextRenderer::get_text_width(1)*6;
-    horizontalScroll=std::clamp(horizontalScroll,0.0,(double)std::max(0,contentWidth-std::max(1,t_w-App::text_padding*5-12)));
-    scroll+=y*TextRenderer::get_text_height()*3;
-    scroll=std::clamp(scroll,0.0,(double)std::max(0,contentHeight-(viewportBottom-viewportTop)));
+    horizontalScrollChange=std::clamp(horizontalScroll+horizontalScrollChange+x*TextRenderer::get_text_width(1)*6,0.0,(double)std::max(0,contentWidth-std::max(1,t_w-App::text_padding*5-12)))-horizontalScroll;
+    scrollChange=std::clamp(scroll+scrollChange+y*TextRenderer::get_text_height()*6,0.0,(double)std::max(0,contentHeight-(viewportBottom-viewportTop)))-scroll;
+    App::time_till_regular=2;
     App::reclear=3; return true;
 }
 

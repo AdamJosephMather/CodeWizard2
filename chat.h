@@ -28,6 +28,7 @@ public:
 	bool on_key_event(int key, int scancode, int action, int mods);
 	
 	double scrolled_to = 0;
+	double scroll_change = 0;
 	int min_scroll = 0;
 private:
 	TextEdit* querybox = nullptr;

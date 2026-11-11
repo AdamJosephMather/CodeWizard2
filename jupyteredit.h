@@ -60,7 +60,9 @@ private:
     std::recursive_mutex saveMutex;
     int selected = 0;
     double scroll = 0;
+    double scrollChange = 0;
     double horizontalScroll = 0;
+    double horizontalScrollChange = 0;
     int contentWidth = 0;
     int nextCellId = 0;
     int contentHeight = 0;

@@ -4,6 +4,7 @@
 #include "text_renderer.h"
 #include "curler.h"
 #include "markdown_utils.h"
+#include <algorithm>
 #include <regex>
 
 Chat::Chat(Widget *parent) : Widget(parent) {
@@ -52,6 +53,8 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 		}
 		message_te.clear();
 		from_user.clear();
+		scrolled_to = 0;
+		scroll_change = 0;
 	});
 	newChat->rounded = true;
 	
@@ -80,6 +83,14 @@ void Chat::position(int x, int y, int width, int height) {
 	t_h = height;
 	t_x = x;
 	t_y = y;
+	if (scroll_change != 0) {
+		double value = App::settings->getValue("smooth_scroll", 0.2f) * App::settings->getValue("anim_speed", 1.0f);
+		double change = scroll_change * value;
+		if (scroll_change < 0.1 && scroll_change > -0.1) change = scroll_change;
+		scrolled_to += change;
+		scroll_change -= change;
+		App::time_till_regular = 2;
+	}
 	
 	int bxsz = 4*TextRenderer::get_text_height();
 	int the_y = t_y+t_h - bxsz;
@@ -120,13 +131,14 @@ void Chat::position(int x, int y, int width, int height) {
 		}
 	}
 	
-	min_scroll += TextRenderer::get_text_height();
+	min_scroll = std::min(0, min_scroll + TextRenderer::get_text_height());
 	
 	if (scrolled_to > 0) {
 		scrolled_to = 0;
 	}if (scrolled_to < min_scroll) {
 		scrolled_to = min_scroll;
 	}
+	scroll_change = std::clamp(scrolled_to + scroll_change, (double)min_scroll, 0.0) - scrolled_to;
 }
 
 void Chat::render() {
@@ -174,12 +186,8 @@ void Chat::render() {
 bool Chat::on_scroll_event(double xchange, double ychange) {
 	if (!cursor_in_this || !is_visible) { return false; }
 	
-	scrolled_to += ychange * 6 * TextRenderer::get_text_height();
-	if (scrolled_to > 0) {
-		scrolled_to = 0;
-	}if (scrolled_to < min_scroll) {
-		scrolled_to = min_scroll;
-	}
+	scroll_change = std::clamp(scrolled_to + scroll_change + ychange * 6 * TextRenderer::get_text_height(), (double)min_scroll, 0.0) - scrolled_to;
+	App::time_till_regular = 2;
 	
 	Widget::on_scroll_event(xchange, 0);
 	

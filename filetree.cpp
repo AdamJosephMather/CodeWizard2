@@ -1,6 +1,7 @@
 #include "filetree.h"
 #include "text_renderer.h"
 #include "application.h"
+#include <algorithm>
 
 FileTree::FileTree(Widget* parent) : Widget(parent) {
 	id = MST::toMonoString("FileTree");
@@ -198,6 +199,17 @@ void FileTree::position(int x, int y, int w, int h) {
 	}
 	
 	elHeighto = TextRenderer::get_text_height()+App::text_padding;
+	auto animateScroll = [](double& offset, double& pending) {
+		if (pending == 0) return;
+		double value = App::settings->getValue("smooth_scroll", 0.2f) * App::settings->getValue("anim_speed", 1.0f);
+		double change = pending * value;
+		if (pending < 0.1 && pending > -0.1) change = pending;
+		offset += change;
+		pending -= change;
+		App::time_till_regular = 2;
+	};
+	animateScroll(scrolled_to_vert, scroll_vertical_change);
+	animateScroll(scrolled_to_horz, scroll_horizontal_change);
 	toRender.clear();
 	
 	max_scroll_horz = 0.0;
@@ -214,6 +226,8 @@ void FileTree::position(int x, int y, int w, int h) {
 	}else if (scrolled_to_horz < 0.0) {
 		scrolled_to_horz = 0.0;
 	}
+	scroll_vertical_change = std::clamp(scrolled_to_vert + scroll_vertical_change, 0.0, max_scroll_vert) - scrolled_to_vert;
+	scroll_horizontal_change = std::clamp(scrolled_to_horz + scroll_horizontal_change, 0.0, max_scroll_horz) - scrolled_to_horz;
 	lock.unlock();
 	if (start_remote_refresh) refreshAsync();
 }
@@ -288,7 +302,7 @@ void FileTree::save() {
 }
 
 bool FileTree::on_scroll_event(double xchange, double ychange){
-	if (!cursor_in_this) {
+	if (!cursor_in_this || !is_visible) {
 		return false;
 	}
 	
@@ -296,20 +310,9 @@ bool FileTree::on_scroll_event(double xchange, double ychange){
 		std::swap(xchange, ychange);
 	}
 	
-	scrolled_to_vert += ychange*6;
-	scrolled_to_horz += xchange*6*6;
-	
-	if (scrolled_to_vert > max_scroll_vert) {
-		scrolled_to_vert = max_scroll_vert;
-	}else if (scrolled_to_vert < 0.0) {
-		scrolled_to_vert = 0.0;
-	}
-	
-	if (scrolled_to_horz > max_scroll_horz) {
-		scrolled_to_horz = max_scroll_horz;
-	}else if (scrolled_to_horz < 0.0) {
-		scrolled_to_horz = 0.0;
-	}
+	scroll_vertical_change = std::clamp(scrolled_to_vert + scroll_vertical_change + ychange * 6, 0.0, max_scroll_vert) - scrolled_to_vert;
+	scroll_horizontal_change = std::clamp(scrolled_to_horz + scroll_horizontal_change + xchange * 6 * TextRenderer::get_text_width(1), 0.0, max_scroll_horz) - scrolled_to_horz;
+	App::time_till_regular = 2;
 	
 	return true;	
 }

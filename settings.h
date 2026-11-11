@@ -43,7 +43,8 @@ public:
 	
 	bool rounded = true;
 	
-	int scrolled_to = 0;
+	double scrolled_to = 0;
+	double scroll_change = 0;
 	int max_scroll = 0;
 	std::unordered_map<int, std::vector<SettingsElement*>> settings_menus;
 	std::unordered_map<TextEdit*, SettingsElement*> edits_to_element;

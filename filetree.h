@@ -41,6 +41,8 @@ public:
 	
 	double scrolled_to_vert = 0; // measured in lines
 	double scrolled_to_horz = 0;
+	double scroll_vertical_change = 0;
+	double scroll_horizontal_change = 0;
 	double max_scroll_vert = 0;
 	double max_scroll_horz = 0;
 	

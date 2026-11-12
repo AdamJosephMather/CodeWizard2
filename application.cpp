@@ -50,7 +50,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 6;
-int App::patch_version = 3; // 🚀 (we now support emojis)
+int App::patch_version = 4; // 🚀 (we now support emojis)
 
 const std::vector<int> version = {App::major_version, App::minor_version, App::patch_version};
 
@@ -609,10 +609,6 @@ void App::checkForUpdates() {
 	if (latest.size() != 3) {
 		return;
 	}
-	
-	int f1 = latest[0]-major_version;
-	int f2 = latest[1]-minor_version;
-	int f3 = latest[2]-patch_version;
 	
 	if (isNewer(latest, version)) {
 		displayToast(MST::toMonoString("There is a new version of CodeWizard available!"));

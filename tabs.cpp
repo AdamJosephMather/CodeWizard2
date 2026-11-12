@@ -135,7 +135,7 @@ void Tabs::render() {
 			if (selected_id == info.id) {
 				c = App::theme.main_text_color;
 				tc = App::theme.darker_background_color;
-				bc = App::theme.main_text_color;
+				bc = App::theme.border;
 			}else if (hovering.indx == indx && hovering.body) {
 				c = App::theme.hover_background_color;
 				tc = App::theme.main_text_color;

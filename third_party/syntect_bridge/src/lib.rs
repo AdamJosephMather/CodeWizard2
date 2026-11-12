@@ -215,6 +215,11 @@ fn choose_syntax<'a>(
 ) -> Option<&'a SyntaxReference> {
 	let trimmed = requested.trim();
 	let extension = trimmed.trim_start_matches('.');
+	let extension = if extension.eq_ignore_ascii_case("mjs") {
+		"js"
+	} else {
+		extension
+	};
 
 	if let Some(syntax) = syntax_set.find_syntax_by_extension(extension) {
 		return Some(syntax);
@@ -546,6 +551,111 @@ pub extern "C" fn cw_syntect_role_count() -> u32 {
 #[cfg(test)]
 mod tests {
 	use super::*;
+
+	#[test]
+	fn jsx_nested_expressions_and_multiline_arrows() {
+		let source = r#"function ScrollArea({children}) {
+  return (
+    <div className="info-dialog-scroll-area">
+      <div className="info-dialog-scroll" ref={scrollRef} onScroll={updateScrollbar}>
+        <div className="info-dialog-content">{children}</div>
+      </div>
+      <div
+        className={scrollbar.visible ? 'custom-scrollbar is-visible' : 'custom-scrollbar'}
+        ref={trackRef}
+        aria-hidden="true"
+        onPointerDown={handleTrackPointerDown}
+      >
+        {scrollbar.visible && (
+          <div
+            className="custom-scrollbar-thumb"
+            style={{ height: `${scrollbar.height}px`, top: `${scrollbar.top}px` }}
+            onPointerDown={handleThumbPointerDown}
+            onPointerMove={handleThumbPointerMove}
+            onPointerUp={handleThumbPointerEnd}
+            onPointerCancel={handleThumbPointerEnd}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+function toggleTask(id, done) {
+  setTasks((currentTasks) =>
+    currentTasks.map((task) =>
+      task.id === id ? { ...task, done: typeof done === 'boolean' ? done : !task.done } : task,
+    ),
+  )
+}
+const calendarDays = Array.from({ length: 42 }, (_, index) => {
+  const firstDay = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1)
+  firstDay.setDate(firstDay.getDate() - firstDay.getDay() + index)
+  return firstDay
+})
+"#;
+		for newlines in [false, true] {
+			let syntax_set = load_embedded_syntax_set(newlines).unwrap();
+			for extension in ["js", "jsx", "tsx"] {
+				let source = if extension == "js" {
+					&source[source.find("function toggleTask").unwrap()..]
+				} else {
+					source
+				};
+				let mut state = ParseState::new(choose_syntax(&syntax_set, extension).unwrap());
+				let mut stack = ScopeStack::new();
+				let mut const_count = 0;
+				for line in source.lines() {
+					let line = if newlines { format!("{line}\n") } else { line.to_owned() };
+					let ops = state.parse_line(&line, &syntax_set).unwrap();
+					for (text, operation) in ScopeRegionIterator::new(&ops, &line) {
+						stack.apply(operation).unwrap();
+						assert!(text.is_empty() || selectors("invalid").does_match(stack.as_slice()).is_none(),
+							"{extension} ({newlines}): {text:?} in {line:?}: {stack:?}");
+						if text == "const" && selectors("storage, keyword").does_match(stack.as_slice()).is_some() {
+							const_count += 1;
+						}
+					}
+				}
+				assert_eq!(const_count, 2, "subsequent declarations should remain JavaScript");
+			}
+		}
+	}
+
+	#[test]
+	fn javascript_comparisons_do_not_start_jsx_tags() {
+		for newlines in [false, true] {
+			let syntax_set = load_embedded_syntax_set(newlines).expect("embedded dump should load");
+			assert_eq!(choose_syntax(&syntax_set, ".mjs").unwrap().name,
+				choose_syntax(&syntax_set, "js").unwrap().name);
+			for extension in ["js", "jsx", "tsx"] {
+				let mut state = ParseState::new(choose_syntax(&syntax_set, extension).unwrap());
+				let mut stack = ScopeStack::new();
+				let mut saw_following_function = false;
+				for line in [
+					"function handleTouchEnd(event) {",
+					"  if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY) * 1.25) return;",
+					"  if (activeTab === 'settings') { returnFromSettings(); return; }",
+					"  const currentIndex = navItems.findIndex((item) => item.id === activeTab)",
+					"  const nextIndex = deltaX < 0 ? currentIndex + 1 : currentIndex - 1",
+					"  if (nextIndex >= 0 && nextIndex < navItems.length) navigateToTab(navItems[nextIndex].id)",
+					"}",
+					"async function followingFunction() {}",
+				] {
+					let line = if newlines { format!("{line}\n") } else { line.to_owned() };
+					let ops = state.parse_line(&line, &syntax_set).expect("JavaScript should parse");
+					for (text, operation) in ScopeRegionIterator::new(&ops, &line) {
+						stack.apply(operation).unwrap();
+						assert!(selectors("invalid, meta.jsx, meta.tag").does_match(stack.as_slice()).is_none(),
+							"{extension}: unexpected markup or error at {text:?} in {line:?}");
+						if text == "followingFunction" && selectors("entity.name.function").does_match(stack.as_slice()).is_some() {
+							saw_following_function = true;
+						}
+					}
+				}
+				assert!(saw_following_function, "{extension}: subsequent functions should stay highlighted");
+			}
+		}
+	}
 
 	#[test]
 	fn embedded_jsx_syntax_parses_nested_markup() {

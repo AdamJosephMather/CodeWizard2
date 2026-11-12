@@ -4,7 +4,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use syntect::dumps;
-use syntect::parsing::SyntaxSet;
+use syntect::parsing::syntax_definition::Pattern;
+use syntect::parsing::{SyntaxSet, SyntaxSetBuilder};
 
 fn main() {
 	if let Err(err) = real_main() {
@@ -49,7 +50,28 @@ fn build_dump(
 		SyntaxSet::load_defaults_nonewlines()
 	};
 
-	let mut builder = defaults.into_builder();
+	// Preserve syntax/context order so the defaults' linked context references
+	// remain valid. Re-add definitions to allow a targeted bundled JS correction.
+	let defaults = defaults.into_builder();
+	let mut builder = SyntaxSetBuilder::new();
+	for mut syntax in defaults.syntaxes().iter().cloned() {
+		if syntax.scope.to_string() == "source.js" {
+			for (name, context) in &mut syntax.contexts {
+				if name.starts_with("#anon_function-call-params_") {
+					for pattern in &mut context.patterns {
+						if let Pattern::Match(pattern) = pattern {
+							if pattern.regex.regex_str() == r"(,)\s+" {
+								// A comma is valid with no following whitespace, including
+								// at EOL when the caller supplies lines without newlines.
+								pattern.regex = syntect::parsing::Regex::new(r"(,)\s*".to_owned());
+							}
+						}
+					}
+				}
+			}
+		}
+		builder.add(syntax);
+	}
 
 	// Optional project-local syntaxes.
 	//

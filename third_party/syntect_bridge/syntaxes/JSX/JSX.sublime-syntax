@@ -23,7 +23,9 @@ contexts:
         - include: jsx-tag
 
   jsx-tag:
-    - match: '<(?=\s*(?:{{jsx_name}}|>))'
+    # JSX names must immediately follow '<'. Allowing whitespace here turns
+    # comparisons such as "deltaX < Math.abs(deltaY)" into unclosed JSX tags.
+    - match: '<(?=(?:{{jsx_name}}|>))'
       scope: punctuation.definition.tag.begin.js
       push: jsx-tag-name
 
@@ -112,31 +114,11 @@ contexts:
     - match: '\}'
       scope: punctuation.section.interpolation.end.js
       pop: true
-    - match: ''
-      push: scope:source.js
+    # Let JavaScript balance object literals, blocks and template substitutions.
+    # An expression returns before the interpolation's closing brace naturally.
+    - match: '(?=\S)'
+      push: scope:source.js#expression
       with_prototype:
-        - match: '\{'
-          scope: punctuation.section.block.begin.js
-          push: jsx-interpolation-nested-brace
-        # Return control to this context without consuming the closing brace.
-        - match: '(?=\})'
-          pop: true
-        - include: jsx-tag
-
-  jsx-interpolation-nested-brace:
-    - meta_include_prototype: false
-    - meta_content_scope: source.js.embedded.jsx
-    - match: '\}'
-      scope: punctuation.section.block.end.js
-      pop: true
-    - match: ''
-      push: scope:source.js
-      with_prototype:
-        - match: '\{'
-          scope: punctuation.section.block.begin.js
-          push: jsx-interpolation-nested-brace
-        - match: '(?=\})'
-          pop: true
         - include: jsx-tag
 
   jsx-entity:

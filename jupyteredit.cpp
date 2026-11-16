@@ -708,7 +708,7 @@ void JupyterEdit::position(int x, int y, int w, int h) {
     const int findHeight = (line*std::min(3,(int)findEdit->lines.size())+pad*2)
         +(line*std::min(3,(int)replaceEdit->lines.size())+pad*2)+pad*3;
     viewportTop = by+row+line+pad*2;
-    viewportBottom = y+h-pad-(findOpen ? findHeight : 0);
+    viewportBottom = y+h-(findOpen ? findHeight : 0);
     viewportBottom = std::max(viewportTop+1, viewportBottom);
     const int sourceWidth=std::max(1,w-pad*5-12);
     contentWidth=sourceWidth;
@@ -725,7 +725,7 @@ void JupyterEdit::position(int x, int y, int w, int h) {
     }
     contentHeight=total;
     const bool horizontal = contentWidth>sourceWidth;
-    if (horizontal) viewportBottom=std::max(viewportTop+1,viewportBottom-TextRenderer::get_text_width(1)*2);
+    
     auto animateScroll = [](double& offset, double& pending, double maximum) {
         offset=std::clamp(offset,0.0,maximum);
         pending=std::clamp(offset+pending,0.0,maximum)-offset;
@@ -769,7 +769,12 @@ void JupyterEdit::position(int x, int y, int w, int h) {
             if (c.editor->hoverbox->parent == c.editor) App::RemoveWidgetFromParent(c.editor->hoverbox);
         }
     }
-    scrollArea->t_x=x+pad; scrollArea->t_y=viewportTop; scrollArea->t_w=w-pad*2; scrollArea->t_h=viewportBottom-viewportTop+(horizontal ? TextRenderer::get_text_width(1)*2 : 0);
+    
+    scrollArea->t_x=x+pad;
+    scrollArea->t_y=viewportTop;
+    scrollArea->t_w=w-pad;
+    scrollArea->t_h=viewportBottom-viewportTop;
+    
     scrollbar->position(x,viewportTop,w,viewportBottom-viewportTop);
     horizontalScrollbar->is_visible=horizontal;
     if (horizontal) horizontalScrollbar->position(x,viewportTop,w,viewportBottom-viewportTop);
@@ -796,11 +801,16 @@ void JupyterEdit::position(int x, int y, int w, int h) {
 void JupyterEdit::render() {
     if (!is_visible) return;
     if (conflictReported) { conflictMenu->render(); return; }
-    App::DrawRoundedRect(t_x,t_y,t_w,t_h,App::text_padding,App::theme.extras_background_color);
+    
+    App::DrawRoundedRect(t_x,t_y,t_w,t_h,App::text_padding,App::theme.overlay_background_color);
+    
     for (auto* button : toolbar) button->render();
-    int line=TextRenderer::get_text_height(), pad=App::text_padding;
+    
+    int line = TextRenderer::get_text_height();
+    int pad = App::text_padding;
     TextRenderer::draw_text(t_x+pad,viewportTop-line-pad,MST::toMonoString(status),App::theme.main_text_color);
-    App::runWithSKIZ(t_x+pad,viewportTop,std::max(1,t_w-pad*2),std::max(1,viewportBottom-viewportTop),[&] {
+    
+    App::runWithSKIZ(t_x+pad,viewportTop,std::max(1,t_w-pad),std::max(1,viewportBottom-viewportTop),[&] {
         for (int i=0;i<(int)cells.size();++i) {
             auto& c=cells[i];
             if (!c.source->is_visible) continue;
@@ -817,11 +827,18 @@ void JupyterEdit::render() {
         for (auto& cell : cells) if (cell.editor->is_visible) cell.editor->renderExtras();
         scrollbar->render();
     });
+    
     if (horizontalScrollbar->is_visible) horizontalScrollbar->render();
+    
     if (findOpen) for (auto* widget : findWidgets) {
         App::runWithSKIZ(widget->t_x,widget->t_y,widget->t_w,widget->t_h,[&] { widget->render(); });
     }
-    App::DrawRoundBorder(t_x,t_y,t_w,t_h,containsFocus(this) ? App::theme.active_color : App::theme.border,5,pad);
+    
+    auto borderCol = containsFocus(this) ? App::theme.active_color : App::theme.border;
+    
+    App::DrawRoundBorder(t_x,t_y,t_w,t_h,borderCol,5,pad);
+    
+    App::DrawRect(t_x, viewportTop, t_w, 1, borderCol);
 }
 
 bool JupyterEdit::on_key_event(int key,int scancode,int action,int mods) {

@@ -181,3 +181,7 @@ bool Scrollbar::on_mouse_move_event() {
 	
 	return true;
 }
+
+int Scrollbar::getBarThickness() {
+	return bar_width;
+}

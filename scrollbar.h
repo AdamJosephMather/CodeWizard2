@@ -23,6 +23,8 @@ public:
 	bool on_mouse_move_event() override;
 	
 	void setErrors(std::vector<double> r, std::vector<double> o, std::vector<double> b);
+	
+	int getBarThickness();
 private:
 	bool hovering = false;
 	double start = 0;

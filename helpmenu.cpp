@@ -215,6 +215,8 @@ Note that for most movement shortcuts ('h', 'j', 'k', 'l', '<', '>', 'a', 'w', '
 
 Graphing Window:
 
+	● Click Add Function to plot an expression in x, such as `x^2`, `sin(x)`, or `sqrt(x)`. Enter just the expression after y =; use * for multiplication. Trigonometric functions use radians. Pan or zoom to explore; Reset View restores the data bounds (or the default view when only functions are present). Functions are not affected by SMA.
+
 	● The graphing window allows you to view data on an xy plane. By providing the x and y values like this: `x1, x2, x3`, `y1, y2, y3`, you can view data in either a scatter or line graph.
 
 	● Furthermore, the data can be averaged with a simple moving average, but only the line graphs will be affected.

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
+#include <array>
 #include "widget.h"
 #include "helper_types.h"
 #include "textedit.h"
@@ -45,6 +46,9 @@ struct DataType {
 	virtual ~DataType() = default;
 	
 	bool file = false;
+	TextEdit* function_edit = nullptr;
+	std::string function_status;
+	std::vector<DrawLine> function_lines;
 	
 	// for files
 	MST::MonoString filename;
@@ -83,7 +87,8 @@ private:
 	bool rerender = true;
 	
 	void setColors();
-	void addThing(bool isfile, std::string filepath="");
+	void positionToolbarControl(Widget* control, size_t index);
+	void addThing(bool isfile, std::string filepath="", bool isFunction=false);
 	void updateInfoFor(int id);
 	void recalculateDrawables(bool changeMinsMax=true);
 	void recalculateDisplayedValues();
@@ -98,7 +103,12 @@ private:
 	Button* addCords;
 	Button* addFile;
 	Button* addFolder;
+	Button* addFunction;
 	TextEdit* averageText;
+	struct ToolbarSlot { int x = 0; int y = 0; int width = 0; };
+	std::array<ToolbarSlot, 5> toolbarSlots;
+	int toolbarBottom = 0;
+	double maxDataScroll = 0;
 	
 	int screenHeight = 0;
 	int screenStart = 0;

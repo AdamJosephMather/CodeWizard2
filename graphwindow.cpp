@@ -3,6 +3,7 @@
 #include "text_renderer.h"
 #include "tinyfiledialogs.h"
 #include <algorithm>
+#include "graphfunction.h"
 
 GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 	id = MST::toMonoString("GraphWindow");
@@ -31,8 +32,7 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 	
 	addCords = new Button(this, MST::toMonoString("Add Coords"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
-		btn->t_x = t_x+App::text_padding*2;
-		btn->t_y = screenStart+screenHeight+App::text_padding*2 - scroll;
+		positionToolbarControl(btn, 0);
 	},  [&](Button* btn){
 		// onclick
 		addThing(false);
@@ -40,8 +40,7 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 	
 	addFile = new Button(this, MST::toMonoString("Add File"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
-		btn->t_x = addCords->t_x+addCords->t_w+App::text_padding;
-		btn->t_y = addCords->t_y;
+		positionToolbarControl(btn, 1);
 	},  [&](Button* btn){
 		// onclick
 		addThing(true);
@@ -49,8 +48,7 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 	
 	addFolder = new Button(this, MST::toMonoString("Add Folder"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
-		btn->t_x = addFile->t_x+addFile->t_w+App::text_padding;
-		btn->t_y = addFile->t_y;
+		positionToolbarControl(btn, 2);
 	},  [&](Button* btn){
 		// onclick
 		std::string fldr = App::settings->getValue("current_folder", std::string());
@@ -77,16 +75,19 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 		}
 	});
 	
+	addFunction = new Button(this, MST::toMonoString("Add Function"), [&](Button* btn, int, int, int, int, int, int){
+		positionToolbarControl(btn, 3);
+	}, [&](Button*){ addThing(false, "", true); });
+
 	averageText = new TextEdit(this, [=](Widget* t){
-		t->t_x = addFolder->t_x+addFolder->t_w+App::text_padding+TextRenderer::get_text_width(4);
-		t->t_y = addFile->t_y;
-		t->t_w = TextRenderer::get_text_width(20);
+		positionToolbarControl(t, 4);
+		const int labelWidth = TextRenderer::get_text_width(4);
+		t->t_x += labelWidth;
+		t->t_w = std::max(1, toolbarSlots[4].width - labelWidth);
 		t->t_h = TextRenderer::get_text_height()+2*App::text_padding;
 	});
 	averageText->setFullText(MST::toMonoString("1"));
 	
-	Button* addCords;
-	Button* addFile;
 	
 	recalculateDrawables();
 }
@@ -104,7 +105,7 @@ std::vector<std::filesystem::path> GraphWindow::get_files_in_directory(const std
 	return file_paths;
 }
 
-void GraphWindow::addThing(bool isfile, std::string filepath) {
+void GraphWindow::addThing(bool isfile, std::string filepath, bool isFunction) {
 	DataType line;
 	
 	if (isfile) {
@@ -240,13 +241,14 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 		// position
 		btn->t_x = t_x+App::text_padding*3;
 		
-		btn->t_y = addCords->t_y + addCords->t_h + App::text_padding*2 + (TOTAL_ITEM_HEIGHT + App::text_padding) * EXISTING_VAL;
+		btn->t_y = toolbarBottom + App::text_padding*2 + (TOTAL_ITEM_HEIGHT + App::text_padding) * EXISTING_VAL;
 		EXISTING_VAL += 1;
 	}, [&, thisId](Button* btn){
 		// onclick
 		for (int i = 0; i < allData.size(); i++) {
 			if (allData[i].id == thisId) {
 				// delete associated widgets
+				if (allData[i].function_edit) App::deleteWidget(allData[i].function_edit);
 				if (allData[i].x_edit) {
 					App::deleteWidget(allData[i].x_edit);
 					App::deleteWidget(allData[i].y_edit);
@@ -288,7 +290,7 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 	line.removeButton = remBut;
 	line.scatterButton = scatBut;
 	
-	if (!isfile) {
+	if (!isfile && !isFunction) {
 		TextEdit* xed;
 		TextEdit* yed;
 		
@@ -316,6 +318,19 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 		line.y_edit = yed;
 	}
 	
+	if (isFunction) {
+		line.function_edit = new TextEdit(this, [=](Widget* t){
+			t->t_x = remBut->t_x + TextRenderer::get_text_width(3) + App::text_padding;
+			t->t_y = remBut->t_y + remBut->t_h + App::text_padding;
+			t->t_w = std::max(1, t_w - 8*App::text_padding - TextRenderer::get_text_width(3));
+			t->t_h = TextRenderer::get_text_height() + 2*App::text_padding;
+		});
+		line.function_edit->setFullText(MST::toMonoString("sin(x)"));
+		line.function_edit->ontextchange = [this](Widget*){ rerender = true; };
+		scatBut->is_visible = false;
+		rerender = true;
+	}
+
 	line.c = colorsList[line.id%10];
 	
 	allData.push_back(line);
@@ -410,6 +425,11 @@ void GraphWindow::updateInfoFor(int id) {
 	recalculateDrawables();
 }
 
+void GraphWindow::positionToolbarControl(Widget* control, size_t index) {
+	control->t_x = toolbarSlots[index].x;
+	control->t_y = screenStart + screenHeight + App::text_padding*2 + toolbarSlots[index].y - scroll;
+}
+
 void GraphWindow::position(int x, int y, int w, int h) {
 	OldRenderState NEWSTATE = {x, y, w, h, reset->t_h, reset->t_y};
 	if (OLDSTATE.t_x != NEWSTATE.t_x || OLDSTATE.t_y != NEWSTATE.t_y || OLDSTATE.t_w != NEWSTATE.t_w || OLDSTATE.t_h != NEWSTATE.t_h || OLDSTATE.b_h != NEWSTATE.b_h || OLDSTATE.b_y != NEWSTATE.b_y || selectingSquare) {
@@ -423,7 +443,29 @@ void GraphWindow::position(int x, int y, int w, int h) {
 	// 1 button, 2 text edits. Ie, " B T T " -> 4*pad + 1*button + 2*textedit
 	TOTAL_ITEM_HEIGHT = 4*App::text_padding + (TextRenderer::get_text_height() + App::text_padding*2) * 3;
 	
-	const double maxScroll = allData.size() * (TOTAL_ITEM_HEIGHT+App::text_padding);
+	// Lay out the controls in order. Keep the SMA label and editor together.
+	const int gap = App::text_padding;
+	const int left = x + gap*2;
+	const int available = std::max(1, w - gap*4);
+	const int rowHeight = TextRenderer::get_text_height() + gap*2;
+	int column = 0, row = 0;
+	const std::array<Button*, 4> buttons = {addCords, addFile, addFolder, addFunction};
+	for (size_t i = 0; i < toolbarSlots.size(); ++i) {
+		int width = i < buttons.size()
+			? TextRenderer::get_text_width(buttons[i]->BUTTON_LABEL.length) + gap*2
+			: std::min(available, TextRenderer::get_text_width(24));
+		if (column > 0 && column + width > available) {
+			column = 0;
+			row += rowHeight + gap;
+		}
+		toolbarSlots[i] = {left + column, row, width};
+		column += width + gap;
+	}
+	const int toolbarHeight = row + rowHeight;
+	const int contentTop = screenStart + screenHeight + gap*2;
+	const int contentHeight = toolbarHeight + gap + allData.size() * (TOTAL_ITEM_HEIGHT + gap);
+	maxDataScroll = std::max(0, contentTop + contentHeight - (y + h - gap));
+	const double maxScroll = maxDataScroll;
 	scroll = std::clamp(scroll, 0.0, maxScroll);
 	scroll_change = std::clamp(scroll + scroll_change, 0.0, maxScroll) - scroll;
 	if (scroll_change != 0) {
@@ -435,6 +477,7 @@ void GraphWindow::position(int x, int y, int w, int h) {
 		App::time_till_regular = 2;
 	}
 	
+	toolbarBottom = contentTop + toolbarHeight - scroll;
 	EXISTING_VAL = 0;
 	Widget::position(x, y, w, h);
 }
@@ -464,7 +507,7 @@ bool GraphWindow::on_scroll_event(double xchange, double ychange) {
 		
 		return true;
 	}else if (App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart+screenHeight && App::mouseY <= t_h+t_y){
-		const double maxScroll = allData.size() * (TOTAL_ITEM_HEIGHT+App::text_padding);
+		const double maxScroll = maxDataScroll;
 		scroll_change = std::clamp(scroll + scroll_change + ychange * 6 * TextRenderer::get_text_height(), 0.0, maxScroll) - scroll;
 		App::time_till_regular = 2;
 		
@@ -553,6 +596,7 @@ void GraphWindow::recalculateDrawables(bool changeEm) {
 	}
 	
 	for (size_t i = 0; i < allData.size(); i++) {
+		if (allData[i].function_edit) continue;
 		if (allData[i].modified_x.size() != allData[i].modified_y.size()) {
 			App::displayToast(MST::toMonoString("Ommitting data, non-matching x/y count"));
 			continue;
@@ -677,6 +721,27 @@ void GraphWindow::render() {
 				auto lineVals = fromScaledToPixels(0, 0);
 				App::DrawLine(startX, lineVals.second, widths+startX, lineVals.second, 1, App::theme.main_text_color);
 				App::DrawLine(lineVals.first, screenStart, lineVals.first, screenStart+screenHeight, 1, App::theme.main_text_color);
+				for (auto& data : allData) {
+					if (!data.function_edit) continue;
+					if (rerender) {
+						const auto expression = MST::toString(data.function_edit->getFullText());
+						auto samples = GraphFunction::sample(expression, xmin, xmax, ymin, ymax, widths);
+						data.function_status = samples.hasRealValues ? "Use x; e.g. x^2, sin(x), sqrt(x)" : "Check expression / real domain (use x)";
+						data.function_lines.clear();
+						for (const auto& segment : samples.segments) {
+							DrawLine line;
+							line.x = segment.x1; line.y = segment.y1;
+							line.endX = segment.x2; line.endY = segment.y2;
+							line.c = data.c;
+							data.function_lines.push_back(line);
+						}
+					}
+					for (const auto& segment : data.function_lines) {
+						auto a = fromScaledToPixels(segment.x, segment.y);
+						auto b = fromScaledToPixels(segment.endX, segment.endY);
+						App::DrawLine(a.first, a.second, b.first, b.second, (float)App::text_padding/2, data.c);
+					}
+				}
 				for (const auto& d : drawables) {
 					auto xy = fromScaledToPixels(d->x, d->y);
 					if (auto circle = dynamic_cast<DrawCircle*>(d.get())) {
@@ -706,7 +771,8 @@ void GraphWindow::render() {
 				addCords->render();
 				addFile->render();
 				addFolder->render();
-				TextRenderer::draw_text(addFolder->t_x+addFolder->t_w+App::text_padding, averageText->t_y+App::text_padding, MST::toMonoString("SMA:"), App::theme.main_text_color);
+				addFunction->render();
+				TextRenderer::draw_text(averageText->t_x-TextRenderer::get_text_width(4), averageText->t_y+App::text_padding, MST::toMonoString("SMA:"), App::theme.main_text_color);
 				App::runWithSKIZ(averageText->t_x, averageText->t_y, averageText->t_w, averageText->t_h, [&]() {
 					averageText->render();
 				});
@@ -715,12 +781,17 @@ void GraphWindow::render() {
 				const int itemsWidth = t_w-4*App::text_padding;
 				const float itemRadius = App::themeCornerRadius(itemsWidth, TOTAL_ITEM_HEIGHT);
 				for (int i = 0; i < allData.size(); i++) {
-					int y = addCords->t_y+addCords->t_h+App::text_padding+(App::text_padding+TOTAL_ITEM_HEIGHT)*i;
+					int y = toolbarBottom+App::text_padding+(App::text_padding+TOTAL_ITEM_HEIGHT)*i;
 					App::runWithRoundedClip(itemsStart, y, itemsWidth, TOTAL_ITEM_HEIGHT, itemRadius, [&]() {
 						paintSurface(itemsStart, y, itemsWidth, TOTAL_ITEM_HEIGHT, App::theme.darker_background_color, nullptr);
 						allData[i].removeButton->render();
 						allData[i].scatterButton->render();
-						if (allData[i].x_edit) {
+						if (allData[i].function_edit) {
+							auto edit = allData[i].function_edit;
+							TextRenderer::draw_text(edit->t_x-TextRenderer::get_text_width(3)-App::text_padding, edit->t_y+App::text_padding, MST::toMonoString("y ="), App::theme.main_text_color);
+							App::runWithSKIZ(edit->t_x, edit->t_y, edit->t_w, edit->t_h, [&](){ edit->render(); });
+							TextRenderer::draw_text(edit->t_x, edit->t_y+edit->t_h+App::text_padding, MST::toMonoString(allData[i].function_status), App::theme.main_text_color);
+						} else if (allData[i].x_edit) {
 							TextRenderer::draw_text(allData[i].x_edit->t_x-App::text_padding-TextRenderer::get_text_width(2), allData[i].x_edit->t_y+App::text_padding, MST::toMonoString("x:"), App::theme.main_text_color);
 							App::runWithSKIZ(allData[i].x_edit->t_x, allData[i].x_edit->t_y, allData[i].x_edit->t_w, allData[i].x_edit->t_h, [&]() {
 								allData[i].x_edit->render();

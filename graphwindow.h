@@ -109,6 +109,7 @@ private:
 	int TOTAL_ITEM_HEIGHT = 0;
 	
 	double scroll = 0;
+	double scroll_change = 0;
 	
 	bool selectingSquare = false;
 	bool canSelect = false;

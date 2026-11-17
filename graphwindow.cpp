@@ -2,6 +2,7 @@
 #include "application.h"
 #include "text_renderer.h"
 #include "tinyfiledialogs.h"
+#include <algorithm>
 
 GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 	id = MST::toMonoString("GraphWindow");
@@ -422,6 +423,17 @@ void GraphWindow::position(int x, int y, int w, int h) {
 	// 1 button, 2 text edits. Ie, " B T T " -> 4*pad + 1*button + 2*textedit
 	TOTAL_ITEM_HEIGHT = 4*App::text_padding + (TextRenderer::get_text_height() + App::text_padding*2) * 3;
 	
+	const double maxScroll = allData.size() * (TOTAL_ITEM_HEIGHT+App::text_padding);
+	scroll = std::clamp(scroll, 0.0, maxScroll);
+	scroll_change = std::clamp(scroll + scroll_change, 0.0, maxScroll) - scroll;
+	if (scroll_change != 0) {
+		double value = App::settings->getValue("smooth_scroll", 0.2f) * App::settings->getValue("anim_speed", 1.0f);
+		double change = scroll_change * value;
+		if (scroll_change < 0.1 && scroll_change > -0.1) change = scroll_change;
+		scroll = std::clamp(scroll + change, 0.0, maxScroll);
+		scroll_change -= change;
+		App::time_till_regular = 2;
+	}
 	
 	EXISTING_VAL = 0;
 	Widget::position(x, y, w, h);
@@ -452,15 +464,9 @@ bool GraphWindow::on_scroll_event(double xchange, double ychange) {
 		
 		return true;
 	}else if (App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart+screenHeight && App::mouseY <= t_h+t_y){
-		scroll += ychange * 6 * TextRenderer::get_text_height();
-		
-		int maxScroll = allData.size() * (TOTAL_ITEM_HEIGHT+App::text_padding);
-		
-		if (scroll < 0) {
-			scroll = 0;
-		}else if (scroll > maxScroll) {
-			scroll = maxScroll;
-		}
+		const double maxScroll = allData.size() * (TOTAL_ITEM_HEIGHT+App::text_padding);
+		scroll_change = std::clamp(scroll + scroll_change + ychange * 6 * TextRenderer::get_text_height(), 0.0, maxScroll) - scroll;
+		App::time_till_regular = 2;
 		
 		return true;
 	}

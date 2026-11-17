@@ -46,7 +46,6 @@ public:
 	double max_scroll_vert = 0;
 	double max_scroll_horz = 0;
 	
-	bool rounded = true;
 	
 	Color* back_color;
 	

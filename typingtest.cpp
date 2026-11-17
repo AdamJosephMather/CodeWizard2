@@ -26,7 +26,6 @@ TypingTest::TypingTest(Widget* parent) : Widget(parent) {
 		
 		resetTest();
 	});
-	timeWords->rounded = true;
 	
 	swapInputs = new Button(this, MST::toMonoString("Switch"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
@@ -37,7 +36,6 @@ TypingTest::TypingTest(Widget* parent) : Widget(parent) {
 		
 		resetTest();
 	});
-	swapInputs->rounded = true;
 	
 	resetTest();
 }
@@ -216,57 +214,60 @@ void TypingTest::position(int x, int y, int w, int h) {
 }
 
 void TypingTest::render() {
-	App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.darker_background_color);
-	if (App::activeLeafNode == this) {
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.active_color, 5, App::text_padding);
-	}else {
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
-	}
-	
-	if (status == ShowingResults) {
-		MST::MonoString displaySpeed = MST::toMonoString("Speed:    ") + res.showtime + MST::toMonoString(" WPM");
-		MST::MonoString displayAcc   = MST::toMonoString("Accuracy: ") + res.showacc + MST::toMonoString("%");
-		
-		int x = t_x + (t_w - TextRenderer::get_text_width(displaySpeed.length))/2;
-		int y = swapInputs->t_y + swapInputs->t_h + TextRenderer::get_text_height();
-		
-		TextRenderer::draw_text(x, y, displaySpeed, App::theme.main_text_color);
-		TextRenderer::draw_text(x, y+TextRenderer::get_text_height(), displayAcc, App::theme.main_text_color);
-		
-		Widget::render();
-		return;
-	}
-	
-	int y = timeWords->t_y+timeWords->t_h+TextRenderer::get_text_height();
-	
-	for (int line = 0; line < lineStarts.size()-1; line++) {
-		int x = t_x + t_w * 0.1;
-		
-		for (int i = lineStarts[line]; i < lineStarts[line+1]; i++) {
-			if (test[i].correct == ' ') {
-				if (test[i].correct != test[i].typed && test[i].typed != 0x0) {
-					TextRenderer::draw_text(x, y, MST::toMonoString(test[i].typed), 255, 100, 100);
-				}
-			}else {
-				if (test[i].correct == test[i].typed) {
-					TextRenderer::draw_text(x, y, MST::toMonoString(test[i].correct), 100, 255, 100);
-				}else if (test[i].typed == 0x0) {
-					TextRenderer::draw_text(x, y, MST::toMonoString(test[i].correct), App::theme.lesser_text_color);
-				}else{
-					TextRenderer::draw_text(x, y, MST::toMonoString(test[i].correct), 255, 100, 100);
-				}
-			}
-			
-			x += TextRenderer::get_text_width(1);
+	if (!is_visible) return;
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+		if (radius > 0.0f) App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, App::theme.darker_background_color);
+		else App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
+		Color* border = App::activeLeafNode == this ? App::theme.active_color : App::theme.border;
+		if (radius > 0.0f) App::DrawRoundBorder(t_x, t_y, t_w, t_h, border, 5, radius);
+		else App::DrawBorder(t_x, t_y, t_w, t_h, border);
+
+		if (status == ShowingResults) {
+			MST::MonoString displaySpeed = MST::toMonoString("Speed:    ") + res.showtime + MST::toMonoString(" WPM");
+			MST::MonoString displayAcc   = MST::toMonoString("Accuracy: ") + res.showacc + MST::toMonoString("%");
+
+			int x = t_x + (t_w - TextRenderer::get_text_width(displaySpeed.length))/2;
+			int y = swapInputs->t_y + swapInputs->t_h + TextRenderer::get_text_height();
+
+			TextRenderer::draw_text(x, y, displaySpeed, App::theme.main_text_color);
+			TextRenderer::draw_text(x, y+TextRenderer::get_text_height(), displayAcc, App::theme.main_text_color);
+
+			Widget::render();
+			return;
 		}
-		y += TextRenderer::get_text_height();
-	}
-	
-	if (status == Testing) {
-		TextRenderer::draw_text(swapInputs->t_x + swapInputs->t_w+TextRenderer::get_text_height(), swapInputs->t_y+App::text_padding, displayDuringTest, App::theme.main_text_color);
-	}
-	
-	Widget::render();
+
+		int y = timeWords->t_y+timeWords->t_h+TextRenderer::get_text_height();
+
+		for (int line = 0; line < lineStarts.size()-1; line++) {
+			int x = t_x + t_w * 0.1;
+
+			for (int i = lineStarts[line]; i < lineStarts[line+1]; i++) {
+				if (test[i].correct == ' ') {
+					if (test[i].correct != test[i].typed && test[i].typed != 0x0) {
+						TextRenderer::draw_text(x, y, MST::toMonoString(test[i].typed), App::theme.error_color);
+					}
+				}else {
+					if (test[i].correct == test[i].typed) {
+						TextRenderer::draw_text(x, y, MST::toMonoString(test[i].correct), App::theme.add_diff);
+					}else if (test[i].typed == 0x0) {
+						TextRenderer::draw_text(x, y, MST::toMonoString(test[i].correct), App::theme.lesser_text_color);
+					}else{
+						TextRenderer::draw_text(x, y, MST::toMonoString(test[i].correct), App::theme.error_color);
+					}
+				}
+
+				x += TextRenderer::get_text_width(1);
+			}
+			y += TextRenderer::get_text_height();
+		}
+
+		if (status == Testing) {
+			TextRenderer::draw_text(swapInputs->t_x + swapInputs->t_w+TextRenderer::get_text_height(), swapInputs->t_y+App::text_padding, displayDuringTest, App::theme.main_text_color);
+		}
+
+		Widget::render();
+	});
 }
 
 bool TypingTest::on_mouse_button_event(int button, int action, int mods) {

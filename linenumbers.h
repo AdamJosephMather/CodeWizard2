@@ -17,7 +17,6 @@ public:
 	double start_y;
 	std::vector<MST::MonoString> lines_to_draw;
 	std::vector<Color*> lines_to_color;
-	bool rounded = false;
 	bool border = false;
 	
 	void position(int x, int y, int w, int h);

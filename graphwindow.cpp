@@ -27,7 +27,6 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 		// onclick
 		recalculateDrawables();
 	});
-	reset->rounded = true;
 	
 	addCords = new Button(this, MST::toMonoString("Add Coords"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
@@ -37,7 +36,6 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 		// onclick
 		addThing(false);
 	});
-	addCords->rounded = true;
 	
 	addFile = new Button(this, MST::toMonoString("Add File"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
@@ -47,7 +45,6 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 		// onclick
 		addThing(true);
 	});
-	addFile->rounded = true;
 	
 	addFolder = new Button(this, MST::toMonoString("Add Folder"), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
@@ -78,7 +75,6 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 			addThing(true, f.string());
 		}
 	});
-	addFolder->rounded = true;
 	
 	averageText = new TextEdit(this, [=](Widget* t){
 		t->t_x = addFolder->t_x+addFolder->t_w+App::text_padding+TextRenderer::get_text_width(4);
@@ -86,7 +82,6 @@ GraphWindow::GraphWindow(Widget *parent) : Widget(parent) {
 		t->t_w = TextRenderer::get_text_width(20);
 		t->t_h = TextRenderer::get_text_height()+2*App::text_padding;
 	});
-	averageText->rounded = true;
 	averageText->setFullText(MST::toMonoString("1"));
 	
 	Button* addCords;
@@ -266,7 +261,6 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 		
 		recalculateDrawables(false);
 	});
-	remBut->rounded = true;
 	
 	scatBut = new Button(this, MST::toMonoString("Line"), [=](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
@@ -289,7 +283,6 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 			}
 		}
 	});
-	scatBut->rounded = true;
 	
 	line.removeButton = remBut;
 	line.scatterButton = scatBut;
@@ -304,14 +297,12 @@ void GraphWindow::addThing(bool isfile, std::string filepath) {
 			t->t_w = t_w - 8*App::text_padding - TextRenderer::get_text_width(2);
 			t->t_h = TextRenderer::get_text_height()+2*App::text_padding;
 		});
-		xed->rounded = true;
 		yed = new TextEdit(this, [=](Widget* t){
 			t->t_x = xed->t_x;
 			t->t_y = xed->t_y+xed->t_h+App::text_padding;
 			t->t_w = xed->t_w;
 			t->t_h = xed->t_h;
 		});
-		yed->rounded = true;
 		
 		xed->onlinechange = [&, thisId](EditType typ, int lineindex){
 			updateInfoFor(thisId);
@@ -639,130 +630,111 @@ std::pair<double,double> GraphWindow::fromPixelsToScaled(int x, int y) {
 }
 
 void GraphWindow::render() {
-	if (rerender) {
-		App::reclear = 3;
-	}
-	
-	if (App::reclear != 0) {
-		App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.overlay_background_color, true, 5);
-	}else{
-		App::DrawRect(t_x+App::text_padding, t_y+App::text_padding, t_w-2*App::text_padding, reset->t_h, App::theme.overlay_background_color);
-	}
-	
-	reset->render();
-	
-	int widths = t_w-2*App::text_padding;
-	int startX = t_x+App::text_padding;
-	
-	if (App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart && App::mouseY <= screenStart+screenHeight) {
-		auto loc = fromPixelsToScaled(App::mouseX, App::mouseY);
-		
-		auto xStr = doubleToMonoString_pretty(loc.first);
-		auto yStr = doubleToMonoString_pretty(loc.second);
-		auto str = xStr + MST::toMonoString(", ")+yStr;
-		
-		int width = TextRenderer::get_text_width(str.length);
-		
-		TextRenderer::draw_text(t_x + t_w - width - App::text_padding, reset->t_y + App::text_padding, str, App::theme.main_text_color);
-	}
-	
-	if (App::reclear != 0) {
-		App::DrawRect(startX, screenStart, widths, screenHeight, App::theme.main_background_color);
-	}
-	
-	// draw graphs here
-	
-	App::runWithSKIZ(startX, screenStart, widths, screenHeight, [&](){
-		if (App::reclear == 0) {
-			return;
-		}
-		
-		auto lineVals = fromScaledToPixels(0, 0);
-		
-		App::DrawLine(startX, lineVals.second, widths+startX, lineVals.second, 1, App::theme.main_text_color);
-		App::DrawLine(lineVals.first, screenStart, lineVals.first, screenStart+screenHeight, 1, App::theme.main_text_color);
-		
-		for (const auto& d : drawables) {
-			auto xy = fromScaledToPixels(d->x, d->y);
-			
-			if (auto circle = dynamic_cast<DrawCircle*>(d.get())) {
-				App::DrawCircle(xy.first, xy.second, App::text_padding, 10, circle->c);
-			}else if (auto line = dynamic_cast<DrawLine*>(d.get())) {
-				auto xy2 = fromScaledToPixels(line->endX, line->endY);
-				App::DrawLine(xy.first, xy.second, xy2.first, xy2.second, (float)App::text_padding/2, line->c);
+	if (!is_visible) return;
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+		auto paintSurface = [](int x, int y, int w, int h, Color* background, Color* border) {
+			if (w <= 0 || h <= 0) return;
+			const float corner = App::themeCornerRadius(w, h);
+			if (background) {
+				if (corner > 0.0f) App::DrawRoundedRect(x, y, w, h, corner, background);
+				else App::DrawRect(x, y, w, h, background);
 			}
+			if (border) {
+				if (corner > 0.0f) App::DrawRoundBorder(x, y, w, h, border, 5, corner);
+				else App::DrawBorder(x, y, w, h, border);
+			}
+		};
+		Color* border = App::activeLeafNode == this ? App::theme.active_color : App::theme.border;
+		if (rerender) App::reclear = 3;
+		if (App::reclear != 0) {
+			paintSurface(t_x, t_y, t_w, t_h, App::theme.overlay_background_color, nullptr);
+		} else {
+			App::DrawRect(t_x+App::text_padding, t_y+App::text_padding, t_w-2*App::text_padding, reset->t_h, App::theme.overlay_background_color);
 		}
-		
-		if (selectingSquare) {
-			int x2 = fmax(startX, fmin(App::mouseX, startX+widths));
-			int y2 = fmax(screenStart, fmin(App::mouseY, screenStart+screenHeight));
-			App::DrawRect(squareStartX, squareStartY, x2-squareStartX, y2-squareStartY, App::theme.add_panel);
-			App::DrawBorder(squareStartX, squareStartY, x2-squareStartX, y2-squareStartY, App::theme.active_color);
+		reset->render();
+
+		const int widths = t_w-2*App::text_padding;
+		const int startX = t_x+App::text_padding;
+		if (App::mouseX >= startX && App::mouseX <= startX+widths && App::mouseY >= screenStart && App::mouseY <= screenStart+screenHeight) {
+			auto loc = fromPixelsToScaled(App::mouseX, App::mouseY);
+			auto str = doubleToMonoString_pretty(loc.first) + MST::toMonoString(", ") + doubleToMonoString_pretty(loc.second);
+			int width = TextRenderer::get_text_width(str.length);
+			TextRenderer::draw_text(t_x+t_w-width-App::text_padding, reset->t_y+App::text_padding, str, App::theme.main_text_color);
 		}
-	});
-	
-	Color* use_border_color = App::theme.border;
-	if (App::activeLeafNode == this) {
-		use_border_color = App::theme.active_color;
-	}
-	
-	if (App::reclear != 0) {
-		App::DrawInverseRoundedRect(startX, screenStart, widths, screenHeight, App::text_padding, App::theme.overlay_background_color, 5);
-		App::DrawRoundBorder(startX, screenStart, widths, screenHeight, use_border_color, 5, App::text_padding);
-		rerender = false;
-	}
-	
-	// now we'll draw the data panel
-	
-	int dataStart = screenStart+screenHeight+App::text_padding;
-	int dataHeight = (t_y+t_h) - dataStart - App::text_padding;
-	
-	App::DrawRect(startX, dataStart, widths, dataHeight, App::theme.main_background_color);
-	
-	// draw data panel here
-	
-	App::runWithSKIZ(startX, dataStart, widths, dataHeight, [&](){
-		addCords->render();
-		addFile->render();
-		addFolder->render();
-		TextRenderer::draw_text(addFolder->t_x+addFolder->t_w+App::text_padding, averageText->t_y+App::text_padding, MST::toMonoString("SMA:"), App::theme.main_text_color);
-		App::runWithSKIZ(averageText->t_x, averageText->t_y, averageText->t_w, averageText->t_h, [&](){
-			averageText->render();
+
+		const float plotRadius = App::themeCornerRadius(widths, screenHeight);
+		App::runWithSKIZ(startX, screenStart, widths, screenHeight, [&]() {
+			App::runWithRoundedClip(startX, screenStart, widths, screenHeight, plotRadius, [&]() {
+				if (App::reclear == 0) return;
+				paintSurface(startX, screenStart, widths, screenHeight, App::theme.main_background_color, nullptr);
+				auto lineVals = fromScaledToPixels(0, 0);
+				App::DrawLine(startX, lineVals.second, widths+startX, lineVals.second, 1, App::theme.main_text_color);
+				App::DrawLine(lineVals.first, screenStart, lineVals.first, screenStart+screenHeight, 1, App::theme.main_text_color);
+				for (const auto& d : drawables) {
+					auto xy = fromScaledToPixels(d->x, d->y);
+					if (auto circle = dynamic_cast<DrawCircle*>(d.get())) {
+						App::DrawCircle(xy.first, xy.second, App::text_padding, 10, circle->c);
+					} else if (auto line = dynamic_cast<DrawLine*>(d.get())) {
+						auto xy2 = fromScaledToPixels(line->endX, line->endY);
+						App::DrawLine(xy.first, xy.second, xy2.first, xy2.second, (float)App::text_padding/2, line->c);
+					}
+				}
+				if (selectingSquare) {
+					int x2 = fmax(startX, fmin(App::mouseX, startX+widths));
+					int y2 = fmax(screenStart, fmin(App::mouseY, screenStart+screenHeight));
+					App::DrawRect(squareStartX, squareStartY, x2-squareStartX, y2-squareStartY, App::theme.add_panel);
+					App::DrawBorder(squareStartX, squareStartY, x2-squareStartX, y2-squareStartY, App::theme.active_color);
+				}
+				paintSurface(startX, screenStart, widths, screenHeight, nullptr, border);
+			});
 		});
-		
-		int itemsStart = t_x+App::text_padding*2;
-		int itemsWidth = t_w-4*App::text_padding;
-		
-		for (int i = 0; i < allData.size(); i++) {
-			int y = addCords->t_y+addCords->t_h+App::text_padding+(App::text_padding+TOTAL_ITEM_HEIGHT)*i;
-			
-			App::DrawRoundedRect(itemsStart, y, itemsWidth, TOTAL_ITEM_HEIGHT, App::text_padding, App::theme.darker_background_color, false, 5);
-			App::DrawRoundBorder(itemsStart, y, itemsWidth, TOTAL_ITEM_HEIGHT, allData[i].c, App::text_padding, 5);
-			
-			allData[i].removeButton->render();
-			allData[i].scatterButton->render();
-			if (allData[i].x_edit) {
-				TextRenderer::draw_text(allData[i].x_edit->t_x-App::text_padding-TextRenderer::get_text_width(2), allData[i].x_edit->t_y+App::text_padding, MST::toMonoString("x:"), App::theme.main_text_color);
-				App::runWithSKIZ(allData[i].x_edit->t_x, allData[i].x_edit->t_y, allData[i].x_edit->t_w, allData[i].x_edit->t_h, [&](){
-					allData[i].x_edit->render();
+		if (App::reclear != 0) rerender = false;
+
+		const int dataStart = screenStart+screenHeight+App::text_padding;
+		const int dataHeight = (t_y+t_h)-dataStart-App::text_padding;
+		const float dataRadius = App::themeCornerRadius(widths, dataHeight);
+		App::runWithSKIZ(startX, dataStart, widths, dataHeight, [&]() {
+			App::runWithRoundedClip(startX, dataStart, widths, dataHeight, dataRadius, [&]() {
+				paintSurface(startX, dataStart, widths, dataHeight, App::theme.main_background_color, nullptr);
+				addCords->render();
+				addFile->render();
+				addFolder->render();
+				TextRenderer::draw_text(addFolder->t_x+addFolder->t_w+App::text_padding, averageText->t_y+App::text_padding, MST::toMonoString("SMA:"), App::theme.main_text_color);
+				App::runWithSKIZ(averageText->t_x, averageText->t_y, averageText->t_w, averageText->t_h, [&]() {
+					averageText->render();
 				});
-				TextRenderer::draw_text(allData[i].y_edit->t_x-App::text_padding-TextRenderer::get_text_width(2), allData[i].y_edit->t_y+App::text_padding, MST::toMonoString("y:"), App::theme.main_text_color);
-				App::runWithSKIZ(allData[i].y_edit->t_x, allData[i].y_edit->t_y, allData[i].y_edit->t_w, allData[i].y_edit->t_h, [&](){
-					allData[i].y_edit->render();
-				});
-			}else if (allData[i].file) {
-				int offset = (float)(TOTAL_ITEM_HEIGHT+allData[i].removeButton->t_h - App::text_padding - TextRenderer::get_text_height())/2;
-				
-				TextRenderer::draw_text(itemsStart+offset - App::text_padding - allData[i].removeButton->t_h, y + offset, allData[i].filename, App::theme.main_text_color);
-			}
-		}
+
+				const int itemsStart = t_x+App::text_padding*2;
+				const int itemsWidth = t_w-4*App::text_padding;
+				const float itemRadius = App::themeCornerRadius(itemsWidth, TOTAL_ITEM_HEIGHT);
+				for (int i = 0; i < allData.size(); i++) {
+					int y = addCords->t_y+addCords->t_h+App::text_padding+(App::text_padding+TOTAL_ITEM_HEIGHT)*i;
+					App::runWithRoundedClip(itemsStart, y, itemsWidth, TOTAL_ITEM_HEIGHT, itemRadius, [&]() {
+						paintSurface(itemsStart, y, itemsWidth, TOTAL_ITEM_HEIGHT, App::theme.darker_background_color, nullptr);
+						allData[i].removeButton->render();
+						allData[i].scatterButton->render();
+						if (allData[i].x_edit) {
+							TextRenderer::draw_text(allData[i].x_edit->t_x-App::text_padding-TextRenderer::get_text_width(2), allData[i].x_edit->t_y+App::text_padding, MST::toMonoString("x:"), App::theme.main_text_color);
+							App::runWithSKIZ(allData[i].x_edit->t_x, allData[i].x_edit->t_y, allData[i].x_edit->t_w, allData[i].x_edit->t_h, [&]() {
+								allData[i].x_edit->render();
+							});
+							TextRenderer::draw_text(allData[i].y_edit->t_x-App::text_padding-TextRenderer::get_text_width(2), allData[i].y_edit->t_y+App::text_padding, MST::toMonoString("y:"), App::theme.main_text_color);
+							App::runWithSKIZ(allData[i].y_edit->t_x, allData[i].y_edit->t_y, allData[i].y_edit->t_w, allData[i].y_edit->t_h, [&]() {
+								allData[i].y_edit->render();
+							});
+						} else if (allData[i].file) {
+							int offset = (float)(TOTAL_ITEM_HEIGHT+allData[i].removeButton->t_h-App::text_padding-TextRenderer::get_text_height())/2;
+							TextRenderer::draw_text(itemsStart+offset-App::text_padding-allData[i].removeButton->t_h, y+offset, allData[i].filename, App::theme.main_text_color);
+						}
+						paintSurface(itemsStart, y, itemsWidth, TOTAL_ITEM_HEIGHT, nullptr, allData[i].c);
+					});
+				}
+				paintSurface(startX, dataStart, widths, dataHeight, nullptr, border);
+			});
+		});
+		paintSurface(t_x, t_y, t_w, t_h, nullptr, border);
 	});
-	
-	App::DrawInverseRoundedRect(startX, dataStart, widths, dataHeight, App::text_padding, App::theme.overlay_background_color, 5);
-	App::DrawRoundBorder(startX, dataStart, widths, dataHeight, use_border_color, 5, App::text_padding);
-	
-	App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color, 5);
-	App::DrawRoundBorder(t_x, t_y, t_w, t_h, use_border_color, 5, App::text_padding);
 }
 
 bool GraphWindow::on_mouse_button_event(int button, int action, int mods) {

@@ -15,7 +15,6 @@ BrokenStateMenu::BrokenStateMenu(Widget* parent, std::string firsttext, std::str
 			first_callback();
 		}
 	});
-	firstbutton->rounded = true;
 	
 	secondbutton = new Button(this, MST::toMonoString(secondtext), [&](Button* btn, int x, int y, int av_width, int av_height, int w, int h){
 		// position
@@ -27,19 +26,22 @@ BrokenStateMenu::BrokenStateMenu(Widget* parent, std::string firsttext, std::str
 			second_callback();
 		}
 	});
-	secondbutton->rounded = true;
 	
 	char_1 = std::tolower(firsttext.at(0));
 	char_2 = std::tolower(secondtext.at(0));
 }
 
 void BrokenStateMenu::render() {
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.hover_background_color);
-	
-	auto txt = MST::toMonoString(Q);
-	TextRenderer::draw_text(t_x+t_w/2-TextRenderer::get_text_width(txt.length)/2, t_y+App::text_padding, txt, App::theme.main_text_color);
-	
-	Widget::render();
+	if (!is_visible) return;
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.hover_background_color);
+
+		auto txt = MST::toMonoString(Q);
+		TextRenderer::draw_text(t_x+t_w/2-TextRenderer::get_text_width(txt.length)/2, t_y+App::text_padding, txt, App::theme.main_text_color);
+
+		Widget::render();
+	});
 }
 
 bool BrokenStateMenu::on_key_event(int key, int scancode, int action, int mods) {

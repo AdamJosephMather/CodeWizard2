@@ -5,6 +5,9 @@ LspDebug::LspDebug(Widget *parent) : Widget(parent) {
 	id = MST::toMonoString("LspDebug");
 	
 	viewbox = new TextEdit(this, [](Widget*){});
+	viewbox->surface = TextEdit::Surface::Document;
+	viewbox->borderColor = nullptr;
+	viewbox->activeBorderColor = nullptr;
 }
 
 void LspDebug::lspmessage(std::string& from, std::string& message) {
@@ -25,17 +28,20 @@ void LspDebug::lspmessage(std::string& from, std::string& message) {
 }
 
 void LspDebug::render() {
-	Widget::render();
-	
-	Color* borderC = App::theme.border;
-	if (viewbox == App::activeLeafNode) {
-		borderC = App::theme.active_color;
-	}
-	
-	if (rounded) {
-		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, App::text_padding);
-	}else{
-		App::DrawBorder(t_x, t_y, t_w, t_h, borderC);
-	}
+	if (!is_visible) return;
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+		Widget::render();
+
+		Color* borderC = App::theme.border;
+		if (viewbox == App::activeLeafNode) {
+			borderC = App::theme.active_color;
+		}
+
+		if (radius > 0.0f) {
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, radius);
+		}else{
+			App::DrawBorder(t_x, t_y, t_w, t_h, borderC);
+		}
+	});
 }

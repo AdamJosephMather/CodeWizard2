@@ -68,7 +68,9 @@ public:
 
 	OurCell getCell(int row, int col);
 	CursorInfo getCursorInfo();
-	bool getViewSnapshot(std::vector<OurCell>& cells, CursorInfo& cursor, int& cols, int& rows);
+	bool getViewSnapshot(std::vector<OurCell>& cells, CursorInfo& cursor, int& cols, int& rows,
+	                     GhosttyColorRgb* background = nullptr);
+	void setThemeColors(GhosttyColorRgb foreground, GhosttyColorRgb background);
 	std::string getLastTextLines(int maxLogicalLines);
 
 	bool sendText(const std::string& utf8);
@@ -129,6 +131,7 @@ private:
 	bool initGhostty();
 	void teardownGhostty();
 	bool refreshRenderStateLocked();
+	void applyThemeColorsLocked();
 	void refreshTerminalMetadataLocked();
 	void updateMouseGeometryLocked();
 	bool readGridCellLocked(int docId, int col, OurCell& out);
@@ -191,6 +194,9 @@ private:
 	std::vector<OurCell> m_viewCells;
 	bool m_renderSnapshotDirty{true};
 	GhosttyRenderStateColors m_colors{};
+	GhosttyColorRgb m_themeForeground{};
+	GhosttyColorRgb m_themeBackground{};
+	bool m_hasThemeColors{false};
 	GhosttyTerminalScrollbar m_scrollbar{};
 	CursorInfo m_cursorInfo;
 	std::atomic<bool> m_altScreen{false};

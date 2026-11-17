@@ -13,7 +13,6 @@
 #include <set>
 #include "editor.h"
 #include "curler.h"
-//#include "modelxrunner.h"
 
 std::set<MST::u32> whitespace_before_comment = {U'\t', U' '};
 
@@ -93,7 +92,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		activateCompletion();
 	};
 	completionbox->is_visible_layered = false;
-	completionbox->rounded = true;
 	completionbox->id = MST::toMonoString("completionbox");
 	completionbox->const_parent = this;
 	
@@ -117,7 +115,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	});
 	hoverbox->const_parent = this;
 	hoverbox->background_color = App::theme.extras_background_color;
-	hoverbox->rounded = true;
 	hoverbox->contextmenu->is_visible_3 = true;
 	hoverbox->id = MST::toMonoString("hoverbox");
 	
@@ -129,7 +126,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	}, [&](Button* b){
 		replaceAll(findTextEdit->getFullText(), replaceTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
-	allButton->rounded = true;
 	allButton->const_parent = this;
 	
 	nextReplButton = new Button(nullptr, MST::toMonoString("-→"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
@@ -138,7 +134,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	}, [&](Button* b){
 		activateReplace(true, findTextEdit->getFullText(), replaceTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
-	nextReplButton->rounded = true;
 	nextReplButton->const_parent = this;
 	
 	nextButton = new Button(nullptr, MST::toMonoString("-→"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
@@ -147,7 +142,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	}, [&](Button* b){
 		activateFind(true, findTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
-	nextButton->rounded = true;
 	nextButton->const_parent = this;
 	
 	prevButton = new Button(nullptr, MST::toMonoString("←-"), [&](Button* b, int x, int y, int w, int h, int tw, int th){
@@ -156,7 +150,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	}, [&](Button* b){
 		activateFind(false, findTextEdit->getFullText(), caseSensitivity->is_checked);
 	});
-	prevButton->rounded = true;
 	prevButton->const_parent = this;
 	
 	replaceTextEdit = new TextEdit(nullptr, [&](Widget* t){
@@ -172,7 +165,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		nextReplButton->t_h = h;
 		nextReplButton->t_y = replaceTextEdit->t_y;
 	});
-	replaceTextEdit->rounded = true;
 	replaceTextEdit->const_parent = this;
 	
 	findTextEdit = new TextEdit(nullptr, [&](Widget* t){
@@ -188,7 +180,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		prevButton->t_h = h;
 		prevButton->t_y = findTextEdit->t_y;
 	});
-	findTextEdit->rounded = true;
 	findTextEdit->const_parent = this;
 	
 	caseSensitivity = new CheckBox(nullptr, [&](CheckBox* c, int,int,int,int){
@@ -197,7 +188,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		c->t_x = findTextEdit->t_w + findTextEdit->t_x + App::text_padding;
 		c->t_y = findTextEdit->t_y;
 	}, nullptr);
-	caseSensitivity->rounded = true;
 	caseSensitivity->const_parent = this;
 	
 	line_numbers = new LineNumbers(this);
@@ -216,6 +206,7 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	textedit->scrollbar_vertical = true;
 	textedit->scrollbar_horizontal = true;
 	textedit->contextmenu->is_visible_3 = true;
+	textedit->surface = TextEdit::Surface::Document;
 	textedit->borderColor = nullptr;
 	textedit->activeBorderColor = nullptr;
 	textedit->id = MST::toMonoString("CodeEdit TextEdit");
@@ -270,7 +261,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 	}, [&](Button* b){
 		showhideerrors();
 	});
-	showErrorsButton->rounded = true;
 	showErrorsButton->const_parent = this;
 	showErrorsButton->border_color = nullptr;
 	
@@ -280,7 +270,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 		w->t_x = textedit->t_x+textedit->t_w-w->t_w-App::text_padding*2;
 		w->t_y = showErrorsButton->t_y-w->t_h-App::text_padding*2;
 	});
-	errorMenu->rounded = true;
 	errorMenu->is_visible_layered = false;
 	errorMenu->toshow = 13;
 	errorMenu->ONCLICK = [&](Widget* w, int sel){
@@ -383,65 +372,6 @@ CodeEdit::CodeEdit(Widget* parent, int tabid, App::PosFunction positioner, App::
 			}
 		}
 	});
-	
-//	chauffeurthread = std::thread([&]() {
-//		while (true){
-//			if (closing) {
-//				return;
-//			}
-//			
-//			if (timeuntilchauffeur <= 0) {
-//				std::this_thread::sleep_for(std::chrono::milliseconds(50));
-//			}else{
-//				timeuntilchauffeur -= 20;
-//				if (timeuntilchauffeur <= 0) {
-//					
-//					Cursor prefix_c = textedit->cursors[0];
-//					Cursor suffix_c = textedit->cursors[0];
-//					
-//					prefix_c.anchor_line -= App::settings->getValue("chauffeur_prefix_lines", 10);
-//					prefix_c.anchor_char = 0;
-//					suffix_c.anchor_line += App::settings->getValue("chauffeur_suffix_lines", 7);
-//					
-//					prefix_c.anchor_line = std::max(0, prefix_c.anchor_line);
-//					suffix_c.anchor_line = std::min((int)textedit->lines.size()-1, suffix_c.anchor_line);
-//					
-//					suffix_c.anchor_char = textedit->lines[suffix_c.anchor_line].line_text.length();
-//					
-//					std::string prefix_s;
-//					std::string suffix_s;
-//					
-//					MST::MonoString prefix = textedit->getSelectedText(prefix_c);
-//					MST::MonoString suffix = textedit->getSelectedText(suffix_c);
-//					
-//					prefix.toUTF8String(prefix_s);
-//					suffix.toUTF8String(suffix_s);
-//					
-//					std::string insertion;
-//					
-//					if (App::settings->getValue("use_fim", true)) {
-//						insertion = ModelXRunner::generate_fim(prefix_s, suffix_s, App::settings->getValue("chauffeur_max_continue", 6));
-//					}else{
-//						insertion = ModelXRunner::generate(prefix_s, App::settings->getValue("chauffeur_max_continue", 6));
-//					}
-//					
-//					if (insertion == "") {
-//						continue;
-//					}
-//					
-//					std::vector<MST::MonoString> compld = {MST::toMonoString(insertion)};
-//					
-//					completionbox->is_visible_layered = true;
-//					completionbox->setElements(compld);
-//					are_code_actions = false;
-//					is_chauffeur = true;
-//					completionbox->toshow = compld.size();
-//					App::time_till_regular = 2;
-//				}
-//				std::this_thread::sleep_for(std::chrono::milliseconds(20));
-//			}
-//		}
-//	});
 }
 
 void CodeEdit::showhideerrors() {
@@ -829,81 +759,91 @@ bool CodeEdit::renderTheSplashIfNeeded() {
 }
 
 void CodeEdit::render() {
-	if (textedit->DID_POSITION || findTextEdit->DID_POSITION || replaceTextEdit->DID_POSITION || renamebox->DID_POSITION || hoverbox->DID_POSITION || FILE_BROKEN_STATE) {
-		DO_RENDER = 3;
-	}
-	
-	Color* borderC = App::theme.border;
-	if (textedit == App::activeLeafNode) {
-		borderC = App::theme.active_color;
-	}
-	
-	if (DO_RENDER == 0 && App::reclear == 0) {
-		renderTheSplashIfNeeded();
-		
-		renderFindBox();
-		
-		// needs to happen because otherwise we don't get hovering when mouse moves this is so scuffed
-		textedit->scrollbar_h->render();
-		textedit->scrollbar_v->render();
-		textedit->contextmenu->render();
-		
-		renderExtras();
-		
-		if (rounded) {
-			App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
-			App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, App::text_padding);
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+		if (textedit->DID_POSITION || findTextEdit->DID_POSITION || replaceTextEdit->DID_POSITION || renamebox->DID_POSITION || hoverbox->DID_POSITION || FILE_BROKEN_STATE) {
+			DO_RENDER = 3;
+		}
+
+		Color* borderC = App::theme.border;
+		if (textedit == App::activeLeafNode) {
+			borderC = App::theme.active_color;
+		}
+
+		if (DO_RENDER == 0 && App::reclear == 0) {
+			renderTheSplashIfNeeded();
+
+			renderFindBox();
+
+			// needs to happen because otherwise we don't get hovering when mouse moves this is so scuffed
+			textedit->scrollbar_h->render();
+			textedit->scrollbar_v->render();
+			textedit->contextmenu->render();
+
+			renderExtras();
+
+			if (radius > 0.0f) {
+				App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, radius);
+			}else{
+				App::DrawBorder(t_x, t_y, t_w, t_h, borderC);
+			}
+			return;
+		}
+		DO_RENDER -= 1;
+
+		if (FILE_BROKEN_STATE) {
+			// we don't need to run with skiz because this is already skizzed in that size
+			broken_state_menu->render();
+		}else {
+			renderFindBox();
+
+			App::runWithSKIZ(line_numbers->t_x, line_numbers->t_y, line_numbers->t_w, textedit->t_h, [&](){
+				line_numbers->render();
+			});
+
+			App::runWithSKIZ(textedit->t_x, textedit->t_y, textedit->t_w, textedit->t_h, [&](){
+				textedit->render();
+
+				renderExtras();
+			});
+
+			if (renderTheSplashIfNeeded()) {
+				textedit->contextmenu->render(); // again after textedit because of the splash
+			}
+		}
+
+		double currentTime = glfwGetTime();
+		drawn_frames ++;
+
+		if (currentTime - fpsTime >= 2.0) {
+			float fps = (double)drawn_frames/(currentTime-fpsTime);
+			FPS = doubleToMonoString_pretty(fps);
+			fpsTime = currentTime;
+			drawn_frames = 0;
+		}
+
+		if (App::settings->getValue("show_fps", false)) {
+			int x = t_x+t_w-TextRenderer::get_text_width(FPS.length+2)-App::text_padding*2;
+			int y = t_y+TextRenderer::get_text_width(2);
+			const int badgeWidth = TextRenderer::get_text_width(FPS.length)+App::text_padding*2;
+			const int badgeHeight = TextRenderer::get_text_height()+App::text_padding*2;
+			const float badgeRadius = App::themeCornerRadius(badgeWidth, badgeHeight);
+			if (badgeRadius > 0.0f) {
+				App::DrawRoundedRect(x, y, badgeWidth, badgeHeight, badgeRadius, App::theme.extras_background_color);
+				App::DrawRoundBorder(x, y, badgeWidth, badgeHeight, App::theme.border, 5, badgeRadius);
+			} else {
+				App::DrawRect(x, y, badgeWidth, badgeHeight, App::theme.extras_background_color);
+				App::DrawBorder(x, y, badgeWidth, badgeHeight, App::theme.border);
+			}
+			TextRenderer::draw_text(x+App::text_padding, y+App::text_padding, FPS, App::theme.main_text_color);
+		}
+
+		if (radius > 0.0f) {
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, radius);
 		}else{
 			App::DrawBorder(t_x, t_y, t_w, t_h, borderC);
 		}
-		return;
-	}
-	DO_RENDER -= 1;
-	
-	if (FILE_BROKEN_STATE) {
-		// we don't need to run with skiz because this is already skizzed in that size
-		broken_state_menu->render();
-	}else {
-		renderFindBox();
-		
-		App::runWithSKIZ(line_numbers->t_x, line_numbers->t_y, line_numbers->t_w, textedit->t_h, [&](){
-			line_numbers->render();
-		});
-		
-		App::runWithSKIZ(textedit->t_x, textedit->t_y, textedit->t_w, textedit->t_h, [&](){
-			textedit->render();
-			
-			renderExtras();
-		});
-		
-		if (renderTheSplashIfNeeded()) {
-			textedit->contextmenu->render(); // again after textedit because of the splash
-		}
-	}
-	
-	double currentTime = glfwGetTime();
-	drawn_frames ++;
-	
-	if (currentTime - fpsTime >= 2.0) {
-		float fps = (double)drawn_frames/(currentTime-fpsTime);
-		FPS = doubleToMonoString_pretty(fps);
-		fpsTime = currentTime;
-		drawn_frames = 0;
-	}
-	
-	if (App::settings->getValue("show_fps", false)) {
-		int x = t_x+t_w-TextRenderer::get_text_width(FPS.length+2)-App::text_padding*2;
-		int y = t_y+TextRenderer::get_text_width(2);
-		App::DrawRoundedRect(x, y, TextRenderer::get_text_width(FPS.length)+App::text_padding*2, TextRenderer::get_text_height()+App::text_padding*2, App::text_padding, App::theme.extras_background_color, true);
-		TextRenderer::draw_text(x+App::text_padding, y+App::text_padding, FPS, App::theme.main_text_color);
-	}
-	
-	if (rounded) {
-		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, App::text_padding);
-	}else{
-		App::DrawBorder(t_x, t_y, t_w, t_h, borderC);
-	}
+	});
 }
 
 void CodeEdit::position(int x, int y, int w, int h) {
@@ -1237,10 +1177,6 @@ bool CodeEdit::on_char_event(unsigned int keycode) {
 				if (App::lsp_client_map[lsp] && file) { // lsp completion, much faster (faster than what?)
 					completion_id = App::lsp_client_map[lsp]->requestCompletion(file->filepath, textedit->cursors[0].head_line, textedit->cursors[0].head_char);
 				}
-				
-//				if (App::settings->getValue("use_chauffeur", false)) {
-//					timeuntilchauffeur = App::settings->getValue("chauffeur_time", 1000);
-//				}
 			}
 		}
 		return true;
@@ -1292,15 +1228,6 @@ bool CodeEdit::on_key_event(int key, int scancode, int action, int mods) {
 	Cursor svdCrsr = textedit->cursors[0];
 	
 	if (parent == App::activeEditor || (virtual_document && widgetexists(App::activeLeafNode))) {
-//		if (is_press && timeuntilchauffeur != App::settings->getValue("chauffeur_time", 1000)) {
-//			if (key == GLFW_KEY_ESCAPE || timeuntilchauffeur <= 0) {
-//				timeuntilchauffeur = 0;
-//			}else{
-//				timeuntilchauffeur = App::settings->getValue("chauffeur_time", 1000);
-//			}
-//		
-//		}
-		
 		if (key == GLFW_KEY_F5 && is_press && language != "" && file) {
 			// at this point we've already tried project build commands
 			auto l = App::languagemap[language];
@@ -1815,7 +1742,6 @@ void CodeEdit::completionRecieved(std::vector<std::string> completions, int rec_
 	DO_RENDER = 3;
 	completionbox->setElements(compld);
 	are_code_actions = false;
-//	is_chauffeur = false;
 	
 	if (compld.size() >= 7) {
 		completionbox->toshow = 7;

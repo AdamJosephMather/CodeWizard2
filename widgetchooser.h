@@ -15,7 +15,6 @@ public:
 	
 	void render();
 	
-	bool rounded = true;
 private:
 	Button* b1;
 	Button* b2;

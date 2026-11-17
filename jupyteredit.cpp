@@ -78,7 +78,6 @@ JupyterEdit::JupyterEdit(Widget* parent) : Widget(parent) {
     auto button = [this](const char* label, std::function<void()> action) {
         auto* b = new Button(this, MST::toMonoString(label), [](Button*, int,int,int,int,int,int){},
             [action](Button*) { action(); });
-        b->rounded = true;
         toolbar.push_back(b);
     };
     button("Run", [this] { runCell(false); });
@@ -102,13 +101,11 @@ JupyterEdit::JupyterEdit(Widget* parent) : Widget(parent) {
     findEdit = new TextEdit(this, [](Widget*) {});
     replaceEdit = new TextEdit(this, [](Widget*) {});
     caseSensitive = new CheckBox(this, [](CheckBox*,int,int,int,int){}, nullptr);
-    findEdit->rounded = replaceEdit->rounded = caseSensitive->rounded = true;
     caseSensitive->is_checked = false;
     findWidgets = {findEdit, replaceEdit, caseSensitive};
     auto findButton = [this](const char* label, std::function<void()> action) {
         auto* b = new Button(this, MST::toMonoString(label), [](Button*,int,int,int,int,int,int){},
             [action](Button*) { action(); });
-        b->rounded = true;
         findWidgets.push_back(b);
     };
     findButton("←-", [this] { find(false); });
@@ -161,13 +158,14 @@ void JupyterEdit::addCell(const json& data, int index) {
     cell.data = data;
     cell.editor = new CodeEdit(this, -1, [](Widget*) {}, [](Widget*, FileInfo*) {}, true);
     cell.source = cell.editor->textedit;
+    // Notebook cells render the source directly, outside CodeEdit::render().
+    cell.source->surface = TextEdit::Surface::Control;
     cell.source->POS_FUNC = [](Widget*) {};
     cell.output = new TextEdit(this, [](Widget*) {});
     cell.source->scrollbar_horizontal = false;
     cell.source->scrollbar_vertical = false;
     cell.source->DONT_SCROLL_VERT_CURS = true;
     cell.source->fit_content = true;
-    cell.source->rounded = cell.output->rounded = true;
     cell.source->borderColor = App::theme.border;
     cell.source->activeBorderColor = App::theme.active_color;
     // LSP popups are painted over neighbouring cells, inside the notebook.
@@ -201,13 +199,11 @@ void JupyterEdit::addCell(const json& data, int index) {
         auto original = popup->pFunc;
         popup->pFunc = [original,boundPopup](Widget* widget) { original(widget); boundPopup(widget); };
         popup->exempt_from_parent_for_cursor = true;
-        popup->rounded = true;
     }
     for (auto* popup : {cell.editor->hoverbox,cell.editor->renamebox}) {
         auto original = popup->POS_FUNC;
         popup->POS_FUNC = [original,boundPopup](Widget* widget) { original(widget); boundPopup(widget); };
         popup->exempt_from_parent_for_cursor = true;
-        popup->rounded = true;
     }
     auto errorButtonPosition = cell.editor->showErrorsButton->POSITIONER;
     auto* source = cell.source;
@@ -399,7 +395,7 @@ void JupyterEdit::updateOutput(int index) {
         if (!editor || (editor==c.output &&
             std::find(c.outputParts.begin(),c.outputParts.end(),editor)!=c.outputParts.end()))
             editor=new TextEdit(this,[](Widget*) {});
-        editor->allow_edits=false; editor->rounded=true;
+        editor->allow_edits=false;
         editor->scrollbar_horizontal=editor->scrollbar_vertical=true;
         static const std::regex ansi("\x1b\\[[0-?]*[ -/]*[@-~]");
         text=std::regex_replace(text,ansi,"");
@@ -800,45 +796,50 @@ void JupyterEdit::position(int x, int y, int w, int h) {
 
 void JupyterEdit::render() {
     if (!is_visible) return;
-    if (conflictReported) { conflictMenu->render(); return; }
-    
-    App::DrawRoundedRect(t_x,t_y,t_w,t_h,App::text_padding,App::theme.overlay_background_color);
-    
-    for (auto* button : toolbar) button->render();
-    
-    int line = TextRenderer::get_text_height();
-    int pad = App::text_padding;
-    TextRenderer::draw_text(t_x+pad,viewportTop-line-pad,MST::toMonoString(status),App::theme.main_text_color);
-    
-    App::runWithSKIZ(t_x+pad,viewportTop,std::max(1,t_w-pad),std::max(1,viewportBottom-viewportTop),[&] {
-        for (int i=0;i<(int)cells.size();++i) {
-            auto& c=cells[i];
-            if (!c.source->is_visible) continue;
-            int cy=viewportTop+c.top-(int)scroll;
-            std::string label=std::to_string(i+1)+"  "+c.data["cell_type"].get<std::string>();
-            if (c.data["cell_type"] == "code") label+=" ["+(running==i ? std::string("*") : c.data.value("execution_count",json()).is_null() ? std::string(" ") : c.data["execution_count"].dump())+"]";
-            TextRenderer::draw_text(t_x+pad*2,cy,MST::toMonoString(label),i==selected ? App::theme.main_text_color : App::theme.lesser_text_color);
-            App::runWithSKIZ(c.source->t_x,c.source->t_y,c.source->t_w,c.source->t_h,[&] { c.source->render(); });
-            for (auto* output : c.outputParts) if (output->is_visible)
-                App::runWithSKIZ(output->t_x,output->t_y,output->t_w,output->t_h,[&] { output->render(); });
+    const float radius = App::themeCornerRadius(t_w, t_h);
+    App::runWithRoundedClip(t_x,t_y,t_w,t_h,radius,[&] {
+        if (conflictReported) { conflictMenu->render(); return; }
+
+        if (radius > 0.0f) App::DrawRoundedRect(t_x,t_y,t_w,t_h,radius,App::theme.overlay_background_color);
+        else App::DrawRect(t_x,t_y,t_w,t_h,App::theme.overlay_background_color);
+
+        for (auto* button : toolbar) button->render();
+
+        int line = TextRenderer::get_text_height();
+        int pad = App::text_padding;
+        TextRenderer::draw_text(t_x+pad,viewportTop-line-pad,MST::toMonoString(status),App::theme.main_text_color);
+
+        App::runWithSKIZ(t_x+pad,viewportTop,std::max(1,t_w-pad),std::max(1,viewportBottom-viewportTop),[&] {
+            for (int i=0;i<(int)cells.size();++i) {
+                auto& c=cells[i];
+                if (!c.source->is_visible) continue;
+                int cy=viewportTop+c.top-(int)scroll;
+                std::string label=std::to_string(i+1)+"  "+c.data["cell_type"].get<std::string>();
+                if (c.data["cell_type"] == "code") label+=" ["+(running==i ? std::string("*") : c.data.value("execution_count",json()).is_null() ? std::string(" ") : c.data["execution_count"].dump())+"]";
+                TextRenderer::draw_text(t_x+pad*2,cy,MST::toMonoString(label),i==selected ? App::theme.main_text_color : App::theme.lesser_text_color);
+                App::runWithSKIZ(c.source->t_x,c.source->t_y,c.source->t_w,c.source->t_h,[&] { c.source->render(); });
+                for (auto* output : c.outputParts) if (output->is_visible)
+                    App::runWithSKIZ(output->t_x,output->t_y,output->t_w,output->t_h,[&] { output->render(); });
+            }
+            // LSP menus must overlay the following cells, rather than being clipped
+            // to the source editor's (possibly one-line) rectangle.
+            for (auto& cell : cells) if (cell.editor->is_visible) cell.editor->renderExtras();
+            scrollbar->render();
+        });
+
+        if (horizontalScrollbar->is_visible) horizontalScrollbar->render();
+
+        if (findOpen) for (auto* widget : findWidgets) {
+            App::runWithSKIZ(widget->t_x,widget->t_y,widget->t_w,widget->t_h,[&] { widget->render(); });
         }
-        // LSP menus must overlay the following cells, rather than being clipped
-        // to the source editor's (possibly one-line) rectangle.
-        for (auto& cell : cells) if (cell.editor->is_visible) cell.editor->renderExtras();
-        scrollbar->render();
+
+        auto borderCol = containsFocus(this) ? App::theme.active_color : App::theme.border;
+
+        if (radius > 0.0f) App::DrawRoundBorder(t_x,t_y,t_w,t_h,borderCol,5,radius);
+        else App::DrawBorder(t_x,t_y,t_w,t_h,borderCol);
+
+        App::DrawRect(t_x, viewportTop, t_w, 1, borderCol);
     });
-    
-    if (horizontalScrollbar->is_visible) horizontalScrollbar->render();
-    
-    if (findOpen) for (auto* widget : findWidgets) {
-        App::runWithSKIZ(widget->t_x,widget->t_y,widget->t_w,widget->t_h,[&] { widget->render(); });
-    }
-    
-    auto borderCol = containsFocus(this) ? App::theme.active_color : App::theme.border;
-    
-    App::DrawRoundBorder(t_x,t_y,t_w,t_h,borderCol,5,pad);
-    
-    App::DrawRect(t_x, viewportTop, t_w, 1, borderCol);
 }
 
 bool JupyterEdit::on_key_event(int key,int scancode,int action,int mods) {

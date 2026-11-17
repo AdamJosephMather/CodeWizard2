@@ -340,7 +340,6 @@ Globe::Globe(Widget *parent) : Widget(parent) {
 		
 		updateGlobeData();
 	});
-	pyramid->rounded = true;
 	
 	updateGlobeData();
 }
@@ -498,54 +497,57 @@ void renderLine(int x, int y, Line3d line, Matrix matrix, Color* color, bool pyr
 }
 
 void Globe::render() {
-	if (rerender) {
-		App::reclear = 3;
-		rerender = false;
-	}
-	
-	if (App::reclear == 0) {
+	if (!is_visible) return;
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+		if (rerender) {
+			App::reclear = 3;
+			rerender = false;
+		}
+
+		if (App::reclear == 0) {
+			Widget::render();
+			return;
+		}
+
+		if (radius > 0.0f) App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, App::theme.darker_background_color);
+		else App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
+
 		Widget::render();
-		return;
-	}
-	
-	App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.darker_background_color, false);
-	
-	Widget::render();
-	
-	int centerx = t_x + t_w/2;
-	int centery = t_y + t_h/2;
-	
-	int scale = t_w<t_h ? t_w*.4 : t_h*.4;
-	
-	// first let's draw the longitudinal and lateral lines
-	
-	Matrix matrix = makeRotMatrix(rotation_z, rotation_x, scale);
-	
-	for (const auto& line : longitudinal_lines) {
-		renderLine(centerx, centery, line, matrix, App::theme.lesser_text_color, currently_pyramid);
-	}
-	
-	for (const auto& line : lateral_lines) {
-		renderLine(centerx, centery, line, matrix, App::theme.lesser_text_color, currently_pyramid);
-	}
-	
-	for (const auto& line : borders) {
-		renderLine(centerx, centery, line, matrix, App::theme.main_text_color, currently_pyramid);
-	}
-	
-	if (!currently_pyramid) {
-		App::DrawRoundBorder(centerx-scale, centery-scale, scale*2, scale*2, App::theme.main_text_color, resolution_long/2, scale);
-	}else{
-		for (const auto& line : bright_edges) {
+
+		int centerx = t_x + t_w/2;
+		int centery = t_y + t_h/2;
+
+		int scale = t_w<t_h ? t_w*.4 : t_h*.4;
+
+		// first let's draw the longitudinal and lateral lines
+
+		Matrix matrix = makeRotMatrix(rotation_z, rotation_x, scale);
+
+		for (const auto& line : longitudinal_lines) {
+			renderLine(centerx, centery, line, matrix, App::theme.lesser_text_color, currently_pyramid);
+		}
+
+		for (const auto& line : lateral_lines) {
+			renderLine(centerx, centery, line, matrix, App::theme.lesser_text_color, currently_pyramid);
+		}
+
+		for (const auto& line : borders) {
 			renderLine(centerx, centery, line, matrix, App::theme.main_text_color, currently_pyramid);
 		}
-	}
-	
-	if (this == App::activeLeafNode) {
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.active_color, 5, App::text_padding);
-	}else{
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
-	}
+
+		if (!currently_pyramid) {
+			App::DrawRoundBorder(centerx-scale, centery-scale, scale*2, scale*2, App::theme.main_text_color, resolution_long/2, scale);
+		}else{
+			for (const auto& line : bright_edges) {
+				renderLine(centerx, centery, line, matrix, App::theme.main_text_color, currently_pyramid);
+			}
+		}
+
+		Color* border = this == App::activeLeafNode ? App::theme.active_color : App::theme.border;
+		if (radius > 0.0f) App::DrawRoundBorder(t_x, t_y, t_w, t_h, border, 5, radius);
+		else App::DrawBorder(t_x, t_y, t_w, t_h, border);
+	});
 }
 
 bool Globe::on_mouse_button_event(int button, int action, int mods) {

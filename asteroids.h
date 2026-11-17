@@ -31,7 +31,6 @@ class Asteroids : public Widget {
 public:
 	Asteroids(Widget* parent);
 	
-	bool rounded = true;
 	
 //	bool on_key_event(int key, int scancode, int action, int mods);
 //	bool on_char_event(unsigned int keycode);

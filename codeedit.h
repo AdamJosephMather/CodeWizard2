@@ -59,7 +59,6 @@ public:
 	App::UpdateFInfoFunction FUPDATER = nullptr;
 	
 	int timeuntil = -1;
-//	int timeuntilchauffeur = -1;
 	
 	float splash_transparency = 0.0;
 	
@@ -69,7 +68,6 @@ public:
 	CW_SyntaxEngine* highlighter = nullptr;
 	
 	std::thread hoverthread;
-//	std::thread chauffeurthread;
 	
 	static int indentIdentifierAfterLine(MST::MonoString line, MST::MonoString nextline, int indentWidth);
 	
@@ -80,7 +78,6 @@ public:
 	int code_actions_id = -1;
 	int rename_id = -1;
 	
-	bool rounded = true;
 	
 	TextEdit* renamebox = nullptr;
 	Cursor renamecursor = Cursor();
@@ -88,7 +85,6 @@ public:
 	std::vector<int> errorlines = {};
 	ListBox* completionbox;
 	bool are_code_actions = false;
-//	bool is_chauffeur = false;
 	std::vector<json> code_actions = {};
 	ListBox* errorMenu;
 	std::int64_t last_file_mod_time = 0;

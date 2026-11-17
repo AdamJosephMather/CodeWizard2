@@ -34,7 +34,6 @@ Asteroids::Asteroids(Widget* parent) : Widget(parent) {
 		App::setActiveLeafNode(this);
 		resetGame();
 	});
-	startGameButton->rounded = true;
 }
 
 void Asteroids::position(int winx, int winy, int winw, int winh) {
@@ -223,106 +222,109 @@ void Asteroids::position(int winx, int winy, int winw, int winh) {
 }
 
 void Asteroids::render() {
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.main_background_color);
-	
-	Color* asteroid_color = App::theme.main_text_color;
-	if (!playing) {
-		asteroid_color = App::theme.hover_background_color;
-	}
-	
-	for (Asteroid a : asteroids) {
-		int x = t_x + a.rel_screen_x-a.rel_screen_s/2;
-		int y = t_y + a.rel_screen_y-a.rel_screen_s/2;
-		
-		App::DrawAsteroid(x, y, a.rel_screen_s, a.r, asteroid_color, a.type);
-		
-		bool drawitx = false;
-		int newx = x;
-		if (x+a.rel_screen_s > t_x + t_w) {
-			newx -= t_w;
-			drawitx = true;
-		}else if (x < t_x) {
-			newx += t_w;
-			drawitx = true;
+	if (!is_visible) return;
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.main_background_color);
+
+		Color* asteroid_color = App::theme.main_text_color;
+		if (!playing) {
+			asteroid_color = App::theme.hover_background_color;
 		}
-		if (drawitx) {
-			App::DrawAsteroid(newx, y, a.rel_screen_s, a.r, asteroid_color, a.type);
+
+		for (Asteroid a : asteroids) {
+			int x = t_x + a.rel_screen_x-a.rel_screen_s/2;
+			int y = t_y + a.rel_screen_y-a.rel_screen_s/2;
+
+			App::DrawAsteroid(x, y, a.rel_screen_s, a.r, asteroid_color, a.type);
+
+			bool drawitx = false;
+			int newx = x;
+			if (x+a.rel_screen_s > t_x + t_w) {
+				newx -= t_w;
+				drawitx = true;
+			}else if (x < t_x) {
+				newx += t_w;
+				drawitx = true;
+			}
+			if (drawitx) {
+				App::DrawAsteroid(newx, y, a.rel_screen_s, a.r, asteroid_color, a.type);
+			}
+
+			bool drawity = false;
+			int newy = y;
+			if (y+a.rel_screen_s > t_y + t_h) {
+				newy -= t_h;
+				drawity = true;
+			}else if (y < t_y) {
+				newy += t_h;
+				drawity = true;
+			}
+
+			if (drawity) {
+				App::DrawAsteroid(x, newy, a.rel_screen_s, a.r, asteroid_color, a.type);
+			}
+
+			if (drawity && drawitx) {
+				App::DrawAsteroid(newx, newy, a.rel_screen_s, a.r, asteroid_color, a.type);
+			}
 		}
-		
-		bool drawity = false;
-		int newy = y;
-		if (y+a.rel_screen_s > t_y + t_h) {
-			newy -= t_h;
-			drawity = true;
-		}else if (y < t_y) {
-			newy += t_h;
-			drawity = true;
+
+		if (playing) {
+			int shipw = TextRenderer::get_text_height()*2;
+			int x = shipx*t_w + t_x;
+			int y = shipy*t_h + t_y;
+
+			App::DrawShip(x, y, shipw, shipr, App::theme.main_text_color, accelerating);
+
+
+			bool drawitx = false;
+			int newx = x;
+			if (x+shipw > t_x + t_w) {
+				newx -= t_w;
+				drawitx = true;
+			}else if (x < t_x) {
+				newx += t_w;
+				drawitx = true;
+			}
+			if (drawitx) {
+				App::DrawShip(newx, y, shipw, shipr, App::theme.main_text_color, accelerating);
+			}
+
+			bool drawity = false;
+			int newy = y;
+			if (y+shipw > t_y + t_h) {
+				newy -= t_h;
+				drawity = true;
+			}else if (y < t_y) {
+				newy += t_h;
+				drawity = true;
+			}
+
+			if (drawity) {
+				App::DrawShip(x, newy, shipw, shipr, App::theme.main_text_color, accelerating);
+			}
+
+			if (drawity && drawitx) {
+				App::DrawShip(newx, newy, shipw, shipr, App::theme.main_text_color, accelerating);
+			}
+
+
+			int bulletr = TextRenderer::get_text_width(1) * 0.2;
+
+			for (Bullet b : bullets) {
+				App::DrawCircle(b.x * t_w + t_x, b.y * t_h + t_y, bulletr, 8, App::theme.main_text_color);
+			}
 		}
-		
-		if (drawity) {
-			App::DrawAsteroid(x, newy, a.rel_screen_s, a.r, asteroid_color, a.type);
+
+		Widget::render();
+
+		if (radius > 0.0f) {
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, radius);
+		}else{
+			App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
 		}
-		
-		if (drawity && drawitx) {
-			App::DrawAsteroid(newx, newy, a.rel_screen_s, a.r, asteroid_color, a.type);
-		}
-	}
-	
-	if (playing) {
-		int shipw = TextRenderer::get_text_height()*2;
-		int x = shipx*t_w + t_x;
-		int y = shipy*t_h + t_y;
-		
-		App::DrawShip(x, y, shipw, shipr, App::theme.main_text_color, accelerating);
-		
-		
-		bool drawitx = false;
-		int newx = x;
-		if (x+shipw > t_x + t_w) {
-			newx -= t_w;
-			drawitx = true;
-		}else if (x < t_x) {
-			newx += t_w;
-			drawitx = true;
-		}
-		if (drawitx) {
-			App::DrawShip(newx, y, shipw, shipr, App::theme.main_text_color, accelerating);
-		}
-		
-		bool drawity = false;
-		int newy = y;
-		if (y+shipw > t_y + t_h) {
-			newy -= t_h;
-			drawity = true;
-		}else if (y < t_y) {
-			newy += t_h;
-			drawity = true;
-		}
-		
-		if (drawity) {
-			App::DrawShip(x, newy, shipw, shipr, App::theme.main_text_color, accelerating);
-		}
-		
-		if (drawity && drawitx) {
-			App::DrawShip(newx, newy, shipw, shipr, App::theme.main_text_color, accelerating);
-		}
-		
-		
-		int bulletr = TextRenderer::get_text_width(1) * 0.2;
-		
-		for (Bullet b : bullets) {
-			App::DrawCircle(b.x * t_w + t_x, b.y * t_h + t_y, bulletr, 8, App::theme.main_text_color);
-		}
-	}
-	
-	Widget::render();
-	
-	if (rounded) {
-		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
-	}else{
-		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
-	}
+	});
 }
 
 void Asteroids::resetGame() {

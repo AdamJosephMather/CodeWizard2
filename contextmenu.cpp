@@ -10,28 +10,29 @@ void ContextMenu::render() {
 		return;
 	}
 	
-	float rad = App::text_padding+sqrt(App::text_padding);
-	App::DrawRoundedRect(t_x, t_y, t_w, t_h, rad, App::theme.extras_background_color, !cursor_in_this);
-	if (cursor_in_this) { // draw our own border
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.active_color, 5, rad);
-	}
-	
-	Widget::render();
-	
-	int yc = t_y+App::text_padding+App::border_width;
-	
-	for (int bi = 0; bi < buttons.size(); bi++) {
-		Button* b = buttons[bi];
-		
-		if (b) {
-			App::runWithSKIZ(b->t_x, b->t_y, b->t_w, b->t_h, [&](){
-				b->render();
-			});
-			yc = b->t_h+b->t_y+App::text_padding;
-		}else{
-			App::DrawRect(t_x+App::text_padding+App::border_width, yc-App::text_padding/2, maxwidth, App::border_width, App::theme.main_text_color);
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+		if (radius > 0.0f) {
+			App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, App::theme.extras_background_color);
+		} else {
+			App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
 		}
-	}
+
+		Widget::render();
+
+		int yc = t_y+App::text_padding+App::border_width;
+		for (Button* button : buttons) {
+			if (button) {
+				yc = button->t_h+button->t_y+App::text_padding;
+			} else {
+				App::DrawRect(t_x+App::text_padding+App::border_width, yc-App::text_padding/2, maxwidth, App::border_width, App::theme.main_text_color);
+			}
+		}
+
+		Color* border = cursor_in_this ? App::theme.active_color : App::theme.border;
+		if (radius > 0.0f) App::DrawRoundBorder(t_x, t_y, t_w, t_h, border, 5, radius);
+		else App::DrawBorder(t_x, t_y, t_w, t_h, border);
+	});
 }
 
 void ContextMenu::position(int x, int y, int width, int height) {
@@ -63,8 +64,6 @@ void ContextMenu::addToMenu(MST::MonoString name, Button::OnClick onclick) {
 		maxwidth = fmax(maxwidth, w);
 		runningypos += btn->t_h + App::text_padding;
 	}, onclick);
-	
-	b->rounded = true;
 	b->alignLeft = true;
 	b->background_color = nullptr;
 	b->background_color_hover = App::theme.hover_background_color;

@@ -10,7 +10,6 @@ public:
 	void render();
 	void position(int x, int y, int width, int height);
 	
-	bool rounded = true;
 	
 	Color* background_color = nullptr;
 	Color* border_color = nullptr;

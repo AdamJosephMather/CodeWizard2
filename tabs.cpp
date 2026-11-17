@@ -4,6 +4,7 @@
 
 Tabs::Tabs(Widget* parent) : Widget(parent) {
 	id = MST::toMonoString("Tabs");
+	background_color = App::theme.main_background_color;
 	
 	tabs_list.clear();
 	tab_screen_loc.clear();
@@ -90,24 +91,18 @@ void Tabs::render() {
 		scrolled_to = max_scroll;
 	}
 	
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.main_background_color);
+	if (background_color) App::DrawRect(t_x, t_y, t_w, t_h, background_color);
 	
 	int curx = 0;
 	
 	int start_x = scrolled_to;
 	int end_x = scrolled_to+t_w;
 	int text_height = (t_h-TextRenderer::get_text_height())/2;
-	int end_len = TextRenderer::get_text_width(2);
-	int close_size = TextRenderer::get_text_height()*.6;
-	int tabheight = t_h-1;
-	int close_offset_y = tabheight/2-close_size/2;
-	int close_offset_x = end_len/2-close_size/2-1;
-	
-	if (end_len - 2*close_offset_x >= close_size) {
-		close_offset_x -= 1;
-		close_size += 1;
-		close_offset_y -= 1;
-	}
+	const int end_len = TextRenderer::get_text_height();
+	const int tabheight = t_h-1;
+	const int closeWidth = end_len-2;
+	const int closeHeight = tabheight-4;
+	const int iconSize = std::max(0, std::min({static_cast<int>(end_len*0.6), closeWidth, closeHeight}));
 	
 	for (int indx = 0; indx < tabs_list.size(); indx ++) {
 		auto info = tabs_list[indx];
@@ -146,35 +141,42 @@ void Tabs::render() {
 				bc = App::theme.border;
 			}
 			
-			if (rounded) {
-				App::DrawRoundedRect(lc.start, t_y, tab_width+addextra, tabheight, App::text_padding, c);
-			}else{
-				App::DrawRect(lc.start, t_y, tab_width, tabheight, c);
-			}
-			
-			if (has_close_button){
-				if (hovering.indx == indx && !hovering.body) {
-					c = App::theme.del_diff;
-				}else{
-					c = App::theme.extras_background_color;
+			const int surfaceWidth = tab_width + addextra;
+			const float radius = App::themeCornerRadius(surfaceWidth, tabheight);
+			App::runWithRoundedClip(lc.start, t_y, surfaceWidth, tabheight, radius, [&]() {
+				if (radius > 0.0f) {
+					App::DrawRoundedRect(lc.start, t_y, surfaceWidth, tabheight, radius, c);
+				} else {
+					App::DrawRect(lc.start, t_y, surfaceWidth, tabheight, c);
 				}
-				
-				if (rounded) {
-					App::DrawRoundedRect(lc.end, t_y+2, end_len-2, tabheight-4, App::text_padding-App::SQRT_2, c);
-				}else{
-					App::DrawRect(lc.end, t_y, end_len, tabheight, c);
+
+				if (has_close_button) {
+					Color* closeColor = hovering.indx == indx && !hovering.body
+						? App::theme.del_diff : App::theme.extras_background_color;
+					const float closeRadius = App::themeCornerRadius(closeWidth, closeHeight);
+					if (closeWidth > 0 && closeHeight > 0) {
+						if (closeRadius > 0.0f) {
+							App::DrawRoundedRect(lc.end, t_y+2, closeWidth, closeHeight, closeRadius, closeColor);
+						} else {
+							App::DrawRect(lc.end, t_y+2, closeWidth, closeHeight, closeColor);
+						}
+					}
+					if (iconSize > 0) {
+						// Center within the painted close region. Half-pixel origins keep
+						// the margins equal when the icon and region have different parity.
+						const double iconX = lc.end+(closeWidth-iconSize)*0.5;
+						const double iconY = t_y+2+(closeHeight-iconSize)*0.5;
+						App::DrawX(iconX, iconY, iconSize, iconSize, 2, App::theme.main_text_color);
+					}
 				}
-				
-				App::DrawX(lc.end+close_offset_x, t_y+close_offset_y, close_size, close_size, 2, App::theme.main_text_color);
-			}
-			
-			if (rounded) {
-				App::DrawRoundBorder(lc.start, t_y, tab_width+addextra, tabheight, bc, 5, App::text_padding);
-			}else{
-				App::DrawBorder(lc.start, t_y, tab_width+addextra, tabheight, bc);
-			}
-			
-			TextRenderer::draw_text(lc.start+App::text_padding, t_y+text_height, info.title, tc);
+
+				TextRenderer::draw_text(lc.start+App::text_padding, t_y+text_height, info.title, tc);
+				if (radius > 0.0f) {
+					App::DrawRoundBorder(lc.start, t_y, surfaceWidth, tabheight, bc, 5, radius);
+				} else {
+					App::DrawBorder(lc.start, t_y, surfaceWidth, tabheight, bc);
+				}
+			});
 		}
 		
 		tab_screen_loc.push_back(lc);
@@ -206,15 +208,22 @@ void Tabs::render() {
 				bc = App::theme.border;
 			}
 			
-			if (rounded) {
-				App::DrawRoundedRect(add_loc, t_y, end_len-2, tabheight, App::text_padding, c);
-				App::DrawRoundBorder(add_loc, t_y, end_len-2, tabheight, bc, 5, App::text_padding);
-			}else {
-				App::DrawRect(add_loc, t_y, end_len-2, tabheight, c);
-				App::DrawBorder(add_loc, t_y, end_len-2, tabheight, bc);
-			}
-			
-			App::DrawPlus(add_loc+close_offset_x, t_y+close_offset_y, close_size, close_size, 2, App::theme.main_text_color);
+			const int addWidth = end_len - 2;
+			const float radius = App::themeCornerRadius(addWidth, tabheight);
+			App::runWithRoundedClip(add_loc, t_y, addWidth, tabheight, radius, [&]() {
+				if (radius > 0.0f) {
+					App::DrawRoundedRect(add_loc, t_y, addWidth, tabheight, radius, c);
+					App::DrawRoundBorder(add_loc, t_y, addWidth, tabheight, bc, 5, radius);
+				} else {
+					App::DrawRect(add_loc, t_y, addWidth, tabheight, c);
+					App::DrawBorder(add_loc, t_y, addWidth, tabheight, bc);
+				}
+				if (iconSize > 0) {
+					const double iconX = add_loc+(addWidth-iconSize)*0.5;
+					const double iconY = t_y+(tabheight-iconSize)*0.5;
+					App::DrawPlus(iconX, iconY, iconSize, iconSize, 2, App::theme.main_text_color);
+				}
+			});
 		}
 		
 		screen_add_x = add_loc;

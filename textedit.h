@@ -149,7 +149,8 @@ public:
 	
 	Color* borderColor;
 	Color* activeBorderColor;
-	bool rounded = false;
+	enum class Surface { Control, Document };
+	Surface surface = Surface::Control; // Document outline belongs to its host.
 	
 	CW_SyntaxEngine* highlighter = nullptr;
 	SyntectStatePtr highlighter_initial_state = nullptr;

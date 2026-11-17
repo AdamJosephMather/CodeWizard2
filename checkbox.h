@@ -12,7 +12,6 @@ public:
 	
 	CheckBox(Widget* parent, CheckPositioner positioner, CheckOnClick onclick);
 	
-	bool rounded = false;
 	Color* bgcolor;
 
 	void render();

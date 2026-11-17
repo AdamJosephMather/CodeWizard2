@@ -17,7 +17,6 @@ public:
 	
 	std::string toHex(int num);
 	
-	bool rounded = true;
 	FileInfo* file = nullptr;
 private:
 	std::vector<std::uint8_t> bytes = {};

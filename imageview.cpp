@@ -73,37 +73,39 @@ void ImageView::render() {
 		pendingTexture = false;
 	}
 	
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
 
-	Widget::render();
+		Widget::render();
 
-	if (hasTexture) {
-		// Calculate geometry
-		float scaleX = (float)t_w / (float)imgW;
-		float scaleY = (float)t_h / (float)imgH;
-		float scale = std::min(1.0f, std::min(scaleX, scaleY));
-		float dispW = imgW * scale;
-		float dispH = imgH * scale;
-		float offsetX = t_x + (t_w - dispW) * 0.5f;
-		float offsetY = t_y + (t_h - dispH) * 0.5f;
-		
-		App::renderTexture(texID, offsetX, offsetY, dispW, dispH, App::theme.darker_background_color);
-	} else if (!imageData.empty()) {
-        TextRenderer::draw_text(t_x+App::text_padding,t_y+App::text_padding,
-            MST::toMonoString("[Image could not be decoded]"),App::theme.lesser_text_color);
-    }
-	
-	Color* borderC = App::theme.border;
-	if (this == App::activeLeafNode) {
-		borderC = App::theme.active_color;
-	}
-	
-	if (rounded) {
-		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, App::text_padding);
-	}else{
-		App::DrawBorder(t_x, t_y, t_w, t_h, borderC);
-	}
+		if (hasTexture) {
+			// Calculate geometry
+			float scaleX = (float)t_w / (float)imgW;
+			float scaleY = (float)t_h / (float)imgH;
+			float scale = std::min(1.0f, std::min(scaleX, scaleY));
+			float dispW = imgW * scale;
+			float dispH = imgH * scale;
+			float offsetX = t_x + (t_w - dispW) * 0.5f;
+			float offsetY = t_y + (t_h - dispH) * 0.5f;
+
+			App::renderTexture(texID, offsetX, offsetY, dispW, dispH, App::theme.darker_background_color);
+		} else if (!imageData.empty()) {
+	        TextRenderer::draw_text(t_x+App::text_padding,t_y+App::text_padding,
+	            MST::toMonoString("[Image could not be decoded]"),App::theme.lesser_text_color);
+	    }
+
+		Color* borderC = App::theme.border;
+		if (this == App::activeLeafNode) {
+			borderC = App::theme.active_color;
+		}
+
+		if (radius > 0.0f) {
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, radius);
+		}else{
+			App::DrawBorder(t_x, t_y, t_w, t_h, borderC);
+		}
+	});
 }
 
 bool ImageView::on_mouse_button_event(int button, int action, int mods) {

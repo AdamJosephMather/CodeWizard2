@@ -821,6 +821,7 @@ bool Terminal::initGhostty() {
 	options.max_scrollback = m_scrollbackMax;
 
 	if (ghostty_terminal_new(nullptr, &m_terminal, options) != GHOSTTY_SUCCESS) return false;
+	applyThemeColorsLocked();
 	if (ghostty_render_state_new(nullptr, &m_renderState) != GHOSTTY_SUCCESS) {
 		teardownGhostty();
 		return false;
@@ -922,6 +923,28 @@ void Terminal::refreshTerminalMetadataLocked() {
 	if (m_mouseEncoder) ghostty_mouse_encoder_setopt_from_terminal(m_mouseEncoder, m_terminal);
 }
 
+void Terminal::applyThemeColorsLocked() {
+	if (!m_terminal || !m_hasThemeColors) return;
+	// Ghostty keeps OSC overrides separate from these embedder defaults.
+	ghostty_terminal_set(m_terminal, GHOSTTY_TERMINAL_OPT_COLOR_FOREGROUND, &m_themeForeground);
+	ghostty_terminal_set(m_terminal, GHOSTTY_TERMINAL_OPT_COLOR_BACKGROUND, &m_themeBackground);
+	ghostty_terminal_set(m_terminal, GHOSTTY_TERMINAL_OPT_COLOR_CURSOR, &m_themeForeground);
+}
+
+void Terminal::setThemeColors(GhosttyColorRgb foreground, GhosttyColorRgb background) {
+	std::lock_guard<std::mutex> lock(m_stateMutex);
+	auto same = [](GhosttyColorRgb a, GhosttyColorRgb b) {
+		return a.r == b.r && a.g == b.g && a.b == b.b;
+	};
+	if (m_hasThemeColors && same(foreground, m_themeForeground) && same(background, m_themeBackground)) return;
+	m_themeForeground = foreground;
+	m_themeBackground = background;
+	m_hasThemeColors = true;
+	applyThemeColorsLocked();
+	m_renderSnapshotDirty = true;
+	RERENDER.store(true, std::memory_order_release);
+}
+
 bool Terminal::refreshRenderStateLocked() {
 	if (!m_terminal || !m_renderState || !m_rowIterator || !m_rowCells) return false;
 	if (ghostty_render_state_update(m_renderState, m_terminal) != GHOSTTY_SUCCESS) return false;
@@ -936,7 +959,9 @@ bool Terminal::refreshRenderStateLocked() {
 
 	const int cols = m_cols.load(std::memory_order_acquire);
 	const int rows = m_rows.load(std::memory_order_acquire);
-	m_viewCells.assign(static_cast<size_t>(cols) * static_cast<size_t>(rows), kDefaultCell);
+	const OurCell defaultCell{U' ', m_colors.background.r, m_colors.background.g, m_colors.background.b,
+	                          m_colors.foreground.r, m_colors.foreground.g, m_colors.foreground.b};
+	m_viewCells.assign(static_cast<size_t>(cols) * static_cast<size_t>(rows), defaultCell);
 
 	if (ghostty_render_state_get(
 			m_renderState, GHOSTTY_RENDER_STATE_DATA_ROW_ITERATOR, &m_rowIterator) != GHOSTTY_SUCCESS) {
@@ -1089,13 +1114,14 @@ CursorInfo Terminal::getCursorInfo() {
 bool Terminal::getViewSnapshot(std::vector<OurCell>& cells,
 							   CursorInfo& cursor,
 							   int& cols,
-							   int& rows) {
+							   int& rows, GhosttyColorRgb* background) {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
 	if (m_renderSnapshotDirty && !refreshRenderStateLocked()) return false;
 	cols = m_cols.load(std::memory_order_acquire);
 	rows = m_rows.load(std::memory_order_acquire);
 	cells = m_viewCells;
 	cursor = m_cursorInfo;
+	if (background) *background = m_colors.background;
 	if (!m_terminalReady.load(std::memory_order_acquire)) cursor.visible = false;
 	return cells.size() == static_cast<size_t>(cols) * static_cast<size_t>(rows);
 }

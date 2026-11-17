@@ -7,6 +7,15 @@
 #include <vector>
 #include "Verify.hpp"
 
+namespace {
+GhosttyColorRgb terminalColor(const Color* color) {
+	auto channel = [](float value) {
+		return static_cast<uint8_t>(std::clamp(value, 0.0f, 1.0f) * 255.0f);
+	};
+	return {channel(color->r), channel(color->g), channel(color->b)};
+}
+}
+
 TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 	id = MST::toMonoString("Terminal");
 	
@@ -38,7 +47,6 @@ TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 		needsRerender = 3;
 	});
 	ajm_asv3_tm->const_parent = this;
-	ajm_asv3_tm->rounded = true;
 	ajm_asv3_tm->bgcolor = App::theme.hover_background_color; // brighter for black terminal background
 	
 	if (App::settings->getValue("ajm_asv3_tm_url", std::string()) != std::string()) {
@@ -72,6 +80,7 @@ TerminalWidget::TerminalWidget(Widget* parent)  : Widget(parent) {
 
 void TerminalWidget::executeAction(WidgetActionType typ) {
 	Widget::executeAction(typ);
+	if (typ == THEME_CALCULATED) needsRerender = 3;
 	
 	if (typ != AJM_SETTINGS_CHANGE) {
 		return;
@@ -120,6 +129,7 @@ void TerminalWidget::run() {
 		sel_doc_r1 -= num;
 	});
 	
+	term->setThemeColors(terminalColor(App::theme.main_text_color), terminalColor(App::theme.darker_background_color));
 	if (term->start()) {
 		term->resize(width_cells, height_cells,
 		             TextRenderer::get_text_width(1),
@@ -452,101 +462,105 @@ void TerminalWidget::apply_pending_resize() {
 void TerminalWidget::render() {
 	std::lock_guard<std::recursive_mutex> lock(m_term_mutex);
 	if (!is_visible) { return; }
-	if (term == nullptr || settingup) {
-		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.main_background_color);
-		return;
-	}
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+		auto drawBorder = [&]() {
+			Color* color = this == App::activeLeafNode ? App::theme.active_color : App::theme.border;
+			if (radius > 0.0f) App::DrawRoundBorder(t_x, t_y, t_w, t_h, color, 5, radius);
+			else App::DrawBorder(t_x, t_y, t_w, t_h, color);
+		};
+		if (term == nullptr || settingup) {
+			App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
+			drawBorder();
+			return;
+		}
 
-	apply_pending_resize();
+		// Read the shared palette each frame; the terminal only invalidates its
+		// snapshot when the resulting RGB defaults actually change.
+		term->setThemeColors(terminalColor(App::theme.main_text_color), terminalColor(App::theme.darker_background_color));
+		apply_pending_resize();
 
-	if (term->RERENDER.exchange(false, std::memory_order_acq_rel) ||
-	    t_x != old_tx || t_y != old_ty || t_w != old_tw || t_h != old_th) {
-		needsRerender = 3;
-	}
-	
-	const bool redrawTerminal = needsRerender > 0 || App::reclear != 0;
-	
-	if (!redrawTerminal) {
-		Widget::render();
-		return;
-	}
-	
-	if (needsRerender > 0) {
-		--needsRerender;
-	}
-	
-	CursorInfo ci{};
-	int viewCols = 0;
-	int viewRows = 0;
-	if (!term->getViewSnapshot(render_cells, ci, viewCols, viewRows) || viewCols <= 0 || viewRows <= 0) {
-		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.main_background_color);
-		Widget::render();
-		return;
-	}
+		if (term->RERENDER.exchange(false, std::memory_order_acq_rel) ||
+		    t_x != old_tx || t_y != old_ty || t_w != old_tw || t_h != old_th) {
+			needsRerender = 3;
+		}
 
-	const int rowToUse = std::min(viewRows - 1, viewRows / 2);
-	const int colToUse = std::min(viewCols - 1, viewCols / 2);
-	const OurCell& bgcell = render_cells[static_cast<size_t>(rowToUse) * viewCols + colToUse];
-	const uint8_t bgr = bgcell.bg_red;
-	const uint8_t bgg = bgcell.bg_green;
-	const uint8_t bbg = bgcell.bg_blue;
+		const bool redrawTerminal = needsRerender > 0 || App::reclear != 0;
 
-	App::DrawRect(t_x, t_y, t_w, t_h, bgr, bgg, bbg);
+		if (!redrawTerminal) {
+			drawBorder();
+			Widget::render();
+			return;
+		}
 
-	const UChar32 empty = U' ';
-	const int cellWidth = TextRenderer::get_text_width(1);
-	const int cellHeight = TextRenderer::get_text_height();
-	const int cursorWidth = std::max(cellWidth / 4, 1);
-	const bool showLocalSelection = !term->appWantsMouse();
+		if (needsRerender > 0) {
+			--needsRerender;
+		}
 
-	for (int r = 0; r < viewRows; ++r) {
-		for (int c = 0; c < viewCols; ++c) {
-			OurCell cell = render_cells[static_cast<size_t>(r) * viewCols + c];
-			const int x = t_x + App::text_padding + cellWidth * c;
-			const int y = t_y + App::text_padding + cellHeight * r;
+		CursorInfo ci{};
+		int viewCols = 0;
+		int viewRows = 0;
+		GhosttyColorRgb terminalBackground{};
+		if (!term->getViewSnapshot(render_cells, ci, viewCols, viewRows, &terminalBackground) || viewCols <= 0 || viewRows <= 0) {
+			App::DrawRect(t_x, t_y, t_w, t_h, App::theme.darker_background_color);
+			drawBorder();
+			Widget::render();
+			return;
+		}
 
-			if (showLocalSelection && cell_in_selection(r, c)) {
-				App::DrawRect(x, y, cellWidth, cellHeight, App::theme.white);
-				cell.fg_red = 255 - cell.fg_red;
-				cell.fg_green = 255 - cell.fg_green;
-				cell.fg_blue = 255 - cell.fg_blue;
-			} else if (cell.bg_red != bgr || cell.bg_green != bgg || cell.bg_blue != bbg) {
-				App::DrawRect(x, y, cellWidth, cellHeight,
-				              cell.bg_red, cell.bg_green, cell.bg_blue);
-			}
+		// Padding uses the effective terminal background, never an arbitrary cell.
+		const uint8_t bgr = terminalBackground.r;
+		const uint8_t bgg = terminalBackground.g;
+		const uint8_t bbg = terminalBackground.b;
 
-			if (ci.row == r && ci.col == c && ci.visible) {
-				if (ci.shape == 1) {
-					App::DrawRect(x, y, cellWidth, cellHeight, App::theme.white);
-					cell.fg_red = 255 - cell.fg_red;
-					cell.fg_green = 255 - cell.fg_green;
-					cell.fg_blue = 255 - cell.fg_blue;
-				} else if (ci.shape == 2) {
-					App::DrawRect(x, y + cellHeight - cursorWidth,
-					              cellWidth, cursorWidth, App::theme.white);
-				} else {
-					App::DrawRect(x, y, cursorWidth, cellHeight, App::theme.white);
+		App::DrawRect(t_x, t_y, t_w, t_h, bgr, bgg, bbg);
+
+		const UChar32 empty = U' ';
+		const int cellWidth = TextRenderer::get_text_width(1);
+		const int cellHeight = TextRenderer::get_text_height();
+		const int cursorWidth = std::max(cellWidth / 4, 1);
+		const bool showLocalSelection = !term->appWantsMouse();
+
+		for (int r = 0; r < viewRows; ++r) {
+			for (int c = 0; c < viewCols; ++c) {
+				OurCell cell = render_cells[static_cast<size_t>(r) * viewCols + c];
+				const int x = t_x + App::text_padding + cellWidth * c;
+				const int y = t_y + App::text_padding + cellHeight * r;
+
+				if (showLocalSelection && cell_in_selection(r, c)) {
+					App::DrawRect(x, y, cellWidth, cellHeight, App::theme.main_text_color);
+					cell.fg_red = bgr;
+					cell.fg_green = bgg;
+					cell.fg_blue = bbg;
+				} else if (cell.bg_red != bgr || cell.bg_green != bgg || cell.bg_blue != bbg) {
+					App::DrawRect(x, y, cellWidth, cellHeight,
+					              cell.bg_red, cell.bg_green, cell.bg_blue);
+				}
+
+				if (ci.row == r && ci.col == c && ci.visible) {
+					if (ci.shape == 1) {
+						App::DrawRect(x, y, cellWidth, cellHeight, App::theme.main_text_color);
+						cell.fg_red = bgr;
+						cell.fg_green = bgg;
+						cell.fg_blue = bbg;
+					} else if (ci.shape == 2) {
+						App::DrawRect(x, y + cellHeight - cursorWidth,
+						              cellWidth, cursorWidth, App::theme.main_text_color);
+					} else {
+						App::DrawRect(x, y, cursorWidth, cellHeight, App::theme.main_text_color);
+					}
+				}
+
+				if (cell.c != empty && cell.c != U'\t') {
+					TextRenderer::draw_text(x, y, MST::fromUnicodeCodepoint(cell.c), cell.fg_red, cell.fg_green, cell.fg_blue);
 				}
 			}
-
-			if (cell.c != empty && cell.c != U'\t') {
-				TextRenderer::draw_text(x, y, MST::fromUnicodeCodepoint(cell.c), cell.fg_red, cell.fg_green, cell.fg_blue);
-			}
 		}
-	}
 
-	Color* bColor = App::theme.border;
-	if (this == App::activeLeafNode) bColor = App::theme.active_color;
+		drawBorder();
 
-	if (rounded) {
-		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h,
-		                            App::text_padding, App::theme.main_background_color);
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, bColor, 5, App::text_padding);
-	} else {
-		App::DrawBorder(t_x, t_y, t_w, t_h, bColor);
-	}
-
-	Widget::render();
+		Widget::render();
+	});
 }
 
 static inline void mods_to_bools(int mods, bool& shift, bool& alt, bool& ctrl) {

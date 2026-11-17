@@ -11,12 +11,15 @@ void Scrollbar::render() {
 		return;
 	}
 	
-	if (hovering) {
-		App::DrawRoundedRect(r_x+2, r_y+2, r_w-4, r_h-4, (bar_width-4)/2.0, App::theme.main_text_color);
-	}else{
-		App::DrawRoundedRect(r_x+2, r_y+2, r_w-4, r_h-4, (bar_width-4)/2.0, App::theme.hover_background_color);
+	const int thumbWidth = r_w - 4;
+	const int thumbHeight = r_h - 4;
+	if (thumbWidth > 0 && thumbHeight > 0) {
+		const float radius = App::themeCornerRadius(thumbWidth, thumbHeight);
+		Color* color = hovering ? App::theme.main_text_color : App::theme.hover_background_color;
+		if (radius > 0.0f) App::DrawRoundedRect(r_x+2, r_y+2, thumbWidth, thumbHeight, radius, color);
+		else App::DrawRect(r_x+2, r_y+2, thumbWidth, thumbHeight, color);
 	}
-	
+
 	int errHeight = bar_width / 3;
 	
 	for (double r : red) {

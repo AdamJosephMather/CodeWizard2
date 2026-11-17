@@ -11,7 +11,6 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	});
 	ext_b->window_button = true;
 	ext_b->execute_on_down = false;
-	ext_b->rounded = true;
 	ext_b->background_color = nullptr;
 	ext_b->background_color_hover = App::theme.del_diff;
 	ext_b->border_color = nullptr;
@@ -26,7 +25,6 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	});
 	win_b->window_button = true;
 	win_b->execute_on_down = false;
-	win_b->rounded = true;
 	win_b->background_color = nullptr;
 	win_b->background_color_hover = App::theme.hover_background_color;
 	win_b->border_color = nullptr;
@@ -41,7 +39,6 @@ TitleBar::TitleBar(Widget *parent) : Widget(parent) {
 	});
 	min_b->window_button = true;
 	min_b->execute_on_down = false;
-	min_b->rounded = true;
 	min_b->background_color = nullptr;
 	min_b->background_color_hover = App::theme.hover_background_color;
 	min_b->border_color = nullptr;
@@ -116,23 +113,34 @@ bool TitleBar::on_mouse_move_event() {
 }
 
 void TitleBar::render() {
-	if (!is_visible) {
-		return;
-	}
-	
-	App::DrawRect(0, 0, t_w, t_h, App::theme.main_background_color);
-	
+	if (!is_visible) return;
+
+	// The titlebar sits above the root content area. Establish its own scissor
+	// before creating a rounded clip, then restore the caller's clipping state.
+	const int previousX = App::SKIZ_X, previousY = App::SKIZ_Y;
+	const int previousW = App::SKIZ_W, previousH = App::SKIZ_H;
+	glPushAttrib(GL_SCISSOR_BIT);
+	glEnable(GL_SCISSOR_TEST);
 	App::SKIZ_X = 0;
 	App::SKIZ_Y = 0;
-	App::SKIZ_W = t_w;
-	App::SKIZ_H = t_h;
-	
-	for (auto w : children) {
-		// this is the one instance (as if there aren't more) where our archetecture screws us. The root widget takes up the space below the titlebar (so we have to handle this...)
-		glScissor(w->t_x, App::WINDOW_HEIGHT-(w->t_y+w->t_h), w->t_w, w->t_h);
-		w->render(); // we do this manually because otherwise our scissoring will cut this off
-	}
-	
-	glDisable(GL_SCISSOR_TEST);
-	glEnable(GL_SCISSOR_TEST);
+	App::SKIZ_W = std::max(t_w, 0);
+	App::SKIZ_H = std::max(t_h, 0);
+	glScissor(0, App::WINDOW_HEIGHT-t_h, App::SKIZ_W, App::SKIZ_H);
+
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(0, 0, t_w, t_h, radius, [&]() {
+		if (radius > 0.0f) App::DrawRoundedRect(0, 0, t_w, t_h, radius, App::theme.main_background_color);
+		else App::DrawRect(0, 0, t_w, t_h, App::theme.main_background_color);
+		for (auto child : children) {
+			App::runWithSKIZ(child->t_x, child->t_y, child->t_w, child->t_h, [&]() {
+				child->render();
+			});
+		}
+	});
+
+	App::SKIZ_X = previousX;
+	App::SKIZ_Y = previousY;
+	App::SKIZ_W = previousW;
+	App::SKIZ_H = previousH;
+	glPopAttrib();
 }

@@ -328,6 +328,35 @@ pub fn build(b: *std.Build) !void {
 	});
 	exe.linkLibrary(glfw);
 
+	const theme_tests = b.step("test-theme", "Check theme persistence, palettes, clipping, and terminal colors (requires an OpenGL display)");
+	for ([_][]const u8{ "test_theme_style", "test_theme_settings", "test_theme_rendering" }) |name| {
+		const test_module = b.createModule(.{
+			.target = target,
+			.optimize = optimize,
+			.link_libc = true,
+			.link_libcpp = true,
+		});
+		test_module.addIncludePath(b.path("."));
+		test_module.addCSourceFile(.{
+			.file = b.path(b.fmt("tests/{s}.cpp", .{name})),
+			.flags = &.{ "-std=c++17", "-DGHOSTTY_STATIC" },
+		});
+		const test_exe = b.addExecutable(.{ .name = name, .root_module = test_module });
+		if (std.mem.eql(u8, name, "test_theme_rendering")) {
+			test_module.addIncludePath(glfw_dep.path("include"));
+			test_module.addIncludePath(ghostty.path("include"));
+			test_exe.linkLibrary(glfw);
+			test_exe.linkLibrary(ghostty.artifact("ghostty-vt-static"));
+			if (is_windows) {
+				for ([_][]const u8{ "opengl32", "gdi32", "user32", "shell32" }) |library| test_exe.linkSystemLibrary(library);
+			} else {
+				for ([_][]const u8{ "GL", "X11", "Xrandr", "Xinerama", "Xcursor", "Xi", "pthread", "dl", "m" }) |library| test_exe.linkSystemLibrary(library);
+			}
+		}
+		theme_tests.dependOn(&b.addRunArtifact(test_exe).step);
+	}
+
+
 	const freetype = b.addLibrary(.{
 		.name = "freetype",
 		.linkage = .static,

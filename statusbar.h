@@ -15,6 +15,5 @@ public:
 	void render();
 	void save();
 	
-	bool rounded = true;
 private:
 };

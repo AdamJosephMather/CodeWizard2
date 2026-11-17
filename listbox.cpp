@@ -22,52 +22,55 @@ void ListBox::fillElementalPositions() {
 }
 
 void ListBox::render() {
-	if (!is_visible || !is_visible_layered) {
-		return;
-	}
-	
-	elementalPositions.clear();
-	
-	if (rounded) {
-		App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, background_color);
-	}else{
-		App::DrawRect(t_x, t_y, t_w, t_h, background_color);
-	}
-	
-	int th = TextRenderer::get_text_height()+App::text_padding;
-	
-	int maxlen = floor(t_w/TextRenderer::get_text_width(1));
-	int y = t_y;
-	Color* textCol;
-	
-	for (int indx = scrolled_to; indx < fmin(elements.size(), scrolled_to+toshow); indx++) {
-		if (selected_id == indx) {
-			textCol = App::theme.darker_background_color;
-			if (rounded) {
-				App::DrawRoundedRect(t_x, y, t_w, th, App::text_padding, App::theme.main_text_color); // no need for border because this is so eye catching
-			}else{
-				App::DrawRect(t_x, y, t_w, th, App::theme.main_text_color);
-			}
-		}else{
-			textCol = App::theme.main_text_color;
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+		if (!is_visible || !is_visible_layered) {
+			return;
 		}
-		
-		elementalPositions.push_back({t_x, y, t_w, th, indx});
-		
-		TextRenderer::draw_text(t_x+(float)App::text_padding/2+1, y+(float)App::text_padding/2, MST::substring(elements[indx], 0, maxlen), textCol);
-		y += th;
-	}
-	
-	Color* bColor = App::theme.border;
-	if (cursor_in_this) {
-		bColor = App::theme.active_color;
-	}
-	
-	if (!rounded) {
-		App::DrawBorder(t_x, t_y, t_w, t_h, bColor);
-	}else{
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, bColor, 5, App::text_padding);
-	}
+
+		elementalPositions.clear();
+
+		if (radius > 0.0f) {
+			App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, background_color);
+		}else{
+			App::DrawRect(t_x, t_y, t_w, t_h, background_color);
+		}
+
+		int th = TextRenderer::get_text_height()+App::text_padding;
+
+		int maxlen = floor(t_w/TextRenderer::get_text_width(1));
+		int y = t_y;
+		Color* textCol;
+
+		for (int indx = scrolled_to; indx < fmin(elements.size(), scrolled_to+toshow); indx++) {
+			if (selected_id == indx) {
+				textCol = App::theme.darker_background_color;
+				if (radius > 0.0f) {
+					App::DrawRoundedRect(t_x, y, t_w, th, App::themeCornerRadius(t_w, th), App::theme.main_text_color); // no need for border because this is so eye catching
+				}else{
+					App::DrawRect(t_x, y, t_w, th, App::theme.main_text_color);
+				}
+			}else{
+				textCol = App::theme.main_text_color;
+			}
+
+			elementalPositions.push_back({t_x, y, t_w, th, indx});
+
+			TextRenderer::draw_text(t_x+(float)App::text_padding/2+1, y+(float)App::text_padding/2, MST::substring(elements[indx], 0, maxlen), textCol);
+			y += th;
+		}
+
+		Color* bColor = App::theme.border;
+		if (cursor_in_this) {
+			bColor = App::theme.active_color;
+		}
+
+		if (radius <= 0.0f) {
+			App::DrawBorder(t_x, t_y, t_w, t_h, bColor);
+		}else{
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, bColor, 5, radius);
+		}
+	});
 }
 
 void ListBox::setElements(std::vector<MST::MonoString> el) {

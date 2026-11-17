@@ -14,7 +14,6 @@ HelpMenu::HelpMenu(Widget* parent) : Widget(parent) {
 	});
 	closebutton->text_special = 1;
 	closebutton->window_button = true;
-	closebutton->rounded = true;
 	closebutton->background_color       = nullptr;
 	closebutton->background_color_hover = App::theme.del_diff;
 	closebutton->border_color       = nullptr;
@@ -279,23 +278,28 @@ void HelpMenu::setToIndex(int index) {
 }
 
 void HelpMenu::render() {
-	App::DrawRect(t_x, t_y+closebutton->t_h-App::text_padding, t_w, App::text_padding, App::theme.main_background_color); // this fixes the corners on the bottom to be flat. In a kinda dumb way, but it will work. Probably
-	App::DrawRoundedRect(t_x, t_y, t_w, closebutton->t_h, App::text_padding, App::theme.main_background_color);
-	App::DrawRoundedRect(t_x, t_y+closebutton->t_h, t_w, t_h-closebutton->t_h, App::text_padding, App::theme.darker_background_color);
-	
-	int vert_padding = (closebutton->t_h-TextRenderer::get_text_height())/2;
-	TextRenderer::draw_text(t_x+vert_padding, t_y+vert_padding, MST::toMonoString("CodeWizard2 Help Menu"), App::theme.main_text_color);
-	
-	closebutton->render();
-	App::runWithSKIZ(tb->t_x, tb->t_y, tb->t_w, tb->t_h, [&](){
-		tb->render();
+	if (!is_visible) return;
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+		// One outer silhouette keeps the header/body seam flat in every theme.
+		App::DrawRect(t_x, t_y, t_w, closebutton->t_h, App::theme.main_background_color);
+		App::DrawRect(t_x, t_y+closebutton->t_h, t_w, t_h-closebutton->t_h, App::theme.darker_background_color);
+
+		int vert_padding = (closebutton->t_h-TextRenderer::get_text_height())/2;
+		TextRenderer::draw_text(t_x+vert_padding, t_y+vert_padding, MST::toMonoString("CodeWizard2 Help Menu"), App::theme.main_text_color);
+
+		closebutton->render();
+		App::runWithSKIZ(tb->t_x, tb->t_y, tb->t_w, tb->t_h, [&](){
+			tb->render();
+		});
+		App::runWithSKIZ(t_x, tb->t_y+tb->t_h, t_w, t_h-tb->t_h-closebutton->t_h, [&](){
+			label->render();
+		});
+
+		App::DrawRect(t_x, tb->t_y+tb->t_h, t_w, 1, App::theme.border);
+		if (radius > 0.0f) App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.active_color, 5, radius);
+		else App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.active_color);
 	});
-	App::runWithSKIZ(t_x, tb->t_y+tb->t_h, t_w, t_h-tb->t_h-closebutton->t_h, [&](){
-		label->render();
-	});
-	
-	App::DrawRect(t_x, tb->t_y+tb->t_h, t_w, 1, App::theme.border);
-	App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.active_color, 5, App::text_padding);
 }
 
 void HelpMenu::position(int x, int y, int w, int h) {

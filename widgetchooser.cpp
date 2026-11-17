@@ -29,7 +29,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		App::ReplaceWith(this, new Editor(nullptr));
 		App::deleteWidget(this);
 	});
-	b1->rounded = true;
 	
 	auto text2 = MST::toMonoString("File Tree");
 	b2 = new Button(this, text2, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -41,7 +40,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		std::cout << "Creating file tree\n";
 		App::deleteWidget(this);
 	});
-	b2->rounded = true;
 	
 	auto text3 = MST::toMonoString("Settings Menu");
 	b3 = new Button(this, text3, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -53,7 +51,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		std::cout << "Creating settings menu\n";
 		App::deleteWidget(this);
 	});
-	b3->rounded = true;
 	
 	auto text4 = MST::toMonoString("Compare Two Files");
 	b4 = new Button(this, text4, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -67,7 +64,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		std::cout << "Creating compare menu\n";
 		App::deleteWidget(this);
 	});
-	b4->rounded = true;
 	
 	auto text5 = MST::toMonoString("AI Chat");
 	b5 = new Button(this, text5, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -79,7 +75,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		std::cout << "Creating chat menu\n";
 		App::deleteWidget(this);
 	});
-	b5->rounded = true;
 	
 	auto text6 = MST::toMonoString("LSP Debugger");
 	b6 = new Button(this, text6, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -91,7 +86,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		std::cout << "Creating lsp debug menu\n";
 		App::deleteWidget(this);
 	});
-	b6->rounded = true;
 	
 	auto text7 = MST::toMonoString("Terminal");
 	b7 = new Button(this, text7, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -103,7 +97,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		std::cout << "Creating terminal\n";
 		App::deleteWidget(this);
 	});
-	b7->rounded = true;
 	
 	auto text8 = MST::toMonoString("Math Window");
 	b8 = new Button(this, text8, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -115,7 +108,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		std::cout << "Creating mathwindow\n";
 		App::deleteWidget(this);
 	});
-	b8->rounded = true;
 	
 	auto text9 = MST::toMonoString("Asteroids");
 	b9 = new Button(this, text9, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -127,7 +119,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		std::cout << "Creating asteroids\n";
 		App::deleteWidget(this);
 	});
-	b9->rounded = true;
 	
 	auto text10 = MST::toMonoString("Graph Window");
 	b10 = new Button(this, text10, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -139,7 +130,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		std::cout << "Creating graphwindow\n";
 		App::deleteWidget(this);
 	});
-	b10->rounded = true;
 	
 	auto text11 = MST::toMonoString("Status Bar");
 	b11 = new Button(this, text11, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -151,7 +141,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		std::cout << "Creating statusbar\n";
 		App::deleteWidget(this);
 	});
-	b11->rounded = true;
 	
 	auto text12 = MST::toMonoString("Typing Test");
 	b12 = new Button(this, text12, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -163,7 +152,6 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		std::cout << "Creating typing test\n";
 		App::deleteWidget(this);
 	});
-	b12->rounded = true;
 	
 	auto text13 = MST::toMonoString("Globe");
 	b13 = new Button(this, text13, [&](Button* button, int x, int y, int w, int h, int tw, int th){
@@ -175,21 +163,23 @@ WidgetChooser::WidgetChooser(Widget* parent) : Widget(parent) {
 		std::cout << "Creating globe\n";
 		App::deleteWidget(this);
 	});
-	b13->rounded = true;
 }
 
 void WidgetChooser::render() {
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
-	
-	auto txt = MST::toMonoString("Widget Chooser");
-	TextRenderer::draw_text(t_x+t_w/2-TextRenderer::get_text_width(txt.length)/2, t_y+App::text_padding, txt, App::theme.main_text_color);
-	
-	Widget::render();
-	
-	if (rounded) {
-		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
-	}else{
-		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
-	}
+	if (!is_visible) return;
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
+
+		auto txt = MST::toMonoString("Widget Chooser");
+		TextRenderer::draw_text(t_x+t_w/2-TextRenderer::get_text_width(txt.length)/2, t_y+App::text_padding, txt, App::theme.main_text_color);
+
+		Widget::render();
+
+		if (radius > 0.0f) {
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, radius);
+		}else{
+			App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
+		}
+	});
 }

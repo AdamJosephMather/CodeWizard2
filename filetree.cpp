@@ -23,40 +23,49 @@ FileTree::FileTree(Widget* parent) : Widget(parent) {
 }
 
 void FileTree::render() {
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
-	
-	std::lock_guard<std::mutex> lock(tree_mutex);
-	
-	Color* textCol;
-	for (auto itm : toRender) {
-		if (cursor_in_this && App::mouseX >= itm.x && App::mouseX <= itm.x+itm.w && App::mouseY > itm.y && App::mouseY <= itm.y+itm.h) {
+	if (!is_visible) return;
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
 
-			App::DrawRoundedRect(itm.x, itm.y, itm.w, itm.h, App::text_padding, App::theme.hover_background_color);
-			App::DrawRoundBorder(itm.x, itm.y, itm.w, itm.h, App::theme.active_color, 5, App::text_padding);
-			back_color = App::theme.hover_background_color;
-			textCol = App::theme.main_text_color;
+		std::lock_guard<std::mutex> lock(tree_mutex);
+
+		Color* textCol;
+		for (auto itm : toRender) {
+			if (cursor_in_this && App::mouseX >= itm.x && App::mouseX <= itm.x+itm.w && App::mouseY > itm.y && App::mouseY <= itm.y+itm.h) {
+
+				const float rowRadius = App::themeCornerRadius(itm.w, itm.h);
+				if (rowRadius > 0.0f) {
+					App::DrawRoundedRect(itm.x, itm.y, itm.w, itm.h, rowRadius, App::theme.hover_background_color);
+					App::DrawRoundBorder(itm.x, itm.y, itm.w, itm.h, App::theme.active_color, 5, rowRadius);
+				} else {
+					App::DrawRect(itm.x, itm.y, itm.w, itm.h, App::theme.hover_background_color);
+					App::DrawBorder(itm.x, itm.y, itm.w, itm.h, App::theme.active_color);
+				}
+				back_color = App::theme.hover_background_color;
+				textCol = App::theme.main_text_color;
+			}else{
+				textCol = App::theme.main_text_color;
+				back_color = App::theme.extras_background_color;
+			}
+
+			if (itm.is_folder) {
+				App::renderColorlessTexture(folderIcon, itm.x+App::text_padding/2, itm.y+App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol, back_color);
+			}else {
+				App::renderColorlessTexture(fileIcon, itm.x+App::text_padding/2, itm.y+App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol, back_color);
+			}
+
+			TextRenderer::draw_text(itm.x+TextRenderer::get_text_height()+App::text_padding, itm.y+(float)App::text_padding/2, itm.name, textCol);
+		}
+
+		Widget::render();
+
+		if (radius > 0.0f) {
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, radius);
 		}else{
-			textCol = App::theme.main_text_color;
-			back_color = App::theme.extras_background_color;
+			App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
 		}
-		
-		if (itm.is_folder) {
-			App::renderColorlessTexture(folderIcon, itm.x+App::text_padding/2, itm.y+App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol, back_color);
-		}else {
-			App::renderColorlessTexture(fileIcon, itm.x+App::text_padding/2, itm.y+App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol, back_color);
-		}
-		
-		TextRenderer::draw_text(itm.x+TextRenderer::get_text_height()+App::text_padding, itm.y+(float)App::text_padding/2, itm.name, textCol);
-	}
-	
-	Widget::render();
-	
-	if (rounded) {
-		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
-	}else{
-		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
-	}
+	});
 }
 
 FileTree::~FileTree() {

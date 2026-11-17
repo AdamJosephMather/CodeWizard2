@@ -161,33 +161,8 @@ int main(int argc, char* argv[]) {
 	
 	App::Init();
 	
-	App::setSynColor(&theme, "c_strings_color", 1);
-	App::setSynColor(&theme, "c_comments_color", 2);
-	App::setSynColor(&theme, "c_vars_color", 3);
-	App::setSynColor(&theme, "c_types_color", 4);
-	App::setSynColor(&theme, "c_functs_color", 5);
-	App::setSynColor(&theme, "c_keywords_color", 6);
-	App::setSynColor(&theme, "c_punctuation_color", 7);
-	App::setSynColor(&theme, "c_literals_color", 8);
-	App::setSynColor(&theme, "c_operator_color", 9);
-	App::setSynColor(&theme, "c_preproc_color", 10);
-	App::setSynColor(&theme, "c_invalid_color", 11);
-	
-	std::string cl = App::settings->getValue("c_tint_color", App::empty);
-	if (cl != App::empty) {
-		bool worked;
-		Color c = stringToColor(cl, worked);
-		if (worked) {
-			theme.tint_color->r = c.r;
-			theme.tint_color->g = c.g;
-			theme.tint_color->b = c.b;
-		}
-	}
-	
-	App::updateFromTintColor(&theme); 
-	App::setTheme(theme);
+	App::applyThemeSettings();
 
-	
 	std::vector<Language> langs = App::settings->loadLanguages(); 
 	
 	for (auto l : langs) {
@@ -212,7 +187,6 @@ int main(int argc, char* argv[]) {
 		w->t_h = App::tb->children[0]->t_h;
 	});
 	commandPalette->background_color = App::theme.extras_background_color;
-	commandPalette->rounded = true;
 	commandPalette->id = MST::toMonoString("CommandPalette");
 	
 	ListBox* commandBox = new ListBox(nullptr, [&](Widget* w){
@@ -220,7 +194,6 @@ int main(int argc, char* argv[]) {
 		w->t_w = commandPalette->t_w;
 		w->t_y = App::tb->t_y+App::tb->t_h+2;
 	});
-	commandBox->rounded = true;
 	commandBox->is_visible_layered = true;
 	commandBox->toshow = 12;
 	commandBox->ONCLICK = [&](Widget* w, int sel_id) {
@@ -317,7 +290,6 @@ int main(int argc, char* argv[]) {
 	});
 	file_button->border_color = nullptr;
 	file_button->background_color = nullptr;
-	file_button->rounded = true;
 	
 	Button* actions_button = new Button(App::tb, MST::toMonoString("Actions"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = file_button->t_x+file_button->t_w+App::text_padding;
@@ -454,7 +426,6 @@ int main(int argc, char* argv[]) {
 	});
 	actions_button->border_color = nullptr;
 	actions_button->background_color = nullptr;
-	actions_button->rounded = true;
 	
 	Button* help_button = new Button(App::tb, MST::toMonoString("Help"), [&](Button* button, int x, int y, int w, int h, int tw, int th){
 		button->t_x = actions_button->t_x+actions_button->t_w+App::text_padding;
@@ -472,7 +443,6 @@ int main(int argc, char* argv[]) {
 	});
 	help_button->border_color = nullptr;
 	help_button->background_color = nullptr;
-	help_button->rounded = true;
 	
 	// Widget controls
 	
@@ -482,7 +452,6 @@ int main(int argc, char* argv[]) {
 	}, [&](Button* button) {
 		App::removing_panel();
 	});
-	remove_button->rounded = true;
 	remove_button->text_special = 3;
 	remove_button->background_color = nullptr;
 	remove_button->background_color_hover = App::theme.remove_panel;
@@ -496,7 +465,6 @@ int main(int argc, char* argv[]) {
 	}, [&](Button* button) {
 		App::adding_panel();
 	});
-	add_button->rounded = true;
 	add_button->text_special = 2;
 	add_button->background_color = nullptr;
 	add_button->background_color_hover = App::theme.add_panel;
@@ -509,7 +477,6 @@ int main(int argc, char* argv[]) {
 		w->t_y = App::filesButton->t_y + App::filesButton->t_h + App::text_padding;
 		w->t_w = std::min(App::WINDOW_WIDTH-w->t_x, App::WINDOW_WIDTH/5);
 	});
-	filesList->rounded = true;
 	filesList->is_visible_layered = true;
 	filesList->ONCLICK = [&](Widget* w, int sel_id) {
 		App::closeFilesList();
@@ -556,7 +523,6 @@ int main(int argc, char* argv[]) {
 			App::openFilesList();
 		}
 	});
-	filesButton->rounded = true;
 	filesButton->background_color = nullptr; // transparent
 	filesButton->border_color = nullptr; // transparent
 	

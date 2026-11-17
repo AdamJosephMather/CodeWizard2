@@ -31,7 +31,6 @@ public:
 	using ATCC = std::function<void()>;
 	using ANT = std::function<void()>;
 	
-	bool rounded = true;
 	
 	std::vector<TabInfo> tabs_list;
 	double scrolled_to = 0;
@@ -43,6 +42,7 @@ public:
 	ATCC add_new_tab_callback = nullptr;
 	TCC erasing_tab = nullptr;
 	hit hovering;
+	Color* background_color; // nullptr leaves the host surface visible.
 	bool has_close_button = true;
 	bool can_add_new = true;
 	int screen_add_x = 0;

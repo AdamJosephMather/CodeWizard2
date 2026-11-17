@@ -44,31 +44,35 @@ bool Label::on_mouse_button_event(int button, int action, int mods) {
 }
 
 void Label::render() {
-	if (rect) {
-		if (rounded) {
-			App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, background_color);
-		}else{
-			App::DrawRect(t_x, t_y, t_w, t_h, background_color);
+	if (!is_visible) return;
+	const float radius = (rect || border) ? App::themeCornerRadius(t_w, t_h) : 0.0f;
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+		if (rect) {
+			if (radius > 0.0f) {
+				App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, background_color);
+			}else{
+				App::DrawRect(t_x, t_y, t_w, t_h, background_color);
+			}
 		}
-	}
-	if (border && rounded) {
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, App::text_padding);
-	}else if (border) {
-		App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
-	}
-	
-	int ypos = t_y+App::text_padding;
-	
-	for (int i = 0; i < drawlines.size(); i++) {
-		if (handlingColor) {
-			TextRenderer::draw_text(t_x+App::text_padding, ypos, drawlines[i], drawColors[i]);
-		}else{
-			TextRenderer::draw_text(t_x+App::text_padding, ypos, drawlines[i], App::theme.main_text_color);
+		if (border && radius > 0.0f) {
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, App::theme.border, 5, radius);
+		}else if (border) {
+			App::DrawBorder(t_x, t_y, t_w, t_h, App::theme.border);
 		}
-		ypos += TextRenderer::get_text_height();
-	}
-	
-	Widget::render();
+
+		int ypos = t_y+App::text_padding;
+
+		for (int i = 0; i < drawlines.size(); i++) {
+			if (handlingColor) {
+				TextRenderer::draw_text(t_x+App::text_padding, ypos, drawlines[i], drawColors[i]);
+			}else{
+				TextRenderer::draw_text(t_x+App::text_padding, ypos, drawlines[i], App::theme.main_text_color);
+			}
+			ypos += TextRenderer::get_text_height();
+		}
+
+		Widget::render();
+	});
 }
 
 void Label::position(int x, int y, int w, int h) {

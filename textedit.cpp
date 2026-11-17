@@ -2185,132 +2185,135 @@ bool TextEdit::on_key_event(int key, int scancode, int action, int mods) {
 }
 
 void TextEdit::render() {
-//#ifdef DEBUG
-//		std::cout << "Render\n";
-//#endif
-	if (rounded) {
-		App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, background_color);
-	}else {
-		App::DrawRect(t_x, t_y, t_w, t_h, background_color);
-	}
-	
-	int curx = start_x+t_x+App::text_padding;
-	int cury = start_y+t_y+App::text_padding;
-	
-	std::vector<int> drawMarkLines = {};
-	
-	for (int ln_ren = 0; ln_ren < draw_errors.size(); ln_ren++) {
-		if (draw_mark[ln_ren]) {
-			App::DrawRect(t_x, cury, t_w, TextRenderer::get_text_height(), App::theme.overlay_background_color);
-			if (ln_ren == 0 || !draw_mark[ln_ren-1]) {
-				drawMarkLines.push_back(cury-1);
-			}
-			if (ln_ren == draw_errors.size()-1 || !draw_mark[ln_ren+1]) {
-				drawMarkLines.push_back(cury+TextRenderer::get_text_height());
-			}
-		}
-		cury += TextRenderer::get_text_height();
-	}
-	
-	cury = start_y+t_y+App::text_padding; // reset for later use
-	
-	for (auto cs : draw_selection) {
-		int y = TextRenderer::get_text_height()*cs.rel_line+start_y+t_y+App::text_padding;
-		
-		int sx = TextRenderer::get_text_width(cs.rel_char_start)+start_x+t_x+App::text_padding;
-		int ex = TextRenderer::get_text_width(cs.rel_char_end)+start_x+t_x+App::text_padding;
-		
-		int w = ex-sx;
-		
-		App::DrawRect(sx, y, w, TextRenderer::get_text_height(), App::theme.hover_background_color);
-	}
-
-	for (auto cs : draw_diagnostics) {
-		int y = TextRenderer::get_text_height()*cs.rel_line+start_y+t_y+App::text_padding;
-
-		int sx = TextRenderer::get_text_width(cs.rel_char_start)+start_x+t_x+App::text_padding;
-		int ex = TextRenderer::get_text_width(cs.rel_char_end)+start_x+t_x+App::text_padding;
-
-		int w = ex-sx;
-
-		Color* c;
-		if (cs.type == 0) {
-			c = App::theme.error_color;
-		}else if (cs.type == 1) {
-			c = App::theme.warning_color;
+	const float radius = surface == Surface::Control ? App::themeCornerRadius(t_w, t_h) : 0.0f;
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+	//#ifdef DEBUG
+	//		std::cout << "Render\n";
+	//#endif
+		if (radius > 0.0f) {
+			App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, background_color);
 		}else {
-			c = App::theme.suggestion_color;
+			App::DrawRect(t_x, t_y, t_w, t_h, background_color);
 		}
 
-		App::DrawRect(sx, y+TextRenderer::get_text_height(), w, 2, c);
-	}
+		int curx = start_x+t_x+App::text_padding;
+		int cury = start_y+t_y+App::text_padding;
 
-	for (int ln_ren = 0; ln_ren < draw_errors.size(); ln_ren++) {
-		if (ln_ren+line_start >= lines.size()) {
-			continue;
-		}
-		
-		float newx = TextRenderer::draw_text_substring(
-			curx,
-			cury,
-			lines[line_start+ln_ren].line_text,
-			char_start,
-			end_char,
-			draw_color[ln_ren],
-			false
-		);
-		TextRenderer::draw_text(newx, cury, draw_errors[ln_ren].first, draw_errors[ln_ren].second);
-		cury += TextRenderer::get_text_height();
-	}
+		std::vector<int> drawMarkLines = {};
 
-	for (auto cs : draw_cursor) {
-		int x = TextRenderer::get_text_width(cs.rel_char)+start_x+t_x+App::text_padding;
-		int y = TextRenderer::get_text_height()*cs.rel_line+start_y+t_y+App::text_padding;
-		int w = 2;
-
-		if (mode == 'n') {
-			w = TextRenderer::get_text_width(1);
+		for (int ln_ren = 0; ln_ren < draw_errors.size(); ln_ren++) {
+			if (draw_mark[ln_ren]) {
+				App::DrawRect(t_x, cury, t_w, TextRenderer::get_text_height(), App::theme.overlay_background_color);
+				if (ln_ren == 0 || !draw_mark[ln_ren-1]) {
+					drawMarkLines.push_back(cury-1);
+				}
+				if (ln_ren == draw_errors.size()-1 || !draw_mark[ln_ren+1]) {
+					drawMarkLines.push_back(cury+TextRenderer::get_text_height());
+				}
+			}
+			cury += TextRenderer::get_text_height();
 		}
 
-		App::DrawRect(x, y, w, TextRenderer::get_text_height(), App::theme.main_text_color);
+		cury = start_y+t_y+App::text_padding; // reset for later use
 
-		if (mode == 'n' && cs.charUnder != U'\0' && cs.charUnder != U'\t') {
-			TextRenderer::draw_text(x, y, MST::toMonoString(cs.charUnder), App::theme.darker_background_color, false, cs.italic); // don't draw emojis here because... it doesn't work
+		for (auto cs : draw_selection) {
+			int y = TextRenderer::get_text_height()*cs.rel_line+start_y+t_y+App::text_padding;
+
+			int sx = TextRenderer::get_text_width(cs.rel_char_start)+start_x+t_x+App::text_padding;
+			int ex = TextRenderer::get_text_width(cs.rel_char_end)+start_x+t_x+App::text_padding;
+
+			int w = ex-sx;
+
+			App::DrawRect(sx, y, w, TextRenderer::get_text_height(), App::theme.hover_background_color);
 		}
-	}
-	
-	cury = start_y+t_y+App::text_padding;
-	
-	for (int ln_ren = 0; ln_ren < draw_errors.size(); ln_ren++) {
-		if (draw_mark[ln_ren] && mark_reason[ln_ren].length != 0) {
-			auto text_width = TextRenderer::get_text_width(mark_reason[ln_ren].length);
-			
-			int full_width = text_width+App::text_padding*2;
-			int farleft = t_x+t_w-full_width-TextRenderer::get_text_width(1);
-			
-			TextRenderer::draw_text(farleft+App::text_padding, cury, mark_reason[ln_ren], App::theme.warning_color);
+
+		for (auto cs : draw_diagnostics) {
+			int y = TextRenderer::get_text_height()*cs.rel_line+start_y+t_y+App::text_padding;
+
+			int sx = TextRenderer::get_text_width(cs.rel_char_start)+start_x+t_x+App::text_padding;
+			int ex = TextRenderer::get_text_width(cs.rel_char_end)+start_x+t_x+App::text_padding;
+
+			int w = ex-sx;
+
+			Color* c;
+			if (cs.type == 0) {
+				c = App::theme.error_color;
+			}else if (cs.type == 1) {
+				c = App::theme.warning_color;
+			}else {
+				c = App::theme.suggestion_color;
+			}
+
+			App::DrawRect(sx, y+TextRenderer::get_text_height(), w, 2, c);
 		}
-		cury += TextRenderer::get_text_height();
-	}
-	
-	for (int y : drawMarkLines) {
-		App::DrawRect(t_x, y, t_w, 1, App::theme.active_color);
-	}
-	
-	Widget::render();
-	
-	Color* bC = borderColor;
-	if (App::activeLeafNode == this) {
-		bC = activeBorderColor;
-	}
-	
-	if (bC) {
-		if (rounded) {
-			App::DrawRoundBorder(t_x, t_y, t_w, t_h, bC, 5, App::text_padding);
-		}else{
-			App::DrawBorder(t_x, t_y, t_w, t_h, bC);
+
+		for (int ln_ren = 0; ln_ren < draw_errors.size(); ln_ren++) {
+			if (ln_ren+line_start >= lines.size()) {
+				continue;
+			}
+
+			float newx = TextRenderer::draw_text_substring(
+				curx,
+				cury,
+				lines[line_start+ln_ren].line_text,
+				char_start,
+				end_char,
+				draw_color[ln_ren],
+				false
+			);
+			TextRenderer::draw_text(newx, cury, draw_errors[ln_ren].first, draw_errors[ln_ren].second);
+			cury += TextRenderer::get_text_height();
 		}
-	}
+
+		for (auto cs : draw_cursor) {
+			int x = TextRenderer::get_text_width(cs.rel_char)+start_x+t_x+App::text_padding;
+			int y = TextRenderer::get_text_height()*cs.rel_line+start_y+t_y+App::text_padding;
+			int w = 2;
+
+			if (mode == 'n') {
+				w = TextRenderer::get_text_width(1);
+			}
+
+			App::DrawRect(x, y, w, TextRenderer::get_text_height(), App::theme.main_text_color);
+
+			if (mode == 'n' && cs.charUnder != U'\0' && cs.charUnder != U'\t') {
+				TextRenderer::draw_text(x, y, MST::toMonoString(cs.charUnder), App::theme.darker_background_color, false, cs.italic); // don't draw emojis here because... it doesn't work
+			}
+		}
+
+		cury = start_y+t_y+App::text_padding;
+
+		for (int ln_ren = 0; ln_ren < draw_errors.size(); ln_ren++) {
+			if (draw_mark[ln_ren] && mark_reason[ln_ren].length != 0) {
+				auto text_width = TextRenderer::get_text_width(mark_reason[ln_ren].length);
+
+				int full_width = text_width+App::text_padding*2;
+				int farleft = t_x+t_w-full_width-TextRenderer::get_text_width(1);
+
+				TextRenderer::draw_text(farleft+App::text_padding, cury, mark_reason[ln_ren], App::theme.warning_color);
+			}
+			cury += TextRenderer::get_text_height();
+		}
+
+		for (int y : drawMarkLines) {
+			App::DrawRect(t_x, y, t_w, 1, App::theme.active_color);
+		}
+
+		Widget::render();
+
+		Color* bC = borderColor;
+		if (App::activeLeafNode == this) {
+			bC = activeBorderColor;
+		}
+
+		if (bC) {
+			if (radius > 0.0f) {
+				App::DrawRoundBorder(t_x, t_y, t_w, t_h, bC, 5, radius);
+			}else{
+				App::DrawBorder(t_x, t_y, t_w, t_h, bC);
+			}
+		}
+	});
 }
 
 Color* TextEdit::getColorFromToken(const CW_HighlightToken& token) {

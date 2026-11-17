@@ -1,4 +1,6 @@
 #include "application.h"
+#include "rounded_clip.h"
+#include "theme_settings.h"
 #include <GLFW/glfw3.h>
 #include <queue>
 #include <random>
@@ -13,7 +15,6 @@
 #include <vector>
 #include <regex>
 #include "panel_holder.h"
-//#include "modelxrunner.h"
 #include "terminalwidget.h"
 #include "text_renderer.h"
 #include <cmath>
@@ -50,7 +51,7 @@
 
 int App::major_version = 2;
 int App::minor_version = 6;
-int App::patch_version = 5; // 🚀 (we now support emojis)
+int App::patch_version = 6; // 🚀 (we now support emojis)
 
 const std::vector<int> version = {App::major_version, App::minor_version, App::patch_version};
 
@@ -70,7 +71,7 @@ HWND App::window_handle = nullptr;
 
 bool App::last_transparency_w_clear = false;
 int App::reclear = 3;
-bool App::darkmode = true;
+bool App::darkmode = ThemeBuild::build_dark_mode;
 std::string App::empty = "";
 
 MST::MonoString App::vnum = MST::MonoString();
@@ -87,8 +88,6 @@ bool App::replaying_macro = false;
 int App::rep_count = 0;
 int App::current_step = 0;
 std::vector<std::vector<KeyboardEvent>> App::keyboard_events = {{}};
-
-//int App::chauffeur_call_id = 0;
 
 bool App::REQUESTING_STRING = false;
 App::StringGivenFunc App::ON_STRING_GIVEN = nullptr;
@@ -124,7 +123,6 @@ std::string pending_window_title = "";
 
 int App::mouseX = 0;
 int App::mouseY = 0;
-const double App::SQRT_2 = 1.41421356;
 
 bool (*App::on_key_event)(int key, int scancode, int action, int mods) = nullptr;
 bool (*App::on_char_event)(unsigned int codepoint) = nullptr;
@@ -327,6 +325,7 @@ bool App::Init() {
 	STRING_REQUEST_LABEL->id = MST::toMonoString("STRING_REQUEST_LABEL");
 	
 	settings->loadSettings();
+	applyThemeSettings();
 	
 	MST::setTabWidth(settings->getValue("tab_width", 4));
 	
@@ -344,7 +343,6 @@ bool App::Init() {
 	}
 	setFolder(initial_folder);
 	
-	darkmode = settings->getValue("dark_mode", true);
 	WINDOW_WIDTH = settings->getValue("window_width", 1200);
 	WINDOW_HEIGHT = settings->getValue("window_height", 800);
 	
@@ -357,6 +355,7 @@ bool App::Init() {
 		return false;
 	}
 	
+	glfwWindowHint(GLFW_STENCIL_BITS, 8); // Nested rounded surface clipping.
 	glfwWindowHint(GLFW_SAMPLES, 4); // Request 4x MSAA (or 2, 8, 16 depending on GPU support)
 	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 	
@@ -528,11 +527,6 @@ bool App::Init() {
 	
 	splashTexture = LoadSVGTriangles(getExecutableDir()+"/splashscreen.triangles");
 	
-//	auto stuff = prepareTexture(getExecutableDir()+"/splashscreen.png");
-//	splashTexture = stuff.tex;
-//	splashW = stuff.imgW;
-//	splashH = stuff.imgH;
-	
 	// restore full screened
 	
 	if (settings->getValue("window_maximized", false)) {
@@ -547,15 +541,6 @@ bool App::Init() {
 	t.detach();
 	
 	updateTransparency(settings->getValue("use_transparency", false));
-	
-	
-	
-	// if (settings->getValue("use_chauffeur", false)) {
-	// 	std::thread starter([&](){
-	// 		ModelXRunner::load();
-	// 	});
-	// 	starter.detach();
-	// }
 	
 	if (isNewer(version, {settings->getValue("version_major", 0), settings->getValue("version_minor", 0), settings->getValue("version_patch", 0)})) {
 		fixUpLanguages();
@@ -831,23 +816,8 @@ auto drawCorner = [](float cx, float cy, float startAngle, float endAngle, int s
 	glEnd();
 };
 
-auto drawInverseCorner = [](float cx, float cy, float startAngle, float endAngle, int segments, double radius) {
-	double biggerrad = radius*App::SQRT_2;
-	float center = (startAngle+endAngle)/2;
-	
-	glBegin(GL_TRIANGLE_FAN);
-	glVertex2f(cx+std::cos(center)*biggerrad, cy+std::sin(center)*biggerrad);
-	
-	for (int i = 0; i <= segments; ++i) {
-		float t = (float)i / (float)segments;
-		float theta = startAngle + t * (endAngle - startAngle);
-		glVertex2f(cx + std::cos(theta) * radius, cy + std::sin(theta) * radius);
-	}
-	glEnd();
-};
-
 auto drawCornerEdge = [](float cx, float cy, float startAngle, float endAngle, int segments, double radius, int edgewidth) {
-	double smallerradius = radius-edgewidth;
+	double smallerradius = std::max(0.0, radius-edgewidth);
 	
 	glBegin(GL_QUAD_STRIP);
 	for (int i = 0; i <= segments; ++i) {
@@ -859,7 +829,14 @@ auto drawCornerEdge = [](float cx, float cy, float startAngle, float endAngle, i
 	glEnd();
 };
 
-void App::DrawRoundedRect(float x, float y, float w, float h, float radius, Color* color, bool border, int segments) {
+void App::DrawRoundedRect(float x, float y, float w, float h, float radius, Color* color, int segments) {
+	if (!color || w <= 0 || h <= 0) return;
+	radius = std::clamp(radius, 0.0f, std::min(w, h)*0.5f);
+	segments = std::max(segments, 1);
+	if (radius == 0.0f) {
+		DrawRect(x, y, w, h, color);
+		return;
+	}
 	glColor4f(color->r, color->g, color->b, color->a);
 	
 	// Draw the center and side/quadrant straight regions as quads
@@ -889,17 +866,6 @@ void App::DrawRoundedRect(float x, float y, float w, float h, float radius, Colo
 	drawCorner(x + w - radius, y + h - radius, 0.0f, 0.5f * M_PI, segments, radius); // TR
 	drawCorner(x + radius,      y + h - radius, 0.5f * M_PI, M_PI, segments, radius); // TL
 	
-	if (border) {
-		DrawRoundBorder(x, y, w, h, theme.border, segments, radius);
-	}
-}
-
-void App::DrawInverseRoundedRect(float x, float y, float w, float h, float radius, Color* color, int segments) {
-	glColor4f(color->r, color->g, color->b, color->a);
-	drawInverseCorner(x + radius, y + radius, M_PI, 1.5f * M_PI, segments, radius); // BL
-	drawInverseCorner(x + w - radius, y + radius, 1.5f * M_PI, 2.0f * M_PI, segments, radius); // BR
-	drawInverseCorner(x + w - radius, y + h - radius, 0.0f, 0.5f * M_PI, segments, radius); // TR
-	drawInverseCorner(x + radius,      y + h - radius, 0.5f * M_PI, M_PI, segments, radius); // TL
 }
 
 void App::DrawRect(int x, int y, int w, int h, Color* color) {
@@ -1196,6 +1162,13 @@ void App::DrawSquare(double x, double y, double w, double h, double thickness, C
 }
 
 void App::DrawRoundBorder(int x, int y, int w, int h, Color* color, int segments, double radius) {
+	if (!color || w <= 0 || h <= 0) return;
+	radius = std::clamp(radius, 0.0, std::min(w, h)*0.5);
+	segments = std::max(segments, 1);
+	if (radius == 0.0) {
+		DrawBorder(x, y, w, h, color);
+		return;
+	}
 	glColor4f(color->r, color->g, color->b, color->a);
 	
 	drawCornerEdge(x + radius, y + radius, M_PI, 1.5f * M_PI, segments, radius, border_width); // BL
@@ -1485,13 +1458,15 @@ void App::DoFullRenderWithoutInput() {
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // we need to overwrite everything now (rgb and a)
 	
 	if (settings->getValue("use_transparency", false)) {
-		glClearColor(bgcolor->r, bgcolor->g, bgcolor->b, settings->getValue("opacity", 0.65f)); // reduce opacity to "opacity"
+		glClearColor(bgcolor->r, bgcolor->g, bgcolor->b, settings->getValue("opacity", 0.8f)); // reduce opacity to "opacity"
 	}else{
 		glClearColor(bgcolor->r, bgcolor->g, bgcolor->b, 1.0f);
 	}
 	
 	
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClearStencil(0);
+	glStencilMask(0xff);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	last_transparency_w_clear = settings->getValue("use_transparency", false);
 	
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE); // don't let anything else touch alpha
@@ -1511,10 +1486,11 @@ void App::DoFullRenderWithoutInput() {
 			toastBox->render();
 		});
 		
-		if (rendering_add_rect) {
-			DrawRoundedRect(x_nb_current, y_nb_current, w_nb_current, h_nb_current, App::text_padding, theme.add_panel);
-		}else if (rendering_rem_rect) {
-			DrawRoundedRect(x_nb_current, y_nb_current, w_nb_current, h_nb_current, App::text_padding, theme.remove_panel);
+		if (rendering_add_rect || rendering_rem_rect) {
+			Color* color = rendering_add_rect ? theme.add_panel : theme.remove_panel;
+			const float radius = themeCornerRadius(w_nb_current, h_nb_current);
+			if (radius > 0.0f) DrawRoundedRect(x_nb_current, y_nb_current, w_nb_current, h_nb_current, radius, color);
+			else DrawRect(x_nb_current, y_nb_current, w_nb_current, h_nb_current, color);
 		}
 	}
 	
@@ -2797,75 +2773,90 @@ void App::runBureaucracyCheck() {
 	}
 }
 
+void App::applyThemeSettings() {
+	ThemeSettings::Json resolved;
+	std::string error;
+	auto& simple = settings->settings["simple"];
+	if (!ThemeSettings::normalize(simple.is_object() ? simple : ThemeSettings::Json::object(),
+			resolved, error, ThemeBuild::preset, ThemeBuild::build_dark_mode, false)) {
+		resolved = ThemeSettings::defaults(ThemeBuild::preset, ThemeBuild::build_dark_mode);
+	}
+	if (!simple.is_object()) simple = ThemeSettings::Json::object();
+	for (auto it = resolved.begin(); it != resolved.end(); ++it) simple[it.key()] = it.value();
+
+	parseThemePreset(resolved["c_theme"].get<std::string>(), theme.preset);
+	theme.style = themeStyle(theme.preset);
+	bgcolor = theme.main_background_color;
+	darkmode = resolved["dark_mode"].get<bool>();
+	bool worked = false;
+	Color tint = stringToColor(resolved["c_tint_color"].get<std::string>(), worked);
+	theme.tint_color->r = tint.r;
+	theme.tint_color->g = tint.g;
+	theme.tint_color->b = tint.b;
+	for (size_t i = 0; i < ThemeSettings::syntaxKeys.size(); ++i) {
+		const auto key = ThemeSettings::syntaxKeys[i];
+		Color color = stringToColor(resolved[key].get<std::string>(), worked);
+		Color* target = theme.syntax_colors[i+1];
+		target->r = color.r;
+		target->g = color.g;
+		target->b = color.b;
+		target->italic = resolved[ThemeSettings::italicKey(key)].get<bool>();
+	}
+	updateFromTintColor(&theme);
+	if (window) updateTransparency(resolved["use_transparency"].get<bool>());
+}
+
+std::string App::exportThemeSettings() {
+	// Export the full active appearance, including values never explicitly edited.
+	auto values = ThemeSettings::defaults(theme.preset, darkmode);
+	values["c_tint_color"] = colorToString(theme.tint_color);
+	values["c_saturation"] = settings->getValue("c_saturation", 0.6f);
+	values["use_transparency"] = settings->getValue("use_transparency", false);
+	values["opacity"] = settings->getValue("opacity", 0.8f);
+	for (size_t i = 0; i < ThemeSettings::syntaxKeys.size(); ++i) {
+		const auto key = ThemeSettings::syntaxKeys[i];
+		values[key] = colorToString(theme.syntax_colors[i+1]);
+		values[ThemeSettings::italicKey(key)] = theme.syntax_colors[i+1]->italic;
+	}
+	return ThemeSettings::serialize(values);
+}
+
+bool App::importThemeSettings(const std::string& text, std::string& error) {
+	ThemeSettings::Json values;
+	if (!ThemeSettings::parse(text, values, error)) return false;
+	// Validation has completed; now apply only the supported appearance keys.
+	auto& simple = settings->settings["simple"];
+	for (auto it = values.begin(); it != values.end(); ++it) simple[it.key()] = it.value();
+	applyThemeSettings();
+	settings->saveSettings();
+	if (rootelement) rootelement->executeAction(WidgetActionType::SETTINGS_CHANGE);
+	return true;
+}
+
 void App::saveThemeToFile() {
-	const char * fp = tinyfd_saveFileDialog(
-		"Save as?", // dialog title
-		"CodeWizard2Theme.json", // default path and filename
-		0, NULL, // filter count and filters
-		0 // allow multiple selections (0 = no)
-	);
-	
-	if (fp) {
-		std::string filePath(fp);
-		
-		std::string tosave = settings->getSubSet({"dark_mode", "c_comments_color", "c_functs_color", "c_keywords_color", "c_literals_color", "c_punctuation_color", "c_strings_color", "c_tint_color", "c_saturation", "c_types_color", "c_vars_color", "c_operator_color", "c_preproc_color", "c_invalid_color"});
-		std::string err;
-		if (!atomicWriteReplace(filePath, tosave, &err)) {
-			displayToast(MST::toMonoString("Failed to write file: "+err));
-		}else{
-			displayToast(MST::toMonoString("Saved theme to file!"));
-		}
+	const char* filters[] = { "*.json" };
+	const char* fp = tinyfd_saveFileDialog("Save theme", "CodeWizard2Theme.json", 1, filters, "Theme files");
+	if (!fp) return;
+	std::string error;
+	if (!atomicWriteReplace(fp, exportThemeSettings(), &error)) {
+		displayToast(MST::toMonoString("Failed to save theme: "+error));
+	} else {
+		displayToast(MST::toMonoString("Saved theme to file!"));
 	}
 }
 
 void App::loadThemeFromFile() {
-	const char * fp = tinyfd_openFileDialog(
-		"Select theme",    // dialog title
-		"",                 // default path and filename
-		0, NULL, NULL,      // filter count and filters
-		0                   // allow multiple selections (0 = no)
-	);
-	
-	if (fp) {
-		std::string filePath(fp);
-		bool worked = false;
-		MST::MonoString text = readFileToMonoString(filePath, worked);
-		if (!worked) {
-			displayToast(MST::toMonoString("Could not read file. ")+text);
-		}else{
-			std::string str = MST::toString(text);
-			
-			if (!settings->bringInSubset(str)) {
-				displayToast(MST::toMonoString("Could not load settings."));
-			}else{
-				std::string cl = App::settings->getValue("c_tint_color", App::empty);
-				if (cl != empty) {
-					bool worked;
-					Color c = stringToColor(cl, worked);
-					if (worked) {
-						theme.tint_color->r = c.r;
-						theme.tint_color->g = c.g;
-						theme.tint_color->b = c.b;
-					}
-				}
-				darkmode = settings->getValue("dark_mode", true);
-				updateFromTintColor(&theme);
-				setSynColor(&theme, "c_strings_color", 1);
-				setSynColor(&theme, "c_comments_color", 2);
-				setSynColor(&theme, "c_vars_color", 3);
-				setSynColor(&theme, "c_types_color", 4);
-				setSynColor(&theme, "c_functs_color", 5);
-				setSynColor(&theme, "c_keywords_color", 6);
-				setSynColor(&theme, "c_punctuation_color", 7);
-				setSynColor(&theme, "c_literals_color", 8);
-				setSynColor(&theme, "c_operator_color", 9);
-				setSynColor(&theme, "c_preproc_color", 10);
-				setSynColor(&theme, "c_invalid_color", 11);
-				displayToast(MST::toMonoString("Done!"));
-				
-				App::rootelement->executeAction(WidgetActionType::SETTINGS_CHANGE);
-			}
-		}
+	const char* filters[] = { "*.json" };
+	const char* fp = tinyfd_openFileDialog("Select theme", "", 1, filters, "Theme files", 0);
+	if (!fp) return;
+	// Theme files are local even when the current workspace is accessed over SSH.
+	LocalFileBackend local;
+	std::vector<std::uint8_t> bytes;
+	std::string error;
+	if (!local.readFile(fp, bytes, error) || !importThemeSettings(std::string(bytes.begin(), bytes.end()), error)) {
+		displayToast(MST::toMonoString("Could not load theme: "+error));
+	} else {
+		displayToast(MST::toMonoString("Theme loaded."));
 	}
 }
 
@@ -3262,30 +3253,6 @@ void App::fillCmdBox() {
 		loweredSearchfor = loweredSearchfor.substr(1); // remove the &
 		
 		searchAcrossFiles(loweredSearchfor);
-		
-//		for (const auto& [key, matches] : res) {
-//			const auto& [filePath, fileName] = key;
-//			
-//			std::filesystem::path p(filePath);
-//			
-//			els.push_back(MST::toMonoString(p.filename().string()));
-//			
-//			StoredSearch itm = {filePath, 0};
-//			storedsearches.push_back(itm);
-//			
-//			INDEXED_FILES.currentlyshowing.push_back(storedsearches.size()-1);
-//			INDEXED_FILES.currentlyshowingtype.push_back(2);
-//			
-//			for (const auto& [lineNum, text] : matches) {
-//				els.push_back(MST::toMonoString("    "+text));
-//				
-//				StoredSearch itm = {filePath, lineNum-1};
-//				storedsearches.push_back(itm);
-//				
-//				INDEXED_FILES.currentlyshowing.push_back(storedsearches.size()-1);
-//				INDEXED_FILES.currentlyshowingtype.push_back(2);
-//			}
-//		}
 		
 		cb->setElements(els);
 		return;
@@ -3822,25 +3789,6 @@ void App::searchAcrossFiles(const std::string& searchTerm) {
 	storedsearches.added_already = 0;
 	storedsearches.toptext = "Working... 0/" + std::to_string(INDEXED_FILES.fullPaths.size());
 	
-//	if (FileBackends::isRemote()) {
-//		std::vector<std::string> searchPaths(
-//			INDEXED_FILES.fullPaths.begin(),
-//			INDEXED_FILES.fullPaths.begin() + maxlen);
-//		std::vector<SearchedFile> remoteResults;
-//		std::string search_error;
-//		if (FileBackends::current()->searchFiles(searchPaths, searchTerm, remoteResults, search_error)) {
-//			for (const auto& sf : remoteResults) {
-//				SearchMatchVec matches;
-//				for (const auto& m : sf.matches) {
-//					matches.emplace_back(m.line, m.content);
-//				}
-//				out[{sf.path, sf.path}] = std::move(matches);
-//			}
-//		}
-//		
-//		return out;
-//	}
-	
 	storedsearches.torun = INDEXED_FILES.fullPaths;
 	
 	// replace it with a new one
@@ -3859,18 +3807,19 @@ void App::setTintedColor(Color* tint_c, Color* c, float b, float s) {
 		return;
 	}
 	
-	float tcb = tint_c->r*0.299+tint_c->g*0.587+tint_c->b*0.114; // tint color brightness 
+	float tintR = tint_c->r, tintG = tint_c->g, tintB = tint_c->b;
+	float tcb = tintR*0.299+tintG*0.587+tintB*0.114; // tint color brightness
 	
 	if (tcb == 0) { // fix 0,0,0 breaking things
-		tint_c->r = 0.1;
-		tint_c->g = 0.1;
-		tint_c->b = 0.1;
+		tintR = 0.1;
+		tintG = 0.1;
+		tintB = 0.1;
 		
 		tcb = 0.1;
 	}else if (tcb < 0.1) { // raise the brightness to 0.1
-		tint_c->r *= 0.1/tcb;
-		tint_c->g *= 0.1/tcb;
-		tint_c->b *= 0.1/tcb;
+		tintR *= 0.1/tcb;
+		tintG *= 0.1/tcb;
+		tintB *= 0.1/tcb;
 		
 		tcb = 0.1;
 	}
@@ -3878,43 +3827,46 @@ void App::setTintedColor(Color* tint_c, Color* c, float b, float s) {
 	float scale = s*b;
 	float intercept = (1-s)*b;
 	
-	float new_r = fmin(1.0, tint_c->r*scale + intercept);
-	float new_g = fmin(1.0, tint_c->g*scale + intercept);
-	float new_b = fmin(1.0, tint_c->b*scale + intercept);
+	float new_r = fmin(1.0, tintR*scale + intercept);
+	float new_g = fmin(1.0, tintG*scale + intercept);
+	float new_b = fmin(1.0, tintB*scale + intercept);
 	
 	c->r = new_r;
 	c->g = new_g;
 	c->b = new_b;
 }
 
+void App::runWithRoundedClip(int x, int y, int w, int h, float radius, VoidFunction draw) {
+	Rendering::withRoundedClip(w, h, radius, [&]() {
+		DrawRoundedRect(x, y, w, h, radius, theme.white);
+	}, draw);
+}
+
+float App::themeCornerRadius(float width, float height) {
+	return theme.style.cornerRadius(width, height, TextRenderer::get_text_width(1), TextRenderer::get_text_height());
+}
+
 void App::updateFromTintColor(Theme* t) {
-	float s = settings->getValue("c_saturation", 0.6f);
-	
-	if (darkmode) {
-		setTintedColor(t->tint_color, t->main_background_color,    0.098039, s);
-		setTintedColor(t->tint_color, t->extras_background_color,  0.164706, s);
-		setTintedColor(t->tint_color, t->hover_background_color,   0.26,     s);
-		setTintedColor(t->tint_color, t->main_text_color,          1.0,      s);
-		setTintedColor(t->tint_color, t->active_color,             0.7,      1.0);
-		setTintedColor(t->tint_color, t->border,                   0.35,     s);
-		setTintedColor(t->tint_color, t->syntax_colors[0],         1.0,      s);
-		setTintedColor(t->tint_color, t->darker_background_color,  0.05,     s);
-		setTintedColor(t->tint_color, t->overlay_background_color, 0.12,     s);
-		setTintedColor(t->tint_color, t->lesser_text_color,        0.392157, s);
-	}else{
-		setTintedColor(t->tint_color, t->main_background_color,    0.7,      s);
-		setTintedColor(t->tint_color, t->extras_background_color,  0.9,      s);
-		setTintedColor(t->tint_color, t->hover_background_color,   0.8,      s);
-		setTintedColor(t->tint_color, t->main_text_color,          0.0,      s);
-		setTintedColor(t->tint_color, t->active_color,             0.0,      1.0);
-		setTintedColor(t->tint_color, t->border,                   0.6,      s);
-		setTintedColor(t->tint_color, t->syntax_colors[0],         0.0,      s);
-		setTintedColor(t->tint_color, t->darker_background_color,  1.0,      s);
-		setTintedColor(t->tint_color, t->overlay_background_color, 0.95,     s);
-		setTintedColor(t->tint_color, t->lesser_text_color,        0.5,      s);
+	const float s = std::clamp(settings->getValue("c_saturation", 0.6f), 0.0f, 1.0f) * t->style.saturation_scale;
+	const ThemeIntensities& intensity = darkmode ? t->style.dark : t->style.light;
+
+	// Mutate the existing colors so every widget keeps its palette pointers.
+	setTintedColor(t->tint_color, t->main_background_color, intensity.main_background, s);
+	setTintedColor(t->tint_color, t->extras_background_color, intensity.extras_background, s);
+	setTintedColor(t->tint_color, t->hover_background_color, intensity.hover_background, s);
+	setTintedColor(t->tint_color, t->darker_background_color, intensity.darker_background, s);
+	setTintedColor(t->tint_color, t->overlay_background_color, intensity.overlay_background, s);
+	setTintedColor(t->tint_color, t->main_text_color, intensity.main_text, s);
+	setTintedColor(t->tint_color, t->lesser_text_color, intensity.lesser_text, s);
+	setTintedColor(t->tint_color, t->border, intensity.border, s);
+	setTintedColor(t->tint_color, t->active_color, intensity.active, 1.0f);
+	setTintedColor(t->tint_color, t->syntax_colors[0], intensity.main_text, s);
+
+	if (rootelement) {
+		rootelement->executeAction(WidgetActionType::THEME_CALCULATED);
 	}
-	
-	rootelement->executeAction(WidgetActionType::THEME_CALCULATED);
+	rerender = true;
+	reclear = std::max(reclear, 1);
 }
 
 void App::displayToast(MST::MonoString text) {

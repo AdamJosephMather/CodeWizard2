@@ -14,7 +14,6 @@ public:
 	bool is_visible_layered = false;
 	
 	double tryingtoscrollby = 0;
-	bool rounded = false;
 	
 	using onclick = std::function<void(Widget*, int)>;
 	

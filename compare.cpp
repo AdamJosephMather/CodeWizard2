@@ -139,11 +139,6 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 		reload();
 	});
 	
-	f1Button->rounded = true;
-	f2Button->rounded = true;
-	cb1Button->rounded = true;
-	cb2Button->rounded = true;
-	
 	textedit = new TextEdit(this, [&](Widget* t){
 		textedit->t_x = t_x+line_numbers->t_w;
 		textedit->t_y = f1Button->t_h+f1Button->t_y+App::text_padding;
@@ -151,6 +146,7 @@ Compare::Compare(Widget* parent, App::PosFunction positioner) : Widget(parent) {
 		textedit->t_h = (t_y+t_h) - (f1Button->t_h+f1Button->t_y+App::text_padding);
 	});
 	
+	textedit->surface = TextEdit::Surface::Document;
 	textedit->highlighter = nullptr;
 	textedit->scrollbar_vertical = true;
 	textedit->scrollbar_horizontal = true;
@@ -269,6 +265,7 @@ void Compare::reload() {
 }
 
 void Compare::render() {
+	if (!is_visible) return;
 	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.main_background_color);
 	
 	App::runWithSKIZ(f1Button->t_x, f1Button->t_y, f1Button->t_w, textedit->t_h, [&](){
@@ -283,24 +280,26 @@ void Compare::render() {
 	App::runWithSKIZ(cb2Button->t_x, cb2Button->t_y, cb2Button->t_w, cb2Button->t_h, [&](){
 		cb2Button->render();
 	});
-	App::runWithSKIZ(line_numbers->t_x, line_numbers->t_y, line_numbers->t_w, textedit->t_h, [&](){
-		line_numbers->render();
+	const float radius = App::themeCornerRadius(t_w, textedit->t_h);
+	App::runWithRoundedClip(t_x, textedit->t_y, t_w, textedit->t_h, radius, [&]() {
+		App::runWithSKIZ(line_numbers->t_x, line_numbers->t_y, line_numbers->t_w, textedit->t_h, [&](){
+			line_numbers->render();
+		});
+		App::runWithSKIZ(textedit->t_x, textedit->t_y, textedit->t_w, textedit->t_h, [&](){
+			textedit->render();
+		});
+
+		Color* borderCol = App::theme.border;
+		if (App::activeLeafNode == textedit) {
+			borderCol = App::theme.active_color;
+		}
+
+		if (radius > 0.0f) {
+			App::DrawRoundBorder(t_x, textedit->t_y, t_w, textedit->t_h, borderCol, 5, radius);
+		}else{
+			App::DrawBorder(t_x, textedit->t_y, t_w, textedit->t_h, borderCol);
+		}
 	});
-	App::runWithSKIZ(textedit->t_x, textedit->t_y, textedit->t_w, textedit->t_h, [&](){
-		textedit->render();
-	});
-	
-	Color* borderCol = App::theme.border;
-	if (App::activeLeafNode == textedit) {
-		borderCol = App::theme.active_color;
-	}
-	
-	if (rounded) {
-		App::DrawInverseRoundedRect(t_x, textedit->t_y, t_w, textedit->t_h, App::text_padding, App::theme.main_background_color);
-		App::DrawRoundBorder(t_x, textedit->t_y, t_w, textedit->t_h, borderCol, 5, App::text_padding);
-	}else{
-		App::DrawBorder(t_x, textedit->t_y, t_w, textedit->t_h, borderCol);
-	}
 }
 
 void Compare::position(int x, int y, int w, int h) {

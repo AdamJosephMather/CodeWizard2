@@ -32,6 +32,10 @@ struct SettingsString : SettingsElement {
 	std::string value = "";
 };
 
+struct SettingsChoice : SettingsString {
+	std::vector<std::string> options;
+};
+
 struct SettingsLabel : SettingsElement {
 	std::string default_value;
 };
@@ -41,14 +45,13 @@ public:
 	Settings(Widget* parent);
 	Tabs* tab_bar;
 	
-	bool rounded = true;
 	
 	double scrolled_to = 0;
 	double scroll_change = 0;
 	int max_scroll = 0;
 	std::unordered_map<int, std::vector<SettingsElement*>> settings_menus;
 	std::unordered_map<TextEdit*, SettingsElement*> edits_to_element;
-	std::unordered_map<SettingsElement*, TextEdit*> elements_to_edit;
+	std::unordered_map<SettingsElement*, Widget*> elements_to_edit;
 	
 	bool on_key_event(int key, int scancode, int action, int mods);
 	bool on_mouse_button_event(int button, int action, int mods);
@@ -62,6 +65,8 @@ public:
 	SettingsBool* makeBool(std::string name, std::string key, bool default_value);
 	SettingsString* makeString(std::string name, std::string key, std::string default_value);
 	SettingsLabel* makeLabel(std::string name);
+	SettingsChoice* makeChoice(std::string name, std::string key, std::string default_value, std::vector<std::string> options);
+	void positionSetting(Widget* widget);
 	
 	void handleChildren();
 	void handleChange(TextEdit* te, SettingsElement* se);

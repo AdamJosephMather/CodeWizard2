@@ -1,6 +1,7 @@
 #pragma once
 
 #include "filebackend.h"
+#include "theme_style.h"
 #include <GLFW/glfw3.h>
 
 #ifdef _WIN32
@@ -109,6 +110,9 @@ inline std::vector<Color*> AllOneColor(Color* c, int count){
 }
 
 struct Theme {
+	ThemePreset preset = ThemeBuild::preset;
+	ThemeStyle style = themeStyle(ThemeBuild::preset);
+
 	Color* main_text_color;
 	Color* active_color;
 	Color* lesser_text_color;
@@ -543,9 +547,9 @@ static bool isBinaryFile(const std::string& path) {
 }
 
 static std::string colorToString(Color* c) {
-	int r = (int)(c->r*255.0);
-	int g = (int)(c->g*255.0);
-	int b = (int)(c->b*255.0);
+	int r = (int)std::lround(std::clamp(c->r, 0.0f, 1.0f)*255.0f);
+	int g = (int)std::lround(std::clamp(c->g, 0.0f, 1.0f)*255.0f);
+	int b = (int)std::lround(std::clamp(c->b, 0.0f, 1.0f)*255.0f);
 	return std::to_string(r)+","+std::to_string(g)+","+std::to_string(b);
 }
 

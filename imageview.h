@@ -14,7 +14,6 @@ public:
 	void openFile(FileInfo* f);
 	bool setImageData(const std::vector<std::uint8_t>& bytes);
 	
-	bool rounded = true;
 	
 	FileInfo* file = nullptr;
 	

@@ -27,7 +27,20 @@ void Toast::render() {
 		return;
 	}
 	
-	const int radius = 10;
+	const int padding = App::text_padding;
+	auto drawToast = [&](int x, int width) {
+		const float radius = App::themeCornerRadius(width, t_h);
+		App::runWithRoundedClip(x, t_y, width, t_h, radius, [&]() {
+			if (radius > 0.0f) {
+				App::DrawRoundedRect(x, t_y, width, t_h, radius, App::theme.darker_background_color);
+				App::DrawRoundBorder(x, t_y, width, t_h, App::theme.border, 5, radius);
+			} else {
+				App::DrawRect(x, t_y, width, t_h, App::theme.darker_background_color);
+				App::DrawBorder(x, t_y, width, t_h, App::theme.border);
+			}
+			TextRenderer::draw_text(x+padding, t_y+t_h/2-TextRenderer::get_text_height()/2, text, App::theme.main_text_color);
+		});
+	};
 	
 	if (time != -1) {
 		if (displayOffset != 0) {
@@ -44,8 +57,7 @@ void Toast::render() {
 		int x_disp = t_x+displayOffset;
 		int w_disp = t_w-displayOffset;
 		
-		App::DrawRoundedRect(x_disp, t_y, w_disp, t_h, radius, App::theme.darker_background_color, true);
-		TextRenderer::draw_text(x_disp+radius, t_y+t_h/2-TextRenderer::get_text_height()/2, text, App::theme.main_text_color);
+		drawToast(x_disp, w_disp);
 	}else if (displayOffset >= 0) {
 		App::time_till_regular = 2;
 		App::reclear = 3;
@@ -55,10 +67,9 @@ void Toast::render() {
 		int x_disp = t_x+displayOffset;
 		int w_disp = t_w-displayOffset;
 		
-		App::DrawRoundedRect(x_disp, t_y, w_disp, t_h, radius, App::theme.darker_background_color, true);
-		TextRenderer::draw_text(x_disp+radius, t_y+t_h/2-TextRenderer::get_text_height()/2, text, App::theme.main_text_color);
+		drawToast(x_disp, w_disp);
 		
-		if (displayOffset >= t_w-radius*2) {
+		if (t_w-displayOffset <= 1.0f) {
 			displayOffset = -1;
 		}
 	}

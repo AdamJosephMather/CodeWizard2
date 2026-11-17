@@ -109,114 +109,115 @@ std::string HexEditor::toHex(int num) {
 
 void HexEditor::render() {
 	if (!is_visible) return;
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+		// draw the file
 
-	// draw the file
-	
-	long long line_start = floor(scroll);
-	long long end_line = line_start+ceil((float)t_h/(float)TextRenderer::get_text_height()) + 1;
-	
-	int cur_y = t_y + App::text_padding - fmod(scroll, 1)*TextRenderer::get_text_height();
-	
-	long long maxAddress = lineCount*16;
-	std::string hexMaxAddress = toHex(maxAddress);
-	int req_len = hexMaxAddress.length();
-	
-	int mx = App::mouseX;
-	int my = App::mouseY;
-	
-	int left = t_x+App::text_padding;
-	int asciiX = left + TextRenderer::get_text_width(req_len+53);
-	
-	// background
-	
-	int columnWidth = TextRenderer::get_text_width(req_len+1)+App::text_padding;
-	App::DrawRect(t_x, t_y, columnWidth, t_h, App::theme.extras_background_color);
-	App::DrawRect(t_x+columnWidth, t_y, t_w-columnWidth, t_h, App::theme.darker_background_color);
-	App::DrawRect(t_x+columnWidth, t_y, 1, t_h, App::theme.border); // border betwix the two
-	
-	// text
-	
-	for (long long l = line_start; l < fmin(end_line, lineCount); l++) {
-		long long address = l*16; // idk if we really need long longs but... why not, eh?
-		std::string addressString = toHex(address);
-		int count = req_len - addressString.length();
-		
-		for (int i = 0; i < count; i++) {
-			addressString = "0"+addressString;
-		}
-		
-		std::string hexdata = "";
-		std::string ascii = "";
-		
-		std::vector<Color*> asciiColors = {};
-		
-		for (long long offset = address; offset < address+16; offset++) {
-			if (offset >= bytes.size()) {
-				break;
+		long long line_start = floor(scroll);
+		long long end_line = line_start+ceil((float)t_h/(float)TextRenderer::get_text_height()) + 1;
+
+		int cur_y = t_y + App::text_padding - fmod(scroll, 1)*TextRenderer::get_text_height();
+
+		long long maxAddress = lineCount*16;
+		std::string hexMaxAddress = toHex(maxAddress);
+		int req_len = hexMaxAddress.length();
+
+		int mx = App::mouseX;
+		int my = App::mouseY;
+
+		int left = t_x+App::text_padding;
+		int asciiX = left + TextRenderer::get_text_width(req_len+53);
+
+		// background
+
+		int columnWidth = TextRenderer::get_text_width(req_len+1)+App::text_padding;
+		App::DrawRect(t_x, t_y, columnWidth, t_h, App::theme.extras_background_color);
+		App::DrawRect(t_x+columnWidth, t_y, t_w-columnWidth, t_h, App::theme.darker_background_color);
+		App::DrawRect(t_x+columnWidth, t_y, 1, t_h, App::theme.border); // border betwix the two
+
+		// text
+
+		for (long long l = line_start; l < fmin(end_line, lineCount); l++) {
+			long long address = l*16; // idk if we really need long longs but... why not, eh?
+			std::string addressString = toHex(address);
+			int count = req_len - addressString.length();
+
+			for (int i = 0; i < count; i++) {
+				addressString = "0"+addressString;
 			}
-			
-			if (offset % 8 == 0) {
-				hexdata += " ";
-			}
-			
-			std::uint8_t byte = bytes[offset];
-			
-			auto hexStr = toHex(byte);
-			if (hexStr.length() == 0) {
-				hexStr = "00";
-			}else if (hexStr.length() == 1) {
-				hexStr = "0" + hexStr;
-			}
-			
-			if (cursor_in_this && my >= cur_y && my < cur_y+TextRenderer::get_text_height()) {
-				int x_left = left + TextRenderer::get_text_width(req_len+2+hexdata.size()) - App::text_padding;
-				int x_right = x_left+TextRenderer::get_text_width(2)+App::text_padding*2;
-				
-				int x_left_ascii = asciiX + TextRenderer::get_text_width(ascii.length());
-				int x_right_ascii = x_left_ascii + TextRenderer::get_text_width(1);
-				
-				if ((x_left <= mx && x_right > mx) || (x_left_ascii <= mx && x_right_ascii > mx)) {
-					App::DrawRect(x_left, cur_y, TextRenderer::get_text_width(2)+App::text_padding*2, TextRenderer::get_text_height(), App::theme.hover_background_color);
-					App::DrawBorder(x_left, cur_y, TextRenderer::get_text_width(2)+App::text_padding*2, TextRenderer::get_text_height(), App::theme.active_color);
-					
-					App::DrawRect(x_left_ascii, cur_y, TextRenderer::get_text_width(1), TextRenderer::get_text_height(), App::theme.hover_background_color);
-					App::DrawBorder(x_left_ascii, cur_y, TextRenderer::get_text_width(1), TextRenderer::get_text_height(), App::theme.active_color);
+
+			std::string hexdata = "";
+			std::string ascii = "";
+
+			std::vector<Color*> asciiColors = {};
+
+			for (long long offset = address; offset < address+16; offset++) {
+				if (offset >= bytes.size()) {
+					break;
+				}
+
+				if (offset % 8 == 0) {
+					hexdata += " ";
+				}
+
+				std::uint8_t byte = bytes[offset];
+
+				auto hexStr = toHex(byte);
+				if (hexStr.length() == 0) {
+					hexStr = "00";
+				}else if (hexStr.length() == 1) {
+					hexStr = "0" + hexStr;
+				}
+
+				if (cursor_in_this && my >= cur_y && my < cur_y+TextRenderer::get_text_height()) {
+					int x_left = left + TextRenderer::get_text_width(req_len+2+hexdata.size()) - App::text_padding;
+					int x_right = x_left+TextRenderer::get_text_width(2)+App::text_padding*2;
+
+					int x_left_ascii = asciiX + TextRenderer::get_text_width(ascii.length());
+					int x_right_ascii = x_left_ascii + TextRenderer::get_text_width(1);
+
+					if ((x_left <= mx && x_right > mx) || (x_left_ascii <= mx && x_right_ascii > mx)) {
+						App::DrawRect(x_left, cur_y, TextRenderer::get_text_width(2)+App::text_padding*2, TextRenderer::get_text_height(), App::theme.hover_background_color);
+						App::DrawBorder(x_left, cur_y, TextRenderer::get_text_width(2)+App::text_padding*2, TextRenderer::get_text_height(), App::theme.active_color);
+
+						App::DrawRect(x_left_ascii, cur_y, TextRenderer::get_text_width(1), TextRenderer::get_text_height(), App::theme.hover_background_color);
+						App::DrawBorder(x_left_ascii, cur_y, TextRenderer::get_text_width(1), TextRenderer::get_text_height(), App::theme.active_color);
+					}
+				}
+
+				hexdata += hexStr + " ";
+
+				if (std::isprint(byte)) {
+					ascii += static_cast<char>(byte);
+					asciiColors.push_back(App::theme.main_text_color);
+				}else{
+					ascii += ".";
+					asciiColors.push_back(App::theme.lesser_text_color);
 				}
 			}
-			
-			hexdata += hexStr + " ";
-			
-			if (std::isprint(byte)) {
-				ascii += static_cast<char>(byte);
-				asciiColors.push_back(App::theme.main_text_color);
-			}else{
-				ascii += ".";
-				asciiColors.push_back(App::theme.lesser_text_color);
-			}
+
+			TextRenderer::draw_text(left, cur_y, MST::toMonoString(addressString+": "+hexdata), App::theme.main_text_color);
+			TextRenderer::draw_text(asciiX, cur_y, MST::toMonoString(ascii), asciiColors); // 53 is the combined length of the spaces and other text there
+			cur_y += TextRenderer::get_text_height();
 		}
-		
-		TextRenderer::draw_text(left, cur_y, MST::toMonoString(addressString+": "+hexdata), App::theme.main_text_color);
-		TextRenderer::draw_text(asciiX, cur_y, MST::toMonoString(ascii), asciiColors); // 53 is the combined length of the spaces and other text there
-		cur_y += TextRenderer::get_text_height();
-	}
-	
-	// scrollbar
-	
-	Widget::render();
-	
-	// border
-	
-	Color* borderC = App::theme.border;
-	if (this == App::activeLeafNode) {
-		borderC = App::theme.active_color;
-	}
-	
-	if (rounded) {
-		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, App::text_padding);
-	}else{
-		App::DrawBorder(t_x, t_y, t_w, t_h, borderC);
-	}
+
+		// scrollbar
+
+		Widget::render();
+
+		// border
+
+		Color* borderC = App::theme.border;
+		if (this == App::activeLeafNode) {
+			borderC = App::theme.active_color;
+		}
+
+		if (radius > 0.0f) {
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, radius);
+		}else{
+			App::DrawBorder(t_x, t_y, t_w, t_h, borderC);
+		}
+	});
 }
 
 bool HexEditor::on_mouse_button_event(int button, int action, int mods) {

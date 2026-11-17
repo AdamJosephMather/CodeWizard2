@@ -16,6 +16,7 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 	
 	querybox = new TextEdit(this, [](Widget*){});
 	querybox->id = MST::toMonoString("QueryBox");
+	querybox->surface = TextEdit::Surface::Document;
 	querybox->borderColor = nullptr;
 	querybox->activeBorderColor = nullptr;
 	
@@ -37,7 +38,6 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 		
 		filesAddList->is_visible_layered = !filesAddList->is_visible_layered;
 	});
-	filesButton->rounded = true;
 	
 	newChat = new Button(this, MST::toMonoString("Reset Chat"), [&](Widget* btn, int x, int y, int _, int _2, int w, int h){
 		btn->t_x = t_x+App::text_padding;
@@ -56,21 +56,18 @@ Chat::Chat(Widget *parent) : Widget(parent) {
 		scrolled_to = 0;
 		scroll_change = 0;
 	});
-	newChat->rounded = true;
 	
 	filesAddList = new ListBox(this, [&](Widget* w){
 		w->t_x = t_x + 2;
 		w->t_y = filesButton->t_y - w->t_h - 3;
 		w->t_w = t_w/2.5;
 	});
-	filesAddList->rounded = true;
 	filesAddList->is_visible_layered = false;
 	filesAddList->ONCLICK = [&](Widget* w, int idx) {
 		std::string message = textstoadd[idx];
 		Label* te = new Label(this);
 		te->background_color = App::theme.overlay_background_color;
 		te->setFullText(MST::toMonoString(message));
-		te->rounded = true;
 		message_te.push_back(te);
 		from_user.push_back(true);
 		filesAddList->is_visible_layered = false;
@@ -142,45 +139,45 @@ void Chat::position(int x, int y, int width, int height) {
 }
 
 void Chat::render() {
-	if (!is_visible) {
-		return;
-	}
-	
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
-	
-	for (auto m : message_te) {
-		App::runWithSKIZ(m->t_x, m->t_y, m->t_w, m->t_h, [&](){
-			m->render();
+	if (!is_visible) return;
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+
+		App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
+
+		for (auto m : message_te) {
+			App::runWithSKIZ(m->t_x, m->t_y, m->t_w, m->t_h, [&](){
+				m->render();
+			});
+		}
+
+		App::DrawRect(querybox->t_x, querybox->t_y-2-filesButton->t_h, querybox->t_w, 2+filesButton->t_h, App::theme.darker_background_color);
+		App::runWithSKIZ(querybox->t_x, querybox->t_y, querybox->t_w, querybox->t_h, [&](){
+			querybox->render();
 		});
-	}
-	
-	App::DrawRect(querybox->t_x, querybox->t_y-2-filesButton->t_h, querybox->t_w, 2+filesButton->t_h, App::theme.darker_background_color);
-	App::runWithSKIZ(querybox->t_x, querybox->t_y, querybox->t_w, querybox->t_h, [&](){
-		querybox->render();
+		App::runWithSKIZ(filesButton->t_x, filesButton->t_y, filesButton->t_w, filesButton->t_h, [&](){
+			filesButton->render();
+		});
+		App::runWithSKIZ(filesAddList->t_x, filesAddList->t_y, filesAddList->t_w, filesAddList->t_h, [&](){
+			filesAddList->render();
+		});
+		App::runWithSKIZ(newChat->t_x, newChat->t_y, newChat->t_w, newChat->t_h, [&](){
+			newChat->render();
+		});
+		TextRenderer::draw_text(filesButton->t_x+filesButton->t_w+App::text_padding, filesButton->t_y+App::text_padding, MST::toMonoString(App::settings->getValue("lm_studio_model_id",std::string("qwen2.5-coder-1.5b-instruct@q4_k_m"))), App::theme.lesser_text_color);
+
+		Color* bColor = App::theme.border;
+		if (querybox == App::activeLeafNode) {
+			bColor = App::theme.active_color;
+		}
+
+		if (radius > 0.0f) {
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, bColor, 5, radius);
+		}else {
+			App::DrawBorder(t_x, t_y, t_w, t_h, bColor);
+		}
+		App::DrawRect(t_x, filesButton->t_y-2, t_w, 1, bColor);
 	});
-	App::runWithSKIZ(filesButton->t_x, filesButton->t_y, filesButton->t_w, filesButton->t_h, [&](){
-		filesButton->render();
-	});
-	App::runWithSKIZ(filesAddList->t_x, filesAddList->t_y, filesAddList->t_w, filesAddList->t_h, [&](){
-		filesAddList->render();
-	});
-	App::runWithSKIZ(newChat->t_x, newChat->t_y, newChat->t_w, newChat->t_h, [&](){
-		newChat->render();
-	});
-	TextRenderer::draw_text(filesButton->t_x+filesButton->t_w+App::text_padding, filesButton->t_y+App::text_padding, MST::toMonoString(App::settings->getValue("lm_studio_model_id",std::string("qwen2.5-coder-1.5b-instruct@q4_k_m"))), App::theme.lesser_text_color);
-	
-	Color* bColor = App::theme.border;
-	if (querybox == App::activeLeafNode) {
-		bColor = App::theme.active_color;
-	}
-	
-	if (rounded) {
-		App::DrawInverseRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, App::theme.main_background_color);
-		App::DrawRoundBorder(t_x, t_y, t_w, t_h, bColor, 5, App::text_padding);
-	}else {
-		App::DrawBorder(t_x, t_y, t_w, t_h, bColor);
-	}
-	App::DrawRect(t_x, filesButton->t_y-2, t_w, 1, bColor);
 }
 
 bool Chat::on_scroll_event(double xchange, double ychange) {
@@ -355,7 +352,6 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 			auto message = querybox->getFullText();
 			te->background_color = App::theme.overlay_background_color;
 			te->setFullText(message);
-			te->rounded = true;
 			
 			message_te.push_back(te);
 			from_user.push_back(true);
@@ -410,7 +406,6 @@ bool Chat::on_key_event(int key, int scancode, int action, int mods) {
 						auto te = new TextEdit(this, [](Widget*){});
 						te->setFullText(trimMonoAscii(segment.content));
 						te->DONT_SCROLL_VERT_CURS = true;
-						te->rounded = true;
 						te->allow_edits = false;
 						
 						App::setTextEditHighlighter(te, segment.name);

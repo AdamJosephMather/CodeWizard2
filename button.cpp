@@ -8,7 +8,6 @@ Button::Button(Widget *parent, MST::MonoString text, Positioner positioner, OnCl
 	ONCLICK = onclick;
 	
 	window_button = false;
-	rounded = false;
 	
 	background_color = App::theme.darker_background_color;
 	background_color_hover = App::theme.hover_background_color;
@@ -78,17 +77,19 @@ void Button::render() {
 		borderColor = border_color_hover;
 	}
 	
+	const float radius = App::themeCornerRadius(t_w, t_h);
+
 	if (backColor != nullptr) {
-		if (rounded) {
-			App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, backColor, borderColor != nullptr);
+		if (radius > 0.0f) {
+			App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, backColor);
 		}else{
 			App::DrawRect(t_x, t_y, t_w, t_h, backColor);
 		}
 	}
 	
 	if (borderColor) {
-		if (rounded) {
-			App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderColor, 5, App::text_padding);
+		if (radius > 0.0f) {
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderColor, 5, radius);
 		}else{
 			App::DrawBorder(t_x, t_y, t_w, t_h, borderColor);
 		}

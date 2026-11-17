@@ -20,7 +20,6 @@ public:
 	bool window_button = false;
 	bool execute_on_down = true;
 	
-	bool rounded = true;
 	bool alignLeft = false;
 	int text_special = 0;
 	

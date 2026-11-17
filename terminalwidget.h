@@ -44,7 +44,6 @@ public:
 	std::string selection_text() const;
 	void clear_selection();
 	
-	bool rounded = true;
 	
 	void run();
 	

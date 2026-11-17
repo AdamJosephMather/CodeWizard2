@@ -44,6 +44,16 @@ SettingsString* Settings::makeString(std::string name, std::string key, std::str
 	return f;
 }
 
+SettingsChoice* Settings::makeChoice(std::string name, std::string key, std::string default_value, std::vector<std::string> options) {
+	auto* choice = new SettingsChoice();
+	choice->name = name;
+	choice->key_name = key;
+	choice->default_value = default_value;
+	choice->value = App::settings->getValue(key, default_value);
+	choice->options = std::move(options);
+	return choice;
+}
+
 SettingsLabel* Settings::makeLabel(std::string name) {
 	auto f = new SettingsLabel();
 	f->name = name;
@@ -77,10 +87,12 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 	
 	
 	settings_menus[0] = {
+		makeChoice("Theme", "c_theme", themePresetName(ThemeBuild::preset),
+			{ "Existing", "Square", "Modern", "Bubble" }),
 		makeBool(
 			"Dark Mode",
 			"dark_mode",
-			true
+			ThemeBuild::build_dark_mode
 		),
 		makeFloat(
 			"Font Size",
@@ -95,7 +107,7 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 		makeFloat(
 			"Transparency Mode Opacity",
 			"opacity",
-			0.65f
+			0.8f
 		),
 		makeString(
 			"Font Path",
@@ -289,52 +301,6 @@ Settings::Settings(Widget* parent) : Widget(parent) {
 			"ssh_helper_path",
 			""
 		)
-		
-//		makeBool(
-//			"Use Chauffeur",
-//			"use_chauffeur",
-//			false
-//		),
-//		makeString(
-//			"Chauffeur Model Path (Restart CW)",
-//			"chauffeur_model_path",
-//			""
-//		),
-//		makeString(
-//			"Chauffeur Tokenizer Path (Restart CW)",
-//			"chauffeur_tokenizer_path",
-//			""
-//		),
-//		makeInt(
-//			"Chauffeur Prefix Lines",
-//			"chauffeur_prefix_lines",
-//			10
-//		),
-//		makeInt(
-//			"Chauffeur Suffix Lines",
-//			"chauffeur_suffix_lines",
-//			7
-//		),
-//		makeInt(
-//			"Chauffeur Max Continue",
-//			"chauffeur_max_continue",
-//			6
-//		),
-//		makeInt(
-//			"Chauffeur Wait Time (ms)",
-//			"chauffeur_time",
-//			1000
-//		),
-//		makeFloat(
-//			"Chauffeur Temperature (0-1)",
-//			"chauffeur_temp",
-//			0.6f
-//		),
-//		makeBool(
-//			"Chauffeur Use FIM (recommended)",
-//			"use_fim",
-//			true
-//		)
 	};
 	
 	settings_menus[2] = {
@@ -419,30 +385,58 @@ void Settings::handleChildren() {
 	}
 	
 	for (auto el : settings_menus[tab_bar->selected_id]) {
-		TextEdit* e = new TextEdit(this, [&](Widget* t){
-			auto el = edits_to_element[dynamic_cast<TextEdit*>(t)];
-			
-			int y = 0; // we apply the scrolled to on the first element so that it will propegate down to the rest
-			if (before != nullptr) {
-				y = before->t_y+before->t_h; // all that just to get the y location... maybe there's a problem with my system. Oh well, it's too late now y'all
-			}else{
-				y = tab_bar->t_h+tab_bar->t_y+App::text_padding-(int)scrolled_to;
+		auto* choice = dynamic_cast<SettingsChoice*>(el);
+		auto* boolean = dynamic_cast<SettingsBool*>(el);
+		if (choice || boolean) {
+			auto* control = new Tabs(this);
+			control->has_close_button = false;
+			control->can_add_new = false;
+			control->background_color = nullptr;
+			control->POSITIONER = [this](Widget* widget) { positionSetting(widget); };
+			const std::vector<std::string> options = choice ? choice->options : std::vector<std::string>{ "Off", "On" };
+			for (size_t i = 0; i < options.size(); ++i) {
+				TabInfo info{};
+				info.id = static_cast<int>(i);
+				info.title = MST::toMonoString(options[i]);
+				control->addTab(info);
+				if (choice ? choice->value == options[i] : boolean->value == (i != 0)) control->selected_id = info.id;
 			}
-			
-			t->t_y = y+TextRenderer::get_text_height()+App::text_padding;
-			t->t_h = TextRenderer::get_text_height()+App::text_padding*2;
-			t->t_x = t_x+App::text_padding*2;
-			t->t_w = TextRenderer::get_text_width(40);
-			
-			before = t;
-		});
-		e->rounded = true;
-		
-		setWithValue(e, el);
-		
-		edits_to_element[e] = el;
-		elements_to_edit[el] = e;
+			control->tab_clicked_callback = [this, choice, boolean](TabInfo info) {
+				if (boolean) {
+					const bool previous = boolean->value;
+					boolean->value = info.id != 0;
+					if (validate_input(boolean)) {
+						App::settings->setValue(boolean->key_name, boolean->value);
+						after_change(boolean);
+					} else {
+						boolean->value = previous;
+					}
+				} else {
+					choice->value = choice->options.at(info.id);
+					App::settings->setValue(choice->key_name, choice->value);
+					App::applyThemeSettings();
+				}
+				App::rootelement->executeAction(WidgetActionType::SETTINGS_CHANGE);
+				App::rerender = true;
+			};
+			elements_to_edit[el] = control;
+			continue;
+		}
+		auto* edit = new TextEdit(this, [this](Widget* widget) { positionSetting(widget); });
+		setWithValue(edit, el);
+		edits_to_element[edit] = el;
+		elements_to_edit[el] = edit;
 	}
+}
+
+void Settings::positionSetting(Widget* widget) {
+	const int y = before ? before->t_y+before->t_h
+		: tab_bar->t_h+tab_bar->t_y+App::text_padding-static_cast<int>(scrolled_to);
+	widget->t_y = y+TextRenderer::get_text_height()+App::text_padding;
+	widget->t_h = TextRenderer::get_text_height()+App::text_padding*2;
+	widget->t_x = t_x+App::text_padding*2;
+	widget->t_w = std::max(1, std::min(TextRenderer::get_text_width(40), t_w-App::text_padding*4));
+	before = widget;
 }
 
 void Settings::setWithValue(TextEdit* e, SettingsElement* el) {
@@ -452,12 +446,6 @@ void Settings::setWithValue(TextEdit* e, SettingsElement* el) {
 		e->setFullText(MST::toMonoString(std::to_string(i->value)));
 	}else if (auto i = dynamic_cast<SettingsString*>(el)) {
 		e->setFullText(MST::toMonoString(i->value));
-	}else if (auto i = dynamic_cast<SettingsBool*>(el)) {
-		MST::MonoString vl = MST::toMonoString("false");
-		if (i->value) {
-			vl = MST::toMonoString("true");
-		}
-		e->setFullText(vl);
 	}else if (auto i = dynamic_cast<SettingsLabel*>(el)) {
 		MST::MonoString vl = MST::toMonoString(i->default_value);
 		e->setFullText(vl);
@@ -465,31 +453,32 @@ void Settings::setWithValue(TextEdit* e, SettingsElement* el) {
 }
 
 void Settings::render() {
-	App::DrawRect(t_x, t_y, t_w, t_h, App::theme.extras_background_color);
-	
-	App::runWithSKIZ(tab_bar->t_x, tab_bar->t_y, tab_bar->t_w, tab_bar->t_h, [&](){
+	if (!is_visible) return;
+	// Tabs own their individual shapes; the scrolling settings body is one surface.
+	App::DrawRect(t_x, t_y, t_w, tab_bar->t_h, App::theme.extras_background_color);
+	App::runWithSKIZ(tab_bar->t_x, tab_bar->t_y, tab_bar->t_w, tab_bar->t_h, [&]() {
 		tab_bar->render();
 	});
-	
-	App::runWithSKIZ(t_x, tab_bar->t_y+tab_bar->t_h, t_w, t_h-tab_bar->t_h, [&](){
-		for (auto it : elements_to_edit) {
-			int y = it.second->t_y-TextRenderer::get_text_height()-App::text_padding/2;
-			int x = t_x+App::text_padding*2;
-			MST::MonoString text = MST::toMonoString(it.first->name);
-			
-			TextRenderer::draw_text(x, y, text, App::theme.main_text_color);
-			App::runWithSKIZ(it.second->t_x, it.second->t_y, it.second->t_w, it.second->t_h, [&](){
-				it.second->render();
-			});
-		}
+
+	const int bodyY = t_y+tab_bar->t_h;
+	const int bodyHeight = t_h-tab_bar->t_h;
+	const float radius = App::themeCornerRadius(t_w, bodyHeight);
+	App::runWithSKIZ(t_x, bodyY, t_w, bodyHeight, [&]() {
+		App::runWithRoundedClip(t_x, bodyY, t_w, bodyHeight, radius, [&]() {
+			App::DrawRect(t_x, bodyY, t_w, bodyHeight, App::theme.extras_background_color);
+			for (auto it : elements_to_edit) {
+				int y = it.second->t_y-TextRenderer::get_text_height()-App::text_padding/2;
+				int x = t_x+App::text_padding*2;
+				MST::MonoString text = MST::toMonoString(it.first->name);
+				TextRenderer::draw_text(x, y, text, App::theme.main_text_color);
+				App::runWithSKIZ(it.second->t_x, it.second->t_y, it.second->t_w, it.second->t_h, [&]() {
+					it.second->render();
+				});
+			}
+			if (radius > 0.0f) App::DrawRoundBorder(t_x, bodyY, t_w, bodyHeight, App::theme.border, 5, radius);
+			else App::DrawBorder(t_x, bodyY, t_w, bodyHeight, App::theme.border);
+		});
 	});
-	
-	if (rounded) {
-		App::DrawInverseRoundedRect(t_x, t_y+tab_bar->t_h, t_w, t_h-tab_bar->t_h, App::text_padding, App::theme.main_background_color);
-		App::DrawRoundBorder(t_x, t_y+tab_bar->t_h, t_w, t_h-tab_bar->t_h, App::theme.border, 5, App::text_padding);
-	}else{
-		App::DrawBorder(t_x, t_y+tab_bar->t_h, t_w, t_h-tab_bar->t_h, App::theme.border);
-	}
 }
 
 void Settings::handleChange(TextEdit* te, SettingsElement* se) {
@@ -505,25 +494,6 @@ void Settings::handleChange(TextEdit* te, SettingsElement* se) {
 		std::string oldvalue = i->value;
 		i->value = str;
 		if (validate_input(i, oldvalue)) {
-			App::settings->setValue(se->key_name, str);
-			after_change(i);
-		}
-	}else if (auto i = dynamic_cast<SettingsBool*>(se)) {
-		if (str == "") {
-			if (i->default_value) {
-				str = "true";
-			}else{
-				str = "false";
-			}
-		}
-		
-		if (str == "true") {
-			i->value = true;
-		}else if (str == "false") {
-			i->value = false;
-		}
-		
-		if (validate_input(i)) {
 			App::settings->setValue(se->key_name, i->value);
 			after_change(i);
 		}
@@ -664,7 +634,7 @@ bool Settings::validate_input(SettingsFloat* el) {
 }
 
 bool Settings::validate_input(SettingsInt* el) {
-	if (el->key_name == "max_index_files" || el->key_name == "chauffeur_prefix_lines" || el->key_name == "chauffeur_suffix_lines" || el->key_name == "lm_studio_max_tokens" || el->key_name == "lm_studio_context_lines") {
+	if (el->key_name == "max_index_files" || el->key_name == "lm_studio_max_tokens" || el->key_name == "lm_studio_context_lines") {
 		if (el->value < 1) {
 			el->value = el->default_value;
 			return false;
@@ -776,7 +746,18 @@ void Settings::executeAction(WidgetActionType typ) {
 			}
 		}
 		
-		tab_bar->tab_clicked_callback(tab_bar->tabs_list[tab_bar->selected_id]);
+		for (auto [element, control] : elements_to_edit) {
+			if (auto* boolean = dynamic_cast<SettingsBool*>(element)) {
+				static_cast<Tabs*>(control)->selected_id = boolean->value ? 1 : 0;
+			} else if (auto* choice = dynamic_cast<SettingsChoice*>(element)) {
+				auto* tabs = static_cast<Tabs*>(control);
+				for (size_t i = 0; i < choice->options.size(); ++i) {
+					if (choice->value == choice->options[i]) tabs->selected_id = static_cast<int>(i);
+				}
+			} else if (auto* edit = dynamic_cast<TextEdit*>(control)) {
+				if (edit != App::activeLeafNode) setWithValue(edit, element);
+			}
+		}
 	}
 }
 

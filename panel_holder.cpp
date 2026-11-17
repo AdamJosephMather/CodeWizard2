@@ -320,8 +320,9 @@ void PanelHolder::render() {
 		}
 		
 		if (dragging_handle || hoveringHandle()) {
-			int rad = std::min(width_h, height_h)/2;
-			App::DrawRoundedRect(xpos_h, ypos_h, width_h, height_h, rad, App::theme.main_text_color);
+			const float radius = App::themeCornerRadius(width_h, height_h);
+			if (radius > 0.0f) App::DrawRoundedRect(xpos_h, ypos_h, width_h, height_h, radius, App::theme.main_text_color);
+			else App::DrawRect(xpos_h, ypos_h, width_h, height_h, App::theme.main_text_color);
 		}
 	}
 }

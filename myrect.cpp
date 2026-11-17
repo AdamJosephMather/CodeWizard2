@@ -18,20 +18,21 @@ void MyRect::position(int x, int y, int width, int height) {
 }
 
 void MyRect::render() {
+	const float radius = App::themeCornerRadius(t_w, t_h);
 	if (!is_visible) {
 		return;
 	}
 	
-	if (rounded) {
-		App::DrawRoundedRect(t_x, t_y, t_w, t_h, App::text_padding, background_color);
+	if (radius > 0.0f) {
+		App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, background_color);
 	}else{
 		App::DrawRect(t_x, t_y, t_w, t_h, background_color);
 	}
 	
 	
 	if (border_color != nullptr) {
-		if (rounded) {
-			App::DrawRoundBorder(t_x, t_y, t_w, t_h, border_color, 5, App::text_padding);
+		if (radius > 0.0f) {
+			App::DrawRoundBorder(t_x, t_y, t_w, t_h, border_color, 5, radius);
 		}else{
 			App::DrawBorder(t_x, t_y, t_w, t_h, border_color);
 		}

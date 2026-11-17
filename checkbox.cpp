@@ -70,37 +70,39 @@ bool CheckBox::on_mouse_move_event() {
 }
 
 void CheckBox::render() {
-	if (!is_visible) {
-		return;
-	}
-	
-	int p = 4;
-	int radius = App::text_padding;
-	
-	Color* borderC = border_color;
-	Color* backC = bgcolor;
-	if (cursor_in_this) {
-		borderC = border_color_hover;
-		backC = App::theme.hover_background_color;
-	}
-	
-	if (rounded) {
-		App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, backC);
-	}else{
-		App::DrawRect(t_x, t_y, t_w, t_h, backC);
-	}
-	
-	if (is_checked) {
-		App::DrawRoundedRect(t_x+p, t_y+p, t_w-2*p, t_h-2*p, radius, App::theme.main_text_color);
-	}
-	
-	Widget::render();
-	
-	if (borderC) {
-		if (rounded) {
-			App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, radius);
-		}else{
-			App::DrawBorder(t_x, t_y, t_w, t_h, borderC);
+	if (!is_visible) return;
+	const float radius = App::themeCornerRadius(t_w, t_h);
+	App::runWithRoundedClip(t_x, t_y, t_w, t_h, radius, [&]() {
+
+		const int p = std::min(4, std::max(0, std::min(t_w, t_h)/4));
+
+		Color* borderC = border_color;
+		Color* backC = bgcolor;
+		if (cursor_in_this) {
+			borderC = border_color_hover;
+			backC = App::theme.hover_background_color;
 		}
-	}
+
+		if (radius > 0.0f) {
+			App::DrawRoundedRect(t_x, t_y, t_w, t_h, radius, backC);
+		}else{
+			App::DrawRect(t_x, t_y, t_w, t_h, backC);
+		}
+
+		if (is_checked && t_w > 2*p && t_h > 2*p) {
+			const float innerRadius = std::clamp(radius-p, 0.0f, std::min(t_w-2*p, t_h-2*p)*0.5f);
+			if (innerRadius > 0.0f) App::DrawRoundedRect(t_x+p, t_y+p, t_w-2*p, t_h-2*p, innerRadius, App::theme.main_text_color);
+			else App::DrawRect(t_x+p, t_y+p, t_w-2*p, t_h-2*p, App::theme.main_text_color);
+		}
+
+		Widget::render();
+
+		if (borderC) {
+			if (radius > 0.0f) {
+				App::DrawRoundBorder(t_x, t_y, t_w, t_h, borderC, 5, radius);
+			}else{
+				App::DrawBorder(t_x, t_y, t_w, t_h, borderC);
+			}
+		}
+	});
 }

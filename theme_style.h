@@ -79,7 +79,7 @@ inline constexpr ThemeStyle themeStyle(ThemePreset preset) {
     }
     case ThemePreset::Modern:
         return {
-            {0.115f, 0.14f, 0.19f, 0.095f, 0.16f, 0.9f, 0.55f, 0.24f, 0.7f},
+            {0.115f, 0.14f, 0.19f, 0.095f, 0.16f, 0.9f, 0.4f, 0.24f, 0.7f},
             {0.96f, 0.93f, 0.88f, 1.0f, 0.98f, 0.12f, 0.43f, 0.78f, 0.28f},
             2.0f, 0.4f
         };

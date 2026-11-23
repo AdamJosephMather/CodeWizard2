@@ -68,7 +68,11 @@ void MathWindow::render() {
 		int textH = TextRenderer::get_text_height();
 		int iconS = textH*0.7;
 		int iconOff = (textH-iconS)/2;
-
+		
+		if (line_start > 0) { // honestly not sure why we need this but it's in the textedit, and it fixes problems.
+			line_start -= 1;
+		}
+		
 		if (textH - iconS * 2 != iconOff) {
 			iconS += 1;
 		}

@@ -50,12 +50,12 @@ void FileTree::render() {
 			}
 
 			if (itm.is_folder) {
-				App::renderColorlessTexture(folderIcon, itm.x+App::text_padding/2, itm.y+App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol, back_color);
+				App::renderColorlessTexture(folderIcon, itm.x+App::text_padding, itm.y+App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol, back_color);
 			}else {
-				App::renderColorlessTexture(fileIcon, itm.x+App::text_padding/2, itm.y+App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol, back_color);
+				App::renderColorlessTexture(fileIcon, itm.x+App::text_padding, itm.y+App::text_padding/2, TextRenderer::get_text_height(), TextRenderer::get_text_height(), textCol, back_color);
 			}
 
-			TextRenderer::draw_text(itm.x+TextRenderer::get_text_height()+App::text_padding, itm.y+(float)App::text_padding/2, itm.name, textCol);
+			TextRenderer::draw_text(itm.x+TextRenderer::get_text_height()+App::text_padding*1.5f, itm.y+(float)App::text_padding/2, itm.name, textCol);
 		}
 
 		Widget::render();

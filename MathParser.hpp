@@ -45,14 +45,14 @@ private:
 	
 	
 	void _addConstants(StateDict& dict) {
-		const double M_PI  = 3.14159265358979323;
-		const double M_E   = 2.71828182845904523;
+		const double PI_VAR  = 3.14159265358979323;
+		const double E_VAR   = 2.71828182845904523;
 		
 		// ---- Mathematical constants ----
-		dict.vars["pi"]      = M_PI;
-		dict.vars["e"]       = M_E;
+		dict.vars["pi"]      = PI_VAR;
+		dict.vars["e"]       = E_VAR;
 		dict.vars["phi"]     = 1.6180339887498948482045868343656381177203091798057628621354486227;
-		dict.vars["tau"]     = 2.0 * M_PI;
+		dict.vars["tau"]     = 2.0 * PI_VAR;
 		dict.vars["sqrt2"]   = std::sqrt(2);
 		dict.vars["sqrt1_2"] = std::sqrt(1/2);
 		dict.vars["ln2"]     = std::log(2);
@@ -137,8 +137,8 @@ private:
 		dict.functions["sign"]  = [](double a){ return (a > 0) - (a < 0); };
 	
 		// ---- Angle conversion ----
-		dict.functions["deg"] = [M_PI](double a){ return a * 180.0 / M_PI; }; // radians -> degrees
-		dict.functions["rad"] = [M_PI](double a){ return a * M_PI / 180.0; }; // degrees -> radians
+		dict.functions["deg"] = [PI_VAR](double a){ return a * 180.0 / PI_VAR; }; // radians -> degrees
+		dict.functions["rad"] = [PI_VAR](double a){ return a * PI_VAR / 180.0; }; // degrees -> radians
 	
 		// ---- Special functions ----
 		dict.functions["gamma"]  = [](double a){ return std::tgamma(a); };
